@@ -21,8 +21,7 @@ const NAV_ITEMS: { tab: NavTab; label: string; icon: string }[] = [
   { tab: 'templates', label: 'Templates', icon: 'quiz' },
   { tab: 'content-bank', label: 'Content Bank', icon: 'article' },
   { tab: 'brand-kit', label: 'Brand Kit', icon: 'palette' },
-  { tab: 'assets', label: 'Assets', icon: 'layers' },
-  { tab: 'appscript', label: 'Integrations', icon: 'terminal' }
+  { tab: 'assets', label: 'Assets', icon: 'layers' }
 ];
 
 const COLLAPSE_KEY = 'pz_sidenav_collapsed';
