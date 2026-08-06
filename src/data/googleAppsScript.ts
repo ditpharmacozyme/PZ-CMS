@@ -467,6 +467,7 @@ function handleInstallReminderTrigger() {
       }))
       .setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
+    Logger.log("handleInstallReminderTrigger failed: " + err.toString());
     return ContentService
       .createTextOutput(JSON.stringify({
         status: "error",
