@@ -159,6 +159,17 @@ input:focus, textarea:focus, select:focus {
   box-shadow: 0 0 0 3px rgba(41, 108, 0, 0.12);
 }
 
+/* ─── Mobile Input Zoom Fix ───
+   iOS Safari auto-zooms the page on focus for any text input under 16px.
+   The design uses smaller type (text-xs/sm) on these controls for desktop
+   density, so force 16px specifically below the tablet breakpoint instead
+   of bumping every input's font size globally. */
+@media (max-width: 767px) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
 /* ─── Primary Button Gradient ─── */
 .btn-primary {
   background: linear-gradient(135deg, #296c00, #1f5700);

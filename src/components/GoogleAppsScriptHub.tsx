@@ -26,6 +26,11 @@ export const GoogleAppsScriptHub: React.FC<GoogleAppsScriptHubProps> = ({
   const [syncingSheets, setSyncingSheets] = useState(false);
   const [syncResult, setSyncResult] = useState<any>(null);
 
+  // Daily Reminder Trigger State
+  const [installingTrigger, setInstallingTrigger] = useState(false);
+  const [triggerInstalled, setTriggerInstalled] = useState<boolean | null>(null);
+  const [triggerResult, setTriggerResult] = useState<any>(null);
+
   // Express Health State
   const [serverHealth, setServerHealth] = useState<any>(null);
   const [checkingHealth, setCheckingHealth] = useState(false);
@@ -36,6 +41,23 @@ export const GoogleAppsScriptHub: React.FC<GoogleAppsScriptHubProps> = ({
 
     checkBackendHealth();
   }, []);
+
+  useEffect(() => {
+    if (!scriptUrl) return;
+    (async () => {
+      try {
+        const res = await fetch('/api/appscript/proxy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ scriptUrl, payload: { action: 'reminderTriggerStatus' } })
+        });
+        const data = await res.json();
+        setTriggerInstalled(Boolean(data?.data?.installed));
+      } catch {
+        setTriggerInstalled(null);
+      }
+    })();
+  }, [scriptUrl]);
 
   const handleSaveScriptUrl = (url: string) => {
     setScriptUrl(url);
@@ -146,6 +168,31 @@ export const GoogleAppsScriptHub: React.FC<GoogleAppsScriptHubProps> = ({
     } catch (err: any) {
       setUploadResult({ status: 'error', error: err.message });
       setUploading(false);
+    }
+  };
+
+  const handleInstallReminderTrigger = async () => {
+    if (!scriptUrl) {
+      alert('Please enter your deployed Google Apps Script Web App URL first.');
+      return;
+    }
+
+    setInstallingTrigger(true);
+    setTriggerResult(null);
+
+    try {
+      const res = await fetch('/api/appscript/proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scriptUrl, payload: { action: 'installReminderTrigger' } })
+      });
+      const data = await res.json();
+      setTriggerResult(data);
+      if (data?.data?.installed) setTriggerInstalled(true);
+    } catch (err: any) {
+      setTriggerResult({ status: 'error', error: err.message });
+    } finally {
+      setInstallingTrigger(false);
     }
   };
 
@@ -513,6 +560,48 @@ export const GoogleAppsScriptHub: React.FC<GoogleAppsScriptHubProps> = ({
                       <span className="material-symbols-outlined text-sm">open_in_new</span>
                     </a>
                   )}
+                </div>
+              )}
+            </div>
+
+            {/* Daily Reminder Trigger — turns "send" from a manual click into a
+                real time-driven schedule that runs on Google's servers. */}
+            <div className="bg-white border border-[#bfcab4] p-4 sm:p-6 rounded-lg shadow-xs space-y-4">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#296c00]">schedule_send</span>
+                <h3 className="font-headline-md text-base font-bold text-[#1b1c1a]">
+                  Daily Reminders
+                </h3>
+              </div>
+              <p className="font-body-md text-xs text-[#707a67]">
+                Installs a trigger that checks Supabase every morning (~8am) and emails anyone with a post due
+                today, instead of needing someone to click "Send" by hand. Requires <code className="font-code-sm text-[10px] bg-[#efeeea] px-1 rounded">SUPABASE_URL</code> and{' '}
+                <code className="font-code-sm text-[10px] bg-[#efeeea] px-1 rounded">SUPABASE_ANON_KEY</code> to be filled in near the top of the pasted script.
+              </p>
+
+              <div className="p-3 bg-[#faf9f5] border border-[#bfcab4] rounded text-xs flex items-center gap-2">
+                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${triggerInstalled ? 'bg-[#296c00]' : 'bg-[#bfcab4]'}`} />
+                <span className="font-label-caps text-[#404a39]">
+                  {triggerInstalled === null && 'Status unknown — enter your Web App URL to check.'}
+                  {triggerInstalled === true && 'Installed — reminders send automatically.'}
+                  {triggerInstalled === false && 'Not installed yet.'}
+                </span>
+              </div>
+
+              <button
+                onClick={handleInstallReminderTrigger}
+                disabled={installingTrigger || !scriptUrl}
+                className="w-full bg-[#296c00] text-white font-label-caps text-xs font-bold py-3 rounded shadow-xs hover:bg-[#1f5700] disabled:opacity-50 transition-all min-h-[44px]"
+              >
+                {installingTrigger ? 'Installing…' : triggerInstalled ? 'Re-install Daily Trigger' : 'Enable Daily Reminders'}
+              </button>
+
+              {triggerResult && (
+                <div className="p-3 bg-[#faf9f5] border border-[#bfcab4] rounded text-xs space-y-2">
+                  <p className="font-label-caps text-[10px] font-bold text-[#296c00]">RESULT</p>
+                  <pre className="font-code-sm text-[11px] overflow-x-auto text-[#1b1c1a]">
+                    {JSON.stringify(triggerResult, null, 2)}
+                  </pre>
                 </div>
               )}
             </div>

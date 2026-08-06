@@ -22,15 +22,19 @@ import {
   fetchRemoteTemplates,
   upsertRemoteTemplate,
   deleteRemoteTemplate,
+  subscribeRemoteTemplates,
   fetchRemoteContentBank,
   upsertRemoteContentBankItem,
   deleteRemoteContentBankItem,
+  subscribeRemoteContentBank,
   fetchRemoteAssets,
   upsertRemoteAsset,
   deleteRemoteAsset,
+  subscribeRemoteAssets,
   fetchRemoteTeam,
   upsertRemoteTeamMember,
   deleteRemoteTeamMember,
+  subscribeRemoteTeam,
   importLocalDataToRemote
 } from './utils/storage';
 import { SideNav, NavTab } from './components/SideNav';
@@ -146,8 +150,17 @@ export function App() {
       if (remoteTeam && remoteTeam.length > 0) setTeamMembers(remoteTeam);
     })();
 
-    const unsubscribe = subscribeRemotePosts((remotePosts) => setPosts(remotePosts));
-    return unsubscribe;
+    // Live subscriptions on every table, not just posts — a teammate adding a
+    // template, asset, bank item, or team member shows up here without a
+    // manual re-import or page refresh.
+    const unsubs = [
+      subscribeRemotePosts((remotePosts) => setPosts(remotePosts)),
+      subscribeRemoteTemplates((remoteTemplates) => setTemplates(remoteTemplates)),
+      subscribeRemoteAssets((remoteAssets) => setAssets(remoteAssets)),
+      subscribeRemoteContentBank((remoteBank) => setContentBank(remoteBank)),
+      subscribeRemoteTeam((remoteTeam) => setTeamMembers(remoteTeam))
+    ];
+    return () => unsubs.forEach((unsub) => unsub());
     // Runs once on mount — deliberately not re-running on every state change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

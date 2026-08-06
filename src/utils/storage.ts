@@ -200,6 +200,7 @@ type PostRow = {
   scheduled_time: string;
   reminder_email: string | null;
   email_reminder_enabled: boolean;
+  reminder_sent_at: string | null;
   status: string;
   assignee: string;
   visual_url: string;
@@ -226,6 +227,7 @@ function rowToPost(row: PostRow): Post {
     scheduledTime: row.scheduled_time || '',
     reminderEmail: row.reminder_email || undefined,
     emailReminderEnabled: row.email_reminder_enabled,
+    reminderSentAt: row.reminder_sent_at || undefined,
     status: row.status as Post['status'],
     assignee: row.assignee,
     visualUrl: row.visual_url,
@@ -253,6 +255,7 @@ function postToRow(post: Post): PostRow {
     scheduled_time: post.scheduledTime || '',
     reminder_email: post.reminderEmail || null,
     email_reminder_enabled: !!post.emailReminderEnabled,
+    reminder_sent_at: post.reminderSentAt || null,
     status: post.status,
     assignee: post.assignee,
     visual_url: post.visualUrl,
@@ -362,6 +365,18 @@ export async function deleteRemoteTemplate(id: string): Promise<void> {
   if (error) console.error('[Supabase] deleteRemoteTemplate failed:', error.message);
 }
 
+export function subscribeRemoteTemplates(onChange: (templates: PostTemplate[]) => void): () => void {
+  if (!supabase) return () => {};
+  const channel = supabase
+    .channel('templates-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'templates' }, async () => {
+      const templates = await fetchRemoteTemplates();
+      if (templates) onChange(templates);
+    })
+    .subscribe();
+  return () => { supabase.removeChannel(channel); };
+}
+
 // ─── Content Bank ────────────────────────────────────────────────────────
 function rowToBankItem(row: any): ContentBankItem {
   return { id: row.id, text: row.text, tags: row.tags || [], source: row.source, savedDate: row.saved_date, brandId: row.brand_id };
@@ -388,6 +403,18 @@ export async function deleteRemoteContentBankItem(id: string): Promise<void> {
   if (!supabase) return;
   const { error } = await supabase.from('content_bank').delete().eq('id', id);
   if (error) console.error('[Supabase] deleteRemoteContentBankItem failed:', error.message);
+}
+
+export function subscribeRemoteContentBank(onChange: (items: ContentBankItem[]) => void): () => void {
+  if (!supabase) return () => {};
+  const channel = supabase
+    .channel('content-bank-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'content_bank' }, async () => {
+      const items = await fetchRemoteContentBank();
+      if (items) onChange(items);
+    })
+    .subscribe();
+  return () => { supabase.removeChannel(channel); };
 }
 
 // ─── Assets ──────────────────────────────────────────────────────────────
@@ -418,6 +445,18 @@ export async function deleteRemoteAsset(id: string): Promise<void> {
   if (error) console.error('[Supabase] deleteRemoteAsset failed:', error.message);
 }
 
+export function subscribeRemoteAssets(onChange: (assets: BrandAsset[]) => void): () => void {
+  if (!supabase) return () => {};
+  const channel = supabase
+    .channel('assets-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'assets' }, async () => {
+      const assets = await fetchRemoteAssets();
+      if (assets) onChange(assets);
+    })
+    .subscribe();
+  return () => { supabase.removeChannel(channel); };
+}
+
 // ─── Team Members ────────────────────────────────────────────────────────
 function rowToTeamMember(row: any): TeamMember {
   return { id: row.id, name: row.name, role: row.role, email: row.email, avatarInitials: row.avatar_initials, color: row.color };
@@ -444,6 +483,18 @@ export async function deleteRemoteTeamMember(id: string): Promise<void> {
   if (!supabase) return;
   const { error } = await supabase.from('team_members').delete().eq('id', id);
   if (error) console.error('[Supabase] deleteRemoteTeamMember failed:', error.message);
+}
+
+export function subscribeRemoteTeam(onChange: (members: TeamMember[]) => void): () => void {
+  if (!supabase) return () => {};
+  const channel = supabase
+    .channel('team-members-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'team_members' }, async () => {
+      const members = await fetchRemoteTeam();
+      if (members) onChange(members);
+    })
+    .subscribe();
+  return () => { supabase.removeChannel(channel); };
 }
 
 // ─── One-time import ─────────────────────────────────────────────────────

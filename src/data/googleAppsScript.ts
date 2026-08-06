@@ -5,27 +5,39 @@
 
 export const GOOGLE_APPS_SCRIPT_CODE = `/**
  * Pharmacozyme CMS v2.0 - Apps Script Backend, Multi-Tab Sheets & Email Reminder Manager
- * 
+ *
  * INSTRUCTIONS:
  * 1. Go to https://script.google.com and click "New project"
  * 2. Erase any existing code and paste this ENTIRE script into Code.gs
- * 3. Click "Save project" (Ctrl+S or Cmd+S)
- * 4. IMPORTANT FOR EMAIL REMINDERS:
+ * 3. Fill in SUPABASE_URL and SUPABASE_ANON_KEY below (Settings -> System in the app has both).
+ *    This is what lets the daily reminder trigger check for due posts on its own —
+ *    without it, "Enable Daily Reminders" in Integrations will fail.
+ * 4. Click "Save project" (Ctrl+S or Cmd+S)
+ * 5. IMPORTANT FOR EMAIL REMINDERS:
  *    - Select "doGet" or "handleSendEmailReminder" from the function dropdown at the top of Apps Script editor.
  *    - Click "Run".
  *    - Click "Review permissions" -> select your Google Account -> "Advanced" -> "Go to Pharmacozyme Backend (unsafe)" -> "Allow".
- * 5. Click "Deploy" -> "New deployment"
- * 6. Select type: "Web app"
- * 7. Set Description: "Pharmacozyme CMS Media, Multi-Tab Sheets & Email Backend"
- * 8. Set Execute as: "Me (your account)"
- * 9. Set Who has access: "Anyone" (CRITICAL for receiving uploads and requests)
- * 10. Click "Deploy"
- * 11. Copy the Web App URL (starts with https://script.google.com/macros/s/...) and paste it into your CMS App Settings!
+ * 6. Click "Deploy" -> "New deployment"
+ * 7. Select type: "Web app"
+ * 8. Set Description: "Pharmacozyme CMS Media, Multi-Tab Sheets & Email Backend"
+ * 9. Set Execute as: "Me (your account)"
+ * 10. Set Who has access: "Anyone" (CRITICAL for receiving uploads and requests)
+ * 11. Click "Deploy"
+ * 12. Copy the Web App URL (starts with https://script.google.com/macros/s/...) and paste it into your CMS App Settings!
+ * 13. In the app's Integrations tab, click "Enable Daily Reminders" once — this installs a
+ *     trigger that runs sendDueReminders() automatically every morning, so reminder emails go
+ *     out on their own instead of only when someone clicks "Send" by hand.
  */
 
 // Global Configuration
 const DRIVE_FOLDER_NAME = "Pharmacozyme CMS Uploads";
 const SPREADSHEET_NAME = "Pharmacozyme Content Schedule";
+
+// Fill these in from the app's Settings -> System panel so the daily trigger
+// can read due posts directly from Supabase (this script runs on Google's
+// servers on a timer, not from the browser, so it needs its own credentials).
+const SUPABASE_URL = "YOUR_SUPABASE_PROJECT_URL_HERE";
+const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY_HERE";
 
 // Tab Names & Theme Colors
 const TAB_CONFIGS = [
@@ -80,6 +92,12 @@ function doPost(e) {
       return handleSyncMultiTabSheets(data);
     } else if (action === "sendEmailReminder" || action === "sendTestEmail") {
       return handleSendEmailReminder(data);
+    } else if (action === "installReminderTrigger") {
+      return handleInstallReminderTrigger();
+    } else if (action === "reminderTriggerStatus") {
+      return ContentService
+        .createTextOutput(JSON.stringify({ status: "success", installed: isReminderTriggerInstalled() }))
+        .setMimeType(ContentService.MimeType.JSON);
     } else {
       throw new Error("Unknown action requested: " + action);
     }
@@ -339,5 +357,122 @@ function handleSendEmailReminder(data) {
       title: title
     }))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
+ * Reads today's due, unsent, reminder-enabled posts straight from Supabase and
+ * emails each assignee. This is what actually runs on a timer (installed by
+ * handleInstallReminderTrigger below) instead of relying on someone clicking Send.
+ */
+function sendDueReminders() {
+  if (!SUPABASE_URL || SUPABASE_URL.indexOf("YOUR_SUPABASE") === 0) {
+    Logger.log("sendDueReminders: SUPABASE_URL / SUPABASE_ANON_KEY not configured yet - skipping.");
+    return;
+  }
+
+  var today = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd");
+  var query = "scheduled_date=eq." + today +
+    "&email_reminder_enabled=eq.true&reminder_sent_at=is.null&reminder_email=not.is.null&select=*";
+  var res = UrlFetchApp.fetch(SUPABASE_URL + "/rest/v1/posts?" + query, {
+    method: "get",
+    headers: supabaseHeaders(),
+    muteHttpExceptions: true
+  });
+
+  var posts;
+  try {
+    posts = JSON.parse(res.getContentText());
+  } catch (parseErr) {
+    Logger.log("sendDueReminders: could not parse Supabase response: " + res.getContentText());
+    return;
+  }
+  if (!posts || !posts.length) {
+    Logger.log("sendDueReminders: nothing due for " + today);
+    return;
+  }
+
+  posts.forEach(function (row) {
+    var recipient = row.reminder_email;
+    if (!recipient) return;
+    try {
+      handleSendEmailReminder({
+        recipientEmail: recipient,
+        post: {
+          title: row.title,
+          brandId: row.brand_id,
+          scheduledDate: row.scheduled_date,
+          scheduledTime: row.scheduled_time,
+          platform: row.platform,
+          caption: row.caption,
+          assignee: row.assignee,
+          visualUrl: row.visual_url
+        }
+      });
+      markReminderSent(row.id);
+    } catch (err) {
+      Logger.log("sendDueReminders: failed for post " + row.id + ": " + err.toString());
+    }
+  });
+}
+
+/** Standard headers for calling the Supabase REST API as the anon role. */
+function supabaseHeaders() {
+  return {
+    "apikey": SUPABASE_ANON_KEY,
+    "Authorization": "Bearer " + SUPABASE_ANON_KEY,
+    "Content-Type": "application/json"
+  };
+}
+
+/** Stamp reminder_sent_at so this post is never emailed twice. */
+function markReminderSent(postId) {
+  UrlFetchApp.fetch(SUPABASE_URL + "/rest/v1/posts?id=eq." + encodeURIComponent(postId), {
+    method: "patch",
+    headers: supabaseHeaders(),
+    payload: JSON.stringify({ reminder_sent_at: new Date().toISOString() }),
+    muteHttpExceptions: true
+  });
+}
+
+/** True if a daily sendDueReminders trigger is already installed. */
+function isReminderTriggerInstalled() {
+  var triggers = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === "sendDueReminders") return true;
+  }
+  return false;
+}
+
+/**
+ * Installs (or re-installs) the daily ~8am trigger for sendDueReminders.
+ * Called from the app's Integrations tab via the "installReminderTrigger" action.
+ * Removes any existing trigger for the same function first, so clicking the
+ * button twice doesn't create duplicate triggers that would double-send.
+ */
+function handleInstallReminderTrigger() {
+  try {
+    var triggers = ScriptApp.getProjectTriggers();
+    for (var i = 0; i < triggers.length; i++) {
+      if (triggers[i].getHandlerFunction() === "sendDueReminders") {
+        ScriptApp.deleteTrigger(triggers[i]);
+      }
+    }
+    ScriptApp.newTrigger("sendDueReminders").timeBased().everyDays(1).atHour(8).create();
+
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        status: "success",
+        message: "Daily reminder trigger installed - sendDueReminders() now runs automatically around 8am every day.",
+        installed: true
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        status: "error",
+        error: "Authorization Required: open the Apps Script editor, run function 'handleInstallReminderTrigger' once, click 'Review Permissions' -> 'Allow', and try again. (" + err.toString() + ")"
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
 }
 `;

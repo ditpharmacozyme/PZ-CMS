@@ -80,6 +80,7 @@ export interface Post {
   scheduledTime: string; // HH:MM (Email Reminder Time)
   reminderEmail?: string; // Recipient email for Instagram posting reminder
   emailReminderEnabled?: boolean; // Whether email reminder is enabled
+  reminderSentAt?: string; // Set once the Apps Script daily trigger has emailed this post — prevents duplicate sends
   status: PostStatus;
   assignee: string;
   visualUrl: string; // image preview or drive URL

@@ -357,7 +357,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                   {isAddingMember && (
                     <div className="p-4 bg-[#f0fdf4] border border-[#296c00]/30 rounded space-y-3">
                       <p className="font-label-caps text-[10px] text-[#296c00] font-bold uppercase">New Team Member</p>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div className="space-y-1">
                           <label className="font-label-caps text-[9px] text-[#707a67] uppercase block">Full Name *</label>
                           <input
@@ -419,7 +419,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                       <div key={member.id} className="p-3 bg-[#faf9f5] border border-[#bfcab4] rounded">
                         {editingMember?.id === member.id ? (
                           <div className="space-y-2">
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                               <div className="space-y-1">
                                 <label className="font-label-caps text-[9px] text-[#707a67] uppercase block">Name</label>
                                 <input
@@ -534,21 +534,26 @@ export const TopNav: React.FC<TopNavProps> = ({
                       <>
                         <p className="flex items-center gap-1.5">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#296c00] flex-shrink-0" />
-                          Connected — everyone with this app sees the same posts, live.
+                          Connected — every change syncs live for everyone with this app. Nothing to click.
                         </p>
                         {onImportLocalData && (
-                          <button
-                            onClick={() => {
-                              if (confirm("Push everything in this browser's local data up to the shared store? This won't delete anything already there.")) {
-                                onImportLocalData();
-                              }
-                            }}
-                            disabled={isImportingData}
-                            className="w-full mt-1 bg-white border border-[#296c00] text-[#296c00] py-2 px-3 font-label-caps text-xs rounded hover:bg-[#296c00] hover:text-white disabled:opacity-50 font-bold flex items-center justify-center gap-1.5"
-                          >
-                            <span className="material-symbols-outlined text-sm">cloud_upload</span>
-                            <span>{isImportingData ? 'Importing…' : 'Import this browser\'s data'}</span>
-                          </button>
+                          <>
+                            <p className="text-[11px] text-[#707a67] pt-1">
+                              This button is only for a browser that had posts saved locally <em>before</em> shared data was turned on — everyday edits already sync automatically.
+                            </p>
+                            <button
+                              onClick={() => {
+                                if (confirm("Push everything in this browser's local data up to the shared store? This won't delete anything already there.")) {
+                                  onImportLocalData();
+                                }
+                              }}
+                              disabled={isImportingData}
+                              className="w-full mt-1 bg-white border border-[#296c00] text-[#296c00] py-2 px-3 font-label-caps text-xs rounded hover:bg-[#296c00] hover:text-white disabled:opacity-50 font-bold flex items-center justify-center gap-1.5"
+                            >
+                              <span className="material-symbols-outlined text-sm">cloud_upload</span>
+                              <span>{isImportingData ? 'Importing…' : 'Import old local data (one-time)'}</span>
+                            </button>
+                          </>
                         )}
                       </>
                     ) : (
