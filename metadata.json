@@ -1,0 +1,6 @@
+{
+  "name": "Pharmacozyme Brand-Ops Studio",
+  "description": "Social & Design Ops Platform for Pharmacozyme, PZ Academy, MED-Q, PillZ, and PrescriptionZ",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

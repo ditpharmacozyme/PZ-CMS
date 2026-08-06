@@ -1,0 +1,481 @@
+import { Post, PostTemplate, BrandAsset, AppNotification, ContentBankItem, TeamMember } from '../types';
+import { INITIAL_POSTS, INITIAL_TEMPLATES, INITIAL_ASSETS, INITIAL_NOTIFICATIONS, INITIAL_CONTENT_BANK } from '../data/initialData';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
+
+const POSTS_KEY = 'pharmacozyme_brandops_posts_v3';
+const TEMPLATES_KEY = 'pharmacozyme_brandops_templates_v3';
+const ASSETS_KEY = 'pharmacozyme_brandops_assets_v3';
+const NOTIFICATIONS_KEY = 'pharmacozyme_brandops_notifs_v3';
+const CONTENT_BANK_KEY = 'pharmacozyme_brandops_contentbank_v3';
+const TEAM_KEY = 'pharmacozyme_brandops_team_v4'; // Bumped to v4 to evict old fictional defaults
+const TEAM_KEY_LEGACY = 'pharmacozyme_brandops_team_v3'; // Old key — only used for cleanup
+
+const DEFAULT_TEAM_MEMBERS: TeamMember[] = [
+  { id: 'tm-1', name: 'Hamza Ansari', role: 'Brand & Content Lead', email: 'hamzaansari4you@gmail.com', avatarInitials: 'HA', color: '#296c00' },
+  { id: 'tm-2', name: 'Pharmacozyme Ops', role: 'Global Approver', email: 'ops@pharmacozyme.com', avatarInitials: 'PO', color: '#0A66C2' },
+];
+
+// ═══════════════════════════════════════════════════════════════════════
+// Local cache (localStorage) — always the fast path. The app reads this on
+// first paint so it's never blocked on a network round trip, and every
+// mutation writes through it so the app keeps working if Supabase is
+// unreachable. See fetchRemote*/upsertRemote* below for the shared layer.
+// ═══════════════════════════════════════════════════════════════════════
+
+export function getStoredPosts(): Post[] {
+  try {
+    const raw = localStorage.getItem(POSTS_KEY);
+    if (!raw) {
+      saveStoredPosts(INITIAL_POSTS);
+      return INITIAL_POSTS;
+    }
+    return JSON.parse(raw);
+  } catch (err) {
+    console.error('Error reading stored posts:', err);
+    return INITIAL_POSTS;
+  }
+}
+
+export function saveStoredPosts(posts: Post[]): void {
+  try {
+    localStorage.setItem(POSTS_KEY, JSON.stringify(posts));
+  } catch (err) {
+    console.error('Error saving posts:', err);
+  }
+}
+
+export function getStoredTemplates(): PostTemplate[] {
+  try {
+    const raw = localStorage.getItem(TEMPLATES_KEY);
+    if (!raw) {
+      saveStoredTemplates(INITIAL_TEMPLATES);
+      return INITIAL_TEMPLATES;
+    }
+    return JSON.parse(raw);
+  } catch (err) {
+    return INITIAL_TEMPLATES;
+  }
+}
+
+export function saveStoredTemplates(templates: PostTemplate[]): void {
+  try {
+    localStorage.setItem(TEMPLATES_KEY, JSON.stringify(templates));
+  } catch (err) {
+    console.error('Error saving templates:', err);
+  }
+}
+
+export function getStoredAssets(): BrandAsset[] {
+  try {
+    const raw = localStorage.getItem(ASSETS_KEY);
+    if (!raw) {
+      saveStoredAssets(INITIAL_ASSETS);
+      return INITIAL_ASSETS;
+    }
+    return JSON.parse(raw);
+  } catch (err) {
+    return INITIAL_ASSETS;
+  }
+}
+
+export function saveStoredAssets(assets: BrandAsset[]): void {
+  try {
+    localStorage.setItem(ASSETS_KEY, JSON.stringify(assets));
+  } catch (err) {
+    console.error('Error saving assets:', err);
+  }
+}
+
+export function getStoredNotifications(): AppNotification[] {
+  try {
+    const raw = localStorage.getItem(NOTIFICATIONS_KEY);
+    if (!raw) {
+      saveStoredNotifications(INITIAL_NOTIFICATIONS);
+      return INITIAL_NOTIFICATIONS;
+    }
+    return JSON.parse(raw);
+  } catch (err) {
+    console.error('Error reading stored notifications:', err);
+    return INITIAL_NOTIFICATIONS;
+  }
+}
+
+export function saveStoredNotifications(notifs: AppNotification[]): void {
+  try {
+    localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(notifs));
+  } catch (err) {
+    console.error('Error saving notifications:', err);
+  }
+}
+
+export function getStoredContentBank(): ContentBankItem[] {
+  try {
+    const raw = localStorage.getItem(CONTENT_BANK_KEY);
+    if (!raw) {
+      saveStoredContentBank(INITIAL_CONTENT_BANK);
+      return INITIAL_CONTENT_BANK;
+    }
+    return JSON.parse(raw);
+  } catch (err) {
+    console.error('Error reading stored content bank:', err);
+    return INITIAL_CONTENT_BANK;
+  }
+}
+
+export function saveStoredContentBank(items: ContentBankItem[]): void {
+  try {
+    localStorage.setItem(CONTENT_BANK_KEY, JSON.stringify(items));
+  } catch (err) {
+    console.error('Error saving content bank:', err);
+  }
+}
+
+// Legacy fictional team members that should be auto-evicted on load
+const LEGACY_PHANTOM_NAMES = ['Sarah Jenkins', 'Dr. Alex Vane', 'Marcus Brody', 'Elena Rostova'];
+
+export function resetToDefaults(): void {
+  localStorage.removeItem(POSTS_KEY);
+  localStorage.removeItem(TEMPLATES_KEY);
+  localStorage.removeItem(ASSETS_KEY);
+  localStorage.removeItem(NOTIFICATIONS_KEY);
+  localStorage.removeItem(CONTENT_BANK_KEY);
+  localStorage.removeItem(TEAM_KEY);
+  localStorage.removeItem(TEAM_KEY_LEGACY); // Also clear old v3 key
+}
+
+export function getStoredTeam(): TeamMember[] {
+  try {
+    // Clean up old v3 key if it exists
+    localStorage.removeItem(TEAM_KEY_LEGACY);
+
+    const raw = localStorage.getItem(TEAM_KEY);
+    if (!raw) {
+      saveStoredTeam(DEFAULT_TEAM_MEMBERS);
+      return DEFAULT_TEAM_MEMBERS;
+    }
+    const parsed: TeamMember[] = JSON.parse(raw);
+
+    // Migration guard: if stored team only contains old phantom/fictional names, reset to real defaults
+    const hasOnlyPhantoms = parsed.every((m) =>
+      LEGACY_PHANTOM_NAMES.includes(m.name)
+    );
+    if (hasOnlyPhantoms && parsed.length > 0) {
+      console.info('[Storage] Detected legacy phantom team — resetting to current defaults.');
+      saveStoredTeam(DEFAULT_TEAM_MEMBERS);
+      return DEFAULT_TEAM_MEMBERS;
+    }
+
+    return parsed;
+  } catch (err) {
+    console.error('Error reading team:', err);
+    return DEFAULT_TEAM_MEMBERS;
+  }
+}
+
+export function saveStoredTeam(members: TeamMember[]): void {
+  try {
+    localStorage.setItem(TEAM_KEY, JSON.stringify(members));
+  } catch (err) {
+    console.error('Error saving team:', err);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Remote layer (Supabase) — the shared store. Every function here is
+// best-effort: on any failure (offline, misconfigured project, RLS not
+// applied yet) it logs and returns null/no-ops rather than throwing, so a
+// flaky connection degrades to local-only instead of breaking the app.
+// ═══════════════════════════════════════════════════════════════════════
+
+export { isSupabaseConfigured };
+
+type PostRow = {
+  id: string;
+  brand_id: string;
+  title: string;
+  caption: string;
+  platform: string;
+  spec_type: string;
+  scheduled_date: string | null;
+  scheduled_time: string;
+  reminder_email: string | null;
+  email_reminder_enabled: boolean;
+  status: string;
+  assignee: string;
+  visual_url: string;
+  template_id: string | null;
+  approved: boolean;
+  approved_by: string | null;
+  approved_at: string | null;
+  recurrence_rule: string | null;
+  notes: string | null;
+  tags: string[];
+  comments: unknown;
+  activity_log: unknown;
+};
+
+function rowToPost(row: PostRow): Post {
+  return {
+    id: row.id,
+    brandId: row.brand_id as Post['brandId'],
+    title: row.title,
+    caption: row.caption,
+    platform: row.platform as Post['platform'],
+    specType: row.spec_type as Post['specType'],
+    scheduledDate: row.scheduled_date || '',
+    scheduledTime: row.scheduled_time || '',
+    reminderEmail: row.reminder_email || undefined,
+    emailReminderEnabled: row.email_reminder_enabled,
+    status: row.status as Post['status'],
+    assignee: row.assignee,
+    visualUrl: row.visual_url,
+    templateId: row.template_id || undefined,
+    approved: row.approved,
+    approvedBy: row.approved_by || undefined,
+    approvedAt: row.approved_at || undefined,
+    recurrenceRule: row.recurrence_rule || undefined,
+    notes: row.notes || undefined,
+    tags: row.tags || [],
+    comments: (row.comments as Post['comments']) || [],
+    activityLog: (row.activity_log as Post['activityLog']) || []
+  };
+}
+
+function postToRow(post: Post): PostRow {
+  return {
+    id: post.id,
+    brand_id: post.brandId,
+    title: post.title,
+    caption: post.caption,
+    platform: post.platform,
+    spec_type: post.specType,
+    scheduled_date: post.scheduledDate || null,
+    scheduled_time: post.scheduledTime || '',
+    reminder_email: post.reminderEmail || null,
+    email_reminder_enabled: !!post.emailReminderEnabled,
+    status: post.status,
+    assignee: post.assignee,
+    visual_url: post.visualUrl,
+    template_id: post.templateId || null,
+    approved: post.approved,
+    approved_by: post.approvedBy || null,
+    approved_at: post.approvedAt || null,
+    recurrence_rule: post.recurrenceRule || null,
+    notes: post.notes || null,
+    tags: post.tags || [],
+    comments: post.comments || [],
+    activity_log: post.activityLog || []
+  };
+}
+
+/** Fetch every post from Supabase. Returns null (not []) if the fetch failed. */
+export async function fetchRemotePosts(): Promise<Post[] | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.from('posts').select('*').order('created_at', { ascending: false });
+  if (error) {
+    console.error('[Supabase] fetchRemotePosts failed:', error.message);
+    return null;
+  }
+  return (data as PostRow[]).map(rowToPost);
+}
+
+/** Upsert one post to Supabase. Fire-and-forget from the caller's perspective. */
+export async function upsertRemotePost(post: Post): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from('posts').upsert(postToRow(post));
+  if (error) console.error('[Supabase] upsertRemotePost failed:', error.message);
+}
+
+export async function deleteRemotePost(id: string): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from('posts').delete().eq('id', id);
+  if (error) console.error('[Supabase] deleteRemotePost failed:', error.message);
+}
+
+/**
+ * Subscribe to live changes on the posts table. Refetches the full list on
+ * any change rather than patching individual rows — simpler to reason about
+ * correctly at this data scale (a handful of brands, not millions of rows).
+ * Returns an unsubscribe function.
+ */
+export function subscribeRemotePosts(onChange: (posts: Post[]) => void): () => void {
+  if (!supabase) return () => {};
+  const channel = supabase
+    .channel('posts-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, async () => {
+      const posts = await fetchRemotePosts();
+      if (posts) onChange(posts);
+    })
+    .subscribe();
+  return () => { supabase.removeChannel(channel); };
+}
+
+// ─── Templates ───────────────────────────────────────────────────────────
+function rowToTemplate(row: any): PostTemplate {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    brandId: row.brand_id,
+    category: row.category,
+    platform: row.platform,
+    specType: row.spec_type,
+    defaultCaption: row.default_caption,
+    tags: row.tags || [],
+    imagePreview: row.image_preview || '',
+    usesCount: row.uses_count || 0
+  };
+}
+
+function templateToRow(t: PostTemplate) {
+  return {
+    id: t.id,
+    title: t.title,
+    description: t.description,
+    brand_id: t.brandId,
+    category: t.category,
+    platform: t.platform,
+    spec_type: t.specType,
+    default_caption: t.defaultCaption,
+    tags: t.tags || [],
+    image_preview: t.imagePreview || '',
+    uses_count: t.usesCount || 0
+  };
+}
+
+export async function fetchRemoteTemplates(): Promise<PostTemplate[] | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.from('templates').select('*').order('created_at', { ascending: false });
+  if (error) { console.error('[Supabase] fetchRemoteTemplates failed:', error.message); return null; }
+  return data.map(rowToTemplate);
+}
+
+export async function upsertRemoteTemplate(t: PostTemplate): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from('templates').upsert(templateToRow(t));
+  if (error) console.error('[Supabase] upsertRemoteTemplate failed:', error.message);
+}
+
+export async function deleteRemoteTemplate(id: string): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from('templates').delete().eq('id', id);
+  if (error) console.error('[Supabase] deleteRemoteTemplate failed:', error.message);
+}
+
+// ─── Content Bank ────────────────────────────────────────────────────────
+function rowToBankItem(row: any): ContentBankItem {
+  return { id: row.id, text: row.text, tags: row.tags || [], source: row.source, savedDate: row.saved_date, brandId: row.brand_id };
+}
+
+function bankItemToRow(item: ContentBankItem) {
+  return { id: item.id, text: item.text, tags: item.tags || [], source: item.source, saved_date: item.savedDate, brand_id: item.brandId };
+}
+
+export async function fetchRemoteContentBank(): Promise<ContentBankItem[] | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.from('content_bank').select('*').order('saved_date', { ascending: false });
+  if (error) { console.error('[Supabase] fetchRemoteContentBank failed:', error.message); return null; }
+  return data.map(rowToBankItem);
+}
+
+export async function upsertRemoteContentBankItem(item: ContentBankItem): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from('content_bank').upsert(bankItemToRow(item));
+  if (error) console.error('[Supabase] upsertRemoteContentBankItem failed:', error.message);
+}
+
+export async function deleteRemoteContentBankItem(id: string): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from('content_bank').delete().eq('id', id);
+  if (error) console.error('[Supabase] deleteRemoteContentBankItem failed:', error.message);
+}
+
+// ─── Assets ──────────────────────────────────────────────────────────────
+function rowToAsset(row: any): BrandAsset {
+  return { id: row.id, brandId: row.brand_id, title: row.title, type: row.type, fileType: row.file_type, size: row.size, url: row.url };
+}
+
+function assetToRow(a: BrandAsset) {
+  return { id: a.id, brand_id: a.brandId, title: a.title, type: a.type, file_type: a.fileType, size: a.size, url: a.url };
+}
+
+export async function fetchRemoteAssets(): Promise<BrandAsset[] | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.from('assets').select('*');
+  if (error) { console.error('[Supabase] fetchRemoteAssets failed:', error.message); return null; }
+  return data.map(rowToAsset);
+}
+
+export async function upsertRemoteAsset(a: BrandAsset): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from('assets').upsert(assetToRow(a));
+  if (error) console.error('[Supabase] upsertRemoteAsset failed:', error.message);
+}
+
+export async function deleteRemoteAsset(id: string): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from('assets').delete().eq('id', id);
+  if (error) console.error('[Supabase] deleteRemoteAsset failed:', error.message);
+}
+
+// ─── Team Members ────────────────────────────────────────────────────────
+function rowToTeamMember(row: any): TeamMember {
+  return { id: row.id, name: row.name, role: row.role, email: row.email, avatarInitials: row.avatar_initials, color: row.color };
+}
+
+function teamMemberToRow(m: TeamMember) {
+  return { id: m.id, name: m.name, role: m.role, email: m.email, avatar_initials: m.avatarInitials, color: m.color };
+}
+
+export async function fetchRemoteTeam(): Promise<TeamMember[] | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.from('team_members').select('*').order('created_at', { ascending: true });
+  if (error) { console.error('[Supabase] fetchRemoteTeam failed:', error.message); return null; }
+  return data.map(rowToTeamMember);
+}
+
+export async function upsertRemoteTeamMember(m: TeamMember): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from('team_members').upsert(teamMemberToRow(m));
+  if (error) console.error('[Supabase] upsertRemoteTeamMember failed:', error.message);
+}
+
+export async function deleteRemoteTeamMember(id: string): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from('team_members').delete().eq('id', id);
+  if (error) console.error('[Supabase] deleteRemoteTeamMember failed:', error.message);
+}
+
+// ─── One-time import ─────────────────────────────────────────────────────
+/**
+ * Push everything currently in this browser's local cache up to Supabase.
+ * Deliberately manual (a Settings button), not automatic — if a Supabase
+ * project is empty, that's ambiguous ("nobody's added anything yet" vs.
+ * "this browser's data hasn't been pushed"), and auto-uploading could let
+ * one browser's stale local copy clobber what teammates already entered.
+ */
+export async function importLocalDataToRemote(): Promise<{
+  posts: number; templates: number; assets: number; contentBank: number; team: number;
+}> {
+  const posts = getStoredPosts();
+  const templates = getStoredTemplates();
+  const assets = getStoredAssets();
+  const contentBank = getStoredContentBank();
+  const team = getStoredTeam();
+
+  await Promise.all([
+    ...posts.map(upsertRemotePost),
+    ...templates.map(upsertRemoteTemplate),
+    ...assets.map(upsertRemoteAsset),
+    ...contentBank.map(upsertRemoteContentBankItem),
+    ...team.map(upsertRemoteTeamMember)
+  ]);
+
+  return {
+    posts: posts.length,
+    templates: templates.length,
+    assets: assets.length,
+    contentBank: contentBank.length,
+    team: team.length
+  };
+}
