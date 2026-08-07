@@ -564,18 +564,19 @@ export const GoogleAppsScriptHub: React.FC<GoogleAppsScriptHubProps> = ({
               )}
             </div>
 
-            {/* Daily Reminder Trigger — turns "send" from a manual click into a
+            {/* Scheduled Reminder Trigger — turns "send" from a manual click into a
                 real time-driven schedule that runs on Google's servers. */}
             <div className="bg-white border border-[#bfcab4] p-4 sm:p-6 rounded-lg shadow-xs space-y-4">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[#296c00]">schedule_send</span>
                 <h3 className="font-headline-md text-base font-bold text-[#1b1c1a]">
-                  Daily Reminders
+                  Scheduled Reminders
                 </h3>
               </div>
               <p className="font-body-md text-xs text-[#707a67]">
-                Installs a trigger that checks Supabase every morning (~8am) and emails anyone with a post due
-                today, instead of needing someone to click "Send" by hand. Requires <code className="font-code-sm text-[10px] bg-[#efeeea] px-1 rounded">SUPABASE_URL</code> and{' '}
+                Installs a trigger that checks Supabase every 15 minutes and emails anyone whose post's own
+                scheduled time has arrived — not one fixed time for everything — instead of needing someone to
+                click "Send" by hand. Requires <code className="font-code-sm text-[10px] bg-[#efeeea] px-1 rounded">SUPABASE_URL</code> and{' '}
                 <code className="font-code-sm text-[10px] bg-[#efeeea] px-1 rounded">SUPABASE_ANON_KEY</code> to be filled in near the top of the pasted script.
               </p>
 
@@ -583,7 +584,7 @@ export const GoogleAppsScriptHub: React.FC<GoogleAppsScriptHubProps> = ({
                 <span className={`w-2 h-2 rounded-full flex-shrink-0 ${triggerInstalled ? 'bg-[#296c00]' : 'bg-[#bfcab4]'}`} />
                 <span className="font-label-caps text-[#404a39]">
                   {triggerInstalled === null && 'Status unknown — enter your Web App URL to check.'}
-                  {triggerInstalled === true && 'Installed — reminders send automatically.'}
+                  {triggerInstalled === true && 'Installed — reminders send automatically, within ~15 min of each post\'s scheduled time.'}
                   {triggerInstalled === false && 'Not installed yet.'}
                 </span>
               </div>
@@ -593,7 +594,7 @@ export const GoogleAppsScriptHub: React.FC<GoogleAppsScriptHubProps> = ({
                 disabled={installingTrigger || !scriptUrl}
                 className="w-full bg-[#296c00] text-white font-label-caps text-xs font-bold py-3 rounded shadow-xs hover:bg-[#1f5700] disabled:opacity-50 transition-all min-h-[44px]"
               >
-                {installingTrigger ? 'Installing…' : triggerInstalled ? 'Re-install Daily Trigger' : 'Enable Daily Reminders'}
+                {installingTrigger ? 'Installing…' : triggerInstalled ? 'Re-install Trigger' : 'Enable Scheduled Reminders'}
               </button>
 
               {triggerResult && (

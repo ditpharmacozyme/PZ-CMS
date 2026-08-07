@@ -24,9 +24,9 @@ export const GOOGLE_APPS_SCRIPT_CODE = `/**
  * 10. Set Who has access: "Anyone" (CRITICAL for receiving uploads and requests)
  * 11. Click "Deploy"
  * 12. Copy the Web App URL (starts with https://script.google.com/macros/s/...) and paste it into your CMS App Settings!
- * 13. In the app's Integrations tab, click "Enable Daily Reminders" once — this installs a
- *     trigger that runs sendDueReminders() automatically every morning, so reminder emails go
- *     out on their own instead of only when someone clicks "Send" by hand.
+ * 13. In the app's Integrations tab, click "Enable Scheduled Reminders" once — this installs a
+ *     trigger that runs sendDueReminders() every 15 minutes, sending each post's reminder
+ *     around its own scheduled time instead of only when someone clicks "Send" by hand.
  */
 
 // Global Configuration
@@ -372,9 +372,15 @@ function sendDueReminders() {
 
   // Pinned to the same zone as the trigger (see handleInstallReminderTrigger) —
   // Session.getScriptTimeZone() would follow the project's timezone setting
-  // instead, which can drift from scheduled_date near midnight.
-  var today = Utilities.formatDate(new Date(), "Asia/Karachi", "yyyy-MM-dd");
-  var query = "scheduled_date=eq." + today +
+  // instead, which can drift from the intended local time.
+  var TIMEZONE = "Asia/Karachi";
+  var today = Utilities.formatDate(new Date(), TIMEZONE, "yyyy-MM-dd");
+  var nowStr = Utilities.formatDate(new Date(), TIMEZONE, "yyyy-MM-dd HH:mm");
+
+  // scheduled_date=lte.today (not eq.today) so a reminder that was due while
+  // this trigger happened to be down still goes out on the next run, instead
+  // of being silently skipped forever.
+  var query = "scheduled_date=lte." + today +
     "&email_reminder_enabled=eq.true&reminder_sent_at=is.null&reminder_email=not.is.null&select=*";
   var res = UrlFetchApp.fetch(SUPABASE_URL + "/rest/v1/posts?" + query, {
     method: "get",
@@ -390,13 +396,22 @@ function sendDueReminders() {
     return;
   }
   if (!posts || !posts.length) {
-    Logger.log("sendDueReminders: nothing due for " + today);
+    Logger.log("sendDueReminders: nothing due as of " + nowStr);
     return;
   }
 
   posts.forEach(function (row) {
     var recipient = row.reminder_email;
     if (!recipient) return;
+
+    // Compare "yyyy-MM-dd HH:mm" strings lexicographically — valid as long as
+    // scheduled_time is zero-padded 24h (the app always saves it that way).
+    // No time set on the post means "any time today", so it sends as soon as
+    // the date arrives, matching the old daily-batch behavior for that case.
+    var timePart = row.scheduled_time && row.scheduled_time.length >= 4 ? row.scheduled_time : "00:00";
+    var dueStr = row.scheduled_date + " " + timePart;
+    if (dueStr > nowStr) return; // scheduled later today — check again next run
+
     try {
       handleSendEmailReminder({
         recipientEmail: recipient,
@@ -447,10 +462,13 @@ function isReminderTriggerInstalled() {
 }
 
 /**
- * Installs (or re-installs) the daily ~8am trigger for sendDueReminders.
- * Called from the app's Integrations tab via the "installReminderTrigger" action.
- * Removes any existing trigger for the same function first, so clicking the
- * button twice doesn't create duplicate triggers that would double-send.
+ * Installs (or re-installs) a trigger that runs sendDueReminders() every 15
+ * minutes, so a post's own scheduled time (not just one fixed daily hour)
+ * decides when its reminder actually goes out — sendDueReminders itself skips
+ * anything not due yet. Called from the app's Integrations tab via the
+ * "installReminderTrigger" action. Removes any existing trigger for the same
+ * function first, so clicking the button twice doesn't create duplicates that
+ * would double-send.
  */
 function handleInstallReminderTrigger() {
   try {
@@ -460,16 +478,17 @@ function handleInstallReminderTrigger() {
         ScriptApp.deleteTrigger(triggers[i]);
       }
     }
-    // Pinned to Asia/Karachi explicitly — without .inTimezone(), atHour(8) uses
-    // the Apps Script PROJECT's timezone setting (often defaults to US Pacific
-    // on a new project), which silently fires at the wrong local hour and looks
-    // like reminders just aren't sending.
-    ScriptApp.newTrigger("sendDueReminders").timeBased().inTimezone("Asia/Karachi").everyDays(1).atHour(8).create();
+    // Every 15 minutes so reminders go out close to each post's own
+    // scheduled_time — 1/5/10/15/30 are the only intervals Apps Script
+    // supports here. Minute-based triggers don't need .inTimezone(); the
+    // due-time comparison inside sendDueReminders is what's pinned to
+    // Asia/Karachi, so this fires plenty often to catch every window on time.
+    ScriptApp.newTrigger("sendDueReminders").timeBased().everyMinutes(15).create();
 
     return ContentService
       .createTextOutput(JSON.stringify({
         status: "success",
-        message: "Daily reminder trigger installed - sendDueReminders() now runs automatically around 8am Pakistan time every day.",
+        message: "Reminder trigger installed - sendDueReminders() now runs every 15 minutes and sends each post's reminder at its own scheduled time.",
         installed: true
       }))
       .setMimeType(ContentService.MimeType.JSON);
