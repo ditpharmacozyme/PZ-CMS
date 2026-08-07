@@ -9,9 +9,9 @@ export const GOOGLE_APPS_SCRIPT_CODE = `/**
  * INSTRUCTIONS:
  * 1. Go to https://script.google.com and click "New project"
  * 2. Erase any existing code and paste this ENTIRE script into Code.gs
- * 3. Fill in SUPABASE_URL and SUPABASE_ANON_KEY below (Settings -> System in the app has both).
- *    This is what lets the daily reminder trigger check for due posts on its own —
- *    without it, "Enable Daily Reminders" in Integrations will fail.
+ * 3. SUPABASE_URL and SUPABASE_ANON_KEY below are already filled in for this project —
+ *    that's what lets the daily reminder trigger check for due posts on its own.
+ *    No edit needed unless you move to a different Supabase project later.
  * 4. Click "Save project" (Ctrl+S or Cmd+S)
  * 5. IMPORTANT FOR EMAIL REMINDERS:
  *    - Select "doGet" or "handleSendEmailReminder" from the function dropdown at the top of Apps Script editor.
@@ -36,8 +36,8 @@ const SPREADSHEET_NAME = "Pharmacozyme Content Schedule";
 // Fill these in from the app's Settings -> System panel so the daily trigger
 // can read due posts directly from Supabase (this script runs on Google's
 // servers on a timer, not from the browser, so it needs its own credentials).
-const SUPABASE_URL = "YOUR_SUPABASE_PROJECT_URL_HERE";
-const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY_HERE";
+const SUPABASE_URL = "https://sgevopyvcsclkasvekah.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNnZXZvcHl2Y3NjbGthc3Zla2FoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU5NDE0NDUsImV4cCI6MjEwMTUxNzQ0NX0.EcxxNypg_7Bm6egjHd49Q5KhX5jm_m0zrHfKt5DZ6yo";
 
 // Tab Names & Theme Colors
 const TAB_CONFIGS = [
