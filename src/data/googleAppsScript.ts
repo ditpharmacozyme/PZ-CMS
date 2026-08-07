@@ -370,7 +370,10 @@ function sendDueReminders() {
     return;
   }
 
-  var today = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd");
+  // Pinned to the same zone as the trigger (see handleInstallReminderTrigger) —
+  // Session.getScriptTimeZone() would follow the project's timezone setting
+  // instead, which can drift from scheduled_date near midnight.
+  var today = Utilities.formatDate(new Date(), "Asia/Karachi", "yyyy-MM-dd");
   var query = "scheduled_date=eq." + today +
     "&email_reminder_enabled=eq.true&reminder_sent_at=is.null&reminder_email=not.is.null&select=*";
   var res = UrlFetchApp.fetch(SUPABASE_URL + "/rest/v1/posts?" + query, {
@@ -457,12 +460,16 @@ function handleInstallReminderTrigger() {
         ScriptApp.deleteTrigger(triggers[i]);
       }
     }
-    ScriptApp.newTrigger("sendDueReminders").timeBased().everyDays(1).atHour(8).create();
+    // Pinned to Asia/Karachi explicitly — without .inTimezone(), atHour(8) uses
+    // the Apps Script PROJECT's timezone setting (often defaults to US Pacific
+    // on a new project), which silently fires at the wrong local hour and looks
+    // like reminders just aren't sending.
+    ScriptApp.newTrigger("sendDueReminders").timeBased().inTimezone("Asia/Karachi").everyDays(1).atHour(8).create();
 
     return ContentService
       .createTextOutput(JSON.stringify({
         status: "success",
-        message: "Daily reminder trigger installed - sendDueReminders() now runs automatically around 8am every day.",
+        message: "Daily reminder trigger installed - sendDueReminders() now runs automatically around 8am Pakistan time every day.",
         installed: true
       }))
       .setMimeType(ContentService.MimeType.JSON);
