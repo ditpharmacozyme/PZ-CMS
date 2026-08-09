@@ -574,7 +574,7 @@ export const GoogleAppsScriptHub: React.FC<GoogleAppsScriptHubProps> = ({
                 </h3>
               </div>
               <p className="font-body-md text-xs text-[#707a67]">
-                Installs a trigger that checks Supabase every 15 minutes and emails anyone whose post's own
+                Installs a trigger that checks Supabase every 5 minutes and emails anyone whose post's own
                 scheduled time has arrived — not one fixed time for everything — instead of needing someone to
                 click "Send" by hand. Requires <code className="font-code-sm text-[10px] bg-[#efeeea] px-1 rounded">SUPABASE_URL</code> and{' '}
                 <code className="font-code-sm text-[10px] bg-[#efeeea] px-1 rounded">SUPABASE_ANON_KEY</code> to be filled in near the top of the pasted script.
@@ -584,7 +584,7 @@ export const GoogleAppsScriptHub: React.FC<GoogleAppsScriptHubProps> = ({
                 <span className={`w-2 h-2 rounded-full flex-shrink-0 ${triggerInstalled ? 'bg-[#296c00]' : 'bg-[#bfcab4]'}`} />
                 <span className="font-label-caps text-[#404a39]">
                   {triggerInstalled === null && 'Status unknown — enter your Web App URL to check.'}
-                  {triggerInstalled === true && 'Installed — reminders send automatically, within ~15 min of each post\'s scheduled time.'}
+                  {triggerInstalled === true && 'Installed — reminders send automatically, within ~5-10 min of each post\'s scheduled time.'}
                   {triggerInstalled === false && 'Not installed yet.'}
                 </span>
               </div>

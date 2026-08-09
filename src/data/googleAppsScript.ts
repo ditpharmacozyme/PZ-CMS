@@ -25,7 +25,7 @@ export const GOOGLE_APPS_SCRIPT_CODE = `/**
  * 11. Click "Deploy"
  * 12. Copy the Web App URL (starts with https://script.google.com/macros/s/...) and paste it into your CMS App Settings!
  * 13. In the app's Integrations tab, click "Enable Scheduled Reminders" once — this installs a
- *     trigger that runs sendDueReminders() every 15 minutes, sending each post's reminder
+ *     trigger that runs sendDueReminders() every 5 minutes, sending each post's reminder
  *     around its own scheduled time instead of only when someone clicks "Send" by hand.
  */
 
@@ -478,17 +478,17 @@ function handleInstallReminderTrigger() {
         ScriptApp.deleteTrigger(triggers[i]);
       }
     }
-    // Every 15 minutes so reminders go out close to each post's own
+    // Every 5 minutes so reminders go out close to each post's own
     // scheduled_time — 1/5/10/15/30 are the only intervals Apps Script
-    // supports here. Minute-based triggers don't need .inTimezone(); the
-    // due-time comparison inside sendDueReminders is what's pinned to
-    // Asia/Karachi, so this fires plenty often to catch every window on time.
-    ScriptApp.newTrigger("sendDueReminders").timeBased().everyMinutes(15).create();
+    // supports here; 5 is the tightest that isn't wasteful. Minute-based
+    // triggers don't need .inTimezone(); the due-time comparison inside
+    // sendDueReminders is what's pinned to Asia/Karachi.
+    ScriptApp.newTrigger("sendDueReminders").timeBased().everyMinutes(5).create();
 
     return ContentService
       .createTextOutput(JSON.stringify({
         status: "success",
-        message: "Reminder trigger installed - sendDueReminders() now runs every 15 minutes and sends each post's reminder at its own scheduled time.",
+        message: "Reminder trigger installed - sendDueReminders() now runs every 5 minutes and sends each post's reminder at its own scheduled time.",
         installed: true
       }))
       .setMimeType(ContentService.MimeType.JSON);
