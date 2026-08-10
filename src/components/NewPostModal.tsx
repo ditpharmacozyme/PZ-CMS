@@ -227,70 +227,78 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
-      <div className="bg-[#FAF9F5] border border-[#bfcab4] max-w-2xl w-full rounded-lg shadow-2xl overflow-hidden my-auto max-h-[96vh] flex flex-col relative">
-        
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end md:items-center justify-center md:p-4 overflow-hidden">
+      <div className="bg-[#FAF9F5] border border-[#bfcab4] w-full md:max-w-2xl rounded-t-2xl md:rounded-lg shadow-2xl overflow-hidden max-h-[96dvh] flex flex-col relative sheet-modal">
+
+        {/* Drag handle (mobile only) */}
+        <div className="pt-3 pb-0 flex justify-center md:hidden">
+          <div className="sheet-handle" />
+        </div>
+
         {/* Modal Header */}
-        <div className="p-4 sm:p-5 bg-white border-b border-[#bfcab4] flex items-center justify-between">
+        <div className="px-4 py-3 sm:p-5 bg-white border-b border-[#bfcab4] flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded bg-[#296c00]/10 flex items-center justify-center text-[#296c00]">
-              <span className="material-symbols-outlined text-2xl">event_upcoming</span>
+            <div className="w-9 h-9 rounded bg-[#296c00]/10 flex items-center justify-center text-[#296c00]">
+              <span className="material-symbols-outlined text-xl">event_upcoming</span>
             </div>
             <div>
-              <h2 className="font-display-xl text-lg sm:text-xl font-bold text-[#1b1c1a] leading-tight">
+              <h2 className="font-display-xl text-base sm:text-xl font-bold text-[#1b1c1a] leading-tight">
                 New Post
               </h2>
-              <p className="font-label-caps text-[11px] text-[#707a67]">
-                Adding to {BRANDS[brandId]?.name || 'Ecosystem'}
+              <p className="font-label-caps text-[10px] text-[#707a67]">
+                {BRANDS[brandId]?.name || 'Ecosystem'}
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="w-9 h-9 flex items-center justify-center text-[#707a67] hover:text-[#1b1c1a] hover:bg-[#efeeea] rounded transition-colors"
+            className="w-10 h-10 flex items-center justify-center text-[#707a67] hover:text-[#1b1c1a] hover:bg-[#efeeea] rounded-full transition-colors"
             title="Close Modal"
           >
             <span className="material-symbols-outlined text-xl">close</span>
           </button>
         </div>
 
-        {/* Wizard Stepper Tabs */}
+        {/* Wizard Stepper Tabs — labels truncate to icons on xs */}
         <div className="flex border-b border-[#bfcab4] bg-[#f5f4ef]">
           <button
             onClick={() => setActiveStep(1)}
-            className={`flex-1 py-2.5 px-3 font-label-caps text-xs font-bold border-b-2 flex items-center justify-center gap-1.5 transition-colors ${
+            className={`flex-1 py-2.5 px-2 font-label-caps text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-colors ${
               activeStep === 1
                 ? 'border-[#296c00] text-[#296c00] bg-white'
                 : 'border-transparent text-[#707a67] hover:text-[#1b1c1a]'
             }`}
           >
-            <span className="w-5 h-5 rounded-full bg-current/10 flex items-center justify-center text-[10px]">1</span>
-            <span>Content & Brand</span>
+            <span className="w-5 h-5 rounded-full bg-current/10 flex items-center justify-center text-[10px] flex-shrink-0">1</span>
+            <span className="hidden sm:inline">Content</span>
+            <span className="hidden sm:inline">&amp; Brand</span>
           </button>
 
           <button
             onClick={() => setActiveStep(2)}
-            className={`flex-1 py-2.5 px-3 font-label-caps text-xs font-bold border-b-2 flex items-center justify-center gap-1.5 transition-colors ${
+            className={`flex-1 py-2.5 px-2 font-label-caps text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-colors ${
               activeStep === 2
                 ? 'border-[#296c00] text-[#296c00] bg-white'
                 : 'border-transparent text-[#707a67] hover:text-[#1b1c1a]'
             }`}
           >
-            <span className="w-5 h-5 rounded-full bg-current/10 flex items-center justify-center text-[10px]">2</span>
-            <span>Schedule & Channel</span>
+            <span className="w-5 h-5 rounded-full bg-current/10 flex items-center justify-center text-[10px] flex-shrink-0">2</span>
+            <span className="hidden sm:inline">Schedule</span>
+            <span className="hidden sm:inline">&amp; Channel</span>
           </button>
 
           <button
             onClick={() => setActiveStep(3)}
-            className={`flex-1 py-2.5 px-3 font-label-caps text-xs font-bold border-b-2 flex items-center justify-center gap-1.5 transition-colors ${
+            className={`flex-1 py-2.5 px-2 font-label-caps text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-colors ${
               activeStep === 3
                 ? 'border-[#296c00] text-[#296c00] bg-white'
                 : 'border-transparent text-[#707a67] hover:text-[#1b1c1a]'
             }`}
           >
-            <span className="w-5 h-5 rounded-full bg-current/10 flex items-center justify-center text-[10px]">3</span>
-            <span>Visual & Specs</span>
+            <span className="w-5 h-5 rounded-full bg-current/10 flex items-center justify-center text-[10px] flex-shrink-0">3</span>
+            <span className="hidden sm:inline">Visual</span>
+            <span className="hidden sm:inline">&amp; Specs</span>
           </button>
         </div>
 
@@ -785,26 +793,26 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
           </div>
         </div>
 
-        {/* Modal Footer Controls */}
-        <div className="p-4 bg-white border-t border-[#bfcab4] flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
+        {/* Modal Footer Controls — sticky sheet action bar */}
+        <div className="sheet-action-bar flex-wrap">
+          <div className="flex items-center gap-2 flex-1">
             {activeStep > 1 && (
               <button
                 type="button"
                 onClick={() => setActiveStep((prev) => (prev - 1) as 1 | 2)}
-                className="px-3 py-2 border border-[#bfcab4] font-label-caps text-xs rounded hover:bg-[#efeeea] flex items-center gap-1 font-bold"
+                className="px-3 py-2.5 min-h-[48px] border border-[#bfcab4] font-label-caps text-xs rounded hover:bg-[#efeeea] flex items-center gap-1 font-bold"
               >
                 <span className="material-symbols-outlined text-sm">arrow_back</span>
-                <span>Back</span>
+                <span className="hidden sm:inline">Back</span>
               </button>
             )}
             {activeStep < 3 && (
               <button
                 type="button"
                 onClick={() => setActiveStep((prev) => (prev + 1) as 2 | 3)}
-                className="px-3 py-2 bg-[#efeeea] border border-[#bfcab4] font-label-caps text-xs rounded hover:bg-[#296c00] hover:text-white transition-colors flex items-center gap-1 font-bold"
+                className="flex-1 sm:flex-none px-3 py-2.5 min-h-[48px] bg-[#efeeea] border border-[#bfcab4] font-label-caps text-xs rounded hover:bg-[#296c00] hover:text-white transition-colors flex items-center justify-center gap-1 font-bold"
               >
-                <span>Next Step</span>
+                <span>Next</span>
                 <span className="material-symbols-outlined text-sm">arrow_forward</span>
               </button>
             )}
@@ -814,14 +822,14 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-[#bfcab4] font-label-caps text-xs rounded hover:bg-[#efeeea] font-bold"
+              className="px-4 py-2.5 min-h-[48px] border border-[#bfcab4] font-label-caps text-xs rounded hover:bg-[#efeeea] font-bold"
             >
               Cancel
             </button>
             <button
               type="button"
               onClick={handleCreate}
-              className="px-5 py-2 bg-[#296c00] text-white font-label-caps text-xs font-bold rounded shadow-xs hover:bg-[#1f5700] active:scale-95 transition-all flex items-center gap-1.5 min-h-[40px]"
+              className="px-5 py-2.5 min-h-[48px] bg-[#296c00] text-white font-label-caps text-xs font-bold rounded shadow-xs hover:bg-[#1f5700] active:scale-95 transition-all flex items-center gap-1.5"
             >
               <span className="material-symbols-outlined text-sm">send</span>
               <span>Save Post</span>

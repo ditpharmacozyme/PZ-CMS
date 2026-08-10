@@ -344,7 +344,7 @@ export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = (
                       <div className="font-display-xl text-base font-bold text-[#c77a00]">{inProg}</div>
                       <div className="font-label-caps text-[8px] text-[#707a67] uppercase">Active</div>
                     </div>
-                    <div className="text-center px-1">
+                    <div className="text-center px-1 hidden sm:block">
                       <div className="font-display-xl text-base font-bold text-[#7c3aed]">{approvals}</div>
                       <div className="font-label-caps text-[8px] text-[#707a67] uppercase">Sign-Offs</div>
                     </div>

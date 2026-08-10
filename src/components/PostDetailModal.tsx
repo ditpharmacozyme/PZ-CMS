@@ -242,10 +242,16 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto">
-      <div className="bg-[#FAF9F5] border border-[#bfcab4] max-w-4xl w-full rounded-lg shadow-2xl overflow-hidden my-auto max-h-[95vh] sm:max-h-[92vh] flex flex-col">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end md:items-center justify-center md:p-6 overflow-hidden">
+      {/* The panel: bottom-sheet on mobile, centered card on md+ */}
+      <div className="bg-[#FAF9F5] border border-[#bfcab4] w-full md:max-w-4xl md:rounded-lg shadow-2xl overflow-hidden max-h-[95dvh] md:max-h-[92vh] flex flex-col rounded-t-2xl md:rounded-lg sheet-modal">
+        {/* Drag handle (mobile only) */}
+        <div className="pt-3 pb-0 flex justify-center md:hidden">
+          <div className="sheet-handle" />
+        </div>
+
         {/* Top Header Bar */}
-        <div className="p-3 sm:p-4 bg-white border-b border-[#bfcab4] flex items-center justify-between sticky top-0 z-10 gap-2">
+        <div className="px-3 sm:px-4 py-3 bg-white border-b border-[#bfcab4] flex items-center justify-between sticky top-0 z-10 gap-2">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <span
               className="w-3 h-3 rounded-full flex-shrink-0"
@@ -287,6 +293,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
             </button>
           </div>
         </div>
+
 
         {/* Modal Scrollable Body */}
         <div className="p-3 sm:p-5 md:p-6 overflow-y-auto space-y-4 sm:space-y-6 flex-1">
@@ -807,20 +814,20 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
           </div>
         </div>
 
-        {/* Modal Footer Controls */}
-        <div className="p-3 sm:p-4 bg-white border-t border-[#bfcab4] flex items-center justify-between sticky bottom-0 z-10 gap-3">
+        {/* Modal Footer Controls — sticky sheet action bar on mobile */}
+        <div className="sheet-action-bar">
           <button
             onClick={onClose}
-            className="px-4 py-2.5 min-h-[44px] border border-[#bfcab4] font-label-caps text-xs text-[#1b1c1a] hover:bg-[#efeeea] rounded font-bold"
+            className="flex-1 md:flex-none px-4 py-2.5 min-h-[48px] border border-[#bfcab4] font-label-caps text-xs text-[#1b1c1a] hover:bg-[#efeeea] rounded font-bold"
           >
             Cancel
           </button>
 
           <button
             onClick={handleSave}
-            className="px-5 sm:px-6 py-2.5 min-h-[44px] bg-[#296c00] text-white font-label-caps text-xs font-bold rounded shadow-xs hover:bg-[#1f5700] active:scale-95 transition-all"
+            className="flex-1 md:flex-none px-5 sm:px-6 py-2.5 min-h-[48px] bg-[#296c00] text-white font-label-caps text-xs font-bold rounded shadow-xs hover:bg-[#1f5700] active:scale-95 transition-all"
           >
-            Save
+            Save Changes
           </button>
         </div>
       </div>

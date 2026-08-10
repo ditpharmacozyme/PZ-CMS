@@ -467,7 +467,7 @@ export function App() {
         />
 
         {/* Dynamic View Tab Rendering */}
-        <main className="flex-1 overflow-x-hidden">
+        <main className="flex-1 overflow-x-hidden mobile-content-pad">
           {currentTab === 'calendar' && (
             <CalendarView
               posts={posts}
@@ -595,6 +595,62 @@ export function App() {
           setIsNewPostModalOpen(true);
         }}
       />
+
+      {/* ── Mobile Bottom Tab Bar (hidden on md+) ── */}
+      <nav className="bottom-tab-bar" aria-label="Mobile navigation">
+        <button
+          className={`bottom-tab-item ${currentTab === 'telemetry' ? 'active' : ''}`}
+          onClick={() => setCurrentTab('telemetry')}
+          aria-label="Dashboard"
+        >
+          <span className="material-symbols-outlined text-xl">monitoring</span>
+          <span className="bottom-tab-label">Dash</span>
+        </button>
+
+        <button
+          className={`bottom-tab-item ${currentTab === 'calendar' ? 'active' : ''}`}
+          onClick={() => setCurrentTab('calendar')}
+          aria-label="Calendar"
+        >
+          <span className="material-symbols-outlined text-xl">calendar_month</span>
+          <span className="bottom-tab-label">Calendar</span>
+        </button>
+
+        {/* Centre: New Post FAB-style button */}
+        <button
+          className="bottom-tab-item"
+          onClick={() => {
+            setNewPostInitialDate(undefined);
+            setIsNewPostModalOpen(true);
+          }}
+          aria-label="New Post"
+        >
+          <span
+            className="w-10 h-10 rounded-full bg-[#296c00] text-white flex items-center justify-center shadow-lg -mt-5"
+          >
+            <span className="material-symbols-outlined text-xl">add</span>
+          </span>
+          <span className="bottom-tab-label mt-1">New</span>
+        </button>
+
+        <button
+          className={`bottom-tab-item ${currentTab === 'content-bank' ? 'active' : ''}`}
+          onClick={() => setCurrentTab('content-bank')}
+          aria-label="Content Bank"
+        >
+          <span className="material-symbols-outlined text-xl">article</span>
+          <span className="bottom-tab-label">Copy</span>
+        </button>
+
+        <button
+          className={`bottom-tab-item ${currentTab === 'templates' ? 'active' : ''}`}
+          onClick={() => setCurrentTab('templates')}
+          aria-label="Templates"
+        >
+          <span className="material-symbols-outlined text-xl">quiz</span>
+          <span className="bottom-tab-label">Templates</span>
+        </button>
+      </nav>
     </div>
   );
 }

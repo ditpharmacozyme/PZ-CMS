@@ -72,6 +72,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const [bulkStatus, setBulkStatus] = useState<PostStatus | ''>('');
   const [bulkAssignee, setBulkAssignee] = useState<string>('');
   const [clearCaptionsOnDuplicate, setClearCaptionsOnDuplicate] = useState(false);
+  // Mobile month view: which days are expanded in the day-list
+  const [expandedMobileDays, setExpandedMobileDays] = useState<Set<string>>(() => new Set([todayStr()]));
+  const toggleMobileDay = (dateStr: string) => setExpandedMobileDays(prev => {
+    const next = new Set(prev);
+    if (next.has(dateStr)) next.delete(dateStr); else next.add(dateStr);
+    return next;
+  });
 
   /** Default owner for quick-created posts — never a hardcoded placeholder name. */
   const defaultAssignee = teamMembers.length > 0 ? teamMembers[0].name : '';
@@ -511,9 +518,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   // Only ever the post the user actually picked — no arbitrary fallback.
   const inspectorPost = selectedPostForInspector;
 
-  // Mobile selected day sheet state
-  const [activeMobileDate, setActiveMobileDate] = useState<string | null>(null);
-
   // Idea Backlog content, shared between the desktop sidebar and the mobile
   // full-screen sheet — it was previously `hidden lg:flex`, making the backlog
   // completely unreachable on a phone (PRD §7 requires full mobile editing).
@@ -719,73 +723,165 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           </div>
         </div>
 
-        {/* Filter Controls Bar */}
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3 bg-white p-2.5 sm:p-3 border border-[#bfcab4] rounded shadow-xs">
-          <span className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold mr-1">
-            FILTERS:
-          </span>
+        {/* Filter Controls Bar — scrollable on mobile */}
+        <div className="bg-white border border-[#bfcab4] rounded shadow-xs p-2.5 sm:p-3">
+          <div className="filter-scroll-row">
+            <span className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold flex-shrink-0 self-center">
+              FILTERS:
+            </span>
 
-          {/* Status Filter */}
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as PostStatus | 'all')}
-            className="bg-[#faf9f5] border border-[#bfcab4] px-2 py-1.5 font-label-caps text-xs text-[#1b1c1a] focus:outline-none min-h-[36px] rounded-xs flex-1 sm:flex-none"
-          >
-            <option value="all">All statuses</option>
-            <option value="not-started">Not started</option>
-            <option value="in-progress">In progress</option>
-            <option value="ready-to-post">Ready to post</option>
-            <option value="posted">Posted</option>
-          </select>
-
-          {/* Platform Filter */}
-          <select
-            value={platformFilter}
-            onChange={(e) => setPlatformFilter(e.target.value as Platform | 'all')}
-            className="bg-[#faf9f5] border border-[#bfcab4] px-2 py-1.5 font-label-caps text-xs text-[#1b1c1a] focus:outline-none min-h-[36px] rounded-xs flex-1 sm:flex-none"
-          >
-            <option value="all">All Platforms</option>
-            <option value="instagram">Instagram</option>
-            <option value="linkedin">LinkedIn</option>
-            <option value="twitter">X / Twitter</option>
-            <option value="web">Web Portal</option>
-            <option value="email">Email Broadcast</option>
-          </select>
-
-          {/* Assignee Filter */}
-          <select
-            value={assigneeFilter}
-            onChange={(e) => setAssigneeFilter(e.target.value)}
-            className="bg-[#faf9f5] border border-[#bfcab4] px-2 py-1.5 font-label-caps text-xs text-[#1b1c1a] focus:outline-none min-h-[36px] rounded-xs flex-1 sm:flex-none"
-          >
-            <option value="all">All Assignees</option>
-            {uniqueAssignees.map((a) => (
-              <option key={a} value={a}>
-                {a}
-              </option>
-            ))}
-          </select>
-
-          {/* Reset Filters */}
-          {(statusFilter !== 'all' || platformFilter !== 'all' || assigneeFilter !== 'all') && (
-            <button
-              onClick={() => {
-                setStatusFilter('all');
-                setPlatformFilter('all');
-                setAssigneeFilter('all');
-              }}
-              className="text-[#ba1a1a] font-label-caps text-xs hover:underline ml-auto py-1"
+            {/* Status Filter */}
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as PostStatus | 'all')}
+              className="bg-[#faf9f5] border border-[#bfcab4] px-2 py-1.5 font-label-caps text-xs text-[#1b1c1a] focus:outline-none min-h-[36px] rounded-xs"
             >
-              Reset Filters
-            </button>
-          )}
+              <option value="all">All statuses</option>
+              <option value="not-started">Not started</option>
+              <option value="in-progress">In progress</option>
+              <option value="ready-to-post">Ready to post</option>
+              <option value="posted">Posted</option>
+            </select>
+
+            {/* Platform Filter */}
+            <select
+              value={platformFilter}
+              onChange={(e) => setPlatformFilter(e.target.value as Platform | 'all')}
+              className="bg-[#faf9f5] border border-[#bfcab4] px-2 py-1.5 font-label-caps text-xs text-[#1b1c1a] focus:outline-none min-h-[36px] rounded-xs"
+            >
+              <option value="all">All Platforms</option>
+              <option value="instagram">Instagram</option>
+              <option value="linkedin">LinkedIn</option>
+              <option value="twitter">X / Twitter</option>
+              <option value="web">Web Portal</option>
+              <option value="email">Email Broadcast</option>
+            </select>
+
+            {/* Assignee Filter */}
+            <select
+              value={assigneeFilter}
+              onChange={(e) => setAssigneeFilter(e.target.value)}
+              className="bg-[#faf9f5] border border-[#bfcab4] px-2 py-1.5 font-label-caps text-xs text-[#1b1c1a] focus:outline-none min-h-[36px] rounded-xs"
+            >
+              <option value="all">All Assignees</option>
+              {uniqueAssignees.map((a) => (
+                <option key={a} value={a}>{a}</option>
+              ))}
+            </select>
+
+            {/* Reset Filters */}
+            {(statusFilter !== 'all' || platformFilter !== 'all' || assigneeFilter !== 'all') && (
+              <button
+                onClick={() => {
+                  setStatusFilter('all');
+                  setPlatformFilter('all');
+                  setAssigneeFilter('all');
+                }}
+                className="text-[#ba1a1a] font-label-caps text-xs hover:underline py-1 flex-shrink-0"
+              >
+                Reset
+              </button>
+            )}
+          </div>
         </div>
 
         {/* MONTH VIEW */}
         {displayMode === 'month' && (
           <div className="bg-white border border-[#bfcab4] shadow-xs rounded-sm overflow-hidden">
-            {/* Day Header Row */}
-            <div className="grid grid-cols-7 border-b border-[#bfcab4] bg-[#efeeea]">
+
+            {/* ── Mobile Day-List (< md) ── */}
+            <div className="md:hidden divide-y divide-[#bfcab4]">
+              {calendarCells
+                .filter(cell => cell.dateStr && cell.isCurrentMonth)
+                .map((cell) => {
+                  const dayPosts = cell.dateStr ? (postsByDate[cell.dateStr] || []) : [];
+                  const isToday = cell.dateStr === todayIso;
+                  const d = cell.dateStr ? fromDateStr(cell.dateStr) : null;
+                  const dayLabel = d ? d.toLocaleDateString('default', { weekday: 'short', month: 'short', day: 'numeric' }) : '';
+                  const expanded = cell.dateStr ? expandedMobileDays.has(cell.dateStr) : false;
+
+                  return (
+                    <div key={cell.dateStr} className="cal-day-row">
+                      <div
+                        className={`cal-day-row-header ${isToday ? 'bg-[#f0fae8]' : ''}`}
+                        onClick={() => cell.dateStr && toggleMobileDay(cell.dateStr)}
+                      >
+                        <div className="flex items-center gap-2">
+                          {isToday && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#296c00] flex-shrink-0" />
+                          )}
+                          <span className={`font-label-caps text-xs font-bold ${isToday ? 'text-[#296c00]' : 'text-[#1b1c1a]'}`}>
+                            {dayLabel}
+                          </span>
+                          {dayPosts.length > 0 && (
+                            <span className="bg-[#296c00] text-white font-label-caps text-[9px] px-1.5 py-0.5 rounded-full">
+                              {dayPosts.length}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onOpenNewPostModal(cell.dateStr!); }}
+                            className="tap-target text-[#296c00] hover:bg-[#aceecf] rounded-full"
+                          >
+                            <span className="material-symbols-outlined text-sm">add</span>
+                          </button>
+                          <span className={`material-symbols-outlined text-base text-[#707a67] transition-transform ${expanded ? 'rotate-180' : ''}`}>
+                            expand_more
+                          </span>
+                        </div>
+                      </div>
+
+                      {expanded && dayPosts.length > 0 && (
+                        <div className="cal-day-row-body space-y-2">
+                          {dayPosts.map((post) => {
+                            const brand = BRANDS[post.brandId];
+                            const assigneeMember = teamMembers.find(m => m.name === post.assignee);
+                            const initials = assigneeMember ? assigneeMember.avatarInitials : (post.assignee || '?').split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+                            const bgColor = assigneeMember ? assigneeMember.color : '#bfcab4';
+                            return (
+                              <div
+                                key={post.id}
+                                onClick={() => { onSelectPost(post); }}
+                                style={{ borderLeftColor: brand?.primaryColor }}
+                                className="flex items-center gap-3 p-3 bg-white border border-[#bfcab4] border-l-4 rounded shadow-2xs active:scale-[0.98] transition-transform"
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <span className="font-label-caps text-[9px] font-bold uppercase" style={{ color: brand?.primaryColor }}>
+                                    {brand?.shortCode}
+                                  </span>
+                                  <p className="font-headline-md text-sm font-bold text-[#1b1c1a] truncate">{post.title}</p>
+                                  <div className="flex items-center gap-1.5 mt-0.5">
+                                    <span className="font-code-sm text-[10px] text-[#707a67]">{post.scheduledTime}</span>
+                                    <span className="font-label-caps text-[9px] text-[#707a67] uppercase">{post.status?.replace('-', ' ')}</span>
+                                  </div>
+                                </div>
+                                <div
+                                  className="w-7 h-7 rounded-full flex items-center justify-center text-white font-label-caps text-[9px] font-bold flex-shrink-0"
+                                  style={{ backgroundColor: bgColor }}
+                                  title={post.assignee}
+                                >
+                                  {initials}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      {expanded && dayPosts.length === 0 && (
+                        <div className="px-4 py-3 text-center">
+                          <p className="font-body-md text-xs text-[#bfcab4]">Nothing scheduled</p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+            </div>
+
+            {/* ── Desktop Grid (md+) ── */}
+            <div className="hidden md:block">
+              {/* Day Header Row */}
+              <div className="grid grid-cols-7 border-b border-[#bfcab4] bg-[#efeeea]">
               {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((dayShort, idx) => {
                 const fullDays = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
                 return (
@@ -813,12 +909,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                     key={idx}
                     onClick={() => {
                       if (!cell.dateStr) return;
-                      // On mobile (< sm), tap date opens mobile day sheet!
-                      if (window.innerWidth < 640) {
-                        setActiveMobileDate(cell.dateStr);
-                      } else {
-                        onOpenNewPostModal(cell.dateStr);
-                      }
+                      onOpenNewPostModal(cell.dateStr);
                     }}
                     onDragOver={(e) => {
                       if (cell.dateStr) {
@@ -1005,6 +1096,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 );
               })}
             </div>
+            </div>{/* end hidden md:block desktop grid */}
           </div>
         )}
 
@@ -1462,81 +1554,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         )}
       </aside>
 
-      {/* Mobile Day Bottom Sheet Drawer */}
-      {activeMobileDate && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex flex-col justify-end sm:hidden">
-          <div className="bg-[#FAF9F5] border-t border-[#bfcab4] rounded-t-2xl p-5 max-h-[80vh] flex flex-col space-y-4 shadow-2xl animate-slideUp">
-            <div className="flex justify-between items-center pb-2 border-b border-[#bfcab4]">
-              <div>
-                <span className="font-label-caps text-[10px] text-[#296c00] font-bold uppercase">
-                  Schedule Slot Summary
-                </span>
-                <h3 className="font-headline-md text-base font-bold text-[#1b1c1a]">
-                  {activeMobileDate}
-                </h3>
-              </div>
-              <button
-                onClick={() => setActiveMobileDate(null)}
-                className="p-2 text-[#707a67] hover:text-[#1b1c1a]"
-              >
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            </div>
-
-            <div className="space-y-2 overflow-y-auto flex-1 max-h-60 pr-1">
-              {(postsByDate[activeMobileDate] || []).length === 0 ? (
-                <p className="text-xs font-body-md text-[#707a67] py-4 text-center">
-                  No posts scheduled for this day yet.
-                </p>
-              ) : (
-                (postsByDate[activeMobileDate] || []).map((post) => {
-                  const brand = BRANDS[post.brandId];
-                  return (
-                    <div
-                      key={post.id}
-                      onClick={() => {
-                        setSelectedPostForInspector(post);
-                        onSelectPost(post);
-                        setActiveMobileDate(null);
-                      }}
-                      style={{ borderLeftColor: brand?.primaryColor || '#296c00' }}
-                      className="p-3 bg-white border border-[#bfcab4] border-l-4 rounded shadow-xs active:bg-[#efeeea]"
-                    >
-                      <div className="flex justify-between items-center mb-1">
-                        <span
-                          className="font-label-caps text-[10px] font-bold uppercase"
-                          style={{ color: brand?.primaryColor || '#296c00' }}
-                        >
-                          {brand?.name}
-                        </span>
-                        <span className="font-code-sm text-[10px] text-[#707a67]">
-                          {post.scheduledTime}
-                        </span>
-                      </div>
-                      <h4 className="font-headline-md text-xs font-bold text-[#1b1c1a]">
-                        {post.title}
-                      </h4>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-
-            <div className="pt-2 flex gap-2">
-              <button
-                onClick={() => {
-                  const dateToPass = activeMobileDate;
-                  setActiveMobileDate(null);
-                  onOpenNewPostModal(dateToPass);
-                }}
-                className="w-full bg-[#296c00] text-white font-label-caps text-xs py-3 rounded font-bold min-h-[44px]"
-              >
-                + Schedule Post For This Date
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
       </div>{/* end flex-1 inner wrapper */}
     </div>
   );
