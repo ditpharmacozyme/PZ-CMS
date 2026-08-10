@@ -14,6 +14,7 @@ interface CalendarViewProps {
   onSavePost: (post: Post) => void;
   onAddPost: (post: Post) => void;
   teamMembers?: TeamMember[];
+  activeTeammate?: TeamMember | null;
 }
 
 type CalendarDisplayMode = 'month' | 'week' | 'list';
@@ -50,7 +51,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   searchQuery,
   onSavePost,
   onAddPost,
-  teamMembers = []
+  teamMembers = [],
+  activeTeammate = null
 }) => {
   const today = useMemo(() => new Date(), []);
   const todayIso = todayStr();
@@ -243,7 +245,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       activityLog: [
         {
           id: `act-${Date.now()}`,
-          actor: defaultAssignee || 'Someone',
+          actor: activeTeammate?.name || defaultAssignee || 'Someone',
           action: 'Created idea',
           timestamp: logTimestamp()
         }
@@ -260,6 +262,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     const draggedPost = posts.find(p => p.id === postId);
     if (draggedPost) {
       const wasUnscheduled = !draggedPost.scheduledDate;
+      const actorName = activeTeammate ? activeTeammate.name : (draggedPost.assignee || defaultAssignee || 'Someone');
       const updated: Post = {
         ...draggedPost,
         scheduledDate: dateStr,
@@ -267,7 +270,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         activityLog: [
           {
             id: `act-${Date.now()}`,
-            actor: draggedPost.assignee || defaultAssignee || 'Someone',
+            actor: actorName,
             action: wasUnscheduled ? `Scheduled for ${dateStr}` : `Moved to ${dateStr}`,
             timestamp: logTimestamp()
           },
@@ -297,7 +300,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       comments: [],
       activityLog: [{
         id: `act-${Date.now()}`,
-        actor: placeholder.assignee || defaultAssignee || 'Someone',
+        actor: activeTeammate?.name || placeholder.assignee || defaultAssignee || 'Someone',
         action: 'Created from a repeating slot',
         timestamp: logTimestamp()
       }]
@@ -908,13 +911,19 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                         return (
                           <div
                             key={post.id}
+                            draggable
+                            onDragStart={(e) => {
+                              e.stopPropagation();
+                              e.dataTransfer.setData("text/plain", post.id);
+                              e.dataTransfer.effectAllowed = "move";
+                            }}
                             onClick={(e) => {
                               e.stopPropagation();
                               setSelectedPostForInspector(post);
                               onSelectPost(post);
                             }}
                             style={{ borderLeftColor: brand?.primaryColor || '#296c00' }}
-                            className="p-1.5 bg-white border border-[#bfcab4] border-l-4 shadow-2xs hover:shadow-md transition-all rounded-xs text-left"
+                            className="p-1.5 bg-white border border-[#bfcab4] border-l-4 shadow-2xs hover:shadow-md transition-all rounded-xs text-left cursor-grab active:cursor-grabbing hover:scale-[1.01]"
                           >
                             <div className="flex items-center justify-between gap-1 mb-0.5">
                               <span
@@ -938,10 +947,26 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                               </div>
                             )}
 
-                            <div className="flex items-center justify-between mt-1 text-[9px] font-label-caps text-[#707a67]">
-                              <span className="capitalize">{post.status?.replace('-', ' ')}</span>
+                            <div className="flex items-center justify-between mt-1.5 text-[9px] font-label-caps text-[#707a67] gap-1.5">
+                              <div className="flex items-center gap-1 min-w-0">
+                                {post.assignee && (() => {
+                                  const assigneeMember = teamMembers.find(m => m.name === post.assignee);
+                                  const initials = assigneeMember ? assigneeMember.avatarInitials : post.assignee.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                                  const bgColor = assigneeMember ? assigneeMember.color : '#bfcab4';
+                                  return (
+                                    <div
+                                      className="w-4 h-4 rounded-full flex items-center justify-center text-white font-label-caps text-[7px] font-bold flex-shrink-0"
+                                      style={{ backgroundColor: bgColor }}
+                                      title={`Assigned to: ${post.assignee}`}
+                                    >
+                                      {initials}
+                                    </div>
+                                  );
+                                })()}
+                                <span className="capitalize truncate">{post.status?.replace('-', ' ')}</span>
+                              </div>
                               {post.approved && (
-                                <span className="text-[#296c00] font-bold">✓ Approved</span>
+                                <span className="text-[#296c00] font-bold flex-shrink-0">✓ Approved</span>
                               )}
                             </div>
                           </div>
@@ -1045,7 +1070,20 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 return (
                   <div
                     key={i}
-                    className={`p-3 border rounded min-h-[160px] sm:min-h-[220px] ${
+                    onDragOver={(e) => {
+                      if (dateStr) {
+                        e.preventDefault();
+                        e.currentTarget.classList.add('ring-2', 'ring-[#296c00]', 'bg-[#f0fae8]');
+                      }
+                    }}
+                    onDragLeave={(e) => {
+                      e.currentTarget.classList.remove('ring-2', 'ring-[#296c00]', 'bg-[#f0fae8]');
+                    }}
+                    onDrop={(e) => {
+                      e.currentTarget.classList.remove('ring-2', 'ring-[#296c00]', 'bg-[#f0fae8]');
+                      if (dateStr) handleDropOnCell(e, dateStr);
+                    }}
+                    className={`p-3 border rounded min-h-[160px] sm:min-h-[220px] transition-all ${
                       isToday ? 'bg-white border-[#296c00] ring-1 ring-[#296c00]/30' : 'bg-[#faf9f5] border-[#bfcab4]'
                     }`}
                   >
@@ -1067,22 +1105,44 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                         return (
                           <div
                             key={post.id}
+                            draggable
+                            onDragStart={(e) => {
+                              e.stopPropagation();
+                              e.dataTransfer.setData("text/plain", post.id);
+                              e.dataTransfer.effectAllowed = "move";
+                            }}
                             onClick={() => {
                               setSelectedPostForInspector(post);
                               onSelectPost(post);
                             }}
                             style={{ borderLeftColor: brand?.primaryColor }}
-                            className="p-2 bg-white border border-[#bfcab4] border-l-4 shadow-xs rounded cursor-pointer hover:border-[#296c00]"
+                            className="p-2 bg-white border border-[#bfcab4] border-l-4 shadow-xs rounded cursor-grab active:cursor-grabbing hover:border-[#296c00] hover:shadow-md transition-all active:scale-[0.98]"
                           >
                             <span className="font-label-caps text-[9px] font-bold text-[#296c00] uppercase">
-                              {brand?.name}
+                              {brand?.shortCode || post.brandId}
                             </span>
                             <h4 className="font-headline-md text-xs font-bold text-[#1b1c1a] line-clamp-2">
                               {post.title}
                             </h4>
-                            <div className="flex justify-between items-center mt-2 text-[10px] font-code-sm text-[#707a67]">
+                            <div className="flex justify-between items-center mt-2 text-[10px] font-code-sm text-[#707a67] gap-1">
+                              <div className="flex items-center gap-1 min-w-0">
+                                {post.assignee && (() => {
+                                  const assigneeMember = teamMembers.find(m => m.name === post.assignee);
+                                  const initials = assigneeMember ? assigneeMember.avatarInitials : post.assignee.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                                  const bgColor = assigneeMember ? assigneeMember.color : '#bfcab4';
+                                  return (
+                                    <div
+                                      className="w-4 h-4 rounded-full flex items-center justify-center text-white font-label-caps text-[7px] font-bold flex-shrink-0"
+                                      style={{ backgroundColor: bgColor }}
+                                      title={`Assigned to: ${post.assignee}`}
+                                    >
+                                      {initials}
+                                    </div>
+                                  );
+                                })()}
+                                <span className="uppercase font-bold truncate">{post.status?.replace('-', ' ')}</span>
+                              </div>
                               <span>{post.scheduledTime}</span>
-                              <span className="uppercase font-bold">{post.status}</span>
                             </div>
                           </div>
                         );

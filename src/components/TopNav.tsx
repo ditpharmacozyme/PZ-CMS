@@ -20,6 +20,8 @@ interface TopNavProps {
   isRemoteConfigured?: boolean;
   onImportLocalData?: () => void;
   isImportingData?: boolean;
+  activeTeammateId?: string;
+  onSelectActiveTeammate?: (id: string) => void;
 }
 
 const AVATAR_COLORS = [
@@ -47,11 +49,16 @@ export const TopNav: React.FC<TopNavProps> = ({
   onSaveTeamMembers,
   isRemoteConfigured = false,
   onImportLocalData,
-  isImportingData = false
+  isImportingData = false,
+  activeTeammateId,
+  onSelectActiveTeammate
 }) => {
   const [showNotificationsPopover, setShowNotificationsPopover] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const [showActiveTeammatePopover, setShowActiveTeammatePopover] = useState(false);
+
+  const activeTeammate = teamMembers.find(m => m.id === activeTeammateId) || teamMembers[0] || null;
 
   // Team management local state
   const [settingsTab, setSettingsTab] = useState<'team' | 'system'>('team');
@@ -250,21 +257,94 @@ export const TopNav: React.FC<TopNavProps> = ({
             Mark Posted
           </button>
 
-          {/* User avatar */}
-          {(() => {
-            const currentUser = teamMembers && teamMembers.length > 0 ? teamMembers[0] : null;
-            const initials = currentUser ? currentUser.avatarInitials || getInitials(currentUser.name) : 'HA';
-            const bgColor = currentUser?.color || '#296c00';
-            return (
+          {/* Active Teammate Selector / Avatar Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setShowActiveTeammatePopover(!showActiveTeammatePopover)}
+              className="flex items-center gap-1.5 p-1 hover:bg-[#efeeea] rounded-full sm:rounded-lg transition-all focus:outline-none min-h-[38px]"
+              title={`Acting as: ${activeTeammate ? activeTeammate.name : 'Guest'}`}
+            >
               <div
-                className="w-8 h-8 rounded-full border border-[#bfcab4] overflow-hidden ml-0.5 hidden sm:flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: bgColor }}
-                title={currentUser ? `${currentUser.name} (${currentUser.role})` : 'Hamza Ansari'}
+                className="w-8 h-8 rounded-full border border-[#bfcab4] flex items-center justify-center flex-shrink-0 text-white font-label-caps text-[11px] font-bold shadow-2xs relative"
+                style={{ backgroundColor: activeTeammate?.color || '#296c00' }}
               >
-                <span className="font-label-caps text-[11px] font-bold text-white">{initials}</span>
+                {activeTeammate ? (activeTeammate.avatarInitials || getInitials(activeTeammate.name)) : 'G'}
+                {/* Active pulse dot */}
+                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-[#78d24b] border border-white rounded-full" />
               </div>
-            );
-          })()}
+              <div className="hidden lg:flex flex-col text-left pr-1.5 max-w-[120px]">
+                <span className="font-headline-md text-[11px] font-bold text-[#1b1c1a] leading-none truncate">
+                  {activeTeammate ? activeTeammate.name : 'Guest'}
+                </span>
+                <span className="font-label-caps text-[8px] text-[#707a67] uppercase tracking-wider mt-0.5 leading-none truncate">
+                  {activeTeammate ? activeTeammate.role : 'Guest Editor'}
+                </span>
+              </div>
+              <span className="material-symbols-outlined text-[#707a67] text-base hidden sm:inline-block">arrow_drop_down</span>
+            </button>
+
+            {showActiveTeammatePopover && (
+              <div className="fixed sm:absolute right-2 sm:right-0 top-16 sm:top-auto sm:mt-2 w-[calc(100vw-1rem)] sm:w-64 bg-white border border-[#bfcab4] shadow-2xl rounded-lg z-50 p-3 max-h-[80vh] flex flex-col">
+                <div className="flex items-center justify-between pb-2 border-b border-[#bfcab4] mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[#296c00] text-lg">supervised_user_circle</span>
+                    <h3 className="font-label-caps text-[10px] font-bold text-[#1b1c1a] uppercase tracking-wider">Acting Teammate</h3>
+                  </div>
+                  <button onClick={() => setShowActiveTeammatePopover(false)} className="text-[#707a67] hover:text-[#1b1c1a] p-0.5">
+                    <span className="material-symbols-outlined text-sm">close</span>
+                  </button>
+                </div>
+
+                <div className="space-y-1 overflow-y-auto pr-0.5 max-h-60">
+                  {teamMembers.map((member) => {
+                    const isSelected = activeTeammate?.id === member.id;
+                    return (
+                      <button
+                        key={member.id}
+                        onClick={() => {
+                          if (onSelectActiveTeammate) onSelectActiveTeammate(member.id);
+                          setShowActiveTeammatePopover(false);
+                        }}
+                        className={`w-full flex items-center gap-2.5 p-2 rounded-md transition-colors text-left ${
+                          isSelected ? 'bg-[#f0fae8] border border-[#296c00]/20' : 'hover:bg-[#faf9f5]'
+                        }`}
+                      >
+                        <div
+                          className="w-7 h-7 rounded-full flex items-center justify-center text-white font-label-caps text-[10px] font-bold flex-shrink-0"
+                          style={{ backgroundColor: member.color }}
+                        >
+                          {member.avatarInitials || getInitials(member.name)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-body-md text-xs font-bold text-[#1b1c1a] truncate flex items-center gap-1">
+                            <span>{member.name}</span>
+                            {isSelected && <span className="text-[#296c00] text-[9.5px]">●</span>}
+                          </p>
+                          <p className="font-label-caps text-[8px] text-[#707a67] uppercase truncate leading-none mt-0.5">{member.role}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                  {teamMembers.length === 0 && (
+                    <p className="text-[10px] text-[#707a67] py-2 text-center">No teammates found.</p>
+                  )}
+                </div>
+
+                <div className="pt-2 border-t border-[#bfcab4] mt-2">
+                  <button
+                    onClick={() => {
+                      setShowActiveTeammatePopover(false);
+                      setShowSettingsModal(true);
+                      setSettingsTab('team');
+                    }}
+                    className="w-full text-center py-1.5 border border-dashed border-[#bfcab4] text-[#296c00] font-label-caps text-[10px] font-bold rounded hover:bg-[#f0fae8] transition-colors"
+                  >
+                    + Manage Team
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

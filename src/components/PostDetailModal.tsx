@@ -12,6 +12,7 @@ interface PostDetailModalProps {
   onClose: () => void;
   contentBank?: ContentBankItem[];
   teamMembers?: TeamMember[];
+  activeTeammate?: TeamMember | null;
 }
 
 const PIPELINE_STATUSES: { value: PostStatus; label: string; color: string }[] = [
@@ -28,9 +29,12 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
   onDuplicatePost,
   onClose,
   contentBank = [],
-  teamMembers = []
+  teamMembers = [],
+  activeTeammate = null
 }) => {
-  const defaultAuthor = teamMembers && teamMembers.length > 0 ? `${teamMembers[0].name} (${teamMembers[0].role})` : 'Team';
+  const defaultAuthor = activeTeammate
+    ? `${activeTeammate.name} (${activeTeammate.role})`
+    : (teamMembers && teamMembers.length > 0 ? `${teamMembers[0].name} (${teamMembers[0].role})` : 'Team');
   const [editedPost, setEditedPost] = useState<Post>({ ...post });
   const [newCommentText, setNewCommentText] = useState('');
   const [commentAuthor, setCommentAuthor] = useState(defaultAuthor);
@@ -106,13 +110,14 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
     setIsUploading(true);
     try {
       const { url } = await uploadImage(file);
+      const actorName = activeTeammate ? activeTeammate.name : (editedPost.assignee || 'Someone');
       setEditedPost((prev) => ({
         ...prev,
         visualUrl: url,
         activityLog: [
           {
             id: `act-${Date.now()}`,
-            actor: prev.assignee || 'Someone',
+            actor: actorName,
             action: `Added image "${file.name}"`,
             timestamp: logTimestamp()
           },
@@ -136,13 +141,14 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
     } else {
       setApprovalWarning(null);
     }
+    const actorName = activeTeammate ? activeTeammate.name : (editedPost.assignee || 'Someone');
     setEditedPost((prev) => ({
       ...prev,
       status: newStatus,
       activityLog: [
         {
           id: `act-${Date.now()}`,
-          actor: prev.assignee || 'Someone',
+          actor: actorName,
           action: `Changed status to "${newStatus.replace(/-/g, ' ')}"`,
           timestamp: logTimestamp()
         },
@@ -154,9 +160,10 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
   // Handle Approval Sign-Off Toggle
   const handleToggleApproval = () => {
     const nextApproved = !editedPost.approved;
-    const approverName = teamMembers && teamMembers.length > 0
-      ? `${teamMembers[0].name} (${teamMembers[0].role})`
-      : 'Team';
+    const approverName = activeTeammate
+      ? `${activeTeammate.name} (${activeTeammate.role})`
+      : (teamMembers && teamMembers.length > 0 ? `${teamMembers[0].name} (${teamMembers[0].role})` : 'Team');
+    const actorName = activeTeammate ? activeTeammate.name : approverName;
     setApprovalWarning(null);
     setEditedPost((prev) => ({
       ...prev,
@@ -166,7 +173,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
       activityLog: [
         {
           id: `act-${Date.now()}`,
-          actor: approverName,
+          actor: actorName,
           action: nextApproved ? 'Approved this post' : 'Removed approval',
           timestamp: logTimestamp()
         },
@@ -193,7 +200,44 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
 
   // Handle Save
   const handleSave = () => {
-    onSavePost(editedPost);
+    const actorName = activeTeammate ? activeTeammate.name : 'Someone';
+    const logs = [...editedPost.activityLog];
+    let changed = false;
+
+    if (post.assignee !== editedPost.assignee) {
+      logs.unshift({
+        id: `act-${Date.now()}-assignee`,
+        actor: actorName,
+        action: `Reassigned to ${editedPost.assignee || 'Unassigned'}`,
+        timestamp: logTimestamp()
+      });
+      changed = true;
+    }
+
+    if (post.scheduledDate !== editedPost.scheduledDate || post.scheduledTime !== editedPost.scheduledTime) {
+      const originalSched = post.scheduledDate ? `${post.scheduledDate} ${post.scheduledTime}` : 'Idea Backlog';
+      const newSched = editedPost.scheduledDate ? `${editedPost.scheduledDate} ${editedPost.scheduledTime}` : 'Idea Backlog';
+      logs.unshift({
+        id: `act-${Date.now()}-sched`,
+        actor: actorName,
+        action: `Rescheduled from ${originalSched} to ${newSched}`,
+        timestamp: logTimestamp()
+      });
+      changed = true;
+    }
+
+    if (post.caption !== editedPost.caption && !post.caption.trim() && editedPost.caption.trim()) {
+      logs.unshift({
+        id: `act-${Date.now()}-caption`,
+        actor: actorName,
+        action: 'Wrote caption copy',
+        timestamp: logTimestamp()
+      });
+      changed = true;
+    }
+
+    const finalPost = changed ? { ...editedPost, activityLog: logs } : editedPost;
+    onSavePost(finalPost);
     onClose();
   };
 

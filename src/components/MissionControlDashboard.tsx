@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Post, TeamMember } from '../types';
 import { toDateStr } from '../utils/date';
 import { getRecentActivity } from '../utils/activity';
@@ -18,10 +18,17 @@ export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = (
   onSelectPost,
   onDeletePost
 }) => {
-  const readyToPostCount = posts.filter((p) => p.status === 'ready-to-post').length;
-  const inProgressCount = posts.filter((p) => p.status === 'in-progress').length;
-  const postedCount = posts.filter((p) => p.status === 'posted').length;
-  const backlogCount = posts.filter((p) => !p.scheduledDate).length;
+  const [selectedTeammateName, setSelectedTeammateName] = useState<string | null>(null);
+
+  const filteredPosts = useMemo(() => {
+    if (!selectedTeammateName) return posts;
+    return posts.filter(p => p.assignee === selectedTeammateName);
+  }, [posts, selectedTeammateName]);
+
+  const readyToPostCount = filteredPosts.filter((p) => p.status === 'ready-to-post').length;
+  const inProgressCount = filteredPosts.filter((p) => p.status === 'in-progress').length;
+  const postedCount = filteredPosts.filter((p) => p.status === 'posted').length;
+  const backlogCount = filteredPosts.filter((p) => !p.scheduledDate).length;
 
   // Team performance: count posts assigned to each person
   const teamStats = teamMembers.map(member => {
@@ -29,7 +36,8 @@ export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = (
     const posted = assigned.filter(p => p.status === 'posted').length;
     const ready = assigned.filter(p => p.status === 'ready-to-post').length;
     const inProg = assigned.filter(p => p.status === 'in-progress').length;
-    return { member, total: assigned.length, posted, ready, inProg };
+    const approvals = posts.filter(p => p.approved && p.approvedBy?.startsWith(member.name)).length;
+    return { member, total: assigned.length, posted, ready, inProg, approvals };
   }).sort((a, b) => b.total - a.total);
 
   // Real 14-day view: how many posts land on each of the next 14 days.
@@ -42,14 +50,18 @@ export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = (
       days.push({
         dateStr,
         label: d.toLocaleDateString('default', { weekday: 'short' }),
-        count: posts.filter((p) => p.scheduledDate === dateStr).length
+        count: filteredPosts.filter((p) => p.scheduledDate === dateStr).length
       });
     }
     return days;
-  }, [posts]);
+  }, [filteredPosts]);
   const maxDayCount = Math.max(1, ...upcomingDays.map((d) => d.count));
 
-  const recentActivity = useMemo(() => getRecentActivity(posts, 15), [posts]);
+  const recentActivity = useMemo(() => {
+    const act = getRecentActivity(posts, 50);
+    if (!selectedTeammateName) return act.slice(0, 15);
+    return act.filter(entry => entry.actor === selectedTeammateName).slice(0, 15);
+  }, [posts, selectedTeammateName]);
 
   return (
     <div className="p-4 md:p-8 space-y-6 max-w-7xl mx-auto">
@@ -76,6 +88,21 @@ export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = (
           <span>New Post</span>
         </button>
       </div>
+
+      {selectedTeammateName && (
+        <div className="p-3 bg-[#f0fae8] border border-[#296c00]/30 rounded flex items-center justify-between text-xs font-body-md text-[#296c00] shadow-2xs drawer-slide-in">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-base">filter_list</span>
+            <span>Showing dashboard statistics and workload for <strong className="font-bold underline">{selectedTeammateName}</strong> only.</span>
+          </div>
+          <button
+            onClick={() => setSelectedTeammateName(null)}
+            className="font-label-caps text-[9px] px-2.5 py-1 rounded bg-[#296c00] text-white hover:bg-[#1f5700] transition-colors font-bold uppercase"
+          >
+            Clear Filter
+          </button>
+        </div>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -143,14 +170,14 @@ export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = (
           </h3>
 
           <div className="space-y-3">
-            {posts.length === 0 ? (
+            {filteredPosts.length === 0 ? (
               <div className="py-8 text-center">
                 <span className="material-symbols-outlined text-3xl text-[#bfcab4] block mb-2">notifications_none</span>
                 <p className="font-label-caps text-[10px] text-[#707a67] uppercase">No posts yet</p>
-                <p className="font-body-md text-xs text-[#707a67] mt-1">Create a post to see it here.</p>
+                <p className="font-body-md text-xs text-[#707a67] mt-1">No upcoming posts found matching filters.</p>
               </div>
             ) : (
-              posts.slice(0, 5).map((post) => (
+              filteredPosts.slice(0, 5).map((post) => (
                 <div key={post.id} className="p-3 bg-[#faf9f5] border border-[#bfcab4] rounded text-xs space-y-2">
                   <div className="flex justify-between items-start gap-2">
                     <span className="font-label-caps font-bold text-[#296c00] truncate max-w-[140px]">
@@ -214,28 +241,41 @@ export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = (
           <div className="p-8 text-center">
             <span className="material-symbols-outlined text-3xl text-[#bfcab4] block mb-2">history</span>
             <p className="font-label-caps text-[10px] text-[#707a67] uppercase">Nothing yet</p>
-            <p className="font-body-md text-xs text-[#707a67] mt-1">Activity shows up here as posts get worked on.</p>
+            <p className="font-body-md text-xs text-[#707a67] mt-1">No recent activity matching filters.</p>
           </div>
         ) : (
           <div className="divide-y divide-[#bfcab4] max-h-80 overflow-y-auto">
-            {recentActivity.map((entry) => (
-              <button
-                key={entry.id}
-                onClick={() => {
-                  const post = posts.find((p) => p.id === entry.postId);
-                  if (post && onSelectPost) onSelectPost(post);
-                }}
-                className="w-full flex items-center justify-between gap-3 p-3 text-left hover:bg-[#faf9f5] transition-colors"
-              >
-                <div className="min-w-0">
-                  <p className="text-xs font-body-md text-[#1b1c1a]">
-                    <strong className="text-[#296c00]">{entry.actor}</strong> {entry.action}
-                  </p>
-                  <p className="font-label-caps text-[10px] text-[#707a67] truncate mt-0.5">{entry.postTitle}</p>
-                </div>
-                <span className="font-code-sm text-[10px] text-[#707a67] flex-shrink-0">{entry.timestamp}</span>
-              </button>
-            ))}
+            {recentActivity.map((entry) => {
+              const actorMember = teamMembers.find(m => m.name === entry.actor);
+              const initials = actorMember ? actorMember.avatarInitials : entry.actor.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+              const bgColor = actorMember ? actorMember.color : '#bfcab4';
+              return (
+                <button
+                  key={entry.id}
+                  onClick={() => {
+                    const post = posts.find((p) => p.id === entry.postId);
+                    if (post && onSelectPost) onSelectPost(post);
+                  }}
+                  className="w-full flex items-center justify-between gap-3 p-3.5 text-left hover:bg-[#faf9f5] transition-colors border-b border-[#bfcab4]/20 last:border-b-0"
+                >
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-white font-label-caps text-[10px] font-bold flex-shrink-0"
+                      style={{ background: bgColor }}
+                    >
+                      {initials}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-body-md text-[#1b1c1a] leading-tight">
+                        <strong className="text-[#296c00]">{entry.actor}</strong> {entry.action}
+                      </p>
+                      <p className="font-label-caps text-[9px] text-[#707a67] truncate mt-1">{entry.postTitle}</p>
+                    </div>
+                  </div>
+                  <span className="font-code-sm text-[10px] text-[#707a67] flex-shrink-0">{entry.timestamp}</span>
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
@@ -258,59 +298,75 @@ export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = (
           </div>
         ) : (
           <div className="divide-y divide-[#bfcab4]">
-            {teamStats.map(({ member, total, posted, ready, inProg }, idx) => (
-              <div key={member.id} className="p-4 flex items-center gap-4">
-                {/* Rank */}
-                <div className="w-6 text-center font-label-caps text-xs text-[#707a67] font-bold flex-shrink-0">
-                  {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
-                </div>
-
-                {/* Avatar */}
+            {teamStats.map(({ member, total, posted, ready, inProg, approvals }, idx) => {
+              const isSelected = selectedTeammateName === member.name;
+              return (
                 <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-white font-label-caps text-xs font-bold flex-shrink-0"
-                  style={{ background: member.color }}
+                  key={member.id}
+                  onClick={() => setSelectedTeammateName(isSelected ? null : member.name)}
+                  className={`p-4 flex items-center gap-4 cursor-pointer transition-all ${
+                    isSelected ? 'bg-[#f0fae8] hover:bg-[#e4f5d8] border-l-4 border-[#296c00]' : 'hover:bg-[#faf9f5]'
+                  }`}
                 >
-                  {member.avatarInitials}
-                </div>
-
-                {/* Name & role */}
-                <div className="flex-1 min-w-0">
-                  <p className="font-body-md text-sm font-bold text-[#1b1c1a] truncate">{member.name}</p>
-                  <p className="font-label-caps text-[9px] text-[#707a67] uppercase">{member.role}</p>
-                </div>
-
-                {/* Mini stat badges */}
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <div className="text-center">
-                    <div className="font-display-xl text-lg font-bold text-[#1b1c1a]">{total}</div>
-                    <div className="font-label-caps text-[9px] text-[#707a67] uppercase">Total</div>
+                  {/* Rank */}
+                  <div className="w-6 text-center font-label-caps text-xs text-[#707a67] font-bold flex-shrink-0">
+                    {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
                   </div>
-                  <div className="text-center">
-                    <div className="font-display-xl text-lg font-bold text-[#296c00]">{posted}</div>
-                    <div className="font-label-caps text-[9px] text-[#707a67] uppercase">Posted</div>
-                  </div>
-                  <div className="text-center hidden sm:block">
-                    <div className="font-display-xl text-lg font-bold text-[#c77a00]">{inProg}</div>
-                    <div className="font-label-caps text-[9px] text-[#707a67] uppercase">Active</div>
-                  </div>
-                </div>
 
-                {/* Progress bar */}
-                {total > 0 && (
-                  <div className="w-20 hidden md:block">
-                    <div className="h-2 bg-[#efeeea] rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-[#296c00] rounded-full transition-all"
-                        style={{ width: `${Math.round((posted / total) * 100)}%` }}
-                      />
-                    </div>
-                    <p className="font-label-caps text-[9px] text-[#707a67] mt-0.5 text-center">
-                      {total > 0 ? Math.round((posted / total) * 100) : 0}% done
+                  {/* Avatar */}
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-white font-label-caps text-xs font-bold flex-shrink-0"
+                    style={{ background: member.color }}
+                  >
+                    {member.avatarInitials}
+                  </div>
+
+                  {/* Name & role */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-body-md text-sm font-bold text-[#1b1c1a] truncate flex items-center gap-1.5">
+                      <span>{member.name}</span>
+                      {isSelected && <span className="bg-[#296c00] text-white px-1.5 py-0.2 rounded font-bold uppercase text-[8px] font-label-caps">Filter On</span>}
                     </p>
+                    <p className="font-label-caps text-[9px] text-[#707a67] uppercase">{member.role}</p>
                   </div>
-                )}
-              </div>
-            ))}
+
+                  {/* Mini stat badges */}
+                  <div className="flex items-center gap-4 flex-shrink-0">
+                    <div className="text-center px-1">
+                      <div className="font-display-xl text-base font-bold text-[#1b1c1a]">{total}</div>
+                      <div className="font-label-caps text-[8px] text-[#707a67] uppercase">Assigned</div>
+                    </div>
+                    <div className="text-center px-1">
+                      <div className="font-display-xl text-base font-bold text-[#296c00]">{posted}</div>
+                      <div className="font-label-caps text-[8px] text-[#707a67] uppercase">Posted</div>
+                    </div>
+                    <div className="text-center px-1 hidden sm:block">
+                      <div className="font-display-xl text-base font-bold text-[#c77a00]">{inProg}</div>
+                      <div className="font-label-caps text-[8px] text-[#707a67] uppercase">Active</div>
+                    </div>
+                    <div className="text-center px-1">
+                      <div className="font-display-xl text-base font-bold text-[#7c3aed]">{approvals}</div>
+                      <div className="font-label-caps text-[8px] text-[#707a67] uppercase">Sign-Offs</div>
+                    </div>
+                  </div>
+
+                  {/* Progress bar */}
+                  {total > 0 && (
+                    <div className="w-20 hidden md:block">
+                      <div className="h-2 bg-[#efeeea] rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-[#296c00] rounded-full transition-all"
+                          style={{ width: `${Math.round((posted / total) * 100)}%` }}
+                        />
+                      </div>
+                      <p className="font-label-caps text-[9px] text-[#707a67] mt-0.5 text-center">
+                        {total > 0 ? Math.round((posted / total) * 100) : 0}% done
+                      </p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
 
             {/* Unassigned posts */}
             {(() => {

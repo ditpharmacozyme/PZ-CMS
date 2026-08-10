@@ -14,6 +14,7 @@ interface NewPostModalProps {
   onClose: () => void;
   contentBank?: ContentBankItem[];
   teamMembers?: TeamMember[];
+  activeTeammate?: TeamMember | null;
 }
 
 const PLATFORM_CONFIG: Record<Platform, { label: string; icon: string; color: string; bg: string }> = {
@@ -32,7 +33,8 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
   onAddPost,
   onClose,
   contentBank = [],
-  teamMembers = []
+  teamMembers = [],
+  activeTeammate = null
 }) => {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [title, setTitle] = useState('');
@@ -47,8 +49,8 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
   const [scheduledDate, setScheduledDate] = useState(initialDate || todayStr());
   const [scheduledTime, setScheduledTime] = useState('10:00');
 
-  const initialAssignee = teamMembers && teamMembers.length > 0 ? teamMembers[0].name : '';
-  const initialEmail = teamMembers && teamMembers.length > 0 ? teamMembers[0].email || '' : '';
+  const initialAssignee = activeTeammate ? activeTeammate.name : (teamMembers && teamMembers.length > 0 ? teamMembers[0].name : '');
+  const initialEmail = activeTeammate ? activeTeammate.email || '' : (teamMembers && teamMembers.length > 0 ? teamMembers[0].email || '' : '');
 
   const [assignee, setAssignee] = useState(initialAssignee);
   const [visualUrl, setVisualUrl] = useState('');
@@ -198,7 +200,7 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
       activityLog: [
         {
           id: `act-${Date.now()}`,
-          actor: assignee || 'Someone',
+          actor: activeTeammate?.name || assignee || 'Someone',
           action: finalDate ? `Scheduled reminder for ${finalDate} at ${finalTime}` : 'Created idea',
           timestamp: logTimestamp()
         }

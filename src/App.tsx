@@ -62,6 +62,17 @@ export function App() {
   );
   const [contentBank, setContentBank] = useState<ContentBankItem[]>(() => getStoredContentBank());
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>(() => getStoredTeam());
+  const [activeTeammateId, setActiveTeammateId] = useState<string>(() => localStorage.getItem('pharmacozyme_active_teammate_id') || '');
+
+  const activeTeammate = teamMembers.find(m => m.id === activeTeammateId) || teamMembers[0] || null;
+
+  useEffect(() => {
+    if (activeTeammateId) {
+      localStorage.setItem('pharmacozyme_active_teammate_id', activeTeammateId);
+    } else {
+      localStorage.removeItem('pharmacozyme_active_teammate_id');
+    }
+  }, [activeTeammateId]);
 
   const [currentTab, setCurrentTab] = useState<NavTab>('calendar');
   const [selectedBrandFilter, setSelectedBrandFilter] = useState<BrandId | 'all'>('all');
@@ -204,6 +215,7 @@ export function App() {
   };
 
   const handleDuplicatePost = (originalPost: Post) => {
+    const actorName = activeTeammate ? activeTeammate.name : (originalPost.assignee || 'Someone');
     const duplicated: Post = {
       ...originalPost,
       id: `post-${Date.now()}`,
@@ -214,7 +226,7 @@ export function App() {
       activityLog: [
         {
           id: `act-${Date.now()}`,
-          actor: originalPost.assignee || 'Someone',
+          actor: actorName,
           action: 'Duplicated from another post',
           timestamp: logTimestamp()
         }
@@ -303,6 +315,7 @@ export function App() {
     setCurrentTab('calendar');
     setNewPostInitialDate(undefined);
     const assignee = teamMembers && teamMembers.length > 0 ? teamMembers[0].name : '';
+    const creatorName = activeTeammate ? activeTeammate.name : (assignee || 'Someone');
     const newPost: Post = {
       id: `post-${Date.now()}`,
       brandId,
@@ -321,7 +334,7 @@ export function App() {
       activityLog: [
         {
           id: `act-${Date.now()}`,
-          actor: assignee || 'Someone',
+          actor: creatorName,
           action: 'Created from a content bank item',
           timestamp: logTimestamp()
         }
@@ -449,6 +462,8 @@ export function App() {
           isRemoteConfigured={isSupabaseConfigured()}
           onImportLocalData={handleImportLocalData}
           isImportingData={importingData}
+          activeTeammateId={activeTeammateId}
+          onSelectActiveTeammate={setActiveTeammateId}
         />
 
         {/* Dynamic View Tab Rendering */}
@@ -467,6 +482,7 @@ export function App() {
               onSavePost={handleSavePost}
               onAddPost={handleAddPost}
               teamMembers={teamMembers}
+              activeTeammate={activeTeammate}
             />
           )}
 
@@ -543,6 +559,7 @@ export function App() {
           onClose={() => setActiveModalPost(null)}
           contentBank={contentBank}
           teamMembers={teamMembers}
+          activeTeammate={activeTeammate}
         />
       )}
 
@@ -560,6 +577,7 @@ export function App() {
           }}
           contentBank={contentBank}
           teamMembers={teamMembers}
+          activeTeammate={activeTeammate}
         />
       )}
 
