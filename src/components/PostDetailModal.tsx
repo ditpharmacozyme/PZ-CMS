@@ -170,7 +170,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
 
   // Handle Approval Sign-Off Toggle
   const handleToggleApproval = () => {
-    const isAllowed = activeTeammate?.userRole === 'Owner' || activeTeammate?.userRole === 'Manager' || activeTeammate?.name === 'Hamza Ansari';
+    const isAllowed = activeTeammate?.userRole === 'Owner' || activeTeammate?.userRole === 'Manager';
     if (!isAllowed) {
       setApprovalWarning(`Permission Denied: Only Owner or Manager roles can approve posts. You are currently logged in as ${activeTeammate?.userRole || 'Editor'}.`);
       return;

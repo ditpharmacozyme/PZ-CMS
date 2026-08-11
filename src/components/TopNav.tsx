@@ -71,7 +71,7 @@ export const TopNav: React.FC<TopNavProps> = ({
   const handleSaveNewMember = () => {
     // Only the owner can set a custom role — everyone else's addition
     // defaults to "Editor" regardless of what's in the (disabled) field.
-    const role = activeTeammate?.name === 'Hamza Ansari' ? newMember.role?.trim() : 'Editor';
+    const role = activeTeammate?.userRole === 'Owner' ? newMember.role?.trim() : 'Editor';
     if (!newMember.name?.trim() || !role) return;
     const member: TeamMember = {
       id: `tm-${Date.now()}`,
@@ -246,7 +246,7 @@ export const TopNav: React.FC<TopNavProps> = ({
           </div>
 
           {/* Settings — visible to Owner and Manager only */}
-          {(activeTeammate?.userRole === 'Owner' || activeTeammate?.userRole === 'Manager' || activeTeammate?.name === 'Hamza Ansari') && (
+          {(activeTeammate?.userRole === 'Owner' || activeTeammate?.userRole === 'Manager') && (
             <button
               onClick={() => { setShowSettingsModal(true); setSettingsTab('team'); }}
               className="hidden sm:flex p-2 min-w-[40px] min-h-[40px] flex items-center justify-center text-[#404a39] hover:bg-[#efeeea] rounded-full transition-colors"
@@ -320,7 +320,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                 )}
 
                 {/* Settings — mobile only; desktop has the dedicated header icon */}
-                {(activeTeammate?.userRole === 'Owner' || activeTeammate?.userRole === 'Manager' || activeTeammate?.name === 'Hamza Ansari') && (
+                {(activeTeammate?.userRole === 'Owner' || activeTeammate?.userRole === 'Manager') && (
                   <button
                     onClick={() => {
                       setShowActiveTeammatePopover(false);
@@ -454,12 +454,12 @@ export const TopNav: React.FC<TopNavProps> = ({
                         </div>
                         <div className="space-y-1">
                           <label className="font-label-caps text-[9px] text-[#707a67] uppercase block">
-                            Role * {activeTeammate?.name !== 'Hamza Ansari' && ' (Hamza only)'}
+                            Role * {activeTeammate?.userRole !== 'Owner' && ' (Owner only)'}
                           </label>
                           <input
                             type="text"
-                            disabled={activeTeammate?.name !== 'Hamza Ansari'}
-                            value={activeTeammate?.name === 'Hamza Ansari' ? (newMember.role || '') : 'Editor'}
+                            disabled={activeTeammate?.userRole !== 'Owner'}
+                            value={activeTeammate?.userRole === 'Owner' ? (newMember.role || '') : 'Editor'}
                             onChange={e => setNewMember(p => ({ ...p, role: e.target.value }))}
                             placeholder="e.g. Designer"
                             className="w-full bg-white border border-[#bfcab4] p-2 text-xs rounded focus:outline-none focus:border-[#296c00] disabled:bg-[#f3f2ee] disabled:text-[#707a67]"
@@ -528,11 +528,11 @@ export const TopNav: React.FC<TopNavProps> = ({
                               </div>
                               <div className="space-y-1">
                                 <label className="font-label-caps text-[9px] text-[#707a67] uppercase block">
-                                  Role * {activeTeammate?.name !== 'Hamza Ansari' && ' (Hamza only)'}
+                                  Role * {activeTeammate?.userRole !== 'Owner' && ' (Owner only)'}
                                 </label>
                                 <input
                                   type="text"
-                                  disabled={activeTeammate?.name !== 'Hamza Ansari'}
+                                  disabled={activeTeammate?.userRole !== 'Owner'}
                                   value={editingMember.role}
                                   onChange={e => setEditingMember(p => p ? { ...p, role: e.target.value } : p)}
                                   className="w-full bg-white border border-[#bfcab4] p-2 text-xs rounded focus:outline-none focus:border-[#296c00] disabled:bg-[#f3f2ee] disabled:text-[#707a67]"

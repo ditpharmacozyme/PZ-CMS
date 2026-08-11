@@ -290,10 +290,11 @@ export async function fetchRemotePosts(): Promise<Post[] | null> {
 }
 
 /** Upsert one post to Supabase. Fire-and-forget from the caller's perspective. */
-export async function upsertRemotePost(post: Post): Promise<void> {
-  if (!supabase) return;
+export async function upsertRemotePost(post: Post): Promise<{ error: string | null }> {
+  if (!supabase) return { error: null };
   const { error } = await supabase.from('posts').upsert(postToRow(post));
   if (error) console.error('[Supabase] upsertRemotePost failed:', error.message);
+  return { error: error ? error.message : null };
 }
 
 export async function deleteRemotePost(id: string): Promise<void> {

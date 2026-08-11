@@ -264,10 +264,17 @@ export function App() {
   };
 
   // Handlers for Post Operations with Audit Logging
-  const handleSavePost = (updatedPost: Post) => {
+  const handleSavePost = async (updatedPost: Post) => {
     const existing = posts.find(p => p.id === updatedPost.id);
     setPosts((prev) => prev.map((p) => (p.id === updatedPost.id ? updatedPost : p)));
-    upsertRemotePost(updatedPost);
+    const { error } = await upsertRemotePost(updatedPost);
+    if (error) {
+      // DB rejected the write (e.g. a role check) — revert the optimistic
+      // update so local state doesn't drift from what's actually saved.
+      setPosts((prev) => prev.map((p) => (p.id === updatedPost.id && existing ? existing : p)));
+      showToast(`Couldn't save "${updatedPost.title}": ${error}`);
+      return;
+    }
     showToast(`Saved "${updatedPost.title}"`);
 
     if (activeTeammate) {
