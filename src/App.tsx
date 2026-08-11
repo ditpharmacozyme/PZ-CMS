@@ -135,6 +135,7 @@ export function App() {
   const [presetTemplateId, setPresetTemplateId] = useState<string | undefined>(undefined);
   const [mobileNavOpen, setMobileNavOpen] = useState<boolean>(false);
   const [isPaletteOpen, setIsPaletteOpen] = useState<boolean>(false);
+  const [importingData, setImportingData] = useState(false); // Settings → System one-time Supabase import
 
   interface ToastState { message: string; action?: { label: string; onClick: () => void } }
   const [toast, setToast] = useState<ToastState | null>(null);
@@ -498,7 +499,6 @@ export function App() {
   };
 
   // One-time push of this browser's local data up to Supabase (Settings → System).
-  const [importingData, setImportingData] = useState(false);
   const handleImportLocalData = async () => {
     setImportingData(true);
     try {
