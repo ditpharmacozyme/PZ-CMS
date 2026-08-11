@@ -21,7 +21,22 @@
     font-size: 0.72rem;
   }
   .font-body-md {
-    font-family: 'Nunito Sans', sans-serif;
+    font-family: 'Poppins', 'Nunito Sans', sans-serif;
+  }
+  .font-poppins {
+    font-family: 'Poppins', sans-serif;
+  }
+  .font-montserrat {
+    font-family: 'Montserrat', sans-serif;
+  }
+  .font-amsterdam {
+    font-family: 'New Amsterdam', sans-serif;
+  }
+  .font-fredoka {
+    font-family: 'Fredoka One', cursive;
+  }
+  .font-rajdhani {
+    font-family: 'Rajdhani', sans-serif;
   }
 }
 
@@ -35,7 +50,7 @@ html {
 }
 
 body {
-  font-family: 'Nunito Sans', sans-serif;
+  font-family: 'Poppins', 'Nunito Sans', sans-serif;
   background: #F7F6F0;
   color: #1b1c1a;
   -webkit-font-smoothing: antialiased;

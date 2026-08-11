@@ -1,14 +1,45 @@
 export type BrandId = 'pharmacozyme' | 'pz-academy' | 'med-q' | 'pillz' | 'prescriptionz';
 
+export type UserRole = 'Owner' | 'Manager' | 'Editor' | 'Viewer';
+
 export interface TeamMember {
   id: string;
   name: string;
-  role: string;
+  role: string; // freeform display role label (e.g. "Creative Director")
+  userRole: UserRole; // permission level
   email: string;
   avatarInitials: string;
   color: string; // hex accent color for avatar
   passcode?: string;
 }
+
+export type AuditActionType =
+  | 'post_created'
+  | 'post_edited'
+  | 'post_deleted'
+  | 'post_approved'
+  | 'post_scheduled'
+  | 'post_duplicated'
+  | 'status_changed'
+  | 'member_added'
+  | 'member_removed'
+  | 'login'
+  | 'logout';
+
+export interface AuditEvent {
+  id: string;
+  actorId: string;
+  actorName: string;
+  actionType: AuditActionType;
+  entityType: 'post' | 'member' | 'template' | 'asset' | 'content_bank' | 'session';
+  entityId?: string;
+  entityTitle?: string;
+  beforeValue?: Record<string, unknown>;
+  afterValue?: Record<string, unknown>;
+  sessionId?: string;
+  timestamp: string; // ISO string
+}
+
 
 export interface BrandConfig {
   id: BrandId;

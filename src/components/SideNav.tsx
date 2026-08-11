@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BrandId } from '../types';
 import { BRANDS } from '../data/brands';
 
-export type NavTab = 'calendar' | 'templates' | 'brand-kit' | 'assets' | 'telemetry' | 'appscript' | 'content-bank';
+export type NavTab = 'calendar' | 'templates' | 'brand-kit' | 'assets' | 'telemetry' | 'appscript' | 'content-bank' | 'audit';
 
 interface SideNavProps {
   currentTab: NavTab;
@@ -21,7 +21,8 @@ const NAV_ITEMS: { tab: NavTab; label: string; icon: string }[] = [
   { tab: 'templates', label: 'Templates', icon: 'quiz' },
   { tab: 'content-bank', label: 'Content Bank', icon: 'article' },
   { tab: 'brand-kit', label: 'Brand Kit', icon: 'palette' },
-  { tab: 'assets', label: 'Assets', icon: 'layers' }
+  { tab: 'assets', label: 'Assets', icon: 'layers' },
+  { tab: 'audit', label: 'Audit Log', icon: 'shield_person' }
 ];
 
 const COLLAPSE_KEY = 'pz_sidenav_collapsed';

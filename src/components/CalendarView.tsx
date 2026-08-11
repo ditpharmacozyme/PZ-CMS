@@ -72,6 +72,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const [bulkStatus, setBulkStatus] = useState<PostStatus | ''>('');
   const [bulkAssignee, setBulkAssignee] = useState<string>('');
   const [clearCaptionsOnDuplicate, setClearCaptionsOnDuplicate] = useState(false);
+  const [touchDraggedPostId, setTouchDraggedPostId] = useState<string | null>(null);
+  const [touchHoverDate, setTouchHoverDate] = useState<string | null>(null);
+
   // Mobile month view: which days are expanded in the day-list
   const [expandedMobileDays, setExpandedMobileDays] = useState<Set<string>>(() => new Set([todayStr()]));
   const toggleMobileDay = (dateStr: string) => setExpandedMobileDays(prev => {
@@ -79,6 +82,40 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     if (next.has(dateStr)) next.delete(dateStr); else next.add(dateStr);
     return next;
   });
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchDraggedPostId) return;
+    const touch = e.touches[0];
+    const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
+    const cellEl = targetEl?.closest('[data-date-cell]');
+    const dateStr = cellEl?.getAttribute('data-date-cell');
+    setTouchHoverDate(dateStr || null);
+  };
+
+  const handleTouchEnd = () => {
+    if (touchDraggedPostId && touchHoverDate) {
+      const draggedPost = posts.find(p => p.id === touchDraggedPostId);
+      if (draggedPost) {
+        const actorName = activeTeammate ? activeTeammate.name : (draggedPost.assignee || defaultAssignee || 'Someone');
+        onSavePost({
+          ...draggedPost,
+          scheduledDate: touchHoverDate,
+          scheduledTime: draggedPost.scheduledTime || '10:00',
+          activityLog: [
+            {
+              id: `act-${Date.now()}`,
+              actor: actorName,
+              action: `Scheduled/Moved to ${touchHoverDate}`,
+              timestamp: logTimestamp()
+            },
+            ...draggedPost.activityLog
+          ]
+        });
+      }
+    }
+    setTouchDraggedPostId(null);
+    setTouchHoverDate(null);
+  };
 
   /** Default owner for quick-created posts — never a hardcoded placeholder name. */
   const defaultAssignee = teamMembers.length > 0 ? teamMembers[0].name : '';
@@ -583,6 +620,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         ) : (
           filteredBacklogPosts.map((post) => {
             const brand = BRANDS[post.brandId];
+            const isTouchDraggingThis = touchDraggedPostId === post.id;
             return (
               <div
                 key={post.id}
@@ -591,8 +629,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   e.dataTransfer.setData("text/plain", post.id);
                   e.dataTransfer.effectAllowed = "move";
                 }}
+                onTouchStart={() => setTouchDraggedPostId(post.id)}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
                 onClick={() => { onSelectPost(post); setMobileBacklogOpen(false); }}
-                className="group bg-white border border-[#bfcab4] rounded p-2.5 cursor-grab active:cursor-grabbing hover:border-[#296c00] hover:shadow-sm transition-all"
+                className={`group bg-white border border-[#bfcab4] rounded p-2.5 cursor-grab active:cursor-grabbing hover:border-[#296c00] hover:shadow-sm transition-all ${
+                  isTouchDraggingThis ? 'opacity-50 ring-2 ring-[#296c00]' : ''
+                }`}
               >
                 <div className="flex items-start justify-between gap-1 mb-1">
                   <span
@@ -601,7 +644,40 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   >
                     {brand?.name?.split(' ')[0] ?? post.brandId}
                   </span>
-                  <span className="material-symbols-outlined text-[#bfcab4] group-hover:text-[#296c00] transition-colors opacity-0 group-hover:opacity-100 hidden lg:inline" style={{ fontSize: '14px' }}>drag_indicator</span>
+                  <div className="flex items-center gap-1">
+                    {/* Mobile Quick Action: Schedule for Date */}
+                    <label
+                      className="lg:hidden p-1 text-[#296c00] hover:bg-[#f0fae8] rounded flex items-center justify-center cursor-pointer shrink-0"
+                      title="Schedule on a date"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <span className="material-symbols-outlined text-sm">calendar_month</span>
+                      <input
+                        type="date"
+                        className="sr-only"
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            onSavePost({
+                              ...post,
+                              scheduledDate: e.target.value,
+                              scheduledTime: post.scheduledTime || '10:00',
+                              activityLog: [
+                                {
+                                  id: `act-${Date.now()}`,
+                                  actor: activeTeammate?.name || post.assignee || defaultAssignee || 'Someone',
+                                  action: `Scheduled for ${e.target.value}`,
+                                  timestamp: logTimestamp()
+                                },
+                                ...post.activityLog
+                              ]
+                            });
+                            setMobileBacklogOpen(false);
+                          }
+                        }}
+                      />
+                    </label>
+                    <span className="material-symbols-outlined text-[#bfcab4] group-hover:text-[#296c00] transition-colors opacity-0 group-hover:opacity-100 hidden lg:inline" style={{ fontSize: '14px' }}>drag_indicator</span>
+                  </div>
                 </div>
 
                 {post.visualUrl && (
@@ -632,9 +708,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       {/* ── Idea Backlog floating access (mobile/tablet) ── */}
       <button
         onClick={() => setMobileBacklogOpen(true)}
-        className="lg:hidden fixed bottom-5 left-4 z-40 flex items-center gap-2 bg-[#1b1c1a] text-white font-label-caps text-xs font-bold pl-3 pr-4 py-3 rounded-full shadow-lg active:scale-95 transition-transform"
+        className="lg:hidden fixed bottom-20 left-4 z-40 flex items-center gap-2 bg-[#1b1c1a] text-white font-label-caps text-xs font-bold pl-3 pr-4 py-3 rounded-full shadow-xl active:scale-95 transition-all border border-white/20"
       >
-        <span className="material-symbols-outlined text-base">lightbulb</span>
+        <span className="material-symbols-outlined text-base text-[#78d24b]">lightbulb</span>
         <span>Ideas ({filteredBacklogPosts.length})</span>
       </button>
 
@@ -920,6 +996,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 return (
                   <div
                     key={idx}
+                    data-date-cell={cell.dateStr || ''}
                     onClick={() => {
                       if (!cell.dateStr) return;
                       onOpenNewPostModal(cell.dateStr);
@@ -939,7 +1016,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                     }}
                     className={`min-h-[64px] sm:min-h-[110px] md:min-h-[120px] p-1 sm:p-2 bg-white flex flex-col justify-between transition-colors relative group cursor-pointer ${
                       !cell.isCurrentMonth ? 'bg-[#faf9f5] opacity-50' : 'hover:bg-[#f5f4f0]'
-                    } ${isToday ? 'ring-1 ring-[#296c00] ring-inset' : ''}`}
+                    } ${isToday ? 'ring-1 ring-[#296c00] ring-inset' : ''} ${
+                      touchHoverDate && touchHoverDate === cell.dateStr ? 'ring-2 ring-[#296c00] bg-[#f0fae8]' : ''
+                    }`}
                   >
                     {/* Top Date Header */}
                     <div className="flex items-center justify-between mb-0.5 sm:mb-1">
@@ -1175,6 +1254,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 return (
                   <div
                     key={i}
+                    data-date-cell={dateStr}
                     onDragOver={(e) => {
                       if (dateStr) {
                         e.preventDefault();
@@ -1190,7 +1270,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                     }}
                     className={`p-3 border rounded min-h-[160px] sm:min-h-[220px] transition-all ${
                       isToday ? 'bg-white border-[#296c00] ring-1 ring-[#296c00]/30' : 'bg-[#faf9f5] border-[#bfcab4]'
-                    }`}
+                    } ${touchHoverDate === dateStr ? 'ring-2 ring-[#296c00] bg-[#f0fae8]' : ''}`}
                   >
                     <div className="pb-2 mb-2 border-b border-[#bfcab4] flex justify-between items-center">
                       <span className={`font-label-caps text-xs font-bold ${isToday ? 'text-[#296c00]' : 'text-[#1b1c1a]'}`}>

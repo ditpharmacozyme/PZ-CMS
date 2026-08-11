@@ -12,8 +12,8 @@ const TEAM_KEY_LEGACY = 'pharmacozyme_brandops_team_v3'; // Old key — only use
 
 // Default PIN is a generic placeholder, not a real credential — change it per-person in Settings after first login.
 const DEFAULT_TEAM_MEMBERS: TeamMember[] = [
-  { id: 'tm-1', name: 'Hamza Ansari', role: 'Brand & Content Lead', email: 'hamzaansari4you@gmail.com', avatarInitials: 'HA', color: '#296c00', passcode: '1234' },
-  { id: 'tm-2', name: 'Pharmacozyme Ops', role: 'Global Approver', email: 'ops@pharmacozyme.com', avatarInitials: 'PO', color: '#0A66C2', passcode: '1234' },
+  { id: 'tm-1', name: 'Hamza Ansari', role: 'Brand & Content Lead', userRole: 'Owner', email: 'hamzaansari4you@gmail.com', avatarInitials: 'HA', color: '#296c00', passcode: '1234' },
+  { id: 'tm-2', name: 'Pharmacozyme Ops', role: 'Global Approver', userRole: 'Manager', email: 'ops@pharmacozyme.com', avatarInitials: 'PO', color: '#0A66C2', passcode: '1234' },
 ];
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -459,12 +459,16 @@ export function subscribeRemoteAssets(onChange: (assets: BrandAsset[]) => void):
 }
 
 // ─── Team Members ────────────────────────────────────────────────────────
+// passcode is deliberately never read from or written to the remote row: team_members
+// uses the same open anon-read policy as every other table, so anything stored there
+// is effectively public. PINs stay local-only (localStorage) and are merged back onto
+// remote snapshots by the caller — see the passcode-preserving merge in App.tsx.
 function rowToTeamMember(row: any): TeamMember {
-  return { id: row.id, name: row.name, role: row.role, email: row.email, avatarInitials: row.avatar_initials, color: row.color };
+  return { id: row.id, name: row.name, role: row.role, userRole: row.user_role || (row.name === 'Hamza Ansari' ? 'Owner' : 'Editor'), email: row.email, avatarInitials: row.avatar_initials, color: row.color };
 }
 
 function teamMemberToRow(m: TeamMember) {
-  return { id: m.id, name: m.name, role: m.role, email: m.email, avatar_initials: m.avatarInitials, color: m.color };
+  return { id: m.id, name: m.name, role: m.role, user_role: m.userRole, email: m.email, avatar_initials: m.avatarInitials, color: m.color };
 }
 
 export async function fetchRemoteTeam(): Promise<TeamMember[] | null> {

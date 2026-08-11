@@ -49,9 +49,24 @@ import { PostDetailModal } from './components/PostDetailModal';
 import { NewPostModal } from './components/NewPostModal';
 import { ContentBank } from './components/ContentBank';
 import { CommandPalette } from './components/CommandPalette';
+import { LoginPage } from './components/LoginPage';
+import { AuditLogView } from './components/AuditLogView';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { logTimestamp } from './utils/date';
 import { generateNotifications, mergeNotifications } from './utils/notifications';
+import { logAuditEvent, buildAuditEvent, clearSessionId } from './utils/audit';
+
+// Passcodes are never stored remotely (team_members uses the same public
+// anon-read policy as every other table), so a fresh remote team snapshot
+// never carries one. Re-attach whatever passcode this browser already knows
+// for each member, otherwise a realtime team refresh would silently reset
+// everyone's PIN to the generic default mid-session.
+function mergeLocalPasscodes(remoteTeam: TeamMember[], localTeam: TeamMember[]): TeamMember[] {
+  return remoteTeam.map((rm) => {
+    const local = localTeam.find((lm) => lm.id === rm.id);
+    return local?.passcode ? { ...rm, passcode: local.passcode } : rm;
+  });
+}
 
 export function App() {
   const [posts, setPosts] = useState<Post[]>(() => getStoredPosts());
@@ -75,39 +90,35 @@ export function App() {
     }
   }, [activeTeammateId]);
 
-  // Login system states
-  const [loginTeammateId, setLoginTeammateId] = useState<string>('');
-  const [loginPasscode, setLoginPasscode] = useState<string>('');
-  const [loginError, setLoginError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (teamMembers.length > 0 && !loginTeammateId) {
-      const hamza = teamMembers.find(m => m.name === 'Hamza Ansari');
-      setLoginTeammateId(hamza ? hamza.id : teamMembers[0].id);
-    }
-  }, [teamMembers, loginTeammateId]);
+  const handleLogin = (teammate: TeamMember, _rememberMe: boolean) => {
+    setActiveTeammateId(teammate.id);
+    setIsLoggedIn(true);
+    localStorage.setItem('pharmacozyme_is_logged_in', 'true');
+    showToast(`Welcome back, ${teammate.name}`);
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    const teammate = teamMembers.find(m => m.id === loginTeammateId);
-    if (!teammate) {
-      setLoginError('Invalid teammate selected.');
-      return;
-    }
-    const expectedPasscode = teammate.passcode || (teammate.name === 'Hamza Ansari' ? 'hamza123' : teammate.name === 'Pharmacozyme Ops' ? 'ops123' : '1234');
-    if (loginPasscode === expectedPasscode) {
-      setActiveTeammateId(teammate.id);
-      setIsLoggedIn(true);
-      localStorage.setItem('pharmacozyme_is_logged_in', 'true');
-      setLoginPasscode('');
-      setLoginError(null);
-      showToast(`Welcome back, ${teammate.name}`);
-    } else {
-      setLoginError('Incorrect passcode. Try again.');
-    }
+    logAuditEvent(buildAuditEvent({
+      actorId: teammate.id,
+      actorName: teammate.name,
+      actionType: 'login',
+      entityType: 'session',
+      entityId: teammate.id,
+      entityTitle: `Signed in as ${teammate.name} (${teammate.userRole || 'Editor'})`
+    }));
   };
 
   const handleLogout = () => {
+    if (activeTeammate) {
+      logAuditEvent(buildAuditEvent({
+        actorId: activeTeammate.id,
+        actorName: activeTeammate.name,
+        actionType: 'logout',
+        entityType: 'session',
+        entityId: activeTeammate.id,
+        entityTitle: `Signed out ${activeTeammate.name}`
+      }));
+    }
+    clearSessionId();
     setIsLoggedIn(false);
     localStorage.removeItem('pharmacozyme_is_logged_in');
     showToast('Logged out.');
@@ -197,7 +208,7 @@ export function App() {
       if (remoteTemplates && remoteTemplates.length > 0) setTemplates(remoteTemplates);
       if (remoteAssets && remoteAssets.length > 0) setAssets(remoteAssets);
       if (remoteBank && remoteBank.length > 0) setContentBank(remoteBank);
-      if (remoteTeam && remoteTeam.length > 0) setTeamMembers(remoteTeam);
+      if (remoteTeam && remoteTeam.length > 0) setTeamMembers((prev) => mergeLocalPasscodes(remoteTeam, prev));
     })();
 
     // Live subscriptions on every table, not just posts — a teammate adding a
@@ -208,7 +219,7 @@ export function App() {
       subscribeRemoteTemplates((remoteTemplates) => setTemplates(remoteTemplates)),
       subscribeRemoteAssets((remoteAssets) => setAssets(remoteAssets)),
       subscribeRemoteContentBank((remoteBank) => setContentBank(remoteBank)),
-      subscribeRemoteTeam((remoteTeam) => setTeamMembers(remoteTeam))
+      subscribeRemoteTeam((remoteTeam) => setTeamMembers((prev) => mergeLocalPasscodes(remoteTeam, prev)))
     ];
     return () => unsubs.forEach((unsub) => unsub());
     // Runs once on mount — deliberately not re-running on every state change.
@@ -222,11 +233,31 @@ export function App() {
     toastTimeoutRef.current = setTimeout(() => setToast(null), durationMs);
   };
 
-  // Handlers for Post Operations
+  // Handlers for Post Operations with Audit Logging
   const handleSavePost = (updatedPost: Post) => {
+    const existing = posts.find(p => p.id === updatedPost.id);
     setPosts((prev) => prev.map((p) => (p.id === updatedPost.id ? updatedPost : p)));
     upsertRemotePost(updatedPost);
     showToast(`Saved "${updatedPost.title}"`);
+
+    if (activeTeammate) {
+      const actionType = existing && existing.status !== updatedPost.status
+        ? 'status_changed'
+        : existing && !existing.approved && updatedPost.approved
+        ? 'post_approved'
+        : 'post_edited';
+
+      logAuditEvent(buildAuditEvent({
+        actorId: activeTeammate.id,
+        actorName: activeTeammate.name,
+        actionType,
+        entityType: 'post',
+        entityId: updatedPost.id,
+        entityTitle: updatedPost.title,
+        beforeValue: existing ? { title: existing.title, status: existing.status, scheduledDate: existing.scheduledDate, approved: existing.approved } : undefined,
+        afterValue: { title: updatedPost.title, status: updatedPost.status, scheduledDate: updatedPost.scheduledDate, approved: updatedPost.approved }
+      }));
+    }
   };
 
   const handleDeletePost = (postId: string) => {
@@ -248,6 +279,18 @@ export function App() {
         },
         5000
       );
+
+      if (activeTeammate) {
+        logAuditEvent(buildAuditEvent({
+          actorId: activeTeammate.id,
+          actorName: activeTeammate.name,
+          actionType: 'post_deleted',
+          entityType: 'post',
+          entityId: removed.id,
+          entityTitle: removed.title,
+          beforeValue: { title: removed.title, status: removed.status, scheduledDate: removed.scheduledDate }
+        }));
+      }
     } else {
       showToast('Post removed.');
     }
@@ -275,13 +318,41 @@ export function App() {
     upsertRemotePost(duplicated);
     setActiveModalPost(duplicated);
     showToast('Post duplicated.');
+
+    if (activeTeammate) {
+      logAuditEvent(buildAuditEvent({
+        actorId: activeTeammate.id,
+        actorName: activeTeammate.name,
+        actionType: 'post_duplicated',
+        entityType: 'post',
+        entityId: duplicated.id,
+        entityTitle: duplicated.title,
+        afterValue: { title: duplicated.title, originalTitle: originalPost.title }
+      }));
+    }
   };
 
   const handleAddPost = (newPost: Post) => {
     setPosts((prev) => [newPost, ...prev]);
     upsertRemotePost(newPost);
     showToast(`Scheduled new post: "${newPost.title}"`);
+
+    if (activeTeammate) {
+      logAuditEvent(buildAuditEvent({
+        actorId: activeTeammate.id,
+        actorName: activeTeammate.name,
+        actionType: newPost.scheduledDate ? 'post_scheduled' : 'post_created',
+        entityType: 'post',
+        entityId: newPost.id,
+        entityTitle: newPost.title,
+        afterValue: { title: newPost.title, status: newPost.status, scheduledDate: newPost.scheduledDate, brandId: newPost.brandId }
+      }));
+    }
   };
+
+  if (!isLoggedIn) {
+    return <LoginPage teamMembers={teamMembers} onLogin={handleLogin} />;
+  }
 
   // Handlers for Templates
   const handleUseTemplate = (template: PostTemplate) => {
@@ -440,74 +511,6 @@ export function App() {
     }
   };
 
-  if (!isLoggedIn) {
-    return (
-      <div className="min-h-screen bg-[#1b1c1a] flex flex-col justify-center items-center p-4 relative overflow-hidden">
-        {/* Decorative Grid background */}
-        <div className="absolute inset-0 opacity-10 pointer-events-none precise-grid" />
-        
-        {/* Glow effect */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-[#296c00]/30 blur-3xl" />
-
-        <div className="w-full max-w-md bg-[#FAF9F5] border border-[#bfcab4] rounded-2xl shadow-2xl p-6 sm:p-8 space-y-6 relative z-10 animate-in fade-in zoom-in-95 duration-200">
-          <div className="text-center space-y-2">
-            <div className="w-16 h-16 rounded-2xl bg-white border border-[#bfcab4] p-2.5 mx-auto flex items-center justify-center shadow-lg overflow-hidden">
-              <img src="/logos/PZ_Logo.png" alt="Pharmacozyme" className="w-full h-full object-contain" />
-            </div>
-            <div>
-              <h1 className="font-display-xl text-xl sm:text-2xl text-[#1b1c1a] font-bold">Pharmacozyme</h1>
-              <p className="font-label-caps text-[10px] text-[#296c00] tracking-widest uppercase font-bold mt-0.5">Brand-Ops Studio</p>
-            </div>
-          </div>
-
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold block">Select Teammate</label>
-              <select
-                value={loginTeammateId}
-                onChange={(e) => setLoginTeammateId(e.target.value)}
-                className="w-full bg-white border border-[#bfcab4] p-3 text-sm text-[#1b1c1a] rounded focus:outline-none focus:border-[#296c00] min-h-[48px]"
-              >
-                {teamMembers.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name} ({m.role})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold block">Enter PIN / Passcode</label>
-              <input
-                type="password"
-                placeholder="••••"
-                value={loginPasscode}
-                onChange={(e) => setLoginPasscode(e.target.value)}
-                className="w-full bg-white border border-[#bfcab4] p-3 text-sm text-[#1b1c1a] rounded text-center tracking-widest focus:outline-none focus:border-[#296c00] min-h-[48px]"
-                required
-              />
-              <p className="text-[10px] text-[#707a67] font-body-md text-center mt-1">
-                Defaults: hamza123 (Hamza), ops123 (Ops), or 1234
-              </p>
-            </div>
-
-            {loginError && (
-              <div className="p-3 bg-[#ffdad6] border border-[#ba1a1a]/25 rounded text-xs text-[#ba1a1a] text-center font-bold">
-                {loginError}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              className="w-full bg-[#296c00] text-white font-label-caps text-xs font-bold py-3.5 rounded-lg shadow-md hover:bg-[#1f5700] transition-colors min-h-[48px] uppercase tracking-wider active:scale-98"
-            >
-              Sign In to Studio
-            </button>
-          </form>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-[#FAF9F5] text-[#1b1c1a] font-body-md flex flex-col md:flex-row">
@@ -654,6 +657,10 @@ export function App() {
               onDeleteBankItem={handleDeleteBankItem}
               onCreatePostFromCopy={handleCreatePostFromCopy}
             />
+          )}
+
+          {currentTab === 'audit' && (
+            <AuditLogView teamMembers={teamMembers} />
           )}
         </main>
       </div>

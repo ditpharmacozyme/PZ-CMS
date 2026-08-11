@@ -6,10 +6,10 @@ export const BRANDS: Record<BrandId, BrandConfig> = {
     name: 'Pharmacozyme',
     shortCode: 'P_ZYME',
     tagline: 'Precision Enzymatic Therapeutics',
-    primaryColor: '#296C00',
-    secondaryColor: '#78D24B',
-    accentColor: '#1F5700',
-    surfaceColor: '#FAF9F5',
+    primaryColor: '#78D24B',
+    secondaryColor: '#00694B',
+    accentColor: '#96B44B',
+    surfaceColor: '#F5FAF2',
     icon: 'science',
     logoUrl: '/logos/PZ_Logo.png',
     description: 'Advanced enzyme-based therapeutics and pharmaceutical solutions for metabolic health.',
@@ -19,10 +19,10 @@ export const BRANDS: Record<BrandId, BrandConfig> = {
       'Avoid generic marketing buzzwords or unsubstantiated claims.'
     ],
     fonts: {
-      display: 'Space Grotesk 700',
-      headline: 'Space Grotesk 600',
+      display: 'Nunito Sans 800',
+      headline: 'Nunito Sans 700',
       code: 'Space Mono 400',
-      body: 'Nunito Sans 400'
+      body: 'Poppins 400'
     }
   },
   'pz-academy': {
@@ -30,10 +30,10 @@ export const BRANDS: Record<BrandId, BrandConfig> = {
     name: 'PZ Academy',
     shortCode: 'PZ_ACAD',
     tagline: 'Molecular & Bio-Tech Education',
-    primaryColor: '#5A38F0',
-    secondaryColor: '#BEB4FF',
-    accentColor: '#180064',
-    surfaceColor: '#FAF9F5',
+    primaryColor: '#7ED957',
+    secondaryColor: '#0F3D22',
+    accentColor: '#C9960A',
+    surfaceColor: '#F7FAF5',
     icon: 'school',
     logoUrl: '/logos/PZ-Academy-logo.png',
     description: 'Educational platform for molecular biology, bio-tech integration, and clinical research deep-dives.',
@@ -43,10 +43,10 @@ export const BRANDS: Record<BrandId, BrandConfig> = {
       'Maintain academic rigor while staying accessible to clinicians.'
     ],
     fonts: {
-      display: 'Space Grotesk 700',
-      headline: 'Space Grotesk 600',
+      display: 'Montserrat 800',
+      headline: 'Montserrat 700',
       code: 'Space Mono 400',
-      body: 'Nunito Sans 400'
+      body: 'Poppins 400'
     }
   },
   'med-q': {
@@ -54,10 +54,10 @@ export const BRANDS: Record<BrandId, BrandConfig> = {
     name: 'MED-Q',
     shortCode: 'MED_Q',
     tagline: 'Diagnostic & Oncology Units',
-    primaryColor: '#296951',
-    secondaryColor: '#ACEECF',
-    accentColor: '#07513B',
-    surfaceColor: '#FAF9F5',
+    primaryColor: '#5E17EB',
+    secondaryColor: '#1E0754',
+    accentColor: '#FF66C4',
+    surfaceColor: '#F8F5FF',
     icon: 'medication',
     logoUrl: '/logos/MED-Q Logo.png.png',
     description: 'Weekly diagnostic challenges, oncology protocol alerts, and high-precision clinical deployment.',
@@ -67,10 +67,10 @@ export const BRANDS: Record<BrandId, BrandConfig> = {
       'Clear, unambiguous instructions for dosage & compliance.'
     ],
     fonts: {
-      display: 'Space Grotesk 700',
-      headline: 'Space Grotesk 600',
+      display: 'New Amsterdam',
+      headline: 'New Amsterdam',
       code: 'Space Mono 400',
-      body: 'Nunito Sans 400'
+      body: 'Poppins 400'
     }
   },
   pillz: {

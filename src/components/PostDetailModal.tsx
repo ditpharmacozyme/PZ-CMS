@@ -46,9 +46,20 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
   const [emailStatus, setEmailStatus] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isDuplicating, setIsDuplicating] = useState(false);
 
   const brand = BRANDS[editedPost.brandId];
   const spec = SPECS[editedPost.specType];
+
+  const handleDuplicateClick = async () => {
+    setIsDuplicating(true);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      onDuplicatePost(editedPost);
+    } finally {
+      setIsDuplicating(false);
+    }
+  };
 
   // Cross-brand Voice Check (Soft Warning)
   const isCrossBrandMention = React.useMemo(() => {
@@ -159,6 +170,12 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
 
   // Handle Approval Sign-Off Toggle
   const handleToggleApproval = () => {
+    const isAllowed = activeTeammate?.userRole === 'Owner' || activeTeammate?.userRole === 'Manager' || activeTeammate?.name === 'Hamza Ansari';
+    if (!isAllowed) {
+      setApprovalWarning(`Permission Denied: Only Owner or Manager roles can approve posts. You are currently logged in as ${activeTeammate?.userRole || 'Editor'}.`);
+      return;
+    }
+
     const nextApproved = !editedPost.approved;
     const approverName = activeTeammate
       ? `${activeTeammate.name} (${activeTeammate.role})`
@@ -245,6 +262,13 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end md:items-center justify-center md:p-6 overflow-hidden">
       {/* The panel: bottom-sheet on mobile, centered card on md+ */}
       <div className="bg-[#FAF9F5] border border-[#bfcab4] w-full md:max-w-4xl md:rounded-lg shadow-2xl overflow-hidden max-h-[95dvh] md:max-h-[92vh] flex flex-col rounded-t-2xl md:rounded-lg sheet-modal relative">
+        {isDuplicating && (
+          <div className="absolute inset-0 bg-[#FAF9F5]/90 backdrop-blur-xs z-50 flex flex-col items-center justify-center pointer-events-auto">
+            <div className="w-10 h-10 rounded-full border-3 border-[#296c00] border-t-transparent animate-spin mb-3" />
+            <p className="font-label-caps text-xs text-[#296c00] font-bold uppercase tracking-wider">Duplicating Post...</p>
+            <p className="font-body-md text-xs text-[#707a67] mt-1">Please wait while the post is cloned.</p>
+          </div>
+        )}
         {isUploading && (
           <div className="absolute inset-0 bg-[#FAF9F5]/75 backdrop-blur-xs z-50 flex flex-col items-center justify-center pointer-events-auto">
             <div className="w-8 h-8 rounded-full border-2 border-[#296c00] border-t-transparent animate-spin mb-2" />
@@ -270,12 +294,22 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
 
           <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
             <button
-              onClick={() => onDuplicatePost(editedPost)}
-              className="px-2.5 sm:px-3 py-1.5 min-h-[38px] bg-[#efeeea] border border-[#bfcab4] font-label-caps text-[11px] sm:text-xs text-[#1b1c1a] hover:bg-[#296c00] hover:text-white transition-all rounded font-bold"
+              onClick={handleDuplicateClick}
+              disabled={isDuplicating}
+              className="px-2.5 sm:px-3 py-1.5 min-h-[38px] bg-[#efeeea] border border-[#bfcab4] font-label-caps text-[11px] sm:text-xs text-[#1b1c1a] hover:bg-[#296c00] hover:text-white transition-all rounded font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
               title="Duplicate Post"
             >
-              <span className="hidden sm:inline">Duplicate Post</span>
-              <span className="sm:hidden material-symbols-outlined text-base">content_copy</span>
+              {isDuplicating ? (
+                <>
+                  <span className="w-3.5 h-3.5 rounded-full border-2 border-[#296c00] border-t-transparent animate-spin" />
+                  <span className="hidden sm:inline">Duplicating...</span>
+                </>
+              ) : (
+                <>
+                  <span className="hidden sm:inline">Duplicate Post</span>
+                  <span className="sm:hidden material-symbols-outlined text-base">content_copy</span>
+                </>
+              )}
             </button>
             <button
               onClick={() => {
