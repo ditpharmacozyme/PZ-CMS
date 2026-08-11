@@ -30,7 +30,13 @@ export function getStoredPosts(): Post[] {
       saveStoredPosts(INITIAL_POSTS);
       return INITIAL_POSTS;
     }
-    return JSON.parse(raw);
+    const parsed: (Post & { assignee?: string })[] = JSON.parse(raw);
+    // Cached posts from before the multi-assignee migration only have `assignee` (string).
+    // Normalize so every post has `assignees` before any UI code reads .length/.includes on it.
+    return parsed.map((p) => ({
+      ...p,
+      assignees: p.assignees || (p.assignee ? [p.assignee] : []),
+    }));
   } catch (err) {
     console.error('Error reading stored posts:', err);
     return INITIAL_POSTS;
