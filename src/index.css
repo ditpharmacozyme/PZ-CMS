@@ -91,14 +91,6 @@ button, input, select, textarea, a {
   font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
-/* ─── Precise Engineering Grid ─── */
-.precise-grid {
-  background-image:
-    linear-gradient(rgba(191, 202, 180, 0.35) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(191, 202, 180, 0.35) 1px, transparent 1px);
-  background-size: 24px 24px;
-}
-
 .spec-grid {
   background-image: radial-gradient(rgba(191, 202, 180, 0.5) 1px, transparent 1px);
   background-size: 20px 20px;
