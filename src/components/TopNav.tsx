@@ -20,8 +20,7 @@ interface TopNavProps {
   isRemoteConfigured?: boolean;
   onImportLocalData?: () => void;
   isImportingData?: boolean;
-  activeTeammateId?: string;
-  onSelectActiveTeammate?: (id: string) => void;
+  activeTeammate: TeamMember | null;
   onLogout?: () => void;
 }
 
@@ -51,16 +50,13 @@ export const TopNav: React.FC<TopNavProps> = ({
   isRemoteConfigured = false,
   onImportLocalData,
   isImportingData = false,
-  activeTeammateId,
-  onSelectActiveTeammate,
+  activeTeammate,
   onLogout
 }) => {
   const [showNotificationsPopover, setShowNotificationsPopover] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [showActiveTeammatePopover, setShowActiveTeammatePopover] = useState(false);
-
-  const activeTeammate = teamMembers.find(m => m.id === activeTeammateId) || teamMembers[0] || null;
 
   // Team management local state
   const [settingsTab, setSettingsTab] = useState<'team' | 'system'>('team');

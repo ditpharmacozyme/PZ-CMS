@@ -464,11 +464,18 @@ export function subscribeRemoteAssets(onChange: (assets: BrandAsset[]) => void):
 // is effectively public. PINs stay local-only (localStorage) and are merged back onto
 // remote snapshots by the caller — see the passcode-preserving merge in App.tsx.
 function rowToTeamMember(row: any): TeamMember {
-  return { id: row.id, name: row.name, role: row.role, userRole: row.user_role || (row.name === 'Hamza Ansari' ? 'Owner' : 'Editor'), email: row.email, avatarInitials: row.avatar_initials, color: row.color };
+  return { id: row.id, name: row.name, role: row.role, userRole: row.user_role || (row.name === 'Hamza Ansari' ? 'Owner' : 'Editor'), email: row.email, avatarInitials: row.avatar_initials, color: row.color, authUserId: row.auth_user_id || undefined };
 }
 
 function teamMemberToRow(m: TeamMember) {
-  return { id: m.id, name: m.name, role: m.role, user_role: m.userRole, email: m.email, avatar_initials: m.avatarInitials, color: m.color };
+  return { id: m.id, name: m.name, role: m.role, user_role: m.userRole, email: m.email, avatar_initials: m.avatarInitials, color: m.color, auth_user_id: m.authUserId || null };
+}
+
+/** Link this team_members row to a real Supabase Auth account (first-login auto-link). */
+export async function linkTeamMemberAuthUser(teamMemberId: string, authUserId: string): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from('team_members').update({ auth_user_id: authUserId }).eq('id', teamMemberId);
+  if (error) console.error('[Supabase] linkTeamMemberAuthUser failed:', error.message);
 }
 
 export async function fetchRemoteTeam(): Promise<TeamMember[] | null> {

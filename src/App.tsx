@@ -35,8 +35,11 @@ import {
   upsertRemoteTeamMember,
   deleteRemoteTeamMember,
   subscribeRemoteTeam,
-  importLocalDataToRemote
+  importLocalDataToRemote,
+  linkTeamMemberAuthUser
 } from './utils/storage';
+import { supabase } from './lib/supabase';
+import type { Session } from '@supabase/supabase-js';
 import { BRANDS } from './data/brands';
 import { applyBrandTypography } from './utils/brandTypography';
 import { SideNav, NavTab } from './components/SideNav';
@@ -58,18 +61,6 @@ import { logTimestamp } from './utils/date';
 import { generateNotifications, mergeNotifications } from './utils/notifications';
 import { logAuditEvent, buildAuditEvent, clearSessionId } from './utils/audit';
 
-// Passcodes are never stored remotely (team_members uses the same public
-// anon-read policy as every other table), so a fresh remote team snapshot
-// never carries one. Re-attach whatever passcode this browser already knows
-// for each member, otherwise a realtime team refresh would silently reset
-// everyone's PIN to the generic default mid-session.
-function mergeLocalPasscodes(remoteTeam: TeamMember[], localTeam: TeamMember[]): TeamMember[] {
-  return remoteTeam.map((rm) => {
-    const local = localTeam.find((lm) => lm.id === rm.id);
-    return local?.passcode ? { ...rm, passcode: local.passcode } : rm;
-  });
-}
-
 export function App() {
   const [posts, setPosts] = useState<Post[]>(() => getStoredPosts());
   const [templates, setTemplates] = useState<PostTemplate[]>(() => getStoredTemplates());
@@ -79,37 +70,66 @@ export function App() {
   );
   const [contentBank, setContentBank] = useState<ContentBankItem[]>(() => getStoredContentBank());
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>(() => getStoredTeam());
-  const [activeTeammateId, setActiveTeammateId] = useState<string>(() => localStorage.getItem('pharmacozyme_active_teammate_id') || '');
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => localStorage.getItem('pharmacozyme_is_logged_in') === 'true');
 
-  const activeTeammate = teamMembers.find(m => m.id === activeTeammateId) || teamMembers[0] || null;
+  // Real Supabase Auth session — replaces the old client-side PIN system.
+  // When Supabase isn't configured at all (local dev without env vars), skip
+  // the auth gate entirely and fall back to the first known team member, same
+  // as the rest of the app's "still runs without Supabase" degradation.
+  const [session, setSession] = useState<Session | null>(null);
+  const [authChecked, setAuthChecked] = useState<boolean>(!supabase);
 
   useEffect(() => {
-    if (activeTeammateId) {
-      localStorage.setItem('pharmacozyme_active_teammate_id', activeTeammateId);
-    } else {
-      localStorage.removeItem('pharmacozyme_active_teammate_id');
+    if (!supabase) return;
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setAuthChecked(true);
+    });
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+    });
+    return () => authListener.subscription.unsubscribe();
+  }, []);
+
+  const authEmail = session?.user?.email?.toLowerCase() || null;
+  const matchedTeammate = authEmail
+    ? teamMembers.find((m) => m.email.toLowerCase() === authEmail) || null
+    : null;
+  const activeTeammate = supabase ? matchedTeammate : (teamMembers[0] || null);
+  // Signed in with Supabase Auth, but no team_members row has a matching email.
+  const noProfileMatch = !!supabase && !!session && !matchedTeammate;
+
+  // Auto-link this browser's authenticated account to its team_members row —
+  // no admin step needed, matching happens by email on first successful login.
+  useEffect(() => {
+    if (!supabase || !session?.user || !matchedTeammate || matchedTeammate.authUserId) return;
+    const authUserId = session.user.id;
+    linkTeamMemberAuthUser(matchedTeammate.id, authUserId);
+    setTeamMembers((prev) => prev.map((m) => (m.id === matchedTeammate.id ? { ...m, authUserId } : m)));
+  }, [session, matchedTeammate]);
+
+  // Announce + audit-log a login exactly once per session, once we know who signed in.
+  const hasAnnouncedLoginRef = React.useRef(false);
+  useEffect(() => {
+    if (!supabase) return;
+    if (!session) {
+      hasAnnouncedLoginRef.current = false;
+      return;
     }
-  }, [activeTeammateId]);
+    if (activeTeammate && !hasAnnouncedLoginRef.current) {
+      hasAnnouncedLoginRef.current = true;
+      showToast(`Welcome back, ${activeTeammate.name}`);
+      logAuditEvent(buildAuditEvent({
+        actorId: activeTeammate.id,
+        actorName: activeTeammate.name,
+        actionType: 'login',
+        entityType: 'session',
+        entityId: activeTeammate.id,
+        entityTitle: `Signed in as ${activeTeammate.name} (${activeTeammate.userRole || 'Editor'})`
+      }));
+    }
+  }, [session, activeTeammate]);
 
-
-  const handleLogin = (teammate: TeamMember, _rememberMe: boolean) => {
-    setActiveTeammateId(teammate.id);
-    setIsLoggedIn(true);
-    localStorage.setItem('pharmacozyme_is_logged_in', 'true');
-    showToast(`Welcome back, ${teammate.name}`);
-
-    logAuditEvent(buildAuditEvent({
-      actorId: teammate.id,
-      actorName: teammate.name,
-      actionType: 'login',
-      entityType: 'session',
-      entityId: teammate.id,
-      entityTitle: `Signed in as ${teammate.name} (${teammate.userRole || 'Editor'})`
-    }));
-  };
-
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (activeTeammate) {
       logAuditEvent(buildAuditEvent({
         actorId: activeTeammate.id,
@@ -121,8 +141,7 @@ export function App() {
       }));
     }
     clearSessionId();
-    setIsLoggedIn(false);
-    localStorage.removeItem('pharmacozyme_is_logged_in');
+    if (supabase) await supabase.auth.signOut();
     showToast('Logged out.');
   };
 
@@ -219,7 +238,7 @@ export function App() {
       if (remoteTemplates && remoteTemplates.length > 0) setTemplates(remoteTemplates);
       if (remoteAssets && remoteAssets.length > 0) setAssets(remoteAssets);
       if (remoteBank && remoteBank.length > 0) setContentBank(remoteBank);
-      if (remoteTeam && remoteTeam.length > 0) setTeamMembers((prev) => mergeLocalPasscodes(remoteTeam, prev));
+      if (remoteTeam && remoteTeam.length > 0) setTeamMembers(remoteTeam);
     })();
 
     // Live subscriptions on every table, not just posts — a teammate adding a
@@ -230,7 +249,7 @@ export function App() {
       subscribeRemoteTemplates((remoteTemplates) => setTemplates(remoteTemplates)),
       subscribeRemoteAssets((remoteAssets) => setAssets(remoteAssets)),
       subscribeRemoteContentBank((remoteBank) => setContentBank(remoteBank)),
-      subscribeRemoteTeam((remoteTeam) => setTeamMembers((prev) => mergeLocalPasscodes(remoteTeam, prev)))
+      subscribeRemoteTeam((remoteTeam) => setTeamMembers(remoteTeam))
     ];
     return () => unsubs.forEach((unsub) => unsub());
     // Runs once on mount — deliberately not re-running on every state change.
@@ -361,8 +380,36 @@ export function App() {
     }
   };
 
-  if (!isLoggedIn) {
-    return <LoginPage teamMembers={teamMembers} onLogin={handleLogin} />;
+  if (supabase && !authChecked) {
+    return (
+      <div className="min-h-screen bg-[#FAF9F5] flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-[#296c00]/30 border-t-[#296c00] rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (supabase && !session) {
+    return <LoginPage />;
+  }
+
+  if (noProfileMatch) {
+    return (
+      <div className="min-h-screen bg-[#FAF9F5] flex items-center justify-center p-4">
+        <div className="w-full max-w-sm bg-white border border-[#bfcab4] rounded-lg shadow-2xs p-6 text-center space-y-3">
+          <span className="material-symbols-outlined text-3xl text-[#ba1a1a]">person_off</span>
+          <h2 className="font-display-xl text-lg font-bold text-[#1b1c1a]">No matching team profile</h2>
+          <p className="font-body-md text-sm text-[#707a67]">
+            You're signed in as <strong>{authEmail}</strong>, but no one on the team list has that email. Ask Hamza to add you in Settings → Team, or check you used the right account.
+          </p>
+          <button
+            onClick={handleLogout}
+            className="w-full bg-[#296c00] hover:bg-[#1f5700] text-white font-bold py-2.5 rounded transition-colors text-sm"
+          >
+            Sign Out
+          </button>
+        </div>
+      </div>
+    );
   }
 
   // Handlers for Templates
@@ -583,8 +630,7 @@ export function App() {
           isRemoteConfigured={isSupabaseConfigured()}
           onImportLocalData={handleImportLocalData}
           isImportingData={importingData}
-          activeTeammateId={activeTeammateId}
-          onSelectActiveTeammate={setActiveTeammateId}
+          activeTeammate={activeTeammate}
           onLogout={handleLogout}
         />
 

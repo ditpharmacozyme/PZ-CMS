@@ -10,7 +10,8 @@ export interface TeamMember {
   email: string;
   avatarInitials: string;
   color: string; // hex accent color for avatar
-  passcode?: string;
+  passcode?: string; // legacy client-side PIN, superseded by authUserId — kept for now, unused once Supabase Auth is live
+  authUserId?: string; // links to auth.users.id once this person has logged in with real Supabase Auth
 }
 
 export type AuditActionType =

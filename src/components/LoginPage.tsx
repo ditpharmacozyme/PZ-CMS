@@ -1,84 +1,52 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { TeamMember } from '../types';
+import React, { useState } from 'react';
+import { supabase } from '../lib/supabase';
 
-interface LoginPageProps {
-  teamMembers: TeamMember[];
-  onLogin: (teammate: TeamMember, rememberMe: boolean) => void;
-  isLoading?: boolean;
-}
-
-const MAX_ATTEMPTS = 3;
-const LOCKOUT_SECONDS = 30;
-
-export const LoginPage: React.FC<LoginPageProps> = ({ teamMembers, onLogin, isLoading = false }) => {
-  const [selectedMemberId, setSelectedMemberId] = useState<string>('');
-  const [pin, setPin] = useState('');
-  const [showPin, setShowPin] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
+/**
+ * Real Supabase Auth login — replaces the old client-side PIN picker.
+ * On success this does nothing itself beyond clearing its own form state;
+ * App.tsx's supabase.auth.onAuthStateChange listener picks up the new
+ * session and re-renders past this screen automatically.
+ */
+export const LoginPage: React.FC = () => {
+  const [mode, setMode] = useState<'signin' | 'reset'>('signin');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [attempts, setAttempts] = useState(0);
-  const [lockoutUntil, setLockoutUntil] = useState<number | null>(null);
-  const [countdown, setCountdown] = useState(0);
-  const [shake, setShake] = useState(false);
-  const pinRef = useRef<HTMLInputElement>(null);
+  const [resetSent, setResetSent] = useState(false);
 
-  // Pre-select Hamza Ansari or first member
-  useEffect(() => {
-    if (teamMembers.length > 0 && !selectedMemberId) {
-      const hamza = teamMembers.find(m => m.name === 'Hamza Ansari');
-      setSelectedMemberId(hamza ? hamza.id : teamMembers[0].id);
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!supabase) {
+      setError('Supabase isn’t configured for this deployment — contact Hamza.');
+      return;
     }
-  }, [teamMembers, selectedMemberId]);
-
-  // Lockout countdown
-  useEffect(() => {
-    if (!lockoutUntil) return;
-    const interval = setInterval(() => {
-      const remaining = Math.ceil((lockoutUntil - Date.now()) / 1000);
-      if (remaining <= 0) {
-        setLockoutUntil(null);
-        setAttempts(0);
-        setCountdown(0);
-        setError(null);
-      } else {
-        setCountdown(remaining);
-      }
-    }, 200);
-    return () => clearInterval(interval);
-  }, [lockoutUntil]);
-
-  const selectedMember = teamMembers.find(m => m.id === selectedMemberId) || null;
-  const isLockedOut = lockoutUntil !== null && Date.now() < lockoutUntil;
-
-  const triggerShake = () => {
-    setShake(true);
-    setTimeout(() => setShake(false), 400);
+    setIsSubmitting(true);
+    setError(null);
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    setIsSubmitting(false);
+    if (signInError) {
+      setError(signInError.message === 'Invalid login credentials'
+        ? 'Incorrect email or password.'
+        : signInError.message);
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleResetRequest = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLockedOut || isLoading || !selectedMember) return;
-
-    const expected = selectedMember.passcode || '1234';
-
-    if (pin === expected) {
-      setError(null);
-      setAttempts(0);
-      onLogin(selectedMember, rememberMe);
+    if (!supabase) {
+      setError('Supabase isn’t configured for this deployment — contact Hamza.');
+      return;
+    }
+    setIsSubmitting(true);
+    setError(null);
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim());
+    setIsSubmitting(false);
+    if (resetError) {
+      setError(resetError.message);
     } else {
-      const newAttempts = attempts + 1;
-      setAttempts(newAttempts);
-      triggerShake();
-
-      if (newAttempts >= MAX_ATTEMPTS) {
-        const until = Date.now() + LOCKOUT_SECONDS * 1000;
-        setLockoutUntil(until);
-        setError(`Too many failed attempts. Locked for ${LOCKOUT_SECONDS} seconds.`);
-      } else {
-        setError(`Incorrect PIN. ${MAX_ATTEMPTS - newAttempts} attempt${MAX_ATTEMPTS - newAttempts === 1 ? '' : 's'} remaining.`);
-      }
-      setPin('');
-      pinRef.current?.focus();
+      setResetSent(true);
     }
   };
 
@@ -91,103 +59,133 @@ export const LoginPage: React.FC<LoginPageProps> = ({ teamMembers, onLogin, isLo
             <img src="/logos/PZ_Logo.png" alt="Pharmacozyme" className="w-full h-full object-contain" />
           </div>
           <h1 className="font-display-xl text-xl text-[#1b1c1a] font-bold">Brand-Ops Studio</h1>
-          <p className="font-body-md text-xs text-[#707a67] mt-1">Sign in to continue</p>
+          <p className="font-body-md text-xs text-[#707a67] mt-1">
+            {mode === 'signin' ? 'Sign in to continue' : 'Reset your password'}
+          </p>
         </div>
 
-        {teamMembers.length === 0 ? (
-          <div className="text-center p-8 bg-white border border-[#bfcab4] rounded-lg shadow-2xs">
-            <span className="material-symbols-outlined text-3xl text-[#bfcab4] block mb-2">group_off</span>
-            <p className="text-[#707a67] text-sm">No team members found. Loading…</p>
-          </div>
-        ) : (
-          <form
-            onSubmit={handleSubmit}
-            className={`bg-white border border-[#bfcab4] rounded-lg shadow-2xs p-6 space-y-4 ${shake ? 'animate-[shake_0.4s_ease-in-out]' : ''}`}
-          >
-            {/* Account */}
+        {mode === 'signin' ? (
+          <form onSubmit={handleSignIn} className="bg-white border border-[#bfcab4] rounded-lg shadow-2xs p-6 space-y-4">
             <div className="space-y-1.5">
               <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold block">
-                Account
+                Email
               </label>
-              <select
-                value={selectedMemberId}
-                onChange={e => { setSelectedMemberId(e.target.value); setPin(''); setError(null); }}
-                disabled={isLockedOut || isLoading}
-                className="w-full bg-[#faf9f5] border border-[#bfcab4] p-2.5 text-sm text-[#1b1c1a] rounded focus:outline-none focus:border-[#296c00] disabled:opacity-50"
-              >
-                {teamMembers.map(member => (
-                  <option key={member.id} value={member.id}>{member.name}</option>
-                ))}
-              </select>
+              <input
+                type="email"
+                value={email}
+                onChange={e => { setEmail(e.target.value); setError(null); }}
+                placeholder="you@pharmacozyme.com"
+                autoComplete="email"
+                autoFocus
+                required
+                disabled={isSubmitting}
+                className="w-full bg-[#faf9f5] border border-[#bfcab4] focus:border-[#296c00] text-[#1b1c1a] p-2.5 rounded outline-none transition-colors placeholder:text-[#bfcab4] placeholder:text-sm disabled:opacity-50"
+              />
             </div>
 
-            {/* PIN */}
             <div className="space-y-1.5">
               <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold flex items-center gap-1">
                 <span className="material-symbols-outlined text-xs">lock</span>
-                PIN
+                Password
               </label>
               <div className="relative">
                 <input
-                  ref={pinRef}
-                  type={showPin ? 'text' : 'password'}
-                  value={pin}
-                  onChange={e => { setPin(e.target.value); setError(null); }}
-                  placeholder="Enter your PIN"
-                  disabled={isLockedOut || isLoading}
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={e => { setPassword(e.target.value); setError(null); }}
+                  placeholder="Enter your password"
                   autoComplete="current-password"
-                  autoFocus
-                  className="w-full bg-[#faf9f5] border border-[#bfcab4] focus:border-[#296c00] text-[#1b1c1a] text-center tracking-[0.3em] p-2.5 rounded outline-none transition-colors placeholder:tracking-normal placeholder:text-[#bfcab4] placeholder:text-xs disabled:opacity-50"
+                  required
+                  disabled={isSubmitting}
+                  className="w-full bg-[#faf9f5] border border-[#bfcab4] focus:border-[#296c00] text-[#1b1c1a] p-2.5 pr-10 rounded outline-none transition-colors placeholder:text-[#bfcab4] placeholder:text-sm disabled:opacity-50"
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPin(v => !v)}
+                  onClick={() => setShowPassword(v => !v)}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#707a67] hover:text-[#1b1c1a] transition-colors"
                   tabIndex={-1}
                 >
                   <span className="material-symbols-outlined text-base">
-                    {showPin ? 'visibility_off' : 'visibility'}
+                    {showPassword ? 'visibility_off' : 'visibility'}
                   </span>
                 </button>
               </div>
             </div>
 
-            {/* Error / Lockout */}
             {error && (
               <div className="p-2.5 rounded bg-[#fce8e6] border border-[#ba1a1a]/20 text-[#ba1a1a] text-xs text-center font-body-md">
-                {isLockedOut ? (
-                  <span>Locked — try again in <strong>{countdown}s</strong></span>
-                ) : error}
+                {error}
               </div>
             )}
 
-            {/* Remember me */}
-            <label className="flex items-center gap-2 cursor-pointer group select-none">
-              <input
-                type="checkbox"
-                checked={rememberMe}
-                onChange={e => setRememberMe(e.target.checked)}
-                className="w-3.5 h-3.5 rounded border-[#bfcab4] text-[#296c00] focus:ring-[#296c00]"
-              />
-              <span className="text-[#707a67] text-xs font-body-md">Remember me on this device</span>
-            </label>
-
-            {/* Submit */}
             <button
               type="submit"
-              disabled={isLockedOut || isLoading || !pin}
+              disabled={isSubmitting || !email || !password}
               className="w-full bg-[#296c00] hover:bg-[#1f5700] text-white font-bold py-2.5 rounded transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              {isLoading ? (
+              {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   Signing in…
                 </span>
-              ) : isLockedOut ? (
-                `Locked (${countdown}s)`
-              ) : (
-                'Sign In'
-              )}
+              ) : 'Sign In'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { setMode('reset'); setError(null); setResetSent(false); }}
+              className="w-full text-center text-[#707a67] hover:text-[#296c00] text-xs font-body-md transition-colors"
+            >
+              Forgot your password?
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleResetRequest} className="bg-white border border-[#bfcab4] rounded-lg shadow-2xs p-6 space-y-4">
+            {resetSent ? (
+              <div className="p-3 rounded bg-[#f0fae8] border border-[#296c00]/20 text-[#296c00] text-xs text-center font-body-md">
+                If that email has an account, a reset link is on its way — check your inbox.
+              </div>
+            ) : (
+              <>
+                <div className="space-y-1.5">
+                  <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold block">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={e => { setEmail(e.target.value); setError(null); }}
+                    placeholder="you@pharmacozyme.com"
+                    autoComplete="email"
+                    autoFocus
+                    required
+                    disabled={isSubmitting}
+                    className="w-full bg-[#faf9f5] border border-[#bfcab4] focus:border-[#296c00] text-[#1b1c1a] p-2.5 rounded outline-none transition-colors placeholder:text-[#bfcab4] placeholder:text-sm disabled:opacity-50"
+                  />
+                </div>
+
+                {error && (
+                  <div className="p-2.5 rounded bg-[#fce8e6] border border-[#ba1a1a]/20 text-[#ba1a1a] text-xs text-center font-body-md">
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isSubmitting || !email}
+                  className="w-full bg-[#296c00] hover:bg-[#1f5700] text-white font-bold py-2.5 rounded transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? 'Sending…' : 'Send Reset Link'}
+                </button>
+              </>
+            )}
+
+            <button
+              type="button"
+              onClick={() => { setMode('signin'); setError(null); setResetSent(false); }}
+              className="w-full text-center text-[#707a67] hover:text-[#296c00] text-xs font-body-md transition-colors"
+            >
+              Back to sign in
             </button>
           </form>
         )}
@@ -196,15 +194,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ teamMembers, onLogin, isLo
           Pharmacozyme Brand-Ops Studio · Internal Use Only
         </p>
       </div>
-
-      <style>{`
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          25% { transform: translateX(-5px); }
-          50% { transform: translateX(5px); }
-          75% { transform: translateX(-3px); }
-        }
-      `}</style>
     </div>
   );
 };
