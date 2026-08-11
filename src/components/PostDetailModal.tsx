@@ -182,8 +182,8 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
       : (teamMembers && teamMembers.length > 0 ? `${teamMembers[0].name} (${teamMembers[0].role})` : 'Team');
     const actorName = activeTeammate ? activeTeammate.name : approverName;
     setApprovalWarning(null);
-    setEditedPost((prev) => ({
-      ...prev,
+    const nextPost: Post = {
+      ...editedPost,
       approved: nextApproved,
       approvedBy: nextApproved ? approverName : undefined,
       approvedAt: nextApproved ? logTimestamp() : undefined,
@@ -194,9 +194,15 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
           action: nextApproved ? 'Approved this post' : 'Removed approval',
           timestamp: logTimestamp()
         },
-        ...prev.activityLog
+        ...editedPost.activityLog
       ]
-    }));
+    };
+    setEditedPost(nextPost);
+    // Approve/unapprove persists immediately (unlike other fields, which wait
+    // for Save Changes) — the button reads as a final action, so it should
+    // behave like one, and it lets a DB-level rejection surface right away
+    // instead of being silently bundled into a later save.
+    onSavePost(nextPost);
   };
 
   // Handle Adding Comment

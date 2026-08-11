@@ -539,6 +539,22 @@ export const TopNav: React.FC<TopNavProps> = ({
                                 />
                               </div>
                               <div className="col-span-2 space-y-1">
+                                <label className="font-label-caps text-[9px] text-[#707a67] uppercase block">
+                                  Permission Level {activeTeammate?.userRole !== 'Owner' && ' (Owner only)'}
+                                </label>
+                                <select
+                                  disabled={activeTeammate?.userRole !== 'Owner'}
+                                  value={editingMember.userRole}
+                                  onChange={e => setEditingMember(p => p ? { ...p, userRole: e.target.value as TeamMember['userRole'] } : p)}
+                                  className="w-full bg-white border border-[#bfcab4] p-2 text-xs rounded focus:outline-none focus:border-[#296c00] disabled:bg-[#f3f2ee] disabled:text-[#707a67]"
+                                >
+                                  <option value="Owner">Owner</option>
+                                  <option value="Manager">Manager</option>
+                                  <option value="Editor">Editor</option>
+                                  <option value="Viewer">Viewer</option>
+                                </select>
+                              </div>
+                              <div className="col-span-2 space-y-1">
                                 <label className="font-label-caps text-[9px] text-[#707a67] uppercase block">Email</label>
                                 <input
                                   type="email"
