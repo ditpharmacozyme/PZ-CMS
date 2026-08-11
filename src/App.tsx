@@ -37,6 +37,8 @@ import {
   subscribeRemoteTeam,
   importLocalDataToRemote
 } from './utils/storage';
+import { BRANDS } from './data/brands';
+import { applyBrandTypography } from './utils/brandTypography';
 import { SideNav, NavTab } from './components/SideNav';
 import { TopNav } from './components/TopNav';
 import { CalendarView } from './components/CalendarView';
@@ -127,6 +129,14 @@ export function App() {
   const [currentTab, setCurrentTab] = useState<NavTab>('calendar');
   const [selectedBrandFilter, setSelectedBrandFilter] = useState<BrandId | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  // Re-skin the app's display/headline/body fonts to match whichever brand is
+  // filtered — falls back to Pharmacozyme (the ecosystem parent brand) when
+  // viewing "All 5 Brands". See index.css's --brand-font-* consumers.
+  useEffect(() => {
+    const activeBrand = selectedBrandFilter === 'all' ? BRANDS.pharmacozyme : BRANDS[selectedBrandFilter];
+    applyBrandTypography(activeBrand);
+  }, [selectedBrandFilter]);
 
   // Modals state
   const [activeModalPost, setActiveModalPost] = useState<Post | null>(null);

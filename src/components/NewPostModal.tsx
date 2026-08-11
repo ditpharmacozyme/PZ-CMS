@@ -763,7 +763,7 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
               {visualUrl && (
                 <div className="p-3 bg-white border border-[#bfcab4] rounded flex items-center gap-4">
                   <div className="w-16 h-16 rounded overflow-hidden bg-[#efeeea] border border-[#bfcab4] flex-shrink-0">
-                    <img src={visualUrl} alt="Preview" className="w-full h-full object-cover" />
+                    <img src={visualUrl} alt="Preview" draggable={false} className="w-full h-full object-cover" />
                   </div>
                   <div className="space-y-1 text-xs">
                     <div className="font-bold text-[#1b1c1a]">Preview</div>

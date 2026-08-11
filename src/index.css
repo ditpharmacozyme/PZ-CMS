@@ -3,13 +3,13 @@
 /* ─── Premium Font System ─── */
 @layer utilities {
   .font-display-xl {
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 700;
+    font-family: var(--brand-font-display, 'Space Grotesk'), sans-serif;
+    font-weight: var(--brand-font-display-weight, 700);
     letter-spacing: -0.02em;
   }
   .font-headline-md {
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 600;
+    font-family: var(--brand-font-headline, 'Space Grotesk'), sans-serif;
+    font-weight: var(--brand-font-headline-weight, 600);
     letter-spacing: -0.01em;
   }
   .font-label-caps {
@@ -21,7 +21,7 @@
     font-size: 0.72rem;
   }
   .font-body-md {
-    font-family: 'Poppins', 'Nunito Sans', sans-serif;
+    font-family: var(--brand-font-body, 'Poppins'), 'Nunito Sans', sans-serif;
   }
   .font-poppins {
     font-family: 'Poppins', sans-serif;
@@ -50,7 +50,7 @@ html {
 }
 
 body {
-  font-family: 'Poppins', 'Nunito Sans', sans-serif;
+  font-family: var(--brand-font-body, 'Poppins'), 'Nunito Sans', sans-serif;
   background: #F7F6F0;
   color: #1b1c1a;
   -webkit-font-smoothing: antialiased;

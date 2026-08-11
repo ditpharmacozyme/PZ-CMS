@@ -744,6 +744,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
                   <img
                     src={editedPost.visualUrl}
                     alt="Visual Attachment"
+                    draggable={false}
                     className="w-full h-full object-cover"
                   />
                 ) : (
