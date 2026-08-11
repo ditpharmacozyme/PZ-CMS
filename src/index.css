@@ -43,6 +43,11 @@ body {
   /* iOS momentum scrolling and notch padding */
   -webkit-overflow-scrolling: touch;
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  touch-action: manipulation;
+}
+
+button, input, select, textarea, a {
+  touch-action: manipulation;
 }
 
 /* ─── Custom Scrollbar ─── */

@@ -83,6 +83,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   /** Default owner for quick-created posts — never a hardcoded placeholder name. */
   const defaultAssignee = teamMembers.length > 0 ? teamMembers[0].name : '';
 
+  const isMobileDevice = typeof window !== 'undefined' && window.innerWidth < 768;
+
   // State for Backlog Idea form
   const [newBacklogTitle, setNewBacklogTitle] = useState('');
 
@@ -584,7 +586,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             return (
               <div
                 key={post.id}
-                draggable
+                draggable={!isMobileDevice}
                 onDragStart={(e) => {
                   e.dataTransfer.setData("text/plain", post.id);
                   e.dataTransfer.effectAllowed = "move";
@@ -653,7 +655,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       )}
 
       {/* ── Main Schedule Content Canvas ── */}
-      <div className="flex-1 flex flex-col xl:flex-row bg-[#FAF9F5] min-h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col xl:flex-row bg-[#FAF9F5] min-h-screen overflow-hidden relative">
+        {isUploading && (
+          <div className="absolute inset-0 bg-[#FAF9F5]/75 backdrop-blur-xs z-50 flex flex-col items-center justify-center pointer-events-auto">
+            <div className="w-8 h-8 rounded-full border-2 border-[#296c00] border-t-transparent animate-spin mb-2" />
+            <p className="font-label-caps text-[10px] text-[#296c00] font-bold uppercase tracking-wider">Uploading Image...</p>
+          </div>
+        )}
       {/* Main Schedule Content Canvas */}
       <div className="flex-1 p-3 sm:p-5 md:p-8 overflow-y-auto space-y-4 sm:space-y-6">
         {/* Calendar Header & Filters */}
@@ -844,8 +852,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                 key={post.id}
                                 onClick={() => { onSelectPost(post); }}
                                 style={{ borderLeftColor: brand?.primaryColor }}
-                                className="flex items-center gap-3 p-3 bg-white border border-[#bfcab4] border-l-4 rounded shadow-2xs active:scale-[0.98] transition-transform"
+                                className="flex items-center gap-3 p-3 bg-white border border-[#bfcab4] border-l-4 rounded shadow-2xs active:scale-[0.98] transition-transform cursor-pointer"
                               >
+                                {post.visualUrl && (
+                                  <div className="w-10 h-10 rounded overflow-hidden border border-[#bfcab4] bg-[#faf9f5] flex-shrink-0">
+                                    <img src={post.visualUrl} alt={post.title} className="w-full h-full object-cover" />
+                                  </div>
+                                )}
                                 <div className="flex-1 min-w-0">
                                   <span className="font-label-caps text-[9px] font-bold uppercase" style={{ color: brand?.primaryColor }}>
                                     {brand?.shortCode}
@@ -1002,7 +1015,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                         return (
                           <div
                             key={post.id}
-                            draggable
+                            draggable={!isMobileDevice}
                             onDragStart={(e) => {
                               e.stopPropagation();
                               e.dataTransfer.setData("text/plain", post.id);
@@ -1197,7 +1210,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                         return (
                           <div
                             key={post.id}
-                            draggable
+                            draggable={!isMobileDevice}
                             onDragStart={(e) => {
                               e.stopPropagation();
                               e.dataTransfer.setData("text/plain", post.id);

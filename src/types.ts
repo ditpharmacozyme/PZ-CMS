@@ -7,6 +7,7 @@ export interface TeamMember {
   email: string;
   avatarInitials: string;
   color: string; // hex accent color for avatar
+  passcode?: string;
 }
 
 export interface BrandConfig {

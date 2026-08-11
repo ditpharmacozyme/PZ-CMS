@@ -22,6 +22,7 @@ interface TopNavProps {
   isImportingData?: boolean;
   activeTeammateId?: string;
   onSelectActiveTeammate?: (id: string) => void;
+  onLogout?: () => void;
 }
 
 const AVATAR_COLORS = [
@@ -51,7 +52,8 @@ export const TopNav: React.FC<TopNavProps> = ({
   onImportLocalData,
   isImportingData = false,
   activeTeammateId,
-  onSelectActiveTeammate
+  onSelectActiveTeammate,
+  onLogout
 }) => {
   const [showNotificationsPopover, setShowNotificationsPopover] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -71,11 +73,14 @@ export const TopNav: React.FC<TopNavProps> = ({
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   const handleSaveNewMember = () => {
-    if (!newMember.name?.trim() || !newMember.role?.trim()) return;
+    // Only the owner can set a custom role — everyone else's addition
+    // defaults to "Editor" regardless of what's in the (disabled) field.
+    const role = activeTeammate?.name === 'Hamza Ansari' ? newMember.role?.trim() : 'Editor';
+    if (!newMember.name?.trim() || !role) return;
     const member: TeamMember = {
       id: `tm-${Date.now()}`,
       name: newMember.name.trim(),
-      role: newMember.role.trim(),
+      role,
       email: newMember.email?.trim() || '',
       color: newMember.color || AVATAR_COLORS[0],
       avatarInitials: getInitials(newMember.name.trim())
@@ -87,10 +92,12 @@ export const TopNav: React.FC<TopNavProps> = ({
 
   const handleSaveEdit = () => {
     if (!editingMember) return;
+    const oldMember = teamMembers.find(m => m.id === editingMember.id);
+    const finalPasscode = editingMember.passcode?.trim() || oldMember?.passcode || '1234';
     onSaveTeamMembers(
       teamMembers.map(m =>
         m.id === editingMember.id
-          ? { ...editingMember, avatarInitials: getInitials(editingMember.name) }
+          ? { ...editingMember, avatarInitials: getInitials(editingMember.name), passcode: finalPasscode }
           : m
       )
     );
@@ -240,19 +247,19 @@ export const TopNav: React.FC<TopNavProps> = ({
             )}
           </div>
 
-          {/* Settings */}
+          {/* Settings — hidden on mobile */}
           <button
             onClick={() => { setShowSettingsModal(true); setSettingsTab('team'); }}
-            className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center text-[#404a39] hover:bg-[#efeeea] rounded-full transition-colors"
+            className="hidden sm:flex p-2 min-w-[40px] min-h-[40px] flex items-center justify-center text-[#404a39] hover:bg-[#efeeea] rounded-full transition-colors"
             title="Settings"
           >
             <span className="material-symbols-outlined text-xl">settings</span>
           </button>
 
-          {/* Mark as Posted */}
+          {/* Mark as Posted — hidden on mobile */}
           <button
             onClick={onPublishNow}
-            className="bg-[#296c00] text-white font-label-caps text-xs font-bold px-3 sm:px-4 py-2 rounded shadow-xs hover:bg-[#1f5700] active:scale-95 transition-all min-h-[38px] whitespace-nowrap"
+            className="hidden sm:block bg-[#296c00] text-white font-label-caps text-xs font-bold px-3 sm:px-4 py-2 rounded shadow-xs hover:bg-[#1f5700] active:scale-95 transition-all min-h-[38px] whitespace-nowrap"
           >
             Mark Posted
           </button>
@@ -330,7 +337,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                   )}
                 </div>
 
-                <div className="pt-2 border-t border-[#bfcab4] mt-2">
+                <div className="pt-2 border-t border-[#bfcab4] mt-2 flex flex-col gap-1">
                   <button
                     onClick={() => {
                       setShowActiveTeammatePopover(false);
@@ -340,6 +347,43 @@ export const TopNav: React.FC<TopNavProps> = ({
                     className="w-full text-center py-1.5 border border-dashed border-[#bfcab4] text-[#296c00] font-label-caps text-[10px] font-bold rounded hover:bg-[#f0fae8] transition-colors"
                   >
                     + Manage Team
+                  </button>
+
+                  {/* System Config (Mobile only) */}
+                  <button
+                    onClick={() => {
+                      setShowActiveTeammatePopover(false);
+                      setShowSettingsModal(true);
+                      setSettingsTab('system');
+                    }}
+                    className="sm:hidden w-full flex items-center justify-center gap-1.5 py-1.5 text-[#404a39] font-label-caps text-[10px] font-bold hover:bg-[#efeeea] rounded transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-sm">settings</span>
+                    <span>System Config</span>
+                  </button>
+
+                  {/* Mark All Posted (Mobile only) */}
+                  <button
+                    onClick={() => {
+                      setShowActiveTeammatePopover(false);
+                      onPublishNow();
+                    }}
+                    className="sm:hidden w-full flex items-center justify-center gap-1.5 py-1.5 text-[#296c00] font-label-caps text-[10px] font-bold hover:bg-[#f0fae8] rounded transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-sm">check_circle</span>
+                    <span>Mark all Posted</span>
+                  </button>
+
+                  {/* Sign Out / Lock */}
+                  <button
+                    onClick={() => {
+                      setShowActiveTeammatePopover(false);
+                      if (onLogout) onLogout();
+                    }}
+                    className="w-full flex items-center justify-center gap-1.5 py-1.5 text-[#ba1a1a] font-label-caps text-[10px] font-bold hover:bg-[#ffdad6]/40 rounded transition-colors border-t border-[#bfcab4]/60 mt-1"
+                  >
+                    <span className="material-symbols-outlined text-sm">logout</span>
+                    <span>Sign Out</span>
                   </button>
                 </div>
               </div>
@@ -449,13 +493,16 @@ export const TopNav: React.FC<TopNavProps> = ({
                           />
                         </div>
                         <div className="space-y-1">
-                          <label className="font-label-caps text-[9px] text-[#707a67] uppercase block">Role *</label>
+                          <label className="font-label-caps text-[9px] text-[#707a67] uppercase block">
+                            Role * {activeTeammate?.name !== 'Hamza Ansari' && ' (Hamza only)'}
+                          </label>
                           <input
                             type="text"
-                            value={newMember.role || ''}
+                            disabled={activeTeammate?.name !== 'Hamza Ansari'}
+                            value={activeTeammate?.name === 'Hamza Ansari' ? (newMember.role || '') : 'Editor'}
                             onChange={e => setNewMember(p => ({ ...p, role: e.target.value }))}
                             placeholder="e.g. Designer"
-                            className="w-full bg-white border border-[#bfcab4] p-2 text-xs rounded focus:outline-none focus:border-[#296c00]"
+                            className="w-full bg-white border border-[#bfcab4] p-2 text-xs rounded focus:outline-none focus:border-[#296c00] disabled:bg-[#f3f2ee] disabled:text-[#707a67]"
                           />
                         </div>
                         <div className="col-span-2 space-y-1">
@@ -465,6 +512,16 @@ export const TopNav: React.FC<TopNavProps> = ({
                             value={newMember.email || ''}
                             onChange={e => setNewMember(p => ({ ...p, email: e.target.value }))}
                             placeholder="jane@pharmacozyme.com"
+                            className="w-full bg-white border border-[#bfcab4] p-2 text-xs rounded focus:outline-none focus:border-[#296c00]"
+                          />
+                        </div>
+                        <div className="col-span-2 space-y-1">
+                          <label className="font-label-caps text-[9px] text-[#707a67] uppercase block">Login PIN / Passcode</label>
+                          <input
+                            type="password"
+                            value={newMember.passcode || ''}
+                            onChange={e => setNewMember(p => ({ ...p, passcode: e.target.value }))}
+                            placeholder="e.g. 1234"
                             className="w-full bg-white border border-[#bfcab4] p-2 text-xs rounded focus:outline-none focus:border-[#296c00]"
                           />
                         </div>
@@ -510,12 +567,15 @@ export const TopNav: React.FC<TopNavProps> = ({
                                 />
                               </div>
                               <div className="space-y-1">
-                                <label className="font-label-caps text-[9px] text-[#707a67] uppercase block">Role</label>
+                                <label className="font-label-caps text-[9px] text-[#707a67] uppercase block">
+                                  Role * {activeTeammate?.name !== 'Hamza Ansari' && ' (Hamza only)'}
+                                </label>
                                 <input
                                   type="text"
+                                  disabled={activeTeammate?.name !== 'Hamza Ansari'}
                                   value={editingMember.role}
                                   onChange={e => setEditingMember(p => p ? { ...p, role: e.target.value } : p)}
-                                  className="w-full bg-white border border-[#bfcab4] p-2 text-xs rounded focus:outline-none focus:border-[#296c00]"
+                                  className="w-full bg-white border border-[#bfcab4] p-2 text-xs rounded focus:outline-none focus:border-[#296c00] disabled:bg-[#f3f2ee] disabled:text-[#707a67]"
                                 />
                               </div>
                               <div className="col-span-2 space-y-1">
@@ -524,6 +584,16 @@ export const TopNav: React.FC<TopNavProps> = ({
                                   type="email"
                                   value={editingMember.email}
                                   onChange={e => setEditingMember(p => p ? { ...p, email: e.target.value } : p)}
+                                  className="w-full bg-white border border-[#bfcab4] p-2 text-xs rounded focus:outline-none focus:border-[#296c00]"
+                                />
+                              </div>
+                              <div className="col-span-2 space-y-1">
+                                <label className="font-label-caps text-[9px] text-[#707a67] uppercase block">Login PIN / Passcode</label>
+                                <input
+                                  type="password"
+                                  value={editingMember.passcode || ''}
+                                  onChange={e => setEditingMember(p => p ? { ...p, passcode: e.target.value } : p)}
+                                  placeholder="Leave blank to keep current"
                                   className="w-full bg-white border border-[#bfcab4] p-2 text-xs rounded focus:outline-none focus:border-[#296c00]"
                                 />
                               </div>
@@ -561,7 +631,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                             </div>
                             <div className="flex gap-1 flex-shrink-0">
                               <button
-                                onClick={() => setEditingMember(member)}
+                                onClick={() => setEditingMember({ ...member, passcode: '' })}
                                 className="p-1.5 text-[#296c00] hover:bg-[#efeeea] rounded"
                                 title="Edit"
                               >

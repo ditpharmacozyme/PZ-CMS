@@ -229,7 +229,12 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end md:items-center justify-center md:p-4 overflow-hidden">
       <div className="bg-[#FAF9F5] border border-[#bfcab4] w-full md:max-w-2xl rounded-t-2xl md:rounded-lg shadow-2xl overflow-hidden max-h-[96dvh] flex flex-col relative sheet-modal">
-
+        {isUploading && (
+          <div className="absolute inset-0 bg-[#FAF9F5]/75 backdrop-blur-xs z-50 flex flex-col items-center justify-center pointer-events-auto">
+            <div className="w-8 h-8 rounded-full border-2 border-[#296c00] border-t-transparent animate-spin mb-2" />
+            <p className="font-label-caps text-[10px] text-[#296c00] font-bold uppercase tracking-wider">Uploading Image...</p>
+          </div>
+        )}
         {/* Drag handle (mobile only) */}
         <div className="pt-3 pb-0 flex justify-center md:hidden">
           <div className="sheet-handle" />
