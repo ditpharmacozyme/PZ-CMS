@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { PostTemplate, BrandId, Platform } from '../types';
 import { BRANDS } from '../data/brands';
+import { uploadImage } from '../utils/uploadImage';
 
 interface TemplateLibraryProps {
   templates: PostTemplate[];
@@ -31,6 +32,26 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
   const [newPlatform, setNewPlatform] = useState<Platform>('instagram');
   const [newCaption, setNewCaption] = useState('');
   const [newImagePreview, setNewImagePreview] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const handleImageFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    setUploadError(null);
+    setIsUploading(true);
+    try {
+      const { url } = await uploadImage(file);
+      setNewImagePreview(url);
+    } catch (err: any) {
+      setUploadError(err?.message || 'Upload failed.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const filteredTemplates = templates.filter((tpl) => {
     if (selectedBrandFilter !== 'all' && tpl.brandId !== 'shared' && tpl.brandId !== selectedBrandFilter) {
@@ -98,6 +119,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
     setNewBrandId('shared');
     setNewCategory('Clinical');
     setNewPlatform('instagram');
+    setUploadError(null);
   };
 
   return (
@@ -326,10 +348,49 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                 </select>
               </div>
 
-              <div>
-                <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
-                  Image Preview URL (Optional or Drive URL)
+              <div className="space-y-2">
+                <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold">
+                  Template Image
                 </label>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageFileUpload}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                  className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-[#bfcab4] rounded p-3 text-[#296c00] hover:border-[#296c00] hover:bg-[#f0fdf4] transition-colors font-label-caps text-xs font-bold disabled:opacity-60"
+                >
+                  <span className="material-symbols-outlined text-lg">
+                    {isUploading ? 'hourglass_empty' : 'upload_file'}
+                  </span>
+                  <span>{isUploading ? 'Uploading…' : 'Upload from your device'}</span>
+                </button>
+                {uploadError && (
+                  <p className="text-[11px] text-[#ba1a1a] bg-[#ffdad6] border border-[#ffb4ab] rounded p-2">
+                    {uploadError}
+                  </p>
+                )}
+
+                {newImagePreview && (
+                  <div className="flex items-center gap-2 p-2 bg-[#faf9f5] border border-[#bfcab4] rounded">
+                    <div className="w-10 h-10 rounded overflow-hidden bg-[#efeeea] border border-[#bfcab4] flex-shrink-0">
+                      <img src={newImagePreview} alt="Preview" draggable={false} className="w-full h-full object-cover" />
+                    </div>
+                    <span className="text-[10px] text-[#707a67] truncate flex-1">{newImagePreview}</span>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-px bg-[#bfcab4]" />
+                  <span className="text-[9px] uppercase text-[#707a67]">or paste a link</span>
+                  <div className="flex-1 h-px bg-[#bfcab4]" />
+                </div>
                 <input
                   type="text"
                   value={newImagePreview}

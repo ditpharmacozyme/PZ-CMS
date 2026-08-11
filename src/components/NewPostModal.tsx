@@ -52,7 +52,10 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
   const initialAssignee = activeTeammate ? activeTeammate.name : (teamMembers && teamMembers.length > 0 ? teamMembers[0].name : '');
   const initialEmail = activeTeammate ? activeTeammate.email || '' : (teamMembers && teamMembers.length > 0 ? teamMembers[0].email || '' : '');
 
-  const [assignee, setAssignee] = useState(initialAssignee);
+  const [assignees, setAssignees] = useState<string[]>(initialAssignee ? [initialAssignee] : []);
+  const toggleAssignee = (name: string) => {
+    setAssignees((prev) => (prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]));
+  };
   const [visualUrl, setVisualUrl] = useState('');
   const [activeStep, setActiveStep] = useState<1 | 2 | 3>(1);
 
@@ -135,7 +138,7 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
               scheduledTime,
               platform,
               caption: caption || 'Instagram post caption cue.',
-              assignee,
+              assignees,
               visualUrl,
               reminderEmail
             },
@@ -192,7 +195,7 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
       reminderEmail,
       emailReminderEnabled: !isBacklog,
       status: finalDate ? 'in-progress' : 'not-started',
-      assignee,
+      assignees,
       visualUrl,
       templateId: selectedTemplateId || undefined,
       approved: false,
@@ -200,7 +203,7 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
       activityLog: [
         {
           id: `act-${Date.now()}`,
-          actor: activeTeammate?.name || assignee || 'Someone',
+          actor: activeTeammate?.name || assignees[0] || 'Someone',
           action: finalDate ? `Scheduled reminder for ${finalDate} at ${finalTime}` : 'Created idea',
           timestamp: logTimestamp()
         }
@@ -451,36 +454,37 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
                 </div>
               </div>
 
-              {/* Assigned person */}
+              {/* Assigned person(s) */}
               <div className="space-y-1">
                 <label className="font-label-caps text-[10px] text-[#707a67] font-bold uppercase block">
-                  Assigned To
+                  Assigned To {assignees.length > 0 && `(${assignees.length})`}
                 </label>
-                <select
-                  value={assignee}
-                  onChange={(e) => {
-                    const selectedName = e.target.value;
-                    setAssignee(selectedName);
-                    const member = teamMembers?.find((m) => m.name === selectedName);
-                    if (member && member.email) {
-                      setReminderEmail(member.email);
-                    }
-                  }}
-                  className="w-full bg-white border border-[#bfcab4] p-2.5 font-label-caps text-xs rounded"
-                >
-                  {teamMembers && teamMembers.length > 0 ? (
-                    teamMembers.map((m) => (
-                      <option key={m.id} value={m.name}>
-                        {m.name} ({m.role})
-                      </option>
-                    ))
-                  ) : (
-                    <>
-                      <option value="Hamza Ansari">Hamza Ansari (Brand & Content Lead)</option>
-                      <option value="Pharmacozyme Ops">Pharmacozyme Ops (Global Approver)</option>
-                    </>
-                  )}
-                </select>
+                <div className="border border-[#bfcab4] rounded divide-y divide-[#bfcab4] max-h-40 overflow-y-auto">
+                  {(teamMembers && teamMembers.length > 0
+                    ? teamMembers
+                    : [{ id: 'h', name: 'Hamza Ansari', role: 'Brand & Content Lead', email: '' }, { id: 'o', name: 'Pharmacozyme Ops', role: 'Global Approver', email: '' }]
+                  ).map((m) => {
+                    const checked = assignees.includes(m.name);
+                    return (
+                      <label
+                        key={m.id}
+                        className="flex items-center gap-2.5 p-2.5 cursor-pointer hover:bg-[#faf9f5] transition-colors"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => {
+                            const wasEmpty = assignees.length === 0;
+                            toggleAssignee(m.name);
+                            if (wasEmpty && m.email) setReminderEmail(m.email);
+                          }}
+                          className="w-4 h-4 text-[#296c00] border-[#bfcab4] rounded focus:ring-[#296c00]"
+                        />
+                        <span className="font-label-caps text-xs">{m.name} ({m.role})</span>
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           )}

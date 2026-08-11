@@ -22,7 +22,7 @@ export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = (
 
   const filteredPosts = useMemo(() => {
     if (!selectedTeammateName) return posts;
-    return posts.filter(p => p.assignee === selectedTeammateName);
+    return posts.filter(p => p.assignees.includes(selectedTeammateName));
   }, [posts, selectedTeammateName]);
 
   const readyToPostCount = filteredPosts.filter((p) => p.status === 'ready-to-post').length;
@@ -32,7 +32,7 @@ export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = (
 
   // Team performance: count posts assigned to each person
   const teamStats = teamMembers.map(member => {
-    const assigned = posts.filter(p => p.assignee === member.name);
+    const assigned = posts.filter(p => p.assignees.includes(member.name));
     const posted = assigned.filter(p => p.status === 'posted').length;
     const ready = assigned.filter(p => p.status === 'ready-to-post').length;
     const inProg = assigned.filter(p => p.status === 'in-progress').length;
@@ -371,7 +371,7 @@ export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = (
             {/* Unassigned posts */}
             {(() => {
               const knownNames = teamMembers.map(m => m.name);
-              const unassignedCount = posts.filter(p => !knownNames.includes(p.assignee)).length;
+              const unassignedCount = posts.filter(p => p.assignees.length === 0 || !p.assignees.some(a => knownNames.includes(a))).length;
               return unassignedCount > 0 ? (
                 <div className="p-4 flex items-center gap-4">
                   <div className="w-6 flex-shrink-0" />

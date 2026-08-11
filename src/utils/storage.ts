@@ -203,7 +203,7 @@ type PostRow = {
   email_reminder_enabled: boolean;
   reminder_sent_at: string | null;
   status: string;
-  assignee: string;
+  assignees: string[];
   visual_url: string;
   template_id: string | null;
   approved: boolean;
@@ -230,7 +230,7 @@ function rowToPost(row: PostRow): Post {
     emailReminderEnabled: row.email_reminder_enabled,
     reminderSentAt: row.reminder_sent_at || undefined,
     status: row.status as Post['status'],
-    assignee: row.assignee,
+    assignees: row.assignees || [],
     visualUrl: row.visual_url,
     templateId: row.template_id || undefined,
     approved: row.approved,
@@ -258,7 +258,7 @@ function postToRow(post: Post): PostRow {
     email_reminder_enabled: !!post.emailReminderEnabled,
     reminder_sent_at: post.reminderSentAt || null,
     status: post.status,
-    assignee: post.assignee,
+    assignees: post.assignees || [],
     visual_url: post.visualUrl,
     template_id: post.templateId || null,
     approved: post.approved,

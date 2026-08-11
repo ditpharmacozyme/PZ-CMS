@@ -26,8 +26,8 @@ export function generateNotifications(posts: Post[]): Omit<AppNotification, 'rea
         id: `due-${post.id}`,
         type: 'due_soon',
         title: post.title,
-        message: post.assignee
-          ? `Due ${post.scheduledDate} — assigned to ${post.assignee}.`
+        message: post.assignees.length > 0
+          ? `Due ${post.scheduledDate} — assigned to ${post.assignees.join(', ')}.`
           : `Due ${post.scheduledDate} — nobody's assigned yet.`,
         date: post.scheduledDate,
         postId: post.id,
@@ -38,7 +38,7 @@ export function generateNotifications(posts: Post[]): Omit<AppNotification, 'rea
 
   // Unassigned but dated — someone needs to own this before it's due.
   for (const post of scheduled) {
-    if (post.assignee.trim() || post.status === 'posted') continue;
+    if (post.assignees.length > 0 || post.status === 'posted') continue;
     notifications.push({
       id: `unassigned-${post.id}`,
       type: 'unassigned',

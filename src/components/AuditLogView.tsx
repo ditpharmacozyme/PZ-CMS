@@ -92,11 +92,11 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ teamMembers }) => {
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-[#296c00]">shield_person</span>
             <span className="font-label-caps text-xs text-[#296c00] uppercase font-bold tracking-widest">
-              Security & Traceability
+              Team Transparency
             </span>
           </div>
           <h2 className="font-display-xl text-2xl md:text-3xl text-[#1b1c1a] font-bold mt-1">
-            System Audit Log
+            Activity Log
           </h2>
           <p className="font-body-md text-sm text-[#707a67] mt-1">
             Complete transparent record of who did what, when, and what changed across the team.
@@ -211,7 +211,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ teamMembers }) => {
         ) : filteredEvents.length === 0 ? (
           <div className="p-12 text-center text-[#707a67] space-y-2">
             <span className="material-symbols-outlined text-4xl text-[#bfcab4]">shield</span>
-            <p className="font-bold text-sm text-[#1b1c1a]">No Audit Log Entries Found</p>
+            <p className="font-bold text-sm text-[#1b1c1a]">No Activity Yet</p>
             <p className="text-xs">No events match your current filter settings.</p>
           </div>
         ) : (

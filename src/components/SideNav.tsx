@@ -22,7 +22,7 @@ const NAV_ITEMS: { tab: NavTab; label: string; icon: string }[] = [
   { tab: 'content-bank', label: 'Content Bank', icon: 'article' },
   { tab: 'brand-kit', label: 'Brand Kit', icon: 'palette' },
   { tab: 'assets', label: 'Assets', icon: 'layers' },
-  { tab: 'audit', label: 'Audit Log', icon: 'shield_person' }
+  { tab: 'audit', label: 'Activity Log', icon: 'shield_person' }
 ];
 
 const COLLAPSE_KEY = 'pz_sidenav_collapsed';

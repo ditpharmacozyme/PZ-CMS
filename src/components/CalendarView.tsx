@@ -32,11 +32,11 @@ function matchesFilters(post: Post, f: PostFilters): boolean {
   if (f.brand !== 'all' && post.brandId !== f.brand) return false;
   if (f.status !== 'all' && post.status !== f.status) return false;
   if (f.platform !== 'all' && post.platform !== f.platform) return false;
-  if (f.assignee !== 'all' && post.assignee !== f.assignee) return false;
+  if (f.assignee !== 'all' && !post.assignees.includes(f.assignee)) return false;
 
   const query = f.search.trim().toLowerCase();
   if (query) {
-    const haystack = [post.title, post.caption, post.assignee, ...post.tags];
+    const haystack = [post.title, post.caption, ...post.assignees, ...post.tags];
     if (!haystack.some((v) => (v || '').toLowerCase().includes(query))) return false;
   }
   return true;
@@ -96,7 +96,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     if (touchDraggedPostId && touchHoverDate) {
       const draggedPost = posts.find(p => p.id === touchDraggedPostId);
       if (draggedPost) {
-        const actorName = activeTeammate ? activeTeammate.name : (draggedPost.assignee || defaultAssignee || 'Someone');
+        const actorName = activeTeammate ? activeTeammate.name : (draggedPost.assignees[0] || defaultAssignee || 'Someone');
         onSavePost({
           ...draggedPost,
           scheduledDate: touchHoverDate,
@@ -159,7 +159,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const uniqueAssignees = useMemo(() => {
     const set = new Set<string>();
     posts.forEach((p) => {
-      if (p.assignee) set.add(p.assignee);
+      p.assignees.forEach((a) => a && set.add(a));
     });
     return Array.from(set);
   }, [posts]);
@@ -239,7 +239,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               scheduledDate: cell.dateStr,
               scheduledTime: series.scheduledTime,
               status: 'not-started',
-              assignee: series.assignee,
+              assignees: series.assignees,
               visualUrl: series.visualUrl,
               approved: false,
               isPlaceholder: true,
@@ -283,7 +283,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       scheduledDate: '',
       scheduledTime: '',
       status: 'not-started',
-      assignee: defaultAssignee,
+      assignees: defaultAssignee ? [defaultAssignee] : [],
       visualUrl: '',
       approved: false,
       tags: [],
@@ -308,7 +308,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     const draggedPost = posts.find(p => p.id === postId);
     if (draggedPost) {
       const wasUnscheduled = !draggedPost.scheduledDate;
-      const actorName = activeTeammate ? activeTeammate.name : (draggedPost.assignee || defaultAssignee || 'Someone');
+      const actorName = activeTeammate ? activeTeammate.name : (draggedPost.assignees[0] || defaultAssignee || 'Someone');
       const updated: Post = {
         ...draggedPost,
         scheduledDate: dateStr,
@@ -339,14 +339,14 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       scheduledDate: placeholder.scheduledDate,
       scheduledTime: placeholder.scheduledTime,
       status: 'not-started',
-      assignee: placeholder.assignee,
+      assignees: placeholder.assignees || [],
       visualUrl: placeholder.visualUrl,
       approved: false,
       tags: ['RecurrentSlot'],
       comments: [],
       activityLog: [{
         id: `act-${Date.now()}`,
-        actor: activeTeammate?.name || placeholder.assignee || defaultAssignee || 'Someone',
+        actor: activeTeammate?.name || placeholder.assignees?.[0] || defaultAssignee || 'Someone',
         action: 'Created from a repeating slot',
         timestamp: logTimestamp()
       }]
@@ -377,7 +377,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           activityLog: [
             {
               id: `act-${Date.now()}`,
-              actor: targetPost.assignee || defaultAssignee || 'Someone',
+              actor: targetPost.assignees[0] || defaultAssignee || 'Someone',
               action: `Added image "${file.name}"`,
               timestamp: logTimestamp()
             },
@@ -395,7 +395,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           scheduledDate: targetDate || '',
           scheduledTime: targetDate ? '10:00' : '',
           status: 'not-started',
-          assignee: defaultAssignee,
+          assignees: defaultAssignee ? [defaultAssignee] : [],
           visualUrl: url,
           approved: false,
           tags: [],
@@ -465,7 +465,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           activityLog: [
             {
               id: `act-${Date.now()}-${post.id}`,
-              actor: post.assignee || defaultAssignee || 'Someone',
+              actor: post.assignees[0] || defaultAssignee || 'Someone',
               action: `Changed status to "${status.replace(/-/g, ' ')}" (bulk update)`,
               timestamp: logTimestamp()
             },
@@ -483,7 +483,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       .forEach((post) => {
         onSavePost({
           ...post,
-          assignee,
+          assignees: assignee ? [assignee] : [],
           activityLog: [
             {
               id: `act-${Date.now()}-${post.id}`,
@@ -537,7 +537,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         activityLog: [
           {
             id: `act-${Date.now()}`,
-            actor: post.assignee || defaultAssignee || 'Someone',
+            actor: post.assignees[0] || defaultAssignee || 'Someone',
             action: `Duplicated forward one week from "${post.title}"`,
             timestamp: logTimestamp()
           }
@@ -664,7 +664,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                               activityLog: [
                                 {
                                   id: `act-${Date.now()}`,
-                                  actor: activeTeammate?.name || post.assignee || defaultAssignee || 'Someone',
+                                  actor: activeTeammate?.name || post.assignees[0] || defaultAssignee || 'Someone',
                                   action: `Scheduled for ${e.target.value}`,
                                   timestamp: logTimestamp()
                                 },
@@ -920,9 +920,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                         <div className="cal-day-row-body space-y-2">
                           {dayPosts.map((post) => {
                             const brand = BRANDS[post.brandId];
-                            const assigneeMember = teamMembers.find(m => m.name === post.assignee);
-                            const initials = assigneeMember ? assigneeMember.avatarInitials : (post.assignee || '?').split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+                            const primaryAssignee = post.assignees[0] || '';
+                            const assigneeMember = teamMembers.find(m => m.name === primaryAssignee);
+                            const initials = assigneeMember ? assigneeMember.avatarInitials : (primaryAssignee || '?').split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
                             const bgColor = assigneeMember ? assigneeMember.color : '#bfcab4';
+                            const extraAssignees = post.assignees.length - 1;
                             return (
                               <div
                                 key={post.id}
@@ -946,11 +948,16 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                   </div>
                                 </div>
                                 <div
-                                  className="w-7 h-7 rounded-full flex items-center justify-center text-white font-label-caps text-[9px] font-bold flex-shrink-0"
+                                  className="relative w-7 h-7 rounded-full flex items-center justify-center text-white font-label-caps text-[9px] font-bold flex-shrink-0"
                                   style={{ backgroundColor: bgColor }}
-                                  title={post.assignee}
+                                  title={post.assignees.join(', ')}
                                 >
                                   {initials}
+                                  {extraAssignees > 0 && (
+                                    <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-[#1b1c1a] text-white text-[8px] font-bold flex items-center justify-center border border-white">
+                                      +{extraAssignees}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                             );
@@ -1132,17 +1139,23 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
                             <div className="flex items-center justify-between mt-1.5 text-[9px] font-label-caps text-[#707a67] gap-1.5">
                               <div className="flex items-center gap-1 min-w-0">
-                                {post.assignee && (() => {
-                                  const assigneeMember = teamMembers.find(m => m.name === post.assignee);
-                                  const initials = assigneeMember ? assigneeMember.avatarInitials : post.assignee.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                                {post.assignees[0] && (() => {
+                                  const primaryAssignee = post.assignees[0];
+                                  const assigneeMember = teamMembers.find(m => m.name === primaryAssignee);
+                                  const initials = assigneeMember ? assigneeMember.avatarInitials : primaryAssignee.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
                                   const bgColor = assigneeMember ? assigneeMember.color : '#bfcab4';
                                   return (
-                                    <div
-                                      className="w-4 h-4 rounded-full flex items-center justify-center text-white font-label-caps text-[7px] font-bold flex-shrink-0"
-                                      style={{ backgroundColor: bgColor }}
-                                      title={`Assigned to: ${post.assignee}`}
-                                    >
-                                      {initials}
+                                    <div className="flex items-center gap-0.5 flex-shrink-0">
+                                      <div
+                                        className="w-4 h-4 rounded-full flex items-center justify-center text-white font-label-caps text-[7px] font-bold flex-shrink-0"
+                                        style={{ backgroundColor: bgColor }}
+                                        title={`Assigned to: ${post.assignees.join(', ')}`}
+                                      >
+                                        {initials}
+                                      </div>
+                                      {post.assignees.length > 1 && (
+                                        <span className="text-[7px] font-bold text-[#707a67]">+{post.assignees.length - 1}</span>
+                                      )}
                                     </div>
                                   );
                                 })()}
@@ -1311,17 +1324,23 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                             </h4>
                             <div className="flex justify-between items-center mt-2 text-[10px] font-code-sm text-[#707a67] gap-1">
                               <div className="flex items-center gap-1 min-w-0">
-                                {post.assignee && (() => {
-                                  const assigneeMember = teamMembers.find(m => m.name === post.assignee);
-                                  const initials = assigneeMember ? assigneeMember.avatarInitials : post.assignee.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                                {post.assignees[0] && (() => {
+                                  const primaryAssignee = post.assignees[0];
+                                  const assigneeMember = teamMembers.find(m => m.name === primaryAssignee);
+                                  const initials = assigneeMember ? assigneeMember.avatarInitials : primaryAssignee.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
                                   const bgColor = assigneeMember ? assigneeMember.color : '#bfcab4';
                                   return (
-                                    <div
-                                      className="w-4 h-4 rounded-full flex items-center justify-center text-white font-label-caps text-[7px] font-bold flex-shrink-0"
-                                      style={{ backgroundColor: bgColor }}
-                                      title={`Assigned to: ${post.assignee}`}
-                                    >
-                                      {initials}
+                                    <div className="flex items-center gap-0.5 flex-shrink-0">
+                                      <div
+                                        className="w-4 h-4 rounded-full flex items-center justify-center text-white font-label-caps text-[7px] font-bold flex-shrink-0"
+                                        style={{ backgroundColor: bgColor }}
+                                        title={`Assigned to: ${post.assignees.join(', ')}`}
+                                      >
+                                        {initials}
+                                      </div>
+                                      {post.assignees.length > 1 && (
+                                        <span className="text-[7px] font-bold text-[#707a67]">+{post.assignees.length - 1}</span>
+                                      )}
                                     </div>
                                   );
                                 })()}
@@ -1468,7 +1487,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                         </div>
 
                         <div className="md:w-28 font-body-md text-xs text-[#404a39]">
-                          {post.assignee || 'Unassigned'}
+                          {post.assignees.length > 0 ? post.assignees.join(', ') : 'Unassigned'}
                         </div>
 
                         <div className="md:w-36 text-right flex items-center justify-end gap-2">
@@ -1581,7 +1600,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
               <div className="flex justify-between py-1 border-b border-[#bfcab4]/50">
                 <span className="text-[#707a67]">Owner</span>
-                <span className="font-label-caps font-bold">{inspectorPost.assignee || 'Unassigned'}</span>
+                <span className="font-label-caps font-bold">{inspectorPost.assignees.length > 0 ? inspectorPost.assignees.join(', ') : 'Unassigned'}</span>
               </div>
 
               <div className="flex justify-between py-1 border-b border-[#bfcab4]/50">

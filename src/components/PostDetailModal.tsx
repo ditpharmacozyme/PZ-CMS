@@ -121,7 +121,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
     setIsUploading(true);
     try {
       const { url } = await uploadImage(file);
-      const actorName = activeTeammate ? activeTeammate.name : (editedPost.assignee || 'Someone');
+      const actorName = activeTeammate ? activeTeammate.name : (editedPost.assignees[0] || 'Someone');
       setEditedPost((prev) => ({
         ...prev,
         visualUrl: url,
@@ -152,7 +152,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
     } else {
       setApprovalWarning(null);
     }
-    const actorName = activeTeammate ? activeTeammate.name : (editedPost.assignee || 'Someone');
+    const actorName = activeTeammate ? activeTeammate.name : (editedPost.assignees[0] || 'Someone');
     setEditedPost((prev) => ({
       ...prev,
       status: newStatus,
@@ -221,11 +221,11 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
     const logs = [...editedPost.activityLog];
     let changed = false;
 
-    if (post.assignee !== editedPost.assignee) {
+    if (post.assignees.join(',') !== editedPost.assignees.join(',')) {
       logs.unshift({
         id: `act-${Date.now()}-assignee`,
         actor: actorName,
-        action: `Reassigned to ${editedPost.assignee || 'Unassigned'}`,
+        action: `Reassigned to ${editedPost.assignees.length > 0 ? editedPost.assignees.join(', ') : 'Unassigned'}`,
         timestamp: logTimestamp()
       });
       changed = true;
@@ -453,29 +453,37 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
             {/* Assignee Box */}
             <div className="space-y-1 bg-white p-3 border border-[#bfcab4] rounded">
               <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold">
-                Assignee
+                Assignees {editedPost.assignees.length > 0 && `(${editedPost.assignees.length})`}
               </label>
               {teamMembers && teamMembers.length > 0 ? (
-                <select
-                  value={editedPost.assignee}
-                  onChange={(e) => {
-                    const selectedName = e.target.value;
-                    const member = teamMembers?.find((m) => m.name === selectedName);
-                    const updatedEmail = member?.email || editedPost.reminderEmail;
-                    setEditedPost((prev) => ({
-                      ...prev,
-                      assignee: selectedName,
-                      reminderEmail: updatedEmail
-                    }));
-                  }}
-                  className="w-full bg-[#faf9f5] border border-[#bfcab4] p-1.5 font-body-md text-xs text-[#1b1c1a] focus:outline-none rounded"
-                >
-                  {teamMembers.map((m) => (
-                    <option key={m.id} value={m.name}>
-                      {m.name} ({m.role})
-                    </option>
-                  ))}
-                </select>
+                <div className="border border-[#bfcab4] rounded divide-y divide-[#bfcab4] max-h-28 overflow-y-auto">
+                  {teamMembers.map((m) => {
+                    const checked = editedPost.assignees.includes(m.name);
+                    return (
+                      <label
+                        key={m.id}
+                        className="flex items-center gap-2 p-1.5 cursor-pointer hover:bg-[#faf9f5] transition-colors"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => {
+                            const wasEmpty = editedPost.assignees.length === 0;
+                            setEditedPost((prev) => ({
+                              ...prev,
+                              assignees: checked
+                                ? prev.assignees.filter((n) => n !== m.name)
+                                : [...prev.assignees, m.name],
+                              reminderEmail: wasEmpty && !checked && m.email ? m.email : prev.reminderEmail
+                            }));
+                          }}
+                          className="w-3.5 h-3.5 text-[#296c00] border-[#bfcab4] rounded focus:ring-[#296c00]"
+                        />
+                        <span className="font-body-md text-[11px] text-[#1b1c1a] truncate">{m.name} ({m.role})</span>
+                      </label>
+                    );
+                  })}
+                </div>
               ) : (
                 <p className="text-[11px] font-body-md text-[#707a67] italic p-1.5">
                   Add people in Settings → Team to assign this post.

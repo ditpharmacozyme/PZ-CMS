@@ -308,7 +308,7 @@ export function App() {
   };
 
   const handleDuplicatePost = (originalPost: Post) => {
-    const actorName = activeTeammate ? activeTeammate.name : (originalPost.assignee || 'Someone');
+    const actorName = activeTeammate ? activeTeammate.name : (originalPost.assignees[0] || 'Someone');
     const duplicated: Post = {
       ...originalPost,
       id: `post-${Date.now()}`,
@@ -435,8 +435,8 @@ export function App() {
   const handleCreatePostFromCopy = (text: string, brandId: BrandId) => {
     setCurrentTab('calendar');
     setNewPostInitialDate(undefined);
-    const assignee = teamMembers && teamMembers.length > 0 ? teamMembers[0].name : '';
-    const creatorName = activeTeammate ? activeTeammate.name : (assignee || 'Someone');
+    const defaultAssignee = teamMembers && teamMembers.length > 0 ? teamMembers[0].name : '';
+    const creatorName = activeTeammate ? activeTeammate.name : (defaultAssignee || 'Someone');
     const newPost: Post = {
       id: `post-${Date.now()}`,
       brandId,
@@ -447,7 +447,7 @@ export function App() {
       scheduledDate: '',
       scheduledTime: '',
       status: 'not-started',
-      assignee,
+      assignees: defaultAssignee ? [defaultAssignee] : [],
       visualUrl: '',
       approved: false,
       tags: [],

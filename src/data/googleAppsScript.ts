@@ -259,7 +259,7 @@ function handleSyncMultiTabSheets(data) {
           p.scheduledDate || "Backlog Idea",
           p.scheduledTime || "--:--",
           p.status || "",
-          p.assignee || "Unassigned",
+          (p.assignees && p.assignees.length) ? p.assignees.join(", ") : "Unassigned",
           p.approved ? "YES" : "NO",
           p.reminderEmail || "",
           p.visualUrl || "",
@@ -308,7 +308,7 @@ function handleSendEmailReminder(data) {
   var timeStr = post.scheduledTime || "10:00";
   var platform = (post.platform || "Instagram").toUpperCase();
   var caption = post.caption || "No caption provided.";
-  var assignee = post.assignee || "Team Member";
+  var assignee = (post.assignees && post.assignees.length) ? post.assignees.join(", ") : "Team Member";
   var visualUrl = post.visualUrl || "";
   
   var subject = "⏰ [Pharmacozyme Reminder] Time to post on " + platform + ": \\"" + title + "\\"";
@@ -422,7 +422,7 @@ function sendDueReminders() {
           scheduledTime: row.scheduled_time,
           platform: row.platform,
           caption: row.caption,
-          assignee: row.assignee,
+          assignees: row.assignees,
           visualUrl: row.visual_url
         }
       });

@@ -323,6 +323,21 @@ export const TopNav: React.FC<TopNavProps> = ({
                   </div>
                 )}
 
+                {/* Settings — mobile only; desktop has the dedicated header icon */}
+                {(activeTeammate?.userRole === 'Owner' || activeTeammate?.userRole === 'Manager' || activeTeammate?.name === 'Hamza Ansari') && (
+                  <button
+                    onClick={() => {
+                      setShowActiveTeammatePopover(false);
+                      setShowSettingsModal(true);
+                      setSettingsTab('team');
+                    }}
+                    className="sm:hidden w-full flex items-center justify-center gap-2 bg-[#efeeea] hover:bg-[#bfcab4]/40 text-[#1b1c1a] font-label-caps text-xs font-bold py-2 px-3 rounded transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-sm">settings</span>
+                    <span>Settings</span>
+                  </button>
+                )}
+
                 {onLogout && (
                   <button
                     onClick={() => {

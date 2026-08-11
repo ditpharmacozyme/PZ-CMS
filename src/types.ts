@@ -114,7 +114,7 @@ export interface Post {
   emailReminderEnabled?: boolean; // Whether email reminder is enabled
   reminderSentAt?: string; // Set once the Apps Script daily trigger has emailed this post — prevents duplicate sends
   status: PostStatus;
-  assignee: string;
+  assignees: string[];
   visualUrl: string; // image preview or drive URL
   templateId?: string;
   approved: boolean;
