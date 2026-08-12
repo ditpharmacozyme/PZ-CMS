@@ -33,7 +33,7 @@ import {
   subscribeRemoteAssets,
   fetchRemoteTeam,
   upsertRemoteTeamMember,
-  deleteRemoteTeamMember,
+  removeTeamMemberAccount,
   subscribeRemoteTeam,
   importLocalDataToRemote,
   linkTeamMemberAuthUser
@@ -624,7 +624,7 @@ export function App() {
 
     const results = await Promise.all([
       ...changed.map((m) => upsertRemoteTeamMember(m)),
-      ...removedIds.map((id) => deleteRemoteTeamMember(id)),
+      ...removedIds.map((id) => removeTeamMemberAccount(id)),
     ]);
     const firstError = results.find((r) => r.error)?.error;
     if (firstError) {

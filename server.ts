@@ -173,6 +173,89 @@ async function startServer() {
     }
   });
 
+  // Owner-only: revokes a team member's Supabase Auth account and removes
+  // their team_members row. Hand-mirrors api/team/remove-member.ts for
+  // local dev parity, same as the other routes in this file.
+  app.post("/api/team/remove-member", async (req, res) => {
+    const supabaseUrl = process.env.VITE_SUPABASE_URL;
+    const anonKey = process.env.VITE_SUPABASE_ANON_KEY;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!supabaseUrl || !anonKey || !serviceRoleKey) {
+      return res.status(500).json({ status: "error", code: "SERVER_NOT_CONFIGURED", message: "Server is missing required Supabase environment variables." });
+    }
+
+    const verifyClient = createClient(supabaseUrl, anonKey);
+    const adminClient = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false }
+    });
+
+    try {
+      const authHeader = req.headers.authorization;
+      const token = authHeader?.startsWith("Bearer ") ? authHeader.slice("Bearer ".length) : null;
+      if (!token) {
+        return res.status(401).json({ status: "error", code: "UNAUTHENTICATED", message: "Missing Authorization header." });
+      }
+
+      const { data: userData, error: userError } = await verifyClient.auth.getUser(token);
+      if (userError || !userData?.user) {
+        return res.status(401).json({ status: "error", code: "UNAUTHENTICATED", message: "Invalid or expired session." });
+      }
+
+      const { data: callerRow, error: callerError } = await adminClient
+        .from("team_members")
+        .select("user_role")
+        .eq("auth_user_id", userData.user.id)
+        .maybeSingle();
+      if (callerError) {
+        return res.status(500).json({ status: "error", code: "CALLER_LOOKUP_FAILED", message: callerError.message });
+      }
+      if (!callerRow || callerRow.user_role !== "Owner") {
+        return res.status(403).json({ status: "error", code: "FORBIDDEN", message: "Only the Owner can remove team members." });
+      }
+
+      const { id } = req.body ?? {};
+      if (typeof id !== "string" || !id.trim()) {
+        return res.status(400).json({ status: "error", code: "INVALID_INPUT", message: "Missing or invalid id." });
+      }
+
+      const { data: targetRow, error: targetError } = await adminClient
+        .from("team_members")
+        .select("id, user_role, auth_user_id")
+        .eq("id", id)
+        .maybeSingle();
+      if (targetError) {
+        return res.status(500).json({ status: "error", code: "MEMBER_LOOKUP_FAILED", message: targetError.message });
+      }
+      if (!targetRow) {
+        return res.status(404).json({ status: "error", code: "MEMBER_NOT_FOUND", message: "No team member with this id." });
+      }
+      if (targetRow.user_role === "Owner") {
+        return res.status(403).json({ status: "error", code: "CANNOT_REMOVE_OWNER", message: "Owners cannot be removed." });
+      }
+
+      if (targetRow.auth_user_id) {
+        const { error: authDeleteError } = await adminClient.auth.admin.deleteUser(targetRow.auth_user_id);
+        if (authDeleteError) {
+          return res.status(500).json({ status: "error", code: "AUTH_DELETE_FAILED", message: authDeleteError.message });
+        }
+      }
+
+      const { error: deleteError } = await adminClient.from("team_members").delete().eq("id", id);
+      if (deleteError) {
+        return res.status(500).json({
+          status: "error",
+          code: "PROFILE_DELETE_FAILED_MANUAL_CLEANUP",
+          message: `The Auth account was revoked, but removing the team_members row failed (${deleteError.message}). Contact an admin to remove team_members id ${id} manually.`,
+          orphanedTeamMemberId: id
+        });
+      }
+
+      return res.status(200).json({ status: "success" });
+    } catch (err: any) {
+      return res.status(500).json({ status: "error", code: "UNEXPECTED_ERROR", message: err?.message || "Unexpected server error." });
+    }
+  });
+
   // Proxy endpoint to Google Apps Script Web App (Bypasses CORS restrictions)
   app.post("/api/appscript/proxy", async (req, res) => {
     try {

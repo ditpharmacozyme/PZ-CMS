@@ -537,11 +537,29 @@ export async function provisionTeamMemberAccount(payload: {
   return { member: body.teamMember as TeamMember };
 }
 
-export async function deleteRemoteTeamMember(id: string): Promise<{ error: string | null }> {
+/**
+ * Owner-only: revokes the team member's Supabase Auth account (via
+ * /api/team/remove-member, which holds the service-role key server-side)
+ * and removes their team_members row. Unlike a raw client-side delete, this
+ * ensures a removed person can no longer authenticate at all -- see
+ * api/team/remove-member.ts for why that matters.
+ */
+export async function removeTeamMemberAccount(id: string): Promise<{ error: string | null }> {
   if (!supabase) return { error: null };
-  const { error } = await supabase.from('team_members').delete().eq('id', id);
-  if (error) console.error('[Supabase] deleteRemoteTeamMember failed:', error.message);
-  return { error: error ? error.message : null };
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
+  if (!token) return { error: 'No active session.' };
+
+  const res = await fetch('/api/team/remove-member', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ id })
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    return { error: body.message || 'Failed to remove the team member account.' };
+  }
+  return { error: null };
 }
 
 export function subscribeRemoteTeam(onChange: (members: TeamMember[]) => void): () => void {
