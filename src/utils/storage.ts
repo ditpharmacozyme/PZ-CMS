@@ -507,6 +507,36 @@ export async function upsertRemoteTeamMember(m: TeamMember): Promise<{ error: st
   return { error: error ? error.message : null };
 }
 
+/**
+ * Owner-only: creates a real Supabase Auth account for a new team member
+ * (via /api/team/create-member, which holds the service-role key server-side)
+ * and invites them by email to set their own password. Also writes the
+ * team_members row -- unlike upsertRemoteTeamMember, the caller must NOT
+ * separately upsert the returned member, since the server already saved it.
+ */
+export async function provisionTeamMemberAccount(payload: {
+  name: string;
+  email: string;
+  role: string;
+  color: string;
+}): Promise<{ member?: TeamMember; error?: string; code?: string }> {
+  if (!supabase) return { error: 'Supabase is not configured.' };
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
+  if (!token) return { error: 'No active session.' };
+
+  const res = await fetch('/api/team/create-member', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(payload)
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    return { error: body.message || 'Failed to create the team member account.', code: body.code };
+  }
+  return { member: body.teamMember as TeamMember };
+}
+
 export async function deleteRemoteTeamMember(id: string): Promise<{ error: string | null }> {
   if (!supabase) return { error: null };
   const { error } = await supabase.from('team_members').delete().eq('id', id);

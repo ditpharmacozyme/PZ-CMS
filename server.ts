@@ -1,6 +1,17 @@
+import dotenv from "dotenv";
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
+import { createClient } from "@supabase/supabase-js";
+
+// Vercel injects project env vars directly for its serverless functions, but
+// local `npm run dev` needs this -- default dotenv only reads `.env`, and
+// this repo only has `.env.local`/`.env.example`.
+dotenv.config({ path: ".env.local" });
+
+function getInitials(name: string): string {
+  return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+}
 
 async function startServer() {
   const app = express();
@@ -42,6 +53,123 @@ async function startServer() {
       });
     } catch (err: any) {
       res.status(500).json({ status: "error", message: err.message });
+    }
+  });
+
+  // Owner-only: creates a real Supabase Auth account (invite email) + the
+  // team_members row. Hand-mirrors api/team/create-member.ts for local dev
+  // parity, same as the other routes in this file.
+  app.post("/api/team/create-member", async (req, res) => {
+    const supabaseUrl = process.env.VITE_SUPABASE_URL;
+    const anonKey = process.env.VITE_SUPABASE_ANON_KEY;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!supabaseUrl || !anonKey || !serviceRoleKey) {
+      return res.status(500).json({ status: "error", code: "SERVER_NOT_CONFIGURED", message: "Server is missing required Supabase environment variables." });
+    }
+
+    const verifyClient = createClient(supabaseUrl, anonKey);
+    const adminClient = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false }
+    });
+
+    try {
+      const authHeader = req.headers.authorization;
+      const token = authHeader?.startsWith("Bearer ") ? authHeader.slice("Bearer ".length) : null;
+      if (!token) {
+        return res.status(401).json({ status: "error", code: "UNAUTHENTICATED", message: "Missing Authorization header." });
+      }
+
+      const { data: userData, error: userError } = await verifyClient.auth.getUser(token);
+      if (userError || !userData?.user) {
+        return res.status(401).json({ status: "error", code: "UNAUTHENTICATED", message: "Invalid or expired session." });
+      }
+
+      const { data: callerRow, error: callerError } = await adminClient
+        .from("team_members")
+        .select("user_role")
+        .eq("auth_user_id", userData.user.id)
+        .maybeSingle();
+      if (callerError) {
+        return res.status(500).json({ status: "error", code: "CALLER_LOOKUP_FAILED", message: callerError.message });
+      }
+      if (!callerRow || callerRow.user_role !== "Owner") {
+        return res.status(403).json({ status: "error", code: "FORBIDDEN", message: "Only the Owner can create new team member accounts." });
+      }
+
+      const { name, email, role, color } = req.body ?? {};
+      if (typeof name !== "string" || !name.trim() || typeof email !== "string" || !email.trim() || typeof role !== "string" || typeof color !== "string") {
+        return res.status(400).json({ status: "error", code: "INVALID_INPUT", message: "Missing or invalid name, email, role, or color." });
+      }
+      const trimmedName = name.trim();
+      const trimmedEmail = email.trim();
+
+      const { data: existingMember, error: existingMemberError } = await adminClient
+        .from("team_members")
+        .select("id")
+        .ilike("email", trimmedEmail)
+        .maybeSingle();
+      if (existingMemberError) {
+        return res.status(500).json({ status: "error", code: "MEMBER_LOOKUP_FAILED", message: existingMemberError.message });
+      }
+      if (existingMember) {
+        return res.status(409).json({ status: "error", code: "MEMBER_EXISTS", message: "A team member with this email already exists." });
+      }
+
+      const redirectTo = `${req.protocol}://${req.get("host")}/`;
+
+      const { data: inviteData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(trimmedEmail, {
+        redirectTo,
+        data: { name: trimmedName }
+      });
+      if (inviteError || !inviteData?.user) {
+        const alreadyRegistered = inviteError?.message?.toLowerCase().includes("already been registered") || inviteError?.message?.toLowerCase().includes("already registered");
+        if (alreadyRegistered) {
+          return res.status(409).json({ status: "error", code: "AUTH_EXISTS", message: "This email already has a Supabase Auth account." });
+        }
+        return res.status(500).json({ status: "error", code: "AUTH_CREATE_FAILED", message: inviteError?.message || "Failed to create the Auth account." });
+      }
+
+      const newMemberId = `tm-${Date.now()}`;
+      const { error: insertError } = await adminClient.from("team_members").insert({
+        id: newMemberId,
+        name: trimmedName,
+        role,
+        user_role: "Editor",
+        email: trimmedEmail,
+        avatar_initials: getInitials(trimmedName),
+        color,
+        auth_user_id: inviteData.user.id
+      });
+
+      if (insertError) {
+        const { error: rollbackError } = await adminClient.auth.admin.deleteUser(inviteData.user.id);
+        if (rollbackError) {
+          return res.status(500).json({
+            status: "error",
+            code: "PROFILE_SAVE_FAILED_MANUAL_CLEANUP",
+            message: `Account was created but the profile save failed, and rollback also failed. Contact an admin to remove auth user ${inviteData.user.id} (${trimmedEmail}) manually.`,
+            orphanedAuthUserId: inviteData.user.id,
+            orphanedEmail: trimmedEmail
+          });
+        }
+        return res.status(500).json({ status: "error", code: "PROFILE_SAVE_FAILED_ROLLED_BACK", message: `Failed to save the team member profile (${insertError.message}). No account was left behind -- safe to retry.` });
+      }
+
+      return res.status(200).json({
+        status: "success",
+        teamMember: {
+          id: newMemberId,
+          name: trimmedName,
+          role,
+          userRole: "Editor",
+          email: trimmedEmail,
+          avatarInitials: getInitials(trimmedName),
+          color,
+          authUserId: inviteData.user.id
+        }
+      });
+    } catch (err: any) {
+      return res.status(500).json({ status: "error", code: "UNEXPECTED_ERROR", message: err?.message || "Unexpected server error." });
     }
   });
 

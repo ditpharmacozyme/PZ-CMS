@@ -1,20 +1,56 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 
+interface LoginPageProps {
+  /** Forces the screen into a specific mode instead of the default sign-in
+   * form — used after an invite/password-reset email link lands the user
+   * back on the app with a session but no password set yet. */
+  forcedMode?: 'set-password';
+  /** Called once a forced 'set-password' flow completes successfully. */
+  onPasswordSet?: () => void;
+}
+
 /**
  * Real Supabase Auth login — replaces the old client-side PIN picker.
  * On success this does nothing itself beyond clearing its own form state;
  * App.tsx's supabase.auth.onAuthStateChange listener picks up the new
  * session and re-renders past this screen automatically.
  */
-export const LoginPage: React.FC = () => {
-  const [mode, setMode] = useState<'signin' | 'reset'>('signin');
+export const LoginPage: React.FC<LoginPageProps> = ({ forcedMode, onPasswordSet }) => {
+  const [mode, setMode] = useState<'signin' | 'reset' | 'set-password'>(forcedMode || 'signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resetSent, setResetSent] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const handleSetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!supabase) {
+      setError('Supabase isn’t configured for this deployment — contact Hamza.');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError('Passwords don’t match.');
+      return;
+    }
+    setIsSubmitting(true);
+    setError(null);
+    const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+    setIsSubmitting(false);
+    if (updateError) {
+      setError(updateError.message);
+    } else {
+      onPasswordSet?.();
+    }
+  };
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,11 +96,67 @@ export const LoginPage: React.FC = () => {
           </div>
           <h1 className="font-display-xl text-xl text-[#1b1c1a] font-bold">Brand-Ops Studio</h1>
           <p className="font-body-md text-xs text-[#707a67] mt-1">
-            {mode === 'signin' ? 'Sign in to continue' : 'Reset your password'}
+            {mode === 'signin' ? 'Sign in to continue' : mode === 'set-password' ? 'Set your password to continue' : 'Reset your password'}
           </p>
         </div>
 
-        {mode === 'signin' ? (
+        {mode === 'set-password' ? (
+          <form onSubmit={handleSetPassword} className="bg-white border border-[#bfcab4] rounded-lg shadow-2xs p-6 space-y-4">
+            <p className="text-xs text-[#707a67] font-body-md">
+              Welcome! Choose a password to finish setting up your account.
+            </p>
+            <div className="space-y-1.5">
+              <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold block">
+                New Password
+              </label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={e => { setNewPassword(e.target.value); setError(null); }}
+                placeholder="At least 6 characters"
+                autoComplete="new-password"
+                autoFocus
+                required
+                disabled={isSubmitting}
+                className="w-full bg-[#faf9f5] border border-[#bfcab4] focus:border-[#296c00] text-[#1b1c1a] p-2.5 rounded outline-none transition-colors placeholder:text-[#bfcab4] placeholder:text-sm disabled:opacity-50"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold block">
+                Confirm Password
+              </label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={e => { setConfirmPassword(e.target.value); setError(null); }}
+                placeholder="Re-enter your password"
+                autoComplete="new-password"
+                required
+                disabled={isSubmitting}
+                className="w-full bg-[#faf9f5] border border-[#bfcab4] focus:border-[#296c00] text-[#1b1c1a] p-2.5 rounded outline-none transition-colors placeholder:text-[#bfcab4] placeholder:text-sm disabled:opacity-50"
+              />
+            </div>
+
+            {error && (
+              <div className="p-2.5 rounded bg-[#fce8e6] border border-[#ba1a1a]/20 text-[#ba1a1a] text-xs text-center font-body-md">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={isSubmitting || !newPassword || !confirmPassword}
+              className="w-full bg-[#296c00] hover:bg-[#1f5700] text-white font-bold py-2.5 rounded transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Saving…
+                </span>
+              ) : 'Set Password & Continue'}
+            </button>
+          </form>
+        ) : mode === 'signin' ? (
           <form onSubmit={handleSignIn} className="bg-white border border-[#bfcab4] rounded-lg shadow-2xs p-6 space-y-4">
             <div className="space-y-1.5">
               <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold block">

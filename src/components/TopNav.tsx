@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AppNotification, BrandId, TeamMember } from '../types';
 import { BRANDS } from '../data/brands';
 import { NavTab } from './SideNav';
+import { provisionTeamMemberAccount } from '../utils/storage';
 
 interface TopNavProps {
   searchQuery: string;
@@ -17,6 +18,7 @@ interface TopNavProps {
   onSelectTab?: (tab: NavTab) => void;
   teamMembers: TeamMember[];
   onSaveTeamMembers: (members: TeamMember[]) => void;
+  onTeamMemberCreated: (member: TeamMember) => void;
   isRemoteConfigured?: boolean;
   onImportLocalData?: () => void;
   isImportingData?: boolean;
@@ -47,6 +49,7 @@ export const TopNav: React.FC<TopNavProps> = ({
   onSelectTab,
   teamMembers,
   onSaveTeamMembers,
+  onTeamMemberCreated,
   isRemoteConfigured = false,
   onImportLocalData,
   isImportingData = false,
@@ -65,26 +68,39 @@ export const TopNav: React.FC<TopNavProps> = ({
   const [newMember, setNewMember] = useState<Partial<TeamMember>>({
     name: '', role: '', email: '', color: AVATAR_COLORS[0]
   });
+  const [isCreatingAccount, setIsCreatingAccount] = useState(false);
+  const [createMemberError, setCreateMemberError] = useState<string | null>(null);
+  const [inviteSentTo, setInviteSentTo] = useState<string | null>(null);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  const handleSaveNewMember = () => {
-    // Only the owner can set a custom role — everyone else's addition
-    // defaults to "Editor" regardless of what's in the (disabled) field.
-    const role = activeTeammate?.userRole === 'Owner' ? newMember.role?.trim() : 'Editor';
-    if (!newMember.name?.trim() || !role) return;
-    const member: TeamMember = {
-      id: `tm-${Date.now()}`,
-      name: newMember.name.trim(),
-      role,
-      userRole: 'Editor',
-      email: newMember.email?.trim() || '',
-      color: newMember.color || AVATAR_COLORS[0],
-      avatarInitials: getInitials(newMember.name.trim()),
-      passcode: newMember.passcode || '1234'
-    };
-    onSaveTeamMembers([...teamMembers, member]);
+  // Adding a member creates a real Supabase Auth account (invite email) via
+  // /api/team/create-member, which also writes the team_members row server
+  // -side — this only ever reaches an Owner (see the Owner-only gate below),
+  // so unlike the edit form, there's no non-Owner "forced to Editor label" case.
+  const handleSaveNewMember = async () => {
+    const name = newMember.name?.trim();
+    const role = newMember.role?.trim();
+    const email = newMember.email?.trim();
+    if (!name || !role || !email) return;
+    setIsCreatingAccount(true);
+    setCreateMemberError(null);
+    const { member, error } = await provisionTeamMemberAccount({
+      name, role, email, color: newMember.color || AVATAR_COLORS[0]
+    });
+    setIsCreatingAccount(false);
+    if (error || !member) {
+      setCreateMemberError(error || 'Failed to create the account.');
+      return;
+    }
+    onTeamMemberCreated(member);
+    setInviteSentTo(email);
+  };
+
+  const handleCloseAddMember = () => {
     setNewMember({ name: '', role: '', email: '', color: AVATAR_COLORS[0] });
+    setCreateMemberError(null);
+    setInviteSentTo(null);
     setIsAddingMember(false);
   };
 
@@ -428,85 +444,113 @@ export const TopNav: React.FC<TopNavProps> = ({
                       <p className="font-headline-md text-sm font-bold text-[#1b1c1a]">Your Team</p>
                       <p className="font-body-md text-xs text-[#707a67] mt-0.5">Add or edit the people who work on posts.</p>
                     </div>
-                    <button
-                      onClick={() => { setIsAddingMember(true); setEditingMember(null); }}
-                      className="flex items-center gap-1 bg-[#296c00] text-white px-3 py-2 rounded font-label-caps text-xs font-bold hover:bg-[#1f5700] transition-colors"
-                    >
-                      <span className="material-symbols-outlined text-sm">person_add</span>
-                      Add Person
-                    </button>
+                    {activeTeammate?.userRole === 'Owner' && (
+                      <button
+                        onClick={() => { setIsAddingMember(true); setEditingMember(null); }}
+                        className="flex items-center gap-1 bg-[#296c00] text-white px-3 py-2 rounded font-label-caps text-xs font-bold hover:bg-[#1f5700] transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-sm">person_add</span>
+                        Add Person
+                      </button>
+                    )}
                   </div>
 
-                  {/* Add new member form */}
+                  {/* Add new member form — Owner only: creating a member here also
+                      creates their real login (invite email), which only an Owner
+                      can trigger (enforced server-side too). */}
                   {isAddingMember && (
                     <div className="p-4 bg-[#f0fdf4] border border-[#296c00]/30 rounded space-y-3">
-                      <p className="font-label-caps text-[10px] text-[#296c00] font-bold uppercase">New Team Member</p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <div className="space-y-1">
-                          <label className="font-label-caps text-[9px] text-[#707a67] uppercase block">Full Name *</label>
-                          <input
-                            type="text"
-                            value={newMember.name || ''}
-                            onChange={e => setNewMember(p => ({ ...p, name: e.target.value }))}
-                            placeholder="e.g. Jane Smith"
-                            className="w-full bg-white border border-[#bfcab4] p-2 text-xs rounded focus:outline-none focus:border-[#296c00]"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="font-label-caps text-[9px] text-[#707a67] uppercase block">
-                            Role * {activeTeammate?.userRole !== 'Owner' && ' (Owner only)'}
-                          </label>
-                          <input
-                            type="text"
-                            disabled={activeTeammate?.userRole !== 'Owner'}
-                            value={activeTeammate?.userRole === 'Owner' ? (newMember.role || '') : 'Editor'}
-                            onChange={e => setNewMember(p => ({ ...p, role: e.target.value }))}
-                            placeholder="e.g. Designer"
-                            className="w-full bg-white border border-[#bfcab4] p-2 text-xs rounded focus:outline-none focus:border-[#296c00] disabled:bg-[#f3f2ee] disabled:text-[#707a67]"
-                          />
-                        </div>
-                        <div className="col-span-2 space-y-1">
-                          <label className="font-label-caps text-[9px] text-[#707a67] uppercase block">Email</label>
-                          <input
-                            type="email"
-                            value={newMember.email || ''}
-                            onChange={e => setNewMember(p => ({ ...p, email: e.target.value }))}
-                            placeholder="jane@pharmacozyme.com"
-                            className="w-full bg-white border border-[#bfcab4] p-2 text-xs rounded focus:outline-none focus:border-[#296c00]"
-                          />
-                        </div>
-                        <div className="col-span-2 space-y-1">
-                          <label className="font-label-caps text-[9px] text-[#707a67] uppercase block">Login PIN / Passcode</label>
-                          <input
-                            type="password"
-                            value={newMember.passcode || ''}
-                            onChange={e => setNewMember(p => ({ ...p, passcode: e.target.value }))}
-                            placeholder="e.g. 1234"
-                            className="w-full bg-white border border-[#bfcab4] p-2 text-xs rounded focus:outline-none focus:border-[#296c00]"
-                          />
-                        </div>
-                        <div className="col-span-2 space-y-1">
-                          <label className="font-label-caps text-[9px] text-[#707a67] uppercase block">Avatar Colour</label>
-                          <div className="flex gap-2 flex-wrap">
-                            {AVATAR_COLORS.map(c => (
-                              <button
-                                key={c}
-                                onClick={() => setNewMember(p => ({ ...p, color: c }))}
-                                className={`w-7 h-7 rounded-full border-2 transition-all ${newMember.color === c ? 'border-[#1b1c1a] scale-110' : 'border-transparent'}`}
-                                style={{ background: c }}
-                              />
-                            ))}
+                      {inviteSentTo ? (
+                        <>
+                          <div className="p-3 rounded bg-white border border-[#296c00]/20 text-[#296c00] text-xs font-body-md">
+                            Invite sent to <strong>{inviteSentTo}</strong> — they'll get an email to set their password and log in.
                           </div>
-                        </div>
-                      </div>
-                      <div className="flex gap-2 pt-1">
-                        <button onClick={handleSaveNewMember} className="flex-1 bg-[#296c00] text-white py-2 font-label-caps text-xs rounded font-bold hover:bg-[#1f5700]">
-                          Save Person
-                        </button>
-                        <button onClick={() => setIsAddingMember(false)} className="px-4 py-2 border border-[#bfcab4] font-label-caps text-xs rounded hover:bg-[#efeeea]">
-                          Cancel
-                        </button>
-                      </div>
+                          <button onClick={handleCloseAddMember} className="w-full bg-[#296c00] text-white py-2 font-label-caps text-xs rounded font-bold hover:bg-[#1f5700]">
+                            Done
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <p className="font-label-caps text-[10px] text-[#296c00] font-bold uppercase">New Team Member</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div className="space-y-1">
+                              <label className="font-label-caps text-[9px] text-[#707a67] uppercase block">Full Name *</label>
+                              <input
+                                type="text"
+                                value={newMember.name || ''}
+                                onChange={e => setNewMember(p => ({ ...p, name: e.target.value }))}
+                                placeholder="e.g. Jane Smith"
+                                disabled={isCreatingAccount}
+                                className="w-full bg-white border border-[#bfcab4] p-2 text-xs rounded focus:outline-none focus:border-[#296c00] disabled:opacity-50"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="font-label-caps text-[9px] text-[#707a67] uppercase block">Role *</label>
+                              <input
+                                type="text"
+                                value={newMember.role || ''}
+                                onChange={e => setNewMember(p => ({ ...p, role: e.target.value }))}
+                                placeholder="e.g. Designer"
+                                disabled={isCreatingAccount}
+                                className="w-full bg-white border border-[#bfcab4] p-2 text-xs rounded focus:outline-none focus:border-[#296c00] disabled:opacity-50"
+                              />
+                            </div>
+                            <div className="col-span-2 space-y-1">
+                              <label className="font-label-caps text-[9px] text-[#707a67] uppercase block">Email *</label>
+                              <input
+                                type="email"
+                                value={newMember.email || ''}
+                                onChange={e => setNewMember(p => ({ ...p, email: e.target.value }))}
+                                placeholder="jane@pharmacozyme.com"
+                                disabled={isCreatingAccount}
+                                className="w-full bg-white border border-[#bfcab4] p-2 text-xs rounded focus:outline-none focus:border-[#296c00] disabled:opacity-50"
+                              />
+                            </div>
+                            <div className="col-span-2 space-y-1">
+                              <label className="font-label-caps text-[9px] text-[#707a67] uppercase block">Avatar Colour</label>
+                              <div className="flex gap-2 flex-wrap">
+                                {AVATAR_COLORS.map(c => (
+                                  <button
+                                    key={c}
+                                    onClick={() => setNewMember(p => ({ ...p, color: c }))}
+                                    disabled={isCreatingAccount}
+                                    className={`w-7 h-7 rounded-full border-2 transition-all ${newMember.color === c ? 'border-[#1b1c1a] scale-110' : 'border-transparent'} disabled:opacity-50`}
+                                    style={{ background: c }}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+
+                          {createMemberError && (
+                            <div className="p-2.5 rounded bg-[#fce8e6] border border-[#ba1a1a]/20 text-[#ba1a1a] text-xs font-body-md">
+                              {createMemberError}
+                            </div>
+                          )}
+
+                          <div className="flex gap-2 pt-1">
+                            <button
+                              onClick={handleSaveNewMember}
+                              disabled={isCreatingAccount || !newMember.name?.trim() || !newMember.role?.trim() || !newMember.email?.trim()}
+                              className="flex-1 bg-[#296c00] text-white py-2 font-label-caps text-xs rounded font-bold hover:bg-[#1f5700] disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                              {isCreatingAccount ? (
+                                <span className="flex items-center justify-center gap-2">
+                                  <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                  Creating…
+                                </span>
+                              ) : 'Save Person'}
+                            </button>
+                            <button
+                              onClick={handleCloseAddMember}
+                              disabled={isCreatingAccount}
+                              className="px-4 py-2 border border-[#bfcab4] font-label-caps text-xs rounded hover:bg-[#efeeea] disabled:opacity-50"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
 

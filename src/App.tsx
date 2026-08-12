@@ -77,6 +77,10 @@ export function App() {
   // as the rest of the app's "still runs without Supabase" degradation.
   const [session, setSession] = useState<Session | null>(null);
   const [authChecked, setAuthChecked] = useState<boolean>(!supabase);
+  // True right after landing from an invite/password-reset email link, until
+  // the person sets a real password — Supabase's link establishes a session
+  // but never a password on its own.
+  const [mustSetPassword, setMustSetPassword] = useState(false);
 
   useEffect(() => {
     if (!supabase) return;
@@ -88,6 +92,22 @@ export function App() {
       setSession(newSession);
     });
     return () => authListener.subscription.unsubscribe();
+  }, []);
+
+  // Invite/recovery email links land back here as
+  // `?token_hash=...&type=invite|recovery` — exchange that one-time token
+  // for a real session, then force the set-password screen. Runs once on
+  // mount, independent of the plain getSession() check above.
+  useEffect(() => {
+    if (!supabase) return;
+    const params = new URLSearchParams(window.location.search);
+    const tokenHash = params.get('token_hash');
+    const type = params.get('type');
+    if (!tokenHash || (type !== 'invite' && type !== 'recovery')) return;
+    supabase.auth.verifyOtp({ token_hash: tokenHash, type }).then(({ error }) => {
+      if (!error) setMustSetPassword(true);
+      window.history.replaceState({}, '', window.location.pathname);
+    });
   }, []);
 
   const authEmail = session?.user?.email?.toLowerCase() || null;
@@ -399,6 +419,10 @@ export function App() {
     return <LoginPage />;
   }
 
+  if (supabase && mustSetPassword) {
+    return <LoginPage forcedMode="set-password" onPasswordSet={() => setMustSetPassword(false)} />;
+  }
+
   if (noProfileMatch) {
     return (
       <div className="min-h-screen bg-[#FAF9F5] flex items-center justify-center p-4">
@@ -578,6 +602,14 @@ export function App() {
     }
   };
 
+  // /api/team/create-member already wrote the team_members row (and the
+  // real Auth account) server-side -- this is a local-state-only insert,
+  // NOT another upsertRemoteTeamMember call, which would be redundant and
+  // race the realtime subscription.
+  const handleTeamMemberCreated = (member: TeamMember) => {
+    setTeamMembers((prev) => [...prev, member]);
+  };
+
   // One-time push of this browser's local data up to Supabase (Settings → System).
   const handleImportLocalData = async () => {
     setImportingData(true);
@@ -650,6 +682,7 @@ export function App() {
           onSelectTab={setCurrentTab}
           teamMembers={teamMembers}
           onSaveTeamMembers={handleSaveTeamMembers}
+          onTeamMemberCreated={handleTeamMemberCreated}
           isRemoteConfigured={isSupabaseConfigured()}
           onImportLocalData={handleImportLocalData}
           isImportingData={importingData}
