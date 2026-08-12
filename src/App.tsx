@@ -607,6 +607,21 @@ export function App() {
     const changed = members.filter((m) => previous.find((pm) => pm.id === m.id) !== m);
     setTeamMembers(members);
 
+    if (activeTeammate) {
+      removedIds.forEach((id) => {
+        const removedMember = previous.find((m) => m.id === id);
+        logAuditEvent(buildAuditEvent({
+          actorId: activeTeammate.id,
+          actorName: activeTeammate.name,
+          actionType: 'member_removed',
+          entityType: 'member',
+          entityId: id,
+          entityTitle: removedMember?.name ?? id,
+          beforeValue: removedMember ? { name: removedMember.name, role: removedMember.userRole } : undefined
+        }));
+      });
+    }
+
     const results = await Promise.all([
       ...changed.map((m) => upsertRemoteTeamMember(m)),
       ...removedIds.map((id) => deleteRemoteTeamMember(id)),
@@ -624,6 +639,17 @@ export function App() {
   // race the realtime subscription.
   const handleTeamMemberCreated = (member: TeamMember) => {
     setTeamMembers((prev) => [...prev, member]);
+    if (activeTeammate) {
+      logAuditEvent(buildAuditEvent({
+        actorId: activeTeammate.id,
+        actorName: activeTeammate.name,
+        actionType: 'member_added',
+        entityType: 'member',
+        entityId: member.id,
+        entityTitle: member.name,
+        afterValue: { name: member.name, role: member.userRole, email: member.email }
+      }));
+    }
   };
 
   // One-time push of this browser's local data up to Supabase (Settings → System).
