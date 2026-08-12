@@ -79,8 +79,19 @@ export function App() {
   const [authChecked, setAuthChecked] = useState<boolean>(!supabase);
   // True right after landing from an invite/password-reset email link, until
   // the person sets a real password — Supabase's link establishes a session
-  // but never a password on its own.
-  const [mustSetPassword, setMustSetPassword] = useState(false);
+  // but never a password on its own. This project's email templates use the
+  // older hash-fragment link style (#access_token=...&type=invite), which
+  // supabase-js auto-exchanges for a session via detectSessionInUrl (default
+  // on) *before* our effects run — so `type` must be read synchronously
+  // during the initial render, not from an effect, or the SDK's own async
+  // handling races ahead of us and the URL gets cleaned/lost first.
+  const [mustSetPassword, setMustSetPassword] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    const hashType = new URLSearchParams(window.location.hash.replace(/^#/, '')).get('type');
+    const queryType = new URLSearchParams(window.location.search).get('type');
+    const type = hashType || queryType;
+    return type === 'invite' || type === 'recovery';
+  });
 
   useEffect(() => {
     if (!supabase) return;
@@ -94,20 +105,25 @@ export function App() {
     return () => authListener.subscription.unsubscribe();
   }, []);
 
-  // Invite/recovery email links land back here as
-  // `?token_hash=...&type=invite|recovery` — exchange that one-time token
-  // for a real session, then force the set-password screen. Runs once on
-  // mount, independent of the plain getSession() check above.
+  // Newer-style invite/recovery links land as `?token_hash=...&type=...`
+  // instead of a hash fragment — those need an explicit exchange call
+  // (the SDK doesn't auto-authenticate from a bare token_hash). The
+  // hash-fragment style above is already handled by detectSessionInUrl,
+  // so this only fires for the query-param style; either way we clean the
+  // URL so a refresh doesn't resubmit a single-use token.
   useEffect(() => {
     if (!supabase) return;
     const params = new URLSearchParams(window.location.search);
     const tokenHash = params.get('token_hash');
     const type = params.get('type');
-    if (!tokenHash || (type !== 'invite' && type !== 'recovery')) return;
-    supabase.auth.verifyOtp({ token_hash: tokenHash, type }).then(({ error }) => {
-      if (!error) setMustSetPassword(true);
+    if (tokenHash && (type === 'invite' || type === 'recovery')) {
+      supabase.auth.verifyOtp({ token_hash: tokenHash, type }).then(({ error }) => {
+        if (!error) setMustSetPassword(true);
+        window.history.replaceState({}, '', window.location.pathname);
+      });
+    } else if (window.location.hash.includes('type=invite') || window.location.hash.includes('type=recovery')) {
       window.history.replaceState({}, '', window.location.pathname);
-    });
+    }
   }, []);
 
   const authEmail = session?.user?.email?.toLowerCase() || null;
