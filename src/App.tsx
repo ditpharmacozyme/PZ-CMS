@@ -103,7 +103,7 @@ export function App() {
   useEffect(() => {
     if (!supabase || !session?.user || !matchedTeammate || matchedTeammate.authUserId) return;
     const authUserId = session.user.id;
-    linkTeamMemberAuthUser(matchedTeammate.id, authUserId);
+    linkTeamMemberAuthUser(matchedTeammate.id);
     setTeamMembers((prev) => prev.map((m) => (m.id === matchedTeammate.id ? { ...m, authUserId } : m)));
   }, [session, matchedTeammate]);
 
@@ -555,11 +555,27 @@ export function App() {
 
   // Team members are edited as a whole array by TopNav's settings panel
   // (add/edit/remove all call this), so push the diff to Supabase here.
-  const handleSaveTeamMembers = (members: TeamMember[]) => {
-    const removedIds = teamMembers.filter((m) => !members.some((nm) => nm.id === m.id)).map((m) => m.id);
+  // Only upsert rows that actually changed (by reference — TopNav's
+  // add/edit/delete handlers all preserve references for untouched members)
+  // rather than blanket-upserting everyone: with role-gated team_members
+  // writes (migration 0009), re-sending an unchanged Owner row as part of
+  // a Manager's edit would otherwise hit that row's write protection for
+  // no reason.
+  const handleSaveTeamMembers = async (members: TeamMember[]) => {
+    const previous = teamMembers;
+    const removedIds = previous.filter((m) => !members.some((nm) => nm.id === m.id)).map((m) => m.id);
+    const changed = members.filter((m) => previous.find((pm) => pm.id === m.id) !== m);
     setTeamMembers(members);
-    members.forEach(upsertRemoteTeamMember);
-    removedIds.forEach(deleteRemoteTeamMember);
+
+    const results = await Promise.all([
+      ...changed.map((m) => upsertRemoteTeamMember(m)),
+      ...removedIds.map((id) => deleteRemoteTeamMember(id)),
+    ]);
+    const firstError = results.find((r) => r.error)?.error;
+    if (firstError) {
+      setTeamMembers(previous);
+      showToast(`Couldn't save team changes: ${firstError}`);
+    }
   };
 
   // One-time push of this browser's local data up to Supabase (Settings → System).

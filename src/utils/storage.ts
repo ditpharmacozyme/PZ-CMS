@@ -478,11 +478,19 @@ function teamMemberToRow(m: TeamMember) {
   return { id: m.id, name: m.name, role: m.role, user_role: m.userRole, email: m.email, avatar_initials: m.avatarInitials, color: m.color, auth_user_id: m.authUserId || null };
 }
 
-/** Link this team_members row to a real Supabase Auth account (first-login auto-link). */
-export async function linkTeamMemberAuthUser(teamMemberId: string, authUserId: string): Promise<void> {
+/**
+ * Link this team_members row to a real Supabase Auth account (first-login
+ * auto-link). Goes through the link_my_team_member RPC (security definer),
+ * not a raw update -- team_members writes are role-gated to Owner/Manager
+ * (see migration 0009), and at first-login time this exact user has no role
+ * yet since their row isn't linked. The RPC derives the auth user id from
+ * the caller's own session server-side rather than trusting a client-passed
+ * value, and only ever touches the row whose email matches the caller's.
+ */
+export async function linkTeamMemberAuthUser(teamMemberId: string): Promise<void> {
   if (!supabase) return;
-  const { error } = await supabase.from('team_members').update({ auth_user_id: authUserId }).eq('id', teamMemberId);
-  if (error) console.error('[Supabase] linkTeamMemberAuthUser failed:', error.message);
+  const { error } = await supabase.rpc('link_my_team_member', { p_team_member_id: teamMemberId });
+  if (error) console.error('[Supabase] link_my_team_member failed:', error.message);
 }
 
 export async function fetchRemoteTeam(): Promise<TeamMember[] | null> {
@@ -492,16 +500,18 @@ export async function fetchRemoteTeam(): Promise<TeamMember[] | null> {
   return data.map(rowToTeamMember);
 }
 
-export async function upsertRemoteTeamMember(m: TeamMember): Promise<void> {
-  if (!supabase) return;
+export async function upsertRemoteTeamMember(m: TeamMember): Promise<{ error: string | null }> {
+  if (!supabase) return { error: null };
   const { error } = await supabase.from('team_members').upsert(teamMemberToRow(m));
   if (error) console.error('[Supabase] upsertRemoteTeamMember failed:', error.message);
+  return { error: error ? error.message : null };
 }
 
-export async function deleteRemoteTeamMember(id: string): Promise<void> {
-  if (!supabase) return;
+export async function deleteRemoteTeamMember(id: string): Promise<{ error: string | null }> {
+  if (!supabase) return { error: null };
   const { error } = await supabase.from('team_members').delete().eq('id', id);
   if (error) console.error('[Supabase] deleteRemoteTeamMember failed:', error.message);
+  return { error: error ? error.message : null };
 }
 
 export function subscribeRemoteTeam(onChange: (members: TeamMember[]) => void): () => void {
