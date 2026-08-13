@@ -35,7 +35,11 @@ export type CalendarCsvParseResult =
  * requirement, then returns the parsed rows.
  */
 export function parseCalendarCsv(text: string): CalendarCsvParseResult {
-  const result = Papa.parse<CalendarCsvRow>(text, { header: true, skipEmptyLines: true });
+  // Strip a UTF-8 BOM if present -- Windows Notepad saves one by default,
+  // and left in place it silently mangles the first header ("date" becomes
+  // "﻿date"), producing a confusing "missing: date" error.
+  const stripped = text.replace(/^﻿/, '');
+  const result = Papa.parse<CalendarCsvRow>(stripped, { header: true, skipEmptyLines: true });
   const fields = result.meta.fields || [];
 
   const missing = CALENDAR_CSV_HEADERS.filter((h) => !fields.includes(h));
