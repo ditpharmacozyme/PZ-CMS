@@ -3,6 +3,7 @@ import { Post, BrandId, PostStatus, Platform, SpecType, PostComment, ContentBank
 import { BRANDS, SPECS } from '../data/brands';
 import { logTimestamp } from '../utils/date';
 import { uploadImage } from '../utils/uploadImage';
+import { supabase } from '../lib/supabase';
 
 interface PostDetailModalProps {
   post: Post;
@@ -70,9 +71,14 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
 
   // Send real test email reminder via Apps Script Proxy
   const handleSendTestEmail = async () => {
-    const scriptUrl = localStorage.getItem('appscript_url');
-    if (!scriptUrl) {
-      alert('Please enter your Google Apps Script Web App URL first in the Apps Script Hub tab.');
+    if (!supabase) {
+      setEmailStatus('❌ Supabase is not configured.');
+      return;
+    }
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+    if (!token) {
+      setEmailStatus('❌ No active session.');
       return;
     }
 
@@ -81,9 +87,8 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
     try {
       const res = await fetch('/api/appscript/proxy', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
-          scriptUrl,
           payload: {
             action: 'sendEmailReminder',
             post: editedPost,
@@ -92,10 +97,10 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
         })
       });
       const data = await res.json();
-      if (data?.data?.status === 'success') {
+      if (res.ok && data?.data?.status === 'success') {
         setEmailStatus(`✓ Email sent to ${editedPost.reminderEmail || 'team@pharmacozyme.com'}`);
       } else {
-        setEmailStatus(`❌ ${data?.data?.error || data?.error || 'Failed to send'}`);
+        setEmailStatus(`❌ ${data?.data?.error || data?.message || data?.error || 'Failed to send'}`);
       }
     } catch (err: any) {
       setEmailStatus(`❌ Error: ${err.message}`);

@@ -5,6 +5,7 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     status: 'ok',
     server: 'Pharmacozyme Vercel Function',
     version: '2.0.0',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    appsScriptConfigured: Boolean(process.env.APPS_SCRIPT_URL)
   });
 }

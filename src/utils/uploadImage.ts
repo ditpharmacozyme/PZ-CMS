@@ -5,7 +5,13 @@
  * returned URL is ever stored on a post. Base64 data URLs are never persisted —
  * a few phone photos would exceed the localStorage quota and silently break
  * saving, and they bloat every database row they land in.
+ *
+ * The Apps Script web app URL is server-side config (APPS_SCRIPT_URL in
+ * Vercel), not something each teammate pastes into their own browser --
+ * see api/appscript/proxy.ts.
  */
+
+import { supabase } from '../lib/supabase';
 
 const MAX_EDGE_PX = 1600;
 const JPEG_QUALITY = 0.82;
@@ -16,17 +22,21 @@ export interface UploadResult {
 }
 
 export class UploadNotConfiguredError extends Error {
-  constructor() {
-    super(
-      'Google Drive is not connected yet. Open Integrations and paste your Apps Script web app URL to enable image uploads.'
-    );
+  constructor(detail?: string) {
+    super(detail || 'Google Drive is not connected yet. An Owner needs to set APPS_SCRIPT_URL in Vercel.');
     this.name = 'UploadNotConfiguredError';
   }
 }
 
-/** True when an Apps Script endpoint has been configured. */
-export function isUploadConfigured(): boolean {
-  return Boolean(localStorage.getItem('appscript_url'));
+/** True when the server has an Apps Script endpoint configured. */
+export async function isUploadConfigured(): Promise<boolean> {
+  try {
+    const res = await fetch('/api/health');
+    const body = await res.json();
+    return Boolean(body?.appsScriptConfigured);
+  } catch {
+    return false;
+  }
 }
 
 /** Read a File as a base64 data URL. */
@@ -81,34 +91,40 @@ async function compress(dataUrl: string, mimeType: string): Promise<string> {
 
 /**
  * Upload an image and return its Drive URL.
- * Throws UploadNotConfiguredError when no Apps Script URL is set — callers
- * should surface that message rather than falling back to a data URL.
+ * Throws UploadNotConfiguredError when the server has no Apps Script URL
+ * configured — callers should surface that message rather than falling
+ * back to a data URL.
  */
 export async function uploadImage(file: File): Promise<UploadResult> {
   if (!file.type.startsWith('image/')) {
     throw new Error(`"${file.name}" is not an image.`);
   }
+  if (!supabase) throw new Error('Supabase is not configured.');
 
-  const scriptUrl = localStorage.getItem('appscript_url');
-  if (!scriptUrl) throw new UploadNotConfiguredError();
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
+  if (!token) throw new Error('No active session.');
 
   const raw = await readAsDataUrl(file);
   const base64Data = await compress(raw, file.type);
 
   const response = await fetch('/api/appscript/proxy', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: JSON.stringify({
-      scriptUrl,
       payload: { action: 'upload', fileName: file.name, mimeType: file.type, base64Data }
     })
   });
 
+  const body = await response.json().catch(() => ({}));
+
   if (!response.ok) {
-    throw new Error(`Upload failed (HTTP ${response.status}).`);
+    if (response.status === 400 && /no google apps script url/i.test(body?.message || '')) {
+      throw new UploadNotConfiguredError(body.message);
+    }
+    throw new Error(body?.message || `Upload failed (HTTP ${response.status}).`);
   }
 
-  const body = await response.json();
   const url: string | undefined = body?.data?.url;
 
   if (!url) {

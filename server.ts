@@ -27,7 +27,8 @@ async function startServer() {
       status: "ok",
       server: "Pharmacozyme Express Node Server",
       version: "2.0.0",
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      appsScriptConfigured: Boolean(process.env.APPS_SCRIPT_URL)
     });
   });
 
@@ -256,12 +257,36 @@ async function startServer() {
     }
   });
 
-  // Proxy endpoint to Google Apps Script Web App (Bypasses CORS restrictions)
+  // Proxy endpoint to Google Apps Script Web App (Bypasses CORS restrictions).
+  // Hand-mirrors api/appscript/proxy.ts for local dev parity -- see that
+  // file for why auth + the script.google.com allowlist are required.
+  const ALLOWED_SCRIPT_URL_PREFIX = "https://script.google.com/macros/";
   app.post("/api/appscript/proxy", async (req, res) => {
+    const supabaseUrl = process.env.VITE_SUPABASE_URL;
+    const anonKey = process.env.VITE_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !anonKey) {
+      return res.status(500).json({ status: "error", message: "Server is missing required Supabase environment variables." });
+    }
+
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.startsWith("Bearer ") ? authHeader.slice("Bearer ".length) : null;
+    if (!token) {
+      return res.status(401).json({ status: "error", message: "Missing Authorization header." });
+    }
+    const verifyClient = createClient(supabaseUrl, anonKey);
+    const { data: userData, error: userError } = await verifyClient.auth.getUser(token);
+    if (userError || !userData?.user) {
+      return res.status(401).json({ status: "error", message: "Invalid or expired session." });
+    }
+
     try {
-      const { scriptUrl, payload } = req.body;
+      const { scriptUrl: clientScriptUrl, payload } = req.body ?? {};
+      const scriptUrl = clientScriptUrl || process.env.APPS_SCRIPT_URL;
       if (!scriptUrl) {
-        return res.status(400).json({ status: "error", message: "Missing Google Apps Script URL" });
+        return res.status(400).json({ status: "error", message: "No Google Apps Script URL configured. An Owner needs to set APPS_SCRIPT_URL, or paste one to test in Integrations." });
+      }
+      if (!scriptUrl.startsWith(ALLOWED_SCRIPT_URL_PREFIX)) {
+        return res.status(400).json({ status: "error", message: `scriptUrl must start with ${ALLOWED_SCRIPT_URL_PREFIX}` });
       }
 
       const response = await fetch(scriptUrl, {

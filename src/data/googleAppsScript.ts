@@ -23,7 +23,10 @@ export const GOOGLE_APPS_SCRIPT_CODE = `/**
  * 9. Set Execute as: "Me (your account)"
  * 10. Set Who has access: "Anyone" (CRITICAL for receiving uploads and requests)
  * 11. Click "Deploy"
- * 12. Copy the Web App URL (starts with https://script.google.com/macros/s/...) and paste it into your CMS App Settings!
+ * 12. Copy the Web App URL (starts with https://script.google.com/macros/s/...). Paste it into the
+ *     Integrations tab's tester to verify it first, then have an Owner set it as APPS_SCRIPT_URL in
+ *     Vercel's project environment variables — that's what makes uploads and reminders work for the
+ *     whole team, not just the browser that pasted it.
  * 13. In the app's Integrations tab, click "Enable Scheduled Reminders" once — this installs a
  *     trigger that runs sendDueReminders() every 5 minutes, sending each post's reminder
  *     around its own scheduled time instead of only when someone clicks "Send" by hand.

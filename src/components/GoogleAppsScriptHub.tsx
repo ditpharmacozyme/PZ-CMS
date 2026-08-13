@@ -1,6 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { GOOGLE_APPS_SCRIPT_CODE } from '../data/googleAppsScript';
 import { Post } from '../types';
+import { supabase } from '../lib/supabase';
+
+// /api/appscript/proxy now requires a real Supabase session (see that file
+// for why) -- every call from this admin hub needs the bearer token too.
+async function getProxyAuthHeaders(): Promise<Record<string, string>> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (!supabase) return headers;
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return headers;
+}
 
 interface GoogleAppsScriptHubProps {
   posts: Post[];
@@ -48,7 +60,7 @@ export const GoogleAppsScriptHub: React.FC<GoogleAppsScriptHubProps> = ({
       try {
         const res = await fetch('/api/appscript/proxy', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: await getProxyAuthHeaders(),
           body: JSON.stringify({ scriptUrl, payload: { action: 'reminderTriggerStatus' } })
         });
         const data = await res.json();
@@ -96,7 +108,7 @@ export const GoogleAppsScriptHub: React.FC<GoogleAppsScriptHubProps> = ({
       // Use proxy backend route
       const res = await fetch('/api/appscript/proxy', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await getProxyAuthHeaders(),
         body: JSON.stringify({
           scriptUrl,
           payload: { action: 'health' }
@@ -129,7 +141,7 @@ export const GoogleAppsScriptHub: React.FC<GoogleAppsScriptHubProps> = ({
           // Upload via Google Apps Script Web App (Proxy)
           const res = await fetch('/api/appscript/proxy', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: await getProxyAuthHeaders(),
             body: JSON.stringify({
               scriptUrl,
               payload: {
@@ -183,7 +195,7 @@ export const GoogleAppsScriptHub: React.FC<GoogleAppsScriptHubProps> = ({
     try {
       const res = await fetch('/api/appscript/proxy', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await getProxyAuthHeaders(),
         body: JSON.stringify({ scriptUrl, payload: { action: 'installReminderTrigger' } })
       });
       const data = await res.json();
@@ -208,7 +220,7 @@ export const GoogleAppsScriptHub: React.FC<GoogleAppsScriptHubProps> = ({
     try {
       const res = await fetch('/api/appscript/proxy', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await getProxyAuthHeaders(),
         body: JSON.stringify({
           scriptUrl,
           payload: {
@@ -243,7 +255,9 @@ export const GoogleAppsScriptHub: React.FC<GoogleAppsScriptHubProps> = ({
             </div>
           </div>
           <p className="font-body-md text-xs sm:text-sm text-[#707a67] mt-2 max-w-3xl">
-            Connect Google Apps Script to upload images to Drive, send email reminders, and optionally export a Sheets snapshot.
+            Google Apps Script uploads images to Drive, sends email reminders, and optionally exports a Sheets
+            snapshot. The live deployment is set once by an Owner (Vercel env var <code className="font-code-sm text-[10px] bg-[#efeeea] px-1 rounded">APPS_SCRIPT_URL</code>) — it
+            works for everyone automatically, nobody else needs to paste anything.
           </p>
         </div>
 
@@ -376,11 +390,14 @@ export const GoogleAppsScriptHub: React.FC<GoogleAppsScriptHubProps> = ({
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-[#296c00]">link</span>
               <h3 className="font-headline-md text-base font-bold text-[#1b1c1a]">
-                Deployed Web App URL Configuration
+                Test a Deployment
               </h3>
             </div>
             <p className="font-body-md text-xs text-[#707a67]">
-              Enter the Web App URL generated after deploying your Google Apps Script as a Web App (with "Anyone" access):
+              Paste a Web App URL here to test it before making it live for the whole team. This field is
+              local to your browser only — it does <strong>not</strong> configure uploads or reminders for
+              anyone else. Once a deployment works here, an Owner sets it as <code className="font-code-sm text-[10px] bg-[#efeeea] px-1 rounded">APPS_SCRIPT_URL</code> in
+              Vercel's project environment variables, which is what everyone's uploads and reminders actually use.
             </p>
             <div className="flex flex-col sm:flex-row gap-2">
               <input
@@ -668,10 +685,11 @@ export const GoogleAppsScriptHub: React.FC<GoogleAppsScriptHubProps> = ({
                 4
               </div>
               <h4 className="font-headline-md text-sm font-bold text-[#1b1c1a]">
-                Connect & Test
+                Test, Then Go Live
               </h4>
               <p className="font-body-md text-xs text-[#707a67]">
-                Copy your Web App URL into Tab 2 ("Live Web App & Upload Tester") to verify connection, test Drive uploads, and send real Email Reminders!
+                Paste your Web App URL into Tab 2 to verify the connection and test a Drive upload. Once it
+                works, set it as <code className="font-code-sm text-[10px] bg-[#efeeea] px-1 rounded">APPS_SCRIPT_URL</code> in Vercel — that's what makes uploads and reminders work for the whole team, not just your browser.
               </p>
             </div>
           </div>
