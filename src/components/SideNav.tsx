@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BrandId } from '../types';
 import { BRANDS } from '../data/brands';
 
-export type NavTab = 'calendar' | 'templates' | 'brand-kit' | 'assets' | 'telemetry' | 'appscript' | 'content-bank' | 'audit';
+export type NavTab = 'calendar' | 'templates' | 'brand-kit' | 'assets' | 'telemetry' | 'appscript' | 'content-bank' | 'research' | 'audit';
 
 interface SideNavProps {
   currentTab: NavTab;
@@ -20,6 +20,7 @@ const NAV_ITEMS: { tab: NavTab; label: string; icon: string }[] = [
   { tab: 'calendar', label: 'Calendar', icon: 'calendar_month' },
   { tab: 'templates', label: 'Templates', icon: 'quiz' },
   { tab: 'content-bank', label: 'Content Bank', icon: 'article' },
+  { tab: 'research', label: 'Research & Plans', icon: 'lightbulb' },
   { tab: 'brand-kit', label: 'Brand Kit', icon: 'palette' },
   { tab: 'assets', label: 'Assets', icon: 'layers' },
   { tab: 'audit', label: 'Activity Log', icon: 'shield_person' }

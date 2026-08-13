@@ -16,6 +16,8 @@ const ACTION_COLORS: Record<AuditActionType, { bg: string; text: string; border:
   status_changed: { bg: '#feeffc', text: '#9c27b0', border: '#f9d6f8', icon: 'published_with_changes' },
   member_added: { bg: '#e6f4ea', text: '#137333', border: '#ceead6', icon: 'person_add' },
   member_removed: { bg: '#fce8e6', text: '#c5221f', border: '#fad2cf', icon: 'person_remove' },
+  research_uploaded: { bg: '#e6f4ea', text: '#137333', border: '#ceead6', icon: 'upload_file' },
+  research_deleted: { bg: '#fce8e6', text: '#c5221f', border: '#fad2cf', icon: 'delete' },
   login: { bg: '#e8f0fe', text: '#1a73e8', border: '#d2e3fc', icon: 'login' },
   logout: { bg: '#f1f3f4', text: '#5f6368', border: '#dadce0', icon: 'logout' }
 };

@@ -91,6 +91,8 @@ function doPost(e) {
         .setMimeType(ContentService.MimeType.JSON);
     } else if (action === "upload") {
       return handleFileUpload(data);
+    } else if (action === "uploadResearchFile") {
+      return handleUploadResearchFile(data);
     } else if (action === "syncAllPosts" || action === "syncPost") {
       return handleSyncMultiTabSheets(data);
     } else if (action === "sendEmailReminder" || action === "sendTestEmail") {
@@ -177,6 +179,58 @@ function handleFileUpload(data) {
       fileName: data.fileName,
       url: directUrl,
       driveViewUrl: directUrl
+    }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
+ * Helper: Get or create a nested Drive folder path, creating each missing
+ * level. e.g. ["Research & Plans", "pharmacozyme", "calendar"] walks/creates
+ * "Research & Plans" -> "pharmacozyme" -> "calendar" under My Drive.
+ */
+function getOrCreateNestedFolder(pathParts) {
+  var current = DriveApp.getRootFolder();
+  for (var i = 0; i < pathParts.length; i++) {
+    var name = pathParts[i];
+    var existing = current.getFoldersByName(name);
+    current = existing.hasNext() ? existing.next() : current.createFolder(name);
+  }
+  return current;
+}
+
+/**
+ * Handles Research & Plans file uploads (any file type -- CSV, XLSX, MD,
+ * DOCX, PDF) into "Research & Plans / {brand} / {type}". Unlike
+ * uploadBase64ToDrive/handleFileUpload above (image-only, used for post
+ * visuals, returns just an image-CDN URL), this returns the real Drive
+ * fileId and webViewLink the CMS needs to store and link back to, and works
+ * for any mime type.
+ */
+function handleUploadResearchFile(data) {
+  if (!data.fileName || !data.base64Data || !data.brand || !data.type) {
+    throw new Error("Missing fileName, base64Data, brand, or type in payload.");
+  }
+
+  var mimeType = data.mimeType || "application/octet-stream";
+  var base64Clean = data.base64Data;
+  if (base64Clean.indexOf("data:") === 0 && base64Clean.indexOf(",") !== -1) {
+    var parts = base64Clean.split(",");
+    mimeType = parts[0].split(";")[0].replace("data:", "") || mimeType;
+    base64Clean = parts[1];
+  }
+
+  var decodedBlob = Utilities.newBlob(Utilities.base64Decode(base64Clean), mimeType, data.fileName);
+  var folder = getOrCreateNestedFolder(["Research & Plans", data.brand, data.type]);
+  var file = folder.createFile(decodedBlob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+  return ContentService
+    .createTextOutput(JSON.stringify({
+      status: "success",
+      message: "File uploaded to Research & Plans",
+      fileId: file.getId(),
+      webViewLink: file.getUrl(),
+      downloadUrl: "https://drive.google.com/uc?export=download&id=" + file.getId()
     }))
     .setMimeType(ContentService.MimeType.JSON);
 }

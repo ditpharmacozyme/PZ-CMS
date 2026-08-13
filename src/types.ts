@@ -24,6 +24,8 @@ export type AuditActionType =
   | 'status_changed'
   | 'member_added'
   | 'member_removed'
+  | 'research_uploaded'
+  | 'research_deleted'
   | 'login'
   | 'logout';
 
@@ -32,7 +34,7 @@ export interface AuditEvent {
   actorId: string;
   actorName: string;
   actionType: AuditActionType;
-  entityType: 'post' | 'member' | 'template' | 'asset' | 'content_bank' | 'session';
+  entityType: 'post' | 'member' | 'template' | 'asset' | 'content_bank' | 'research' | 'session';
   entityId?: string;
   entityTitle?: string;
   beforeValue?: Record<string, unknown>;
@@ -76,6 +78,25 @@ export interface ContentBankItem {
   brandId: BrandId | 'shared';
 }
 
+
+export type ResearchType = 'calendar' | 'research' | 'plan' | 'brief' | 'notes';
+export type ResearchFileType = 'csv' | 'xlsx' | 'md' | 'docx' | 'pdf';
+
+export interface ResearchItem {
+  id: string;
+  brand: BrandId | 'shared';
+  type: ResearchType;
+  title: string;
+  owner: string; // team_members.name, matching posts.assignees convention
+  itemDate?: string;
+  tags: string[];
+  driveFileId: string;
+  driveViewUrl: string;
+  fileType: ResearchFileType;
+  parsedMetadata?: Record<string, unknown>;
+  uploadedBy?: string; // team_members.id, for display only
+  createdAt: string;
+}
 
 export type SpecType = 'feed-post' | 'story' | 'reel' | 'carousel' | 'newsletter' | 'bio-report';
 

@@ -1,4 +1,4 @@
-import { Post, PostTemplate, BrandAsset, AppNotification, ContentBankItem, TeamMember } from '../types';
+import { Post, PostTemplate, BrandAsset, AppNotification, ContentBankItem, TeamMember, ResearchItem } from '../types';
 import { INITIAL_POSTS, INITIAL_TEMPLATES, INITIAL_ASSETS, INITIAL_NOTIFICATIONS, INITIAL_CONTENT_BANK } from '../data/initialData';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
@@ -7,6 +7,7 @@ const TEMPLATES_KEY = 'pharmacozyme_brandops_templates_v3';
 const ASSETS_KEY = 'pharmacozyme_brandops_assets_v3';
 const NOTIFICATIONS_KEY = 'pharmacozyme_brandops_notifs_v3';
 const CONTENT_BANK_KEY = 'pharmacozyme_brandops_contentbank_v3';
+const RESEARCH_KEY = 'pharmacozyme_brandops_research_v1';
 const TEAM_KEY = 'pharmacozyme_brandops_team_v4'; // Bumped to v4 to evict old fictional defaults
 const TEAM_KEY_LEGACY = 'pharmacozyme_brandops_team_v3'; // Old key — only used for cleanup
 
@@ -134,6 +135,25 @@ export function saveStoredContentBank(items: ContentBankItem[]): void {
     localStorage.setItem(CONTENT_BANK_KEY, JSON.stringify(items));
   } catch (err) {
     console.error('Error saving content bank:', err);
+  }
+}
+
+export function getStoredResearchItems(): ResearchItem[] {
+  try {
+    const raw = localStorage.getItem(RESEARCH_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw);
+  } catch (err) {
+    console.error('Error reading stored research items:', err);
+    return [];
+  }
+}
+
+export function saveStoredResearchItems(items: ResearchItem[]): void {
+  try {
+    localStorage.setItem(RESEARCH_KEY, JSON.stringify(items));
+  } catch (err) {
+    console.error('Error saving research items:', err);
   }
 }
 
@@ -425,6 +445,76 @@ export function subscribeRemoteContentBank(onChange: (items: ContentBankItem[]) 
   return () => { supabase.removeChannel(channel); };
 }
 
+// ─── Research & Plans ────────────────────────────────────────────────────
+function rowToResearchItem(row: any): ResearchItem {
+  return {
+    id: row.id,
+    brand: row.brand,
+    type: row.type,
+    title: row.title,
+    owner: row.owner,
+    itemDate: row.item_date || undefined,
+    tags: row.tags || [],
+    driveFileId: row.drive_file_id,
+    driveViewUrl: row.drive_view_url,
+    fileType: row.file_type,
+    parsedMetadata: row.parsed_metadata || undefined,
+    uploadedBy: row.uploaded_by || undefined,
+    createdAt: row.created_at
+  };
+}
+
+// created_at is deliberately omitted -- it's a DB-side default set once on
+// insert, and re-sending it on every edit-upsert would let a stale client
+// value clobber the real one.
+function researchItemToRow(item: ResearchItem) {
+  return {
+    id: item.id,
+    brand: item.brand,
+    type: item.type,
+    title: item.title,
+    owner: item.owner,
+    item_date: item.itemDate || null,
+    tags: item.tags || [],
+    drive_file_id: item.driveFileId,
+    drive_view_url: item.driveViewUrl,
+    file_type: item.fileType,
+    parsed_metadata: item.parsedMetadata || null,
+    uploaded_by: item.uploadedBy || null
+  };
+}
+
+export async function fetchRemoteResearchItems(): Promise<ResearchItem[] | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.from('research_items').select('*').order('created_at', { ascending: false });
+  if (error) { console.error('[Supabase] fetchRemoteResearchItems failed:', error.message); return null; }
+  return data.map(rowToResearchItem);
+}
+
+export async function upsertRemoteResearchItem(item: ResearchItem): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from('research_items').upsert(researchItemToRow(item));
+  if (error) console.error('[Supabase] upsertRemoteResearchItem failed:', error.message);
+}
+
+export async function deleteRemoteResearchItem(id: string): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from('research_items').delete().eq('id', id);
+  if (error) console.error('[Supabase] deleteRemoteResearchItem failed:', error.message);
+}
+
+export function subscribeRemoteResearchItems(onChange: (items: ResearchItem[]) => void): () => void {
+  if (!supabase) return () => {};
+  const channel = supabase
+    .channel('research-items-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'research_items' }, async () => {
+      const items = await fetchRemoteResearchItems();
+      if (items) onChange(items);
+    })
+    .subscribe();
+  return () => { supabase.removeChannel(channel); };
+}
+
 // ─── Assets ──────────────────────────────────────────────────────────────
 function rowToAsset(row: any): BrandAsset {
   return { id: row.id, brandId: row.brand_id, title: row.title, type: row.type, fileType: row.file_type, size: row.size, url: row.url };
@@ -583,20 +673,22 @@ export function subscribeRemoteTeam(onChange: (members: TeamMember[]) => void): 
  * one browser's stale local copy clobber what teammates already entered.
  */
 export async function importLocalDataToRemote(): Promise<{
-  posts: number; templates: number; assets: number; contentBank: number; team: number;
+  posts: number; templates: number; assets: number; contentBank: number; team: number; research: number;
 }> {
   const posts = getStoredPosts();
   const templates = getStoredTemplates();
   const assets = getStoredAssets();
   const contentBank = getStoredContentBank();
   const team = getStoredTeam();
+  const research = getStoredResearchItems();
 
   await Promise.all([
     ...posts.map(upsertRemotePost),
     ...templates.map(upsertRemoteTemplate),
     ...assets.map(upsertRemoteAsset),
     ...contentBank.map(upsertRemoteContentBankItem),
-    ...team.map(upsertRemoteTeamMember)
+    ...team.map(upsertRemoteTeamMember),
+    ...research.map(upsertRemoteResearchItem)
   ]);
 
   return {
@@ -604,6 +696,7 @@ export async function importLocalDataToRemote(): Promise<{
     templates: templates.length,
     assets: assets.length,
     contentBank: contentBank.length,
-    team: team.length
+    team: team.length,
+    research: research.length
   };
 }

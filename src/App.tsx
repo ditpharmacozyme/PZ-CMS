@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Post, PostTemplate, BrandAsset, AppNotification, BrandId, ContentBankItem, TeamMember } from './types';
+import { Post, PostTemplate, BrandAsset, AppNotification, BrandId, ContentBankItem, TeamMember, ResearchItem } from './types';
 import {
   getStoredPosts,
   saveStoredPosts,
@@ -11,6 +11,8 @@ import {
   saveStoredNotifications,
   getStoredContentBank,
   saveStoredContentBank,
+  getStoredResearchItems,
+  saveStoredResearchItems,
   getStoredTeam,
   saveStoredTeam,
   resetToDefaults,
@@ -27,6 +29,10 @@ import {
   upsertRemoteContentBankItem,
   deleteRemoteContentBankItem,
   subscribeRemoteContentBank,
+  fetchRemoteResearchItems,
+  upsertRemoteResearchItem,
+  deleteRemoteResearchItem,
+  subscribeRemoteResearchItems,
   fetchRemoteAssets,
   upsertRemoteAsset,
   deleteRemoteAsset,
@@ -53,6 +59,7 @@ import { GoogleAppsScriptHub } from './components/GoogleAppsScriptHub';
 import { PostDetailModal } from './components/PostDetailModal';
 import { NewPostModal } from './components/NewPostModal';
 import { ContentBank } from './components/ContentBank';
+import { ResearchPlans } from './components/ResearchPlans';
 import { CommandPalette } from './components/CommandPalette';
 import { LoginPage } from './components/LoginPage';
 import { AuditLogView } from './components/AuditLogView';
@@ -69,6 +76,7 @@ export function App() {
     getStoredNotifications()
   );
   const [contentBank, setContentBank] = useState<ContentBankItem[]>(() => getStoredContentBank());
+  const [researchItems, setResearchItems] = useState<ResearchItem[]>(() => getStoredResearchItems());
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>(() => getStoredTeam());
 
   // Real Supabase Auth session — replaces the old client-side PIN system.
@@ -251,6 +259,10 @@ export function App() {
   }, [contentBank]);
 
   useEffect(() => {
+    saveStoredResearchItems(researchItems);
+  }, [researchItems]);
+
+  useEffect(() => {
     saveStoredTeam(teamMembers);
   }, [teamMembers]);
 
@@ -263,28 +275,31 @@ export function App() {
     if (!isSupabaseConfigured()) return;
 
     (async () => {
-      const [remotePosts, remoteTemplates, remoteAssets, remoteBank, remoteTeam] = await Promise.all([
+      const [remotePosts, remoteTemplates, remoteAssets, remoteBank, remoteResearch, remoteTeam] = await Promise.all([
         fetchRemotePosts(),
         fetchRemoteTemplates(),
         fetchRemoteAssets(),
         fetchRemoteContentBank(),
+        fetchRemoteResearchItems(),
         fetchRemoteTeam()
       ]);
       if (remotePosts && remotePosts.length > 0) setPosts(remotePosts);
       if (remoteTemplates && remoteTemplates.length > 0) setTemplates(remoteTemplates);
       if (remoteAssets && remoteAssets.length > 0) setAssets(remoteAssets);
       if (remoteBank && remoteBank.length > 0) setContentBank(remoteBank);
+      if (remoteResearch && remoteResearch.length > 0) setResearchItems(remoteResearch);
       if (remoteTeam && remoteTeam.length > 0) setTeamMembers(remoteTeam);
     })();
 
     // Live subscriptions on every table, not just posts — a teammate adding a
-    // template, asset, bank item, or team member shows up here without a
-    // manual re-import or page refresh.
+    // template, asset, bank item, research item, or team member shows up here
+    // without a manual re-import or page refresh.
     const unsubs = [
       subscribeRemotePosts((remotePosts) => setPosts(remotePosts)),
       subscribeRemoteTemplates((remoteTemplates) => setTemplates(remoteTemplates)),
       subscribeRemoteAssets((remoteAssets) => setAssets(remoteAssets)),
       subscribeRemoteContentBank((remoteBank) => setContentBank(remoteBank)),
+      subscribeRemoteResearchItems((remoteResearch) => setResearchItems(remoteResearch)),
       subscribeRemoteTeam((remoteTeam) => setTeamMembers(remoteTeam))
     ];
     return () => unsubs.forEach((unsub) => unsub());
@@ -526,6 +541,45 @@ export function App() {
     showToast(`Deleted copy item from bank.`);
   };
 
+  // Handlers for Research & Plans — no update/edit in v1, matching the spec
+  // (uploads are categorized once at upload time; no post-hoc metadata edit).
+  const handleAddResearchItem = (newItem: ResearchItem) => {
+    setResearchItems((prev) => [newItem, ...prev]);
+    upsertRemoteResearchItem(newItem);
+    showToast(`Uploaded "${newItem.title}".`);
+
+    if (activeTeammate) {
+      logAuditEvent(buildAuditEvent({
+        actorId: activeTeammate.id,
+        actorName: activeTeammate.name,
+        actionType: 'research_uploaded',
+        entityType: 'research',
+        entityId: newItem.id,
+        entityTitle: newItem.title,
+        afterValue: { title: newItem.title, brand: newItem.brand, type: newItem.type }
+      }));
+    }
+  };
+
+  const handleDeleteResearchItem = (id: string) => {
+    const removed = researchItems.find((item) => item.id === id);
+    setResearchItems((prev) => prev.filter((item) => item.id !== id));
+    deleteRemoteResearchItem(id);
+    showToast(removed ? `Deleted "${removed.title}".` : 'Research item deleted.');
+
+    if (activeTeammate && removed) {
+      logAuditEvent(buildAuditEvent({
+        actorId: activeTeammate.id,
+        actorName: activeTeammate.name,
+        actionType: 'research_deleted',
+        entityType: 'research',
+        entityId: id,
+        entityTitle: removed.title,
+        beforeValue: { title: removed.title, brand: removed.brand, type: removed.type }
+      }));
+    }
+  };
+
   const handleCreatePostFromCopy = (text: string, brandId: BrandId) => {
     setCurrentTab('calendar');
     setNewPostInitialDate(undefined);
@@ -658,7 +712,7 @@ export function App() {
     try {
       const counts = await importLocalDataToRemote();
       showToast(
-        `Imported ${counts.posts} posts, ${counts.templates} templates, ${counts.assets} assets, ${counts.contentBank} bank items, ${counts.team} people.`
+        `Imported ${counts.posts} posts, ${counts.templates} templates, ${counts.assets} assets, ${counts.contentBank} bank items, ${counts.team} people, ${counts.research} research items.`
       );
     } finally {
       setImportingData(false);
@@ -810,6 +864,17 @@ export function App() {
               onUpdateBankItem={handleUpdateBankItem}
               onDeleteBankItem={handleDeleteBankItem}
               onCreatePostFromCopy={handleCreatePostFromCopy}
+            />
+          )}
+
+          {currentTab === 'research' && (
+            <ResearchPlans
+              researchItems={researchItems}
+              selectedBrandFilter={selectedBrandFilter}
+              teamMembers={teamMembers}
+              activeTeammate={activeTeammate}
+              onAddResearchItem={handleAddResearchItem}
+              onDeleteResearchItem={handleDeleteResearchItem}
             />
           )}
 
