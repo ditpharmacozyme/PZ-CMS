@@ -284,7 +284,7 @@ export const ContentBank: React.FC<ContentBankProps> = ({
 
                     {onCreatePostFromCopy && !isShared && (
                       <button
-                        onClick={() => onCreatePostFromCopy(item.text, item.brandId)}
+                        onClick={() => onCreatePostFromCopy(item.text, item.brandId as BrandId)}
                         className="flex-1 bg-[#296c00] text-white font-label-caps text-[10px] font-bold py-2 rounded hover:bg-[#1f5700] transition-colors flex items-center justify-center gap-1 min-h-[36px]"
                       >
                         <span className="material-symbols-outlined text-xs">add_box</span>
