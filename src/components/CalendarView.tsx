@@ -3,6 +3,7 @@ import { Post, BrandId, PostStatus, Platform, TeamMember } from '../types';
 import { BRANDS, SPECS } from '../data/brands';
 import { toDateStr, todayStr, fromDateStr, mondayFirstDay, startOfWeek, logTimestamp } from '../utils/date';
 import { uploadImage } from '../utils/uploadImage';
+import { parseCalendarCsv, convertCsvRowsToPosts } from '../utils/researchParse';
 
 interface CalendarViewProps {
   posts: Post[];
@@ -13,6 +14,7 @@ interface CalendarViewProps {
   searchQuery: string;
   onSavePost: (post: Post) => void;
   onAddPost: (post: Post) => void;
+  onBatchAddPosts?: (posts: Post[]) => void;
   teamMembers?: TeamMember[];
   activeTeammate?: TeamMember | null;
 }
@@ -51,11 +53,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   searchQuery,
   onSavePost,
   onAddPost,
+  onBatchAddPosts,
   teamMembers = [],
   activeTeammate = null
 }) => {
   const today = useMemo(() => new Date(), []);
   const todayIso = todayStr();
+  const csvFileInputRef = React.useRef<HTMLInputElement>(null);
 
   const [displayMode, setDisplayMode] = useState<CalendarDisplayMode>('month');
   const [currentYear, setCurrentYear] = useState<number>(today.getFullYear());
@@ -419,6 +423,33 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     }
   };
 
+  const handleCsvImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !onBatchAddPosts) return;
+
+    setUploadError(null);
+    setIsUploading(true);
+    try {
+      const text = await file.text();
+      const result = parseCalendarCsv(text);
+      if (result.error) {
+        setUploadError(`CSV Import Error: ${result.error}`);
+        return;
+      }
+      if (result.rows) {
+        const brandFallback = selectedBrandFilter === 'all' ? 'pharmacozyme' : selectedBrandFilter;
+        const ownerFallback = activeTeammate?.name || teamMembers[0]?.name || '';
+        const postsToImport = convertCsvRowsToPosts(result.rows, brandFallback, ownerFallback);
+        onBatchAddPosts(postsToImport);
+      }
+    } catch (err: any) {
+      setUploadError(err?.message || 'Failed to read CSV.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   // Navigation handlers
   const handlePrevMonth = () => {
     if (currentMonth === 0) {
@@ -752,6 +783,26 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center justify-between sm:justify-start gap-2">
+            {onBatchAddPosts && (
+              <>
+                <input
+                  type="file"
+                  accept=".csv"
+                  className="hidden"
+                  ref={csvFileInputRef}
+                  onChange={handleCsvImport}
+                />
+                <button
+                  onClick={() => csvFileInputRef.current?.click()}
+                  className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-[#efeeea] border border-[#bfcab4] text-[#296c00] font-label-caps text-xs font-bold rounded hover:bg-[#e4e2db] transition-colors shadow-xs h-[36px]"
+                  title="Import AI Calendar from CSV"
+                >
+                  <span className="material-symbols-outlined text-[16px]">upload_file</span>
+                  <span className="hidden sm:inline">Import CSV</span>
+                </button>
+              </>
+            )}
+
             {/* View Mode Selector */}
             <div className="flex bg-[#efeeea] border border-[#bfcab4] rounded p-1">
               <button

@@ -317,6 +317,15 @@ export async function upsertRemotePost(post: Post): Promise<{ error: string | nu
   return { error: error ? error.message : null };
 }
 
+/** Bulk upsert multiple posts to Supabase in a single batch query. */
+export async function upsertRemotePosts(posts: Post[]): Promise<{ error: string | null }> {
+  if (!supabase || posts.length === 0) return { error: null };
+  const rows = posts.map(postToRow);
+  const { error } = await supabase.from('posts').upsert(rows);
+  if (error) console.error('[Supabase] upsertRemotePosts failed:', error.message);
+  return { error: error ? error.message : null };
+}
+
 export async function deleteRemotePost(id: string): Promise<void> {
   if (!supabase) return;
   const { error } = await supabase.from('posts').delete().eq('id', id);

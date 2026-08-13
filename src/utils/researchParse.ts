@@ -6,7 +6,8 @@
 
 import * as Papa from 'papaparse';
 import { BRANDS } from '../data/brands';
-import { BrandId } from '../types';
+import { BrandId, Post, Platform, SpecType, PostStatus } from '../types';
+import { todayStr, logTimestamp } from './date';
 
 // ─── Type A: Calendar CSV ──────────────────────────────────────────────
 
@@ -137,4 +138,104 @@ export function mapBrandNameToId(name: string): BrandId | 'shared' {
     (b) => b.name.toLowerCase() === normalized || b.id.toLowerCase() === normalized
   );
   return match ? match.id : 'shared';
+}
+
+// ─── Convert CSV Rows to Posts ──────────────────────────────────────────
+
+const VALID_PLATFORMS: Platform[] = ['instagram', 'linkedin', 'twitter', 'web', 'email'];
+const VALID_SPECS: SpecType[] = ['feed-post', 'story', 'reel', 'carousel', 'newsletter', 'bio-report'];
+const VALID_STATUSES: PostStatus[] = ['not-started', 'in-progress', 'ready-to-post', 'posted'];
+
+function normalizePlatform(p: string): Platform {
+  const norm = p.trim().toLowerCase();
+  if (VALID_PLATFORMS.includes(norm as Platform)) return norm as Platform;
+  if (norm.includes('insta')) return 'instagram';
+  if (norm.includes('linked')) return 'linkedin';
+  if (norm.includes('tweet') || norm.includes('x')) return 'twitter';
+  if (norm.includes('mail') || norm.includes('news')) return 'email';
+  return 'instagram';
+}
+
+function normalizeSpecType(s: string): SpecType {
+  const norm = s.trim().toLowerCase().replace(/[\s_]+/g, '-');
+  if (VALID_SPECS.includes(norm as SpecType)) return norm as SpecType;
+  if (norm.includes('feed') || norm.includes('image') || norm.includes('post')) return 'feed-post';
+  if (norm.includes('story')) return 'story';
+  if (norm.includes('reel') || norm.includes('video')) return 'reel';
+  if (norm.includes('caro') || norm.includes('slide')) return 'carousel';
+  if (norm.includes('letter') || norm.includes('email')) return 'newsletter';
+  return 'feed-post';
+}
+
+function normalizeStatus(s: string): PostStatus {
+  const norm = s.trim().toLowerCase().replace(/[\s_]+/g, '-');
+  if (VALID_STATUSES.includes(norm as PostStatus)) return norm as PostStatus;
+  if (norm === 'not-started' || norm === 'notstarted' || norm === 'todo' || norm === 'draft') return 'not-started';
+  if (norm.includes('progress') || norm.includes('working')) return 'in-progress';
+  if (norm.includes('ready') || norm.includes('review') || norm.includes('approved')) return 'ready-to-post';
+  if (norm.includes('posted') || norm.includes('done') || norm.includes('published')) return 'posted';
+  return 'not-started';
+}
+
+function normalizeDate(dStr: string): string {
+  const trimmed = dStr.trim();
+  if (!trimmed) return todayStr();
+  const match = trimmed.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (match) {
+    const y = match[1];
+    const m = match[2].padStart(2, '0');
+    const d = match[3].padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  return trimmed;
+}
+
+/** Converts parsed Calendar CSV rows into fully-editable Post objects for the Content Calendar. */
+export function convertCsvRowsToPosts(
+  rows: CalendarCsvRow[],
+  fallbackBrand?: BrandId | 'shared',
+  defaultOwner?: string
+): Post[] {
+  const now = Date.now();
+  const timestamp = logTimestamp();
+
+  return rows.map((row, idx) => {
+    let brandId: BrandId = 'pharmacozyme';
+    const mappedRowBrand = mapBrandNameToId(row.brand);
+    if (mappedRowBrand !== 'shared') {
+      brandId = mappedRowBrand;
+    } else if (fallbackBrand && fallbackBrand !== 'shared') {
+      brandId = fallbackBrand;
+    }
+
+    const ownerName = row.owner?.trim() || defaultOwner || '';
+    const assignees = ownerName ? [ownerName] : [];
+
+    const post: Post = {
+      id: `post-csv-${now}-${idx}-${Math.random().toString(36).substring(2, 6)}`,
+      brandId,
+      title: row.title?.trim() || `Calendar Post #${idx + 1}`,
+      caption: row.description?.trim() || '',
+      platform: normalizePlatform(row.platform || ''),
+      specType: normalizeSpecType(row.content_type || ''),
+      scheduledDate: normalizeDate(row.date || ''),
+      scheduledTime: '10:00',
+      status: normalizeStatus(row.status || ''),
+      assignees,
+      visualUrl: '',
+      approved: row.status?.toLowerCase().includes('posted') || false,
+      comments: [],
+      activityLog: [
+        {
+          id: `act-${now}-${idx}`,
+          actor: ownerName || 'AI Import',
+          action: 'Imported from AI Calendar CSV',
+          timestamp
+        }
+      ],
+      tags: ['AI-Calendar']
+    };
+
+    return post;
+  });
 }

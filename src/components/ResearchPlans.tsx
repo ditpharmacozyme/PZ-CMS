@@ -1,12 +1,13 @@
 import React, { useMemo, useState, Suspense } from 'react';
-import { ResearchItem, ResearchType, ResearchFileType, BrandId, TeamMember } from '../types';
+import { ResearchItem, ResearchType, ResearchFileType, BrandId, TeamMember, Post } from '../types';
 import { BRANDS } from '../data/brands';
 import {
   CALENDAR_CSV_HEADERS,
   CalendarCsvRow,
   parseCalendarCsv,
   parseFrontmatter,
-  mapBrandNameToId
+  mapBrandNameToId,
+  convertCsvRowsToPosts
 } from '../utils/researchParse';
 import { uploadResearchFile, MAX_RESEARCH_FILE_BYTES } from '../utils/uploadResearchFile';
 
@@ -21,6 +22,7 @@ interface ResearchPlansProps {
   activeTeammate?: TeamMember | null;
   onAddResearchItem: (item: ResearchItem) => void;
   onDeleteResearchItem: (id: string) => void;
+  onBatchAddPosts?: (posts: Post[]) => void;
 }
 
 const RESEARCH_TYPES: ResearchType[] = ['calendar', 'research', 'plan', 'brief', 'notes'];
@@ -55,7 +57,8 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
   teamMembers,
   activeTeammate,
   onAddResearchItem,
-  onDeleteResearchItem
+  onDeleteResearchItem,
+  onBatchAddPosts
 }) => {
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -83,6 +86,7 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
   const [tagsInput, setTagsInput] = useState('');
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [autoPopulateCalendar, setAutoPopulateCalendar] = useState(true);
 
   // Detail view
   const [viewingItem, setViewingItem] = useState<ResearchItem | null>(null);
@@ -209,6 +213,13 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
         createdAt: new Date().toISOString()
       };
       onAddResearchItem(newItem);
+
+      // Auto-populate Calendar if requested and supported
+      if (fileType === 'csv' && parsedRows && autoPopulateCalendar && onBatchAddPosts) {
+        const posts = convertCsvRowsToPosts(parsedRows, brand, owner.trim());
+        onBatchAddPosts(posts);
+      }
+
       handleCloseUploadModal();
     } catch (err: any) {
       setUploadError(err?.message || 'Upload failed.');
@@ -549,6 +560,30 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
                       className="w-full bg-[#faf9f5] border border-[#bfcab4] p-2.5 text-xs focus:outline-none rounded"
                     />
                   </div>
+
+                  {fileType === 'csv' && (
+                    <div className="pt-2">
+                      <label className="flex items-start gap-2 cursor-pointer group">
+                        <div className="relative flex items-center justify-center mt-0.5">
+                          <input
+                            type="checkbox"
+                            checked={autoPopulateCalendar}
+                            onChange={(e) => setAutoPopulateCalendar(e.target.checked)}
+                            className="appearance-none w-4 h-4 border-2 border-[#bfcab4] rounded-sm checked:bg-[#296c00] checked:border-[#296c00] transition-colors cursor-pointer group-hover:border-[#296c00]"
+                          />
+                          {autoPopulateCalendar && (
+                            <span className="material-symbols-outlined text-[12px] text-white absolute pointer-events-none font-bold">
+                              check
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-label-caps text-xs text-[#1b1c1a]">Auto-populate Content Calendar</span>
+                          <span className="text-[10px] text-[#707a67]">Creates editable posts on the main Calendar grid</span>
+                        </div>
+                      </label>
+                    </div>
+                  )}
                 </>
               )}
             </div>
@@ -594,27 +629,42 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
             </div>
 
             {viewingItem.fileType === 'csv' && Array.isArray((viewingItem.parsedMetadata as any)?.rows) && (
-              <div className="overflow-x-auto border border-[#bfcab4] rounded">
-                <table className="w-full text-[11px] font-body-md">
-                  <thead className="bg-[#faf9f5]">
-                    <tr>
-                      {CALENDAR_CSV_HEADERS.map((h) => (
-                        <th key={h} className="text-left px-2 py-1.5 font-label-caps text-[9px] uppercase text-[#707a67] border-b border-[#bfcab4]">
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {((viewingItem.parsedMetadata as any).rows as CalendarCsvRow[]).map((row, i) => (
-                      <tr key={i} className="border-b border-[#bfcab4]/40 last:border-0">
+              <div className="space-y-3">
+                {onBatchAddPosts && (
+                  <button
+                    onClick={() => {
+                      const rows = (viewingItem.parsedMetadata as any).rows as CalendarCsvRow[];
+                      const posts = convertCsvRowsToPosts(rows, viewingItem.brand, viewingItem.owner);
+                      onBatchAddPosts(posts);
+                    }}
+                    className="w-full py-2 bg-[#efeeea] border border-[#bfcab4] text-[#296c00] font-label-caps text-xs font-bold rounded hover:bg-[#e4e2db] flex items-center justify-center gap-2 transition-colors shadow-sm"
+                  >
+                    <span className="material-symbols-outlined text-sm">bolt</span>
+                    Import / Auto-fill Content Calendar ({((viewingItem.parsedMetadata as any).rows as CalendarCsvRow[]).length} posts)
+                  </button>
+                )}
+                <div className="overflow-x-auto border border-[#bfcab4] rounded">
+                  <table className="w-full text-[11px] font-body-md">
+                    <thead className="bg-[#faf9f5]">
+                      <tr>
                         {CALENDAR_CSV_HEADERS.map((h) => (
-                          <td key={h} className="px-2 py-1.5 text-[#1b1c1a]">{row[h]}</td>
+                          <th key={h} className="text-left px-2 py-1.5 font-label-caps text-[9px] uppercase text-[#707a67] border-b border-[#bfcab4]">
+                            {h}
+                          </th>
                         ))}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {((viewingItem.parsedMetadata as any).rows as CalendarCsvRow[]).map((row, i) => (
+                        <tr key={i} className="border-b border-[#bfcab4]/40 last:border-0">
+                          {CALENDAR_CSV_HEADERS.map((h) => (
+                            <td key={h} className="px-2 py-1.5 text-[#1b1c1a]">{row[h]}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
 

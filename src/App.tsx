@@ -19,6 +19,7 @@ import {
   isSupabaseConfigured,
   fetchRemotePosts,
   upsertRemotePost,
+  upsertRemotePosts,
   deleteRemotePost,
   subscribeRemotePosts,
   fetchRemoteTemplates,
@@ -438,6 +439,29 @@ export function App() {
     }
   };
 
+  const handleBatchAddPosts = async (newPosts: Post[]) => {
+    if (newPosts.length === 0) return;
+    setPosts((prev) => [...newPosts, ...prev]);
+    const { error } = await upsertRemotePosts(newPosts);
+    if (error) {
+      showToast(`Added ${newPosts.length} posts locally (Supabase batch warning: ${error})`);
+    } else {
+      showToast(`Imported ${newPosts.length} posts to Content Calendar!`);
+    }
+
+    if (activeTeammate) {
+      logAuditEvent(buildAuditEvent({
+        actorId: activeTeammate.id,
+        actorName: activeTeammate.name,
+        actionType: 'post_created',
+        entityType: 'post',
+        entityId: newPosts[0]?.id,
+        entityTitle: `Imported ${newPosts.length} posts from AI Calendar CSV`,
+        afterValue: { count: newPosts.length, brandId: newPosts[0]?.brandId }
+      }));
+    }
+  };
+
   if (supabase && !authChecked) {
     return (
       <div className="min-h-screen bg-[#FAF9F5] flex items-center justify-center">
@@ -801,6 +825,7 @@ export function App() {
               searchQuery={searchQuery}
               onSavePost={handleSavePost}
               onAddPost={handleAddPost}
+              onBatchAddPosts={handleBatchAddPosts}
               teamMembers={teamMembers}
               activeTeammate={activeTeammate}
             />
@@ -875,6 +900,7 @@ export function App() {
               activeTeammate={activeTeammate}
               onAddResearchItem={handleAddResearchItem}
               onDeleteResearchItem={handleDeleteResearchItem}
+              onBatchAddPosts={handleBatchAddPosts}
             />
           )}
 
