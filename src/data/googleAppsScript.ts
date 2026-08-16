@@ -371,7 +371,7 @@ function handleSendEmailReminder(data) {
   var subject = "⏰ [Pharmacozyme Reminder] Time to post on " + platform + ": \\"" + title + "\\"";
   
   var htmlBody = "" +
-    "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #bfcab4; border-radius: 8px; overflow: hidden; background: #faf9f5;'>" +
+    "<div style='font-family: \\"Segoe UI\\", Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #bfcab4; border-radius: 8px; overflow: hidden; background: #faf9f5;'>" +
       "<div style='background: #296c00; padding: 20px; text-align: center; color: white;'>" +
         "<h1 style='margin: 0; font-size: 20px; font-weight: bold;'>Pharmacozyme Brand-Ops Studio</h1>" +
         "<p style='margin: 5px 0 0 0; font-size: 12px; opacity: 0.9;'>Instagram Posting Cue Reminder</p>" +
@@ -382,7 +382,7 @@ function handleSendEmailReminder(data) {
         "<div style='background: white; border: 1px solid #bfcab4; padding: 16px; border-radius: 6px; margin: 16px 0;'>" +
           "<h2 style='margin: 0 0 8px 0; font-size: 16px; color: #296c00;'>" + title + "</h2>" +
           "<p style='font-size: 12px; color: #707a67; margin: 0 0 12px 0;'>📅 <strong>Date:</strong> " + dateStr + " at " + timeStr + "</p>" +
-          "<div style='background: #faf9f5; border-left: 3px solid #296c00; padding: 12px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; margin-bottom: 12px;'>" + caption + "</div>" +
+          "<div style='background: #faf9f5; border: 1px solid #bfcab4; border-radius: 4px; padding: 12px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; margin-bottom: 12px;'>" + caption + "</div>" +
           (visualUrl ? "<p style='margin: 0; font-size: 12px;'><a href='" + visualUrl + "' target='_blank' style='color: #296c00; font-weight: bold;'>🖼️ Open Visual Asset / Image</a></p>" : "") +
         "</div>" +
         "<p style='font-size: 12px; color: #707a67; margin-bottom: 0;'>We post directly on Instagram, so copy the caption above and upload your image to publish!</p>" +
