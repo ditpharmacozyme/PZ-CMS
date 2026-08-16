@@ -93,8 +93,8 @@ async function startServer() {
       if (callerError) {
         return res.status(500).json({ status: "error", code: "CALLER_LOOKUP_FAILED", message: callerError.message });
       }
-      if (!callerRow || callerRow.user_role !== "Owner") {
-        return res.status(403).json({ status: "error", code: "FORBIDDEN", message: "Only the Owner can create new team member accounts." });
+      if (!callerRow || callerRow.user_role !== "Admin") {
+        return res.status(403).json({ status: "error", code: "FORBIDDEN", message: "Only an Admin can create new team member accounts." });
       }
 
       const { name, email, role, color } = req.body ?? {};
@@ -210,8 +210,8 @@ async function startServer() {
       if (callerError) {
         return res.status(500).json({ status: "error", code: "CALLER_LOOKUP_FAILED", message: callerError.message });
       }
-      if (!callerRow || callerRow.user_role !== "Owner") {
-        return res.status(403).json({ status: "error", code: "FORBIDDEN", message: "Only the Owner can remove team members." });
+      if (!callerRow || callerRow.user_role !== "Admin") {
+        return res.status(403).json({ status: "error", code: "FORBIDDEN", message: "Only an Admin can remove team members." });
       }
 
       const { id } = req.body ?? {};
@@ -230,8 +230,8 @@ async function startServer() {
       if (!targetRow) {
         return res.status(404).json({ status: "error", code: "MEMBER_NOT_FOUND", message: "No team member with this id." });
       }
-      if (targetRow.user_role === "Owner") {
-        return res.status(403).json({ status: "error", code: "CANNOT_REMOVE_OWNER", message: "Owners cannot be removed." });
+      if (targetRow.user_role === "Admin") {
+        return res.status(403).json({ status: "error", code: "CANNOT_REMOVE_ADMIN", message: "Admins cannot be removed." });
       }
 
       if (targetRow.auth_user_id) {

@@ -49,8 +49,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (callerError) {
       return errorResponse(res, 500, 'CALLER_LOOKUP_FAILED', callerError.message);
     }
-    if (!callerRow || callerRow.user_role !== 'Owner') {
-      return errorResponse(res, 403, 'FORBIDDEN', 'Only the Owner can create new team member accounts.');
+    if (!callerRow || callerRow.user_role !== 'Admin') {
+      return errorResponse(res, 403, 'FORBIDDEN', 'Only an Admin can create new team member accounts.');
     }
 
     const { name, email, role, color } = req.body ?? {};

@@ -45,8 +45,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (callerError) {
       return errorResponse(res, 500, 'CALLER_LOOKUP_FAILED', callerError.message);
     }
-    if (!callerRow || callerRow.user_role !== 'Owner') {
-      return errorResponse(res, 403, 'FORBIDDEN', 'Only the Owner can remove team members.');
+    if (!callerRow || callerRow.user_role !== 'Admin') {
+      return errorResponse(res, 403, 'FORBIDDEN', 'Only an Admin can remove team members.');
     }
 
     const { id } = req.body ?? {};
@@ -65,8 +65,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!targetRow) {
       return errorResponse(res, 404, 'MEMBER_NOT_FOUND', 'No team member with this id.');
     }
-    if (targetRow.user_role === 'Owner') {
-      return errorResponse(res, 403, 'CANNOT_REMOVE_OWNER', 'Owners cannot be removed.');
+    if (targetRow.user_role === 'Admin') {
+      return errorResponse(res, 403, 'CANNOT_REMOVE_ADMIN', 'Admins cannot be removed.');
     }
 
     // Revoke the Auth account (and any live session) before touching the

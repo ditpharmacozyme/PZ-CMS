@@ -434,14 +434,18 @@ function sendDueReminders() {
   var today = Utilities.formatDate(new Date(), TIMEZONE, "yyyy-MM-dd");
   var nowStr = Utilities.formatDate(new Date(), TIMEZONE, "yyyy-MM-dd HH:mm");
 
-  // scheduled_date=lte.today (not eq.today) so a reminder that was due while
-  // this trigger happened to be down still goes out on the next run, instead
-  // of being silently skipped forever.
-  var query = "scheduled_date=lte." + today +
-    "&email_reminder_enabled=eq.true&reminder_sent_at=is.null&reminder_email=not.is.null&select=*";
-  var res = UrlFetchApp.fetch(SUPABASE_URL + "/rest/v1/posts?" + query, {
-    method: "get",
+  // p_as_of_date uses lte (not eq) so a reminder that was due while this
+  // trigger happened to be down still goes out on the next run, instead of
+  // being silently skipped forever. Goes through the get_due_reminders RPC
+  // (not a raw table select) because posts RLS only allows the
+  // authenticated role -- this script has no Supabase Auth session, only
+  // the anon key, so a raw select would always come back empty. The RPC is
+  // SECURITY DEFINER and grants anon just this one fixed, minimal-column
+  // query -- see migration 0016_reminder_rpcs.sql.
+  var res = UrlFetchApp.fetch(SUPABASE_URL + "/rest/v1/rpc/get_due_reminders", {
+    method: "post",
     headers: supabaseHeaders(),
+    payload: JSON.stringify({ p_as_of_date: today }),
     muteHttpExceptions: true
   });
 
@@ -499,12 +503,12 @@ function supabaseHeaders() {
   };
 }
 
-/** Stamp reminder_sent_at so this post is never emailed twice. */
+/** Stamp reminder_sent_at so this post is never emailed twice (via RPC -- see sendDueReminders). */
 function markReminderSent(postId) {
-  UrlFetchApp.fetch(SUPABASE_URL + "/rest/v1/posts?id=eq." + encodeURIComponent(postId), {
-    method: "patch",
+  UrlFetchApp.fetch(SUPABASE_URL + "/rest/v1/rpc/mark_reminder_sent", {
+    method: "post",
     headers: supabaseHeaders(),
-    payload: JSON.stringify({ reminder_sent_at: new Date().toISOString() }),
+    payload: JSON.stringify({ p_post_id: postId }),
     muteHttpExceptions: true
   });
 }
