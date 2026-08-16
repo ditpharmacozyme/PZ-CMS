@@ -13,7 +13,7 @@ const TEAM_KEY_LEGACY = 'pharmacozyme_brandops_team_v3'; // Old key — only use
 
 // Default PIN is a generic placeholder, not a real credential — change it per-person in Settings after first login.
 const DEFAULT_TEAM_MEMBERS: TeamMember[] = [
-  { id: 'tm-1', name: 'Hamza Ansari', role: 'Brand & Content Lead', userRole: 'Owner', email: 'hamzaansari4you@gmail.com', avatarInitials: 'HA', color: '#296c00', passcode: '1234' },
+  { id: 'tm-1', name: 'Hamza Ansari', role: 'Brand & Content Lead', userRole: 'Admin', email: 'hamzaansari4you@gmail.com', avatarInitials: 'HA', color: '#296c00', passcode: '1234' },
   { id: 'tm-2', name: 'Pharmacozyme Ops', role: 'Global Approver', userRole: 'Manager', email: 'ops@pharmacozyme.com', avatarInitials: 'PO', color: '#0A66C2', passcode: '1234' },
 ];
 
@@ -576,7 +576,7 @@ export function subscribeRemoteAssets(onChange: (assets: BrandAsset[]) => void):
 // is effectively public. PINs stay local-only (localStorage) and are merged back onto
 // remote snapshots by the caller — see the passcode-preserving merge in App.tsx.
 function rowToTeamMember(row: any): TeamMember {
-  return { id: row.id, name: row.name, role: row.role, userRole: row.user_role || (row.name === 'Hamza Ansari' ? 'Owner' : 'Editor'), email: row.email, avatarInitials: row.avatar_initials, color: row.color, authUserId: row.auth_user_id || undefined };
+  return { id: row.id, name: row.name, role: row.role, userRole: row.user_role || (row.name === 'Hamza Ansari' ? 'Admin' : 'Editor'), email: row.email, avatarInitials: row.avatar_initials, color: row.color, authUserId: row.auth_user_id || undefined };
 }
 
 function teamMemberToRow(m: TeamMember) {
@@ -586,7 +586,7 @@ function teamMemberToRow(m: TeamMember) {
 /**
  * Link this team_members row to a real Supabase Auth account (first-login
  * auto-link). Goes through the link_my_team_member RPC (security definer),
- * not a raw update -- team_members writes are role-gated to Owner/Manager
+ * not a raw update -- team_members writes are role-gated to Admin/Manager
  * (see migration 0009), and at first-login time this exact user has no role
  * yet since their row isn't linked. The RPC derives the auth user id from
  * the caller's own session server-side rather than trusting a client-passed
@@ -613,7 +613,7 @@ export async function upsertRemoteTeamMember(m: TeamMember): Promise<{ error: st
 }
 
 /**
- * Owner-only: creates a real Supabase Auth account for a new team member
+ * Admin-only: creates a real Supabase Auth account for a new team member
  * (via /api/team/create-member, which holds the service-role key server-side)
  * and invites them by email to set their own password. Also writes the
  * team_members row -- unlike upsertRemoteTeamMember, the caller must NOT
@@ -643,7 +643,7 @@ export async function provisionTeamMemberAccount(payload: {
 }
 
 /**
- * Owner-only: revokes the team member's Supabase Auth account (via
+ * Admin-only: revokes the team member's Supabase Auth account (via
  * /api/team/remove-member, which holds the service-role key server-side)
  * and removes their team_members row. Unlike a raw client-side delete, this
  * ensures a removed person can no longer authenticate at all -- see

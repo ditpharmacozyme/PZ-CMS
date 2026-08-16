@@ -3,12 +3,14 @@ import { AppNotification, BrandId, TeamMember } from '../types';
 import { BRANDS } from '../data/brands';
 import { NavTab } from './SideNav';
 import { provisionTeamMemberAccount } from '../utils/storage';
+import { NotificationDrawer } from './NotificationDrawer';
 
 interface TopNavProps {
   searchQuery: string;
   onSearchChange: (q: string) => void;
   notifications: AppNotification[];
   onMarkNotificationRead: (id: string) => void;
+  onMarkAllNotificationsRead?: () => void;
   onSelectNotificationPost: (postId: string) => void;
   onOpenNewPostModal: () => void;
   onToggleMobileNav: () => void;
@@ -40,6 +42,7 @@ export const TopNav: React.FC<TopNavProps> = ({
   onSearchChange,
   notifications,
   onMarkNotificationRead,
+  onMarkAllNotificationsRead,
   onSelectNotificationPost,
   onOpenNewPostModal,
   onToggleMobileNav,
@@ -76,8 +79,8 @@ export const TopNav: React.FC<TopNavProps> = ({
 
   // Adding a member creates a real Supabase Auth account (invite email) via
   // /api/team/create-member, which also writes the team_members row server
-  // -side — this only ever reaches an Owner (see the Owner-only gate below),
-  // so unlike the edit form, there's no non-Owner "forced to Editor label" case.
+  // -side — this only ever reaches an Admin (see the Admin-only gate below),
+  // so unlike the edit form, there's no non-Admin "forced to Editor label" case.
   const handleSaveNewMember = async () => {
     const name = newMember.name?.trim();
     const role = newMember.role?.trim();
@@ -211,58 +214,25 @@ export const TopNav: React.FC<TopNavProps> = ({
               )}
             </button>
 
-            {showNotificationsPopover && (
-              <div className="fixed sm:absolute right-2 sm:right-0 top-16 sm:top-auto sm:mt-2 w-[calc(100vw-1rem)] sm:w-96 bg-white border border-[#bfcab4] shadow-2xl rounded-lg z-50 p-4 max-h-[80vh] flex flex-col">
-                <div className="flex items-center justify-between pb-3 border-b border-[#bfcab4] mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[#296c00]">notifications_active</span>
-                    <h3 className="font-label-caps text-xs font-bold text-[#1b1c1a]">ALERTS</h3>
-                  </div>
-                  <button onClick={() => setShowNotificationsPopover(false)} className="sm:hidden text-[#707a67] p-1">
-                    <span className="material-symbols-outlined text-sm">close</span>
-                  </button>
-                </div>
-
-                <div className="space-y-3 overflow-y-auto pr-1 flex-1">
-                  {notifications.length === 0 ? (
-                    <p className="text-xs font-body-md text-[#707a67] py-4 text-center">No alerts right now.</p>
-                  ) : (
-                    notifications.map((n) => (
-                      <div
-                        key={n.id}
-                        onClick={() => {
-                          onMarkNotificationRead(n.id);
-                          if (n.postId) onSelectNotificationPost(n.postId);
-                          setShowNotificationsPopover(false);
-                        }}
-                        className={`p-3 border rounded-md text-left transition-all cursor-pointer active:scale-[0.99] ${
-                          n.read ? 'bg-[#faf9f5] border-[#bfcab4] opacity-75' : 'bg-white border-[#296c00] shadow-xs'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className={`font-label-caps text-[9px] uppercase font-bold px-1.5 py-0.5 rounded ${
-                            n.type === 'collision_alert'
-                              ? 'bg-[#efeeea] text-[#404a39]'
-                              : n.type === 'unassigned'
-                              ? 'bg-[#aceecf] text-[#07513b]'
-                              : 'bg-[#beb4ff] text-[#180064]'
-                          }`}>
-                            {n.type === 'collision_alert' ? 'Same day' : n.type === 'unassigned' ? 'Unassigned' : 'Due soon'}
-                          </span>
-                          <span className="font-code-sm text-[10px] text-[#707a67]">{n.date}</span>
-                        </div>
-                        <h4 className="font-headline-md text-xs font-bold text-[#1b1c1a]">{n.title}</h4>
-                        <p className="font-body-md text-xs text-[#404a39] mt-1">{n.message}</p>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
+            {/* Notification Drawer overrides the inline popover */}
+            <NotificationDrawer
+              notifications={notifications}
+              isOpen={showNotificationsPopover}
+              onClose={() => setShowNotificationsPopover(false)}
+              onMarkAsRead={onMarkNotificationRead}
+              onMarkAllAsRead={() => {
+                if (onMarkAllNotificationsRead) onMarkAllNotificationsRead();
+                setShowNotificationsPopover(false);
+              }}
+              onViewPost={(postId) => {
+                onSelectNotificationPost(postId);
+                setShowNotificationsPopover(false);
+              }}
+            />
           </div>
 
-          {/* Settings — visible to Owner and Manager only */}
-          {(activeTeammate?.userRole === 'Owner' || activeTeammate?.userRole === 'Manager') && (
+          {/* Settings — visible to Admin and Manager only */}
+          {(activeTeammate?.userRole === 'Admin' || activeTeammate?.userRole === 'Manager') && (
             <button
               onClick={() => { setShowSettingsModal(true); setSettingsTab('team'); }}
               className="hidden sm:flex p-2 min-w-[40px] min-h-[40px] flex items-center justify-center text-[#404a39] hover:bg-[#efeeea] rounded-full transition-colors"
@@ -336,7 +306,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                 )}
 
                 {/* Settings — mobile only; desktop has the dedicated header icon */}
-                {(activeTeammate?.userRole === 'Owner' || activeTeammate?.userRole === 'Manager') && (
+                {(activeTeammate?.userRole === 'Admin' || activeTeammate?.userRole === 'Manager') && (
                   <button
                     onClick={() => {
                       setShowActiveTeammatePopover(false);
@@ -444,7 +414,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                       <p className="font-headline-md text-sm font-bold text-[#1b1c1a]">Your Team</p>
                       <p className="font-body-md text-xs text-[#707a67] mt-0.5">Add or edit the people who work on posts.</p>
                     </div>
-                    {activeTeammate?.userRole === 'Owner' && (
+                    {activeTeammate?.userRole === 'Admin' && (
                       <button
                         onClick={() => { setIsAddingMember(true); setEditingMember(null); }}
                         className="flex items-center gap-1 bg-[#296c00] text-white px-3 py-2 rounded font-label-caps text-xs font-bold hover:bg-[#1f5700] transition-colors"
@@ -455,8 +425,8 @@ export const TopNav: React.FC<TopNavProps> = ({
                     )}
                   </div>
 
-                  {/* Add new member form — Owner only: creating a member here also
-                      creates their real login (invite email), which only an Owner
+                  {/* Add new member form — Admin only: creating a member here also
+                      creates their real login (invite email), which only an Admin
                       can trigger (enforced server-side too). */}
                   {isAddingMember && (
                     <div className="p-4 bg-[#f0fdf4] border border-[#296c00]/30 rounded space-y-3">
@@ -572,11 +542,11 @@ export const TopNav: React.FC<TopNavProps> = ({
                               </div>
                               <div className="space-y-1">
                                 <label className="font-label-caps text-[9px] text-[#707a67] uppercase block">
-                                  Role * {activeTeammate?.userRole !== 'Owner' && ' (Owner only)'}
+                                  Role * {activeTeammate?.userRole !== 'Admin' && ' (Admin only)'}
                                 </label>
                                 <input
                                   type="text"
-                                  disabled={activeTeammate?.userRole !== 'Owner'}
+                                  disabled={activeTeammate?.userRole !== 'Admin'}
                                   value={editingMember.role}
                                   onChange={e => setEditingMember(p => p ? { ...p, role: e.target.value } : p)}
                                   className="w-full bg-white border border-[#bfcab4] p-2 text-xs rounded focus:outline-none focus:border-[#296c00] disabled:bg-[#f3f2ee] disabled:text-[#707a67]"
@@ -584,15 +554,15 @@ export const TopNav: React.FC<TopNavProps> = ({
                               </div>
                               <div className="col-span-2 space-y-1">
                                 <label className="font-label-caps text-[9px] text-[#707a67] uppercase block">
-                                  Permission Level {activeTeammate?.userRole !== 'Owner' && ' (Owner only)'}
+                                  Permission Level {activeTeammate?.userRole !== 'Admin' && ' (Admin only)'}
                                 </label>
                                 <select
-                                  disabled={activeTeammate?.userRole !== 'Owner'}
+                                  disabled={activeTeammate?.userRole !== 'Admin'}
                                   value={editingMember.userRole}
                                   onChange={e => setEditingMember(p => p ? { ...p, userRole: e.target.value as TeamMember['userRole'] } : p)}
                                   className="w-full bg-white border border-[#bfcab4] p-2 text-xs rounded focus:outline-none focus:border-[#296c00] disabled:bg-[#f3f2ee] disabled:text-[#707a67]"
                                 >
-                                  <option value="Owner">Owner</option>
+                                  <option value="Admin">Admin</option>
                                   <option value="Manager">Manager</option>
                                   <option value="Editor">Editor</option>
                                   <option value="Viewer">Viewer</option>

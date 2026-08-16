@@ -69,6 +69,55 @@ export function generateNotifications(posts: Post[]): Omit<AppNotification, 'rea
     }
   }
 
+  const todayIso = todayStr();
+  for (const post of scheduled) {
+    // Overdue
+    if (post.scheduledDate < todayIso && (post.status === 'not-started' || post.status === 'in-progress')) {
+      notifications.push({
+        id: `overdue-${post.id}`,
+        type: 'overdue',
+        title: post.title,
+        message: `Overdue since ${post.scheduledDate}.`,
+        date: post.scheduledDate,
+        postId: post.id,
+        brandId: post.brandId
+      });
+    }
+
+    // Approval needed
+    if (post.status === 'ready-to-post' && !post.approved) {
+      notifications.push({
+        id: `approval-${post.id}`,
+        type: 'approval',
+        title: post.title,
+        message: `Ready to post but needs approval.`,
+        date: post.scheduledDate,
+        postId: post.id,
+        brandId: post.brandId
+      });
+    }
+
+    // Stage Complete (just tracking if any are done, for demo/awareness)
+    if (post.stageCompletion) {
+      const stages = [];
+      if (post.stageCompletion.designDone) stages.push('Design');
+      if (post.stageCompletion.publishDone) stages.push('Publishing');
+      if (post.stageCompletion.engagementDone) stages.push('Engagement');
+
+      if (stages.length > 0) {
+        notifications.push({
+          id: `stage-${post.id}`,
+          type: 'stage_complete',
+          title: post.title,
+          message: `${stages.join(', ')} complete.`,
+          date: post.scheduledDate,
+          postId: post.id,
+          brandId: post.brandId
+        });
+      }
+    }
+  }
+
   return notifications.sort((a, b) => a.date.localeCompare(b.date));
 }
 

@@ -16,11 +16,13 @@ interface PostDetailModalProps {
   activeTeammate?: TeamMember | null;
 }
 
+import { STATUS_CONFIG } from '../utils/statusConfig';
+
 const PIPELINE_STATUSES: { value: PostStatus; label: string; color: string }[] = [
-  { value: 'not-started', label: 'Not Started', color: '#707a67' },
-  { value: 'in-progress', label: 'In Progress', color: '#c77a00' },
-  { value: 'ready-to-post', label: 'Ready to Post', color: '#296951' },
-  { value: 'posted', label: 'Posted', color: '#296c00' }
+  { value: 'not-started', label: STATUS_CONFIG['not-started'].label, color: STATUS_CONFIG['not-started'].color },
+  { value: 'in-progress', label: STATUS_CONFIG['in-progress'].label, color: STATUS_CONFIG['in-progress'].color },
+  { value: 'ready-to-post', label: STATUS_CONFIG['ready-to-post'].label, color: STATUS_CONFIG['ready-to-post'].color },
+  { value: 'posted', label: STATUS_CONFIG['posted'].label, color: STATUS_CONFIG['posted'].color }
 ];
 
 export const PostDetailModal: React.FC<PostDetailModalProps> = ({
@@ -175,9 +177,9 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
 
   // Handle Approval Sign-Off Toggle
   const handleToggleApproval = () => {
-    const isAllowed = activeTeammate?.userRole === 'Owner' || activeTeammate?.userRole === 'Manager';
+    const isAllowed = activeTeammate?.userRole === 'Admin' || activeTeammate?.userRole === 'Manager';
     if (!isAllowed) {
-      setApprovalWarning(`Permission Denied: Only Owner or Manager roles can approve posts. You are currently logged in as ${activeTeammate?.userRole || 'Editor'}.`);
+      setApprovalWarning(`Permission Denied: Only Admin or Manager roles can approve posts. You are currently logged in as ${activeTeammate?.userRole || 'Editor'}.`);
       return;
     }
 

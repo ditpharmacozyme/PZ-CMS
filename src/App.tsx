@@ -646,6 +646,12 @@ export function App() {
     );
   };
 
+  const handleMarkAllNotificationsRead = () => {
+    setNotifications((prev) =>
+      prev.map((n) => ({ ...n, read: true }))
+    );
+  };
+
   const handleSelectNotificationPost = (postId: string) => {
     const found = posts.find((p) => p.id === postId);
     if (found) {
@@ -676,7 +682,7 @@ export function App() {
   // Only upsert rows that actually changed (by reference — TopNav's
   // add/edit/delete handlers all preserve references for untouched members)
   // rather than blanket-upserting everyone: with role-gated team_members
-  // writes (migration 0009), re-sending an unchanged Owner row as part of
+  // writes (migration 0009), re-sending an unchanged Admin row as part of
   // a Manager's edit would otherwise hit that row's write protection for
   // no reason.
   const handleSaveTeamMembers = async (members: TeamMember[]) => {
@@ -790,6 +796,7 @@ export function App() {
           onSearchChange={setSearchQuery}
           notifications={notifications}
           onMarkNotificationRead={handleMarkNotificationRead}
+          onMarkAllNotificationsRead={handleMarkAllNotificationsRead}
           onSelectNotificationPost={handleSelectNotificationPost}
           onOpenNewPostModal={() => {
             setNewPostInitialDate(undefined);

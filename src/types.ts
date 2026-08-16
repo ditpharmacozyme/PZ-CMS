@@ -1,6 +1,6 @@
 export type BrandId = 'pharmacozyme' | 'pz-academy' | 'med-q' | 'pillz' | 'prescriptionz';
 
-export type UserRole = 'Owner' | 'Manager' | 'Editor' | 'Viewer';
+export type UserRole = 'Admin' | 'Manager' | 'Editor' | 'Viewer';
 
 export interface TeamMember {
   id: string;
@@ -195,7 +195,7 @@ export interface BrandAsset {
 
 export interface AppNotification {
   id: string;
-  type: 'due_soon' | 'unassigned' | 'collision_alert';
+  type: 'due_soon' | 'unassigned' | 'collision_alert' | 'stage_complete' | 'approval' | 'overdue';
   title: string;
   message: string;
   date: string;

@@ -4,6 +4,12 @@ import { BRANDS, SPECS } from '../data/brands';
 import { toDateStr, todayStr, fromDateStr, mondayFirstDay, startOfWeek, logTimestamp } from '../utils/date';
 import { uploadImage } from '../utils/uploadImage';
 import { parseCalendarCsv, convertCsvRowsToPosts } from '../utils/researchParse';
+import { STATUS_CONFIG } from '../utils/statusConfig';
+
+function getPostStatusConfig(post: Post) {
+  const isOverdue = post.scheduledDate && post.scheduledDate < todayStr() && (post.status === 'not-started' || post.status === 'in-progress');
+  return isOverdue ? STATUS_CONFIG['overdue'] : STATUS_CONFIG[post.status] || STATUS_CONFIG['not-started'];
+}
 
 interface CalendarViewProps {
   posts: Post[];
@@ -80,13 +86,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const [touchDraggedPostId, setTouchDraggedPostId] = useState<string | null>(null);
   const [touchHoverDate, setTouchHoverDate] = useState<string | null>(null);
 
-  // Mobile month view: which days are expanded in the day-list
-  const [expandedMobileDays, setExpandedMobileDays] = useState<Set<string>>(() => new Set([todayStr()]));
-  const toggleMobileDay = (dateStr: string) => setExpandedMobileDays(prev => {
-    const next = new Set(prev);
-    if (next.has(dateStr)) next.delete(dateStr); else next.add(dateStr);
-    return next;
-  });
+  // Mobile month view: which day is currently selected in the strip
+  const [selectedMobileDate, setSelectedMobileDate] = useState<string>(todayIso);
+  
+  // Selection logic for shift-click range and ctrl-click
+  const [lastSelectedPostId, setLastSelectedPostId] = useState<string | null>(null);
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!touchDraggedPostId) return;
@@ -471,12 +475,37 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   };
 
   // Bulk selection helpers (List view)
-  const toggleSelectPost = (postId: string, e?: React.MouseEvent) => {
+  const toggleSelectPost = (postId: string, e?: React.MouseEvent | React.TouchEvent) => {
     e?.stopPropagation();
+    
     setSelectedPostIds((prev) => {
       const next = new Set(prev);
-      if (next.has(postId)) next.delete(postId);
-      else next.add(postId);
+      
+      // Shift-click range select (if in list view, or across filteredCalendarPosts)
+      if (e && 'shiftKey' in e && e.shiftKey && lastSelectedPostId && displayMode === 'list') {
+        const postIds = filteredCalendarPosts.map(p => p.id);
+        const startIdx = postIds.indexOf(lastSelectedPostId);
+        const endIdx = postIds.indexOf(postId);
+        
+        if (startIdx !== -1 && endIdx !== -1) {
+          const minIdx = Math.min(startIdx, endIdx);
+          const maxIdx = Math.max(startIdx, endIdx);
+          
+          for (let i = minIdx; i <= maxIdx; i++) {
+            next.add(postIds[i]);
+          }
+          setLastSelectedPostId(postId);
+          return next;
+        }
+      }
+      
+      if (next.has(postId)) {
+        next.delete(postId);
+        setLastSelectedPostId(null);
+      } else {
+        next.add(postId);
+        setLastSelectedPostId(postId);
+      }
       return next;
     });
   };
@@ -830,6 +859,20 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               <span className="material-symbols-outlined text-[16px]">check_box</span>
               <span>{isSelectMode ? 'Select Mode (ON)' : 'Select Posts'}</span>
             </button>
+            
+            {/* Sticky mobile exit select mode button */}
+            {(isSelectMode || selectedPostIds.size > 0) && (
+              <button
+                onClick={() => {
+                  setIsSelectMode(false);
+                  clearSelection();
+                }}
+                className="md:hidden fixed top-[70px] left-1/2 -translate-x-1/2 bg-[#1b1c1a] text-white px-4 py-2 rounded-full font-label-caps text-xs font-bold shadow-lg z-50 flex items-center gap-2 animate-in slide-in-from-top-4"
+              >
+                <span className="material-symbols-outlined text-sm">close</span>
+                Exit Select Mode
+              </button>
+            )}
 
             {/* View Mode Selector */}
             <div className="flex bg-[#efeeea] border border-[#bfcab4] rounded p-1">
@@ -957,7 +1000,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
         {/* Bulk Action Floating Bar */}
         {selectedPostIds.size > 0 && (
-          <div className="bg-[#1b1c1a] text-white p-3 rounded shadow-lg flex flex-wrap items-center justify-between gap-3 animate-in fade-in duration-200 border border-white/10">
+          <div className="md:relative fixed bottom-4 left-4 right-4 md:bottom-auto md:left-auto md:right-auto bg-[#1b1c1a] text-white p-3 rounded shadow-lg flex flex-wrap items-center justify-between gap-3 animate-in fade-in duration-200 border border-white/10 z-50">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-[#78d24b] text-base">check_box</span>
               <span className="font-label-caps text-xs font-bold">
@@ -1017,105 +1060,184 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         {displayMode === 'month' && (
           <div className="bg-white border border-[#bfcab4] shadow-xs rounded-sm overflow-hidden">
 
-            {/* ── Mobile Day-List (< md) ── */}
-            <div className="md:hidden divide-y divide-[#bfcab4]">
-              {calendarCells
-                .filter(cell => cell.dateStr && cell.isCurrentMonth)
-                .map((cell) => {
-                  const dayPosts = cell.dateStr ? (postsByDate[cell.dateStr] || []) : [];
-                  const isToday = cell.dateStr === todayIso;
-                  const d = cell.dateStr ? fromDateStr(cell.dateStr) : null;
-                  const dayLabel = d ? d.toLocaleDateString('default', { weekday: 'short', month: 'short', day: 'numeric' }) : '';
-                  const expanded = cell.dateStr ? expandedMobileDays.has(cell.dateStr) : false;
-
-                  return (
-                    <div key={cell.dateStr} className="cal-day-row">
-                      <div
-                        className={`cal-day-row-header ${isToday ? 'bg-[#f0fae8]' : ''}`}
-                        onClick={() => cell.dateStr && toggleMobileDay(cell.dateStr)}
+            {/* ── Mobile Date Strip (< md) ── */}
+            <div className="md:hidden flex flex-col">
+              {/* Horizontal Date Strip */}
+              <div className="flex overflow-x-auto bg-[#efeeea] border-b border-[#bfcab4] p-2 gap-2 hide-scrollbar">
+                {calendarCells
+                  .filter(cell => cell.dateStr && cell.isCurrentMonth)
+                  .map((cell) => {
+                    const d = cell.dateStr ? fromDateStr(cell.dateStr) : null;
+                    const dayShort = d ? d.toLocaleDateString('default', { weekday: 'short' }) : '';
+                    const dayNum = d ? d.getDate() : '';
+                    const isSelected = cell.dateStr === selectedMobileDate;
+                    const isToday = cell.dateStr === todayIso;
+                    const dayPosts = cell.dateStr ? (postsByDate[cell.dateStr] || []) : [];
+                    
+                    return (
+                      <button
+                        key={cell.dateStr}
+                        onClick={() => setSelectedMobileDate(cell.dateStr!)}
+                        className={`flex flex-col items-center justify-center min-w-[3.5rem] py-2 rounded-lg transition-colors relative flex-shrink-0 ${
+                          isSelected ? 'bg-[#296c00] text-white shadow-xs' : isToday ? 'bg-white border border-[#296c00] text-[#296c00]' : 'bg-white border border-[#bfcab4] text-[#1b1c1a]'
+                        }`}
                       >
-                        <div className="flex items-center gap-2">
-                          {isToday && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#296c00] flex-shrink-0" />
-                          )}
-                          <span className={`font-label-caps text-xs font-bold ${isToday ? 'text-[#296c00]' : 'text-[#1b1c1a]'}`}>
-                            {dayLabel}
-                          </span>
-                          {dayPosts.length > 0 && (
-                            <span className="bg-[#296c00] text-white font-label-caps text-[9px] px-1.5 py-0.5 rounded-full">
-                              {dayPosts.length}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={(e) => { e.stopPropagation(); onOpenNewPostModal(cell.dateStr!); }}
-                            className="tap-target text-[#296c00] hover:bg-[#aceecf] rounded-full"
-                          >
-                            <span className="material-symbols-outlined text-sm">add</span>
-                          </button>
-                          <span className={`material-symbols-outlined text-base text-[#707a67] transition-transform ${expanded ? 'rotate-180' : ''}`}>
-                            expand_more
-                          </span>
-                        </div>
-                      </div>
+                        <span className="font-label-caps text-[9px] uppercase font-bold opacity-80">{dayShort}</span>
+                        <span className="font-headline-md text-base font-bold mt-0.5">{dayNum}</span>
+                        {dayPosts.length > 0 && (
+                          <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center font-label-caps text-[8px] font-bold ${isSelected ? 'bg-white text-[#296c00]' : 'bg-[#296c00] text-white'}`}>
+                            {dayPosts.length}
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+              </div>
 
-                      {expanded && dayPosts.length > 0 && (
-                        <div className="cal-day-row-body space-y-2">
-                          {dayPosts.map((post) => {
-                            const brand = BRANDS[post.brandId];
-                            const primaryAssignee = post.assignees[0] || '';
-                            const assigneeMember = teamMembers.find(m => m.name === primaryAssignee);
-                            const initials = assigneeMember ? assigneeMember.avatarInitials : (primaryAssignee || '?').split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
-                            const bgColor = assigneeMember ? assigneeMember.color : '#bfcab4';
-                            const extraAssignees = post.assignees.length - 1;
-                            return (
-                              <div
-                                key={post.id}
-                                onClick={() => { onSelectPost(post); }}
-                                style={{ borderLeftColor: brand?.primaryColor }}
-                                className="flex items-center gap-3 p-3 bg-white border border-[#bfcab4] border-l-4 rounded shadow-2xs active:scale-[0.98] transition-transform cursor-pointer"
-                              >
-                                {post.visualUrl && (
-                                  <div className="w-10 h-10 rounded overflow-hidden border border-[#bfcab4] bg-[#faf9f5] flex-shrink-0">
-                                    <img src={post.visualUrl} alt={post.title} className="w-full h-full object-cover" />
-                                  </div>
-                                )}
-                                <div className="flex-1 min-w-0">
-                                  <span className="font-label-caps text-[9px] font-bold uppercase" style={{ color: brand?.primaryColor }}>
-                                    {brand?.shortCode}
-                                  </span>
-                                  <p className="font-headline-md text-sm font-bold text-[#1b1c1a] truncate">{post.title}</p>
-                                  <div className="flex items-center gap-1.5 mt-0.5">
-                                    <span className="font-code-sm text-[10px] text-[#707a67]">{post.scheduledTime}</span>
-                                    <span className="font-label-caps text-[9px] text-[#707a67] uppercase">{post.status?.replace('-', ' ')}</span>
-                                  </div>
-                                </div>
-                                <div
-                                  className="relative w-7 h-7 rounded-full flex items-center justify-center text-white font-label-caps text-[9px] font-bold flex-shrink-0"
-                                  style={{ backgroundColor: bgColor }}
-                                  title={post.assignees.join(', ')}
-                                >
-                                  {initials}
-                                  {extraAssignees > 0 && (
-                                    <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-[#1b1c1a] text-white text-[8px] font-bold flex items-center justify-center border border-white">
-                                      +{extraAssignees}
+              {/* Selected Day Posts */}
+              <div className="p-3 sm:p-4 bg-[#faf9f5]">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-headline-md text-lg font-bold text-[#1b1c1a]">
+                    {fromDateStr(selectedMobileDate).toLocaleDateString('default', { weekday: 'long', month: 'long', day: 'numeric' })}
+                  </h3>
+                  <button
+                    onClick={() => onOpenNewPostModal(selectedMobileDate)}
+                    className="flex items-center gap-1 text-[#296c00] font-label-caps text-xs font-bold bg-[#f0fae8] px-3 py-1.5 rounded-full hover:bg-[#aceecf] transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-sm">add</span>
+                    New Post
+                  </button>
+                </div>
+                
+                {(() => {
+                  const dayPosts = postsByDate[selectedMobileDate] || [];
+                  if (dayPosts.length === 0) {
+                    return (
+                      <div className="text-center py-10 text-[#707a67] bg-white border border-[#bfcab4] rounded-lg">
+                        <span className="material-symbols-outlined text-3xl mb-2 opacity-50">calendar_today</span>
+                        <p className="font-body-md text-sm">No posts scheduled</p>
+                      </div>
+                    );
+                  }
+                  
+                  return (
+                    <div className="space-y-3">
+                      {dayPosts.map((post) => {
+                        const brand = BRANDS[post.brandId];
+                        const primaryAssignee = post.assignees[0] || '';
+                        const assigneeMember = teamMembers.find(m => m.name === primaryAssignee);
+                        const initials = assigneeMember ? assigneeMember.avatarInitials : (primaryAssignee || '?').split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+                        const bgColor = assigneeMember ? assigneeMember.color : '#bfcab4';
+                        const extraAssignees = post.assignees.length - 1;
+                        const isMobileSelected = selectedPostIds.has(post.id);
+                        
+                        return (
+                          <div
+                            key={post.id}
+                            onTouchStart={(e) => {
+                              setTouchDraggedPostId(post.id);
+                              // Long press for mobile selection (500ms)
+                              const timer = setTimeout(() => {
+                                setIsSelectMode(true);
+                                if (!selectedPostIds.has(post.id)) toggleSelectPost(post.id, e);
+                              }, 500);
+                              (e.currentTarget as any).dataset.longPressTimer = timer.toString();
+                            }}
+                            onTouchEnd={(e) => {
+                              const timer = (e.currentTarget as any).dataset.longPressTimer;
+                              if (timer) clearTimeout(parseInt(timer));
+                            }}
+                            onTouchMove={(e) => {
+                              const timer = (e.currentTarget as any).dataset.longPressTimer;
+                              if (timer) clearTimeout(parseInt(timer));
+                            }}
+                            onClick={(e) => {
+                              if (isSelectMode || e.ctrlKey || e.metaKey || e.shiftKey) { toggleSelectPost(post.id, e); }
+                              else { onSelectPost(post); }
+                            }}
+                            style={{ borderLeftColor: brand?.primaryColor }}
+                            className={`flex items-start gap-3 p-3 border border-l-4 rounded-lg shadow-2xs active:scale-[0.98] transition-transform cursor-pointer ${
+                              isMobileSelected ? 'bg-[#f0fae8] ring-2 ring-[#296c00] border-[#296c00]' : 'bg-white border-[#bfcab4]'
+                            }`}
+                          >
+                            {(isSelectMode || selectedPostIds.size > 0) && (
+                              <input
+                                type="checkbox"
+                                checked={isMobileSelected}
+                                onChange={() => toggleSelectPost(post.id)}
+                                onClick={(e) => e.stopPropagation()}
+                                className="w-5 h-5 mt-1 text-[#296c00] border-[#bfcab4] rounded flex-shrink-0"
+                              />
+                            )}
+                            
+                            {post.visualUrl && (
+                              <div className="w-14 h-14 mt-0.5 rounded overflow-hidden border border-[#bfcab4] bg-[#faf9f5] flex-shrink-0">
+                                <img src={post.visualUrl} alt={post.title} className="w-full h-full object-cover" />
+                              </div>
+                            )}
+                            
+                            <div className="flex-1 min-w-0">
+                              <span className="font-label-caps text-[9px] font-bold uppercase" style={{ color: brand?.primaryColor }}>
+                                {brand?.name} • {post.scheduledTime}
+                              </span>
+                              <p className="font-headline-md text-sm font-bold text-[#1b1c1a] leading-tight mb-1">{post.title}</p>
+                              
+                              <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                                {(() => {
+                                  const st = getPostStatusConfig(post);
+                                  return (
+                                    <span
+                                      className="font-label-caps text-[9px] font-bold uppercase px-1.5 py-0.5 rounded flex items-center gap-0.5"
+                                      style={{ backgroundColor: st.bgColor, color: st.color }}
+                                    >
+                                      {st.icon && <span className="material-symbols-outlined" style={{ fontSize: '10px' }}>{st.icon}</span>}
+                                      {st.label}
+                                    </span>
+                                  );
+                                })()}
+                              </div>
+                              
+                              {/* Mobile Task Role Badges */}
+                              {post.taskRoles && (post.taskRoles.designer || post.taskRoles.publisher || post.taskRoles.engagementLead) && (
+                                <div className="flex flex-wrap gap-1 mt-2 text-[9px] font-label-caps">
+                                  {post.taskRoles.designer && (
+                                    <span className={`px-1.5 py-0.5 rounded ${post.stageCompletion?.designDone ? 'bg-[#296c00] text-white' : 'bg-[#efeeea] text-[#404a39]'}`}>
+                                      🎨 {post.taskRoles.designer}
+                                    </span>
+                                  )}
+                                  {post.taskRoles.publisher && (
+                                    <span className={`px-1.5 py-0.5 rounded ${post.stageCompletion?.publishDone ? 'bg-[#296c00] text-white' : 'bg-[#efeeea] text-[#404a39]'}`}>
+                                      🚀 {post.taskRoles.publisher}
+                                    </span>
+                                  )}
+                                  {post.taskRoles.engagementLead && (
+                                    <span className={`px-1.5 py-0.5 rounded ${post.stageCompletion?.engagementDone ? 'bg-[#296c00] text-white' : 'bg-[#efeeea] text-[#404a39]'}`}>
+                                      💬 {post.taskRoles.engagementLead}
                                     </span>
                                   )}
                                 </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                      {expanded && dayPosts.length === 0 && (
-                        <div className="px-4 py-3 text-center">
-                          <p className="font-body-md text-xs text-[#bfcab4]">Nothing scheduled</p>
-                        </div>
-                      )}
+                              )}
+                            </div>
+                            
+                            <div
+                              className="relative w-8 h-8 rounded-full flex items-center justify-center text-white font-label-caps text-[10px] font-bold flex-shrink-0 shadow-xs"
+                              style={{ backgroundColor: bgColor }}
+                              title={post.assignees.join(', ')}
+                            >
+                              {initials}
+                              {extraAssignees > 0 && (
+                                <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-[#1b1c1a] text-white text-[8px] font-bold flex items-center justify-center border border-white">
+                                  +{extraAssignees}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   );
-                })}
+                })()}
+              </div>
             </div>
 
             {/* ── Desktop Grid (md+) ── */}
@@ -1165,7 +1287,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                       e.currentTarget.classList.remove('ring-2', 'ring-[#296c00]', 'bg-[#f0fae8]');
                       if (cell.dateStr) handleDropOnCell(e, cell.dateStr);
                     }}
-                    className={`min-h-[64px] sm:min-h-[110px] md:min-h-[120px] p-1 sm:p-2 bg-white flex flex-col justify-between transition-colors relative group cursor-pointer ${
+                    className={`min-h-[80px] sm:min-h-[120px] md:min-h-[140px] p-1 sm:p-2 bg-white flex flex-col justify-between transition-colors relative group cursor-pointer ${
                       !cell.isCurrentMonth ? 'bg-[#faf9f5] opacity-50' : 'hover:bg-[#f5f4f0]'
                     } ${isToday ? 'ring-1 ring-[#296c00] ring-inset' : ''} ${
                       touchHoverDate && touchHoverDate === cell.dateStr ? 'ring-2 ring-[#296c00] bg-[#f0fae8]' : ''
@@ -1215,8 +1337,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                     </div>
 
                     {/* Desktop Posts Cards Stack (>= sm screens) */}
-                    <div className="hidden sm:block space-y-1.5 flex-1 overflow-y-auto max-h-[100px] pr-0.5">
-                      {dayPosts.map((post) => {
+                    <div className="hidden sm:block space-y-1.5 flex-1">
+                      {dayPosts.slice(0, 3).map((post) => {
                         const brand = BRANDS[post.brandId];
 
                         // Render recurring slot placeholders as ghost cards
@@ -1254,14 +1376,14 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                             }}
                             onClick={(e) => {
                               e.stopPropagation();
-                              if (isSelectMode) {
+                              if (isSelectMode || e.ctrlKey || e.metaKey) {
                                 toggleSelectPost(post.id, e);
                               } else {
                                 setSelectedPostForInspector(post);
                                 onSelectPost(post);
                               }
                             }}
-                            style={{ borderLeftColor: brand?.primaryColor || '#296c00' }}
+                            style={{ borderLeftColor: getPostStatusConfig(post).color }}
                             className={`p-1.5 border border-l-4 shadow-2xs hover:shadow-md transition-all rounded-xs text-left cursor-pointer ${
                               isSelected ? 'bg-[#f0fae8] ring-2 ring-[#296c00] border-[#296c00]' : 'bg-white border-[#bfcab4]'
                             }`}
@@ -1342,7 +1464,18 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                     </div>
                                   );
                                 })()}
-                                <span className="capitalize truncate">{post.status?.replace('-', ' ')}</span>
+                                {(() => {
+                                  const st = getPostStatusConfig(post);
+                                  return (
+                                    <span
+                                      className="font-label-caps text-[9px] font-bold uppercase px-1.5 py-0.5 rounded flex items-center gap-0.5"
+                                      style={{ backgroundColor: st.bgColor, color: st.color }}
+                                    >
+                                      {st.icon && <span className="material-symbols-outlined" style={{ fontSize: '10px' }}>{st.icon}</span>}
+                                      {st.label}
+                                    </span>
+                                  );
+                                })()}
                               </div>
                               {post.approved && (
                                 <span className="text-[#296c00] font-bold flex-shrink-0">✓ Approved</span>
@@ -1351,6 +1484,17 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                           </div>
                         );
                       })}
+                      {dayPosts.length > 3 && (
+                        <button 
+                          className="w-full text-center py-1 bg-[#efeeea] hover:bg-[#e0dfdb] text-[#404a39] font-label-caps text-[9px] font-bold rounded-xs transition-colors mt-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (cell.dateStr) onOpenNewPostModal(cell.dateStr);
+                          }}
+                        >
+                          +{dayPosts.length - 3} more
+                        </button>
+                      )}
                     </div>
 
                     {/* Quick Add & Direct Image Upload Buttons on Hover (Desktop) */}
@@ -1483,6 +1627,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                     <div className="space-y-2">
                       {dayPosts.map((post) => {
                         const brand = BRANDS[post.brandId];
+                        const isWeekSelected = selectedPostIds.has(post.id);
                         return (
                           <div
                             key={post.id}
@@ -1492,19 +1637,55 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                               e.dataTransfer.setData("text/plain", post.id);
                               e.dataTransfer.effectAllowed = "move";
                             }}
-                            onClick={() => {
-                              setSelectedPostForInspector(post);
-                              onSelectPost(post);
+                            onClick={(e) => {
+                              if (isSelectMode || e.ctrlKey || e.metaKey || e.shiftKey) { 
+                                toggleSelectPost(post.id, e); 
+                              } else { 
+                                setSelectedPostForInspector(post); onSelectPost(post); 
+                              }
                             }}
-                            style={{ borderLeftColor: brand?.primaryColor }}
-                            className="p-2 bg-white border border-[#bfcab4] border-l-4 shadow-xs rounded cursor-grab active:cursor-grabbing hover:border-[#296c00] hover:shadow-md transition-all active:scale-[0.98]"
+                            style={{ borderLeftColor: getPostStatusConfig(post).color }}
+                            className={`p-2 border border-l-4 shadow-xs rounded cursor-pointer hover:border-[#296c00] hover:shadow-md transition-all active:scale-[0.98] ${
+                              isWeekSelected ? 'bg-[#f0fae8] ring-2 ring-[#296c00] border-[#296c00]' : 'bg-white border-[#bfcab4]'
+                            }`}
                           >
-                            <span className="font-label-caps text-[9px] font-bold text-[#296c00] uppercase">
-                              {brand?.shortCode || post.brandId}
-                            </span>
+                            <div className="flex items-center gap-1 mb-0.5">
+                              {(isSelectMode || selectedPostIds.size > 0) && (
+                                <input
+                                  type="checkbox"
+                                  checked={isWeekSelected}
+                                  onChange={() => toggleSelectPost(post.id)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="w-3.5 h-3.5 text-[#296c00] border-[#bfcab4] rounded flex-shrink-0"
+                                />
+                              )}
+                              <span className="font-label-caps text-[9px] font-bold text-[#296c00] uppercase truncate">
+                                {brand?.shortCode || post.brandId}
+                              </span>
+                            </div>
                             <h4 className="font-headline-md text-xs font-bold text-[#1b1c1a] line-clamp-2">
                               {post.title}
                             </h4>
+                            {/* Week View Task Role Badges */}
+                            {post.taskRoles && (post.taskRoles.designer || post.taskRoles.publisher || post.taskRoles.engagementLead) && (
+                              <div className="flex flex-wrap gap-0.5 mt-1 text-[8px] font-label-caps">
+                                {post.taskRoles.designer && (
+                                  <span className={`px-1 py-0.5 rounded ${post.stageCompletion?.designDone ? 'bg-[#296c00] text-white' : 'bg-[#efeeea] text-[#404a39]'}`}>
+                                    🎨 {post.taskRoles.designer}
+                                  </span>
+                                )}
+                                {post.taskRoles.publisher && (
+                                  <span className={`px-1 py-0.5 rounded ${post.stageCompletion?.publishDone ? 'bg-[#296c00] text-white' : 'bg-[#efeeea] text-[#404a39]'}`}>
+                                    🚀 {post.taskRoles.publisher}
+                                  </span>
+                                )}
+                                {post.taskRoles.engagementLead && (
+                                  <span className={`px-1 py-0.5 rounded ${post.stageCompletion?.engagementDone ? 'bg-[#296c00] text-white' : 'bg-[#efeeea] text-[#404a39]'}`}>
+                                    💬 {post.taskRoles.engagementLead}
+                                  </span>
+                                )}
+                              </div>
+                            )}
                             <div className="flex justify-between items-center mt-2 text-[10px] font-code-sm text-[#707a67] gap-1">
                               <div className="flex items-center gap-1 min-w-0">
                                 {post.assignees[0] && (() => {
@@ -1527,13 +1708,35 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                     </div>
                                   );
                                 })()}
-                                <span className="uppercase font-bold truncate">{post.status?.replace('-', ' ')}</span>
+                                {(() => {
+                                  const st = getPostStatusConfig(post);
+                                  return (
+                                    <span
+                                      className="font-label-caps text-[9px] font-bold uppercase px-1.5 py-0.5 rounded flex items-center gap-0.5"
+                                      style={{ backgroundColor: st.bgColor, color: st.color }}
+                                    >
+                                      {st.icon && <span className="material-symbols-outlined" style={{ fontSize: '10px' }}>{st.icon}</span>}
+                                      {st.label}
+                                    </span>
+                                  );
+                                })()}
                               </div>
-                              <span>{post.scheduledTime}</span>
+                              <span className="font-code-sm text-[10px] text-[#707a67]">{post.scheduledTime}</span>
                             </div>
                           </div>
                         );
                       })}
+                      {dayPosts.length > 3 && (
+                        <button 
+                          className="w-full text-center py-1 bg-[#efeeea] hover:bg-[#e0dfdb] text-[#404a39] font-label-caps text-[9px] font-bold rounded-xs transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenNewPostModal(dateStr);
+                          }}
+                        >
+                          +{dayPosts.length - 3} more
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -1616,9 +1819,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   return (
                     <div
                       key={post.id}
-                      onClick={() => {
-                        setSelectedPostForInspector(post);
-                        onSelectPost(post);
+                      onClick={(e) => {
+                        if (isSelectMode || e.ctrlKey || e.metaKey || e.shiftKey) {
+                          toggleSelectPost(post.id, e);
+                        } else {
+                          setSelectedPostForInspector(post);
+                          onSelectPost(post);
+                        }
                       }}
                       className={`p-3 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-2.5 sm:gap-3 transition-colors cursor-pointer ${
                         isSelected ? 'bg-[#f0fae8]' : 'hover:bg-[#faf9f5]'
@@ -1664,9 +1871,18 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
                       <div className="flex items-center justify-between md:contents">
                         <div className="md:w-28">
-                          <span className="font-label-caps text-[10px] px-2 py-1 bg-[#efeeea] border border-[#bfcab4] rounded uppercase font-bold">
-                            {post.status}
-                          </span>
+                          {(() => {
+                            const st = getPostStatusConfig(post);
+                            return (
+                              <span
+                                className="font-label-caps text-[10px] font-bold uppercase px-2 py-1 rounded flex items-center justify-center gap-1"
+                                style={{ backgroundColor: st.bgColor, color: st.color }}
+                              >
+                                {st.icon && <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>{st.icon}</span>}
+                                {st.label}
+                              </span>
+                            );
+                          })()}
                         </div>
 
                         <div className="md:w-28 font-body-md text-xs text-[#404a39]">
@@ -1813,9 +2029,18 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
               <div className="flex justify-between py-1 border-b border-[#bfcab4]/50">
                 <span className="text-[#707a67]">Status</span>
-                <span className="font-label-caps font-bold capitalize">
-                  {inspectorPost.status.replace(/-/g, ' ')}
-                </span>
+                {(() => {
+                  const st = getPostStatusConfig(inspectorPost);
+                  return (
+                    <span
+                      className="font-label-caps text-[10px] font-bold uppercase px-2 py-0.5 rounded flex items-center gap-1"
+                      style={{ backgroundColor: st.bgColor, color: st.color }}
+                    >
+                      {st.icon && <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>{st.icon}</span>}
+                      {st.label}
+                    </span>
+                  );
+                })()}
               </div>
 
               <div className="flex justify-between py-1 border-b border-[#bfcab4]/50">
