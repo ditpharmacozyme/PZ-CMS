@@ -230,6 +230,8 @@ type PostRow = {
   reminder_sent_at: string | null;
   status: string;
   assignees: string[];
+  task_roles?: unknown;
+  stage_completion?: unknown;
   visual_url: string;
   template_id: string | null;
   approved: boolean;
@@ -257,6 +259,8 @@ function rowToPost(row: PostRow): Post {
     reminderSentAt: row.reminder_sent_at || undefined,
     status: row.status as Post['status'],
     assignees: row.assignees || [],
+    taskRoles: (row.task_roles as Post['taskRoles']) || undefined,
+    stageCompletion: (row.stage_completion as Post['stageCompletion']) || undefined,
     visualUrl: row.visual_url,
     templateId: row.template_id || undefined,
     approved: row.approved,
@@ -285,6 +289,8 @@ function postToRow(post: Post): PostRow {
     reminder_sent_at: post.reminderSentAt || null,
     status: post.status,
     assignees: post.assignees || [],
+    task_roles: post.taskRoles || null,
+    stage_completion: post.stageCompletion || null,
     visual_url: post.visualUrl,
     template_id: post.templateId || null,
     approved: post.approved,

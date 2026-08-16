@@ -123,6 +123,24 @@ export interface ActivityLogItem {
   timestamp: string;
 }
 
+export interface TaskRoles {
+  designer?: string;
+  publisher?: string;
+  engagementLead?: string;
+}
+
+export interface StageCompletion {
+  designDone?: boolean;
+  designDoneAt?: string;
+  designDoneBy?: string;
+  publishDone?: boolean;
+  publishDoneAt?: string;
+  publishDoneBy?: string;
+  engagementDone?: boolean;
+  engagementDoneAt?: string;
+  engagementDoneBy?: string;
+}
+
 export interface Post {
   id: string;
   brandId: BrandId;
@@ -137,6 +155,8 @@ export interface Post {
   reminderSentAt?: string; // Set once the Apps Script daily trigger has emailed this post — prevents duplicate sends
   status: PostStatus;
   assignees: string[];
+  taskRoles?: TaskRoles; // Specialized handoff roles (designer, publisher, engagementLead)
+  stageCompletion?: StageCompletion; // Handoff stage checkboxes with timestamps
   visualUrl: string; // image preview or drive URL
   templateId?: string;
   approved: boolean;

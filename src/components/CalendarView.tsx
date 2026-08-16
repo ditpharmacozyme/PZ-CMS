@@ -73,6 +73,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [mobileBacklogOpen, setMobileBacklogOpen] = useState(false);
   const [selectedPostIds, setSelectedPostIds] = useState<Set<string>>(new Set());
+  const [isSelectMode, setIsSelectMode] = useState(false);
   const [bulkStatus, setBulkStatus] = useState<PostStatus | ''>('');
   const [bulkAssignee, setBulkAssignee] = useState<string>('');
   const [clearCaptionsOnDuplicate, setClearCaptionsOnDuplicate] = useState(false);
@@ -530,6 +531,21 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     clearSelection();
   };
 
+  const handleBulkDelete = () => {
+    if (selectedPostIds.size === 0 || !onDeletePost) return;
+    const count = selectedPostIds.size;
+    if (window.confirm(`Are you sure you want to delete ${count} selected post${count > 1 ? 's' : ''}?`)) {
+      const idsToDelete = Array.from(selectedPostIds);
+      idsToDelete.forEach((id) => onDeletePost(id));
+      clearSelection();
+    }
+  };
+
+  const handleSelectAllFiltered = () => {
+    const allIds = filteredCalendarPosts.map((p) => p.id);
+    setSelectedPostIds(new Set(allIds));
+  };
+
   // Duplicate everything scheduled in the visible week to the same days next
   // week (PRD §5.5) — so the slot exists on the calendar before content is written.
   const handleDuplicateWeekForward = () => {
@@ -803,6 +819,18 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               </>
             )}
 
+            <button
+              onClick={() => setIsSelectMode(!isSelectMode)}
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 border font-label-caps text-xs font-bold rounded transition-colors shadow-xs h-[36px] ${
+                isSelectMode || selectedPostIds.size > 0
+                  ? 'bg-[#296c00] text-white border-[#296c00]'
+                  : 'bg-[#efeeea] border-[#bfcab4] text-[#1b1c1a] hover:bg-[#e4e2db]'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[16px]">check_box</span>
+              <span>{isSelectMode ? 'Select Mode (ON)' : 'Select Posts'}</span>
+            </button>
+
             {/* View Mode Selector */}
             <div className="flex bg-[#efeeea] border border-[#bfcab4] rounded p-1">
               <button
@@ -917,8 +945,73 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 Reset
               </button>
             )}
+
+            <button
+              onClick={selectedPostIds.size === filteredCalendarPosts.length ? clearSelection : handleSelectAllFiltered}
+              className="font-label-caps text-xs text-[#296c00] font-bold hover:underline py-1 ml-auto flex-shrink-0"
+            >
+              {selectedPostIds.size === filteredCalendarPosts.length ? 'Deselect All' : `Select All (${filteredCalendarPosts.length})`}
+            </button>
           </div>
         </div>
+
+        {/* Bulk Action Floating Bar */}
+        {selectedPostIds.size > 0 && (
+          <div className="bg-[#1b1c1a] text-white p-3 rounded shadow-lg flex flex-wrap items-center justify-between gap-3 animate-in fade-in duration-200 border border-white/10">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-[#78d24b] text-base">check_box</span>
+              <span className="font-label-caps text-xs font-bold">
+                {selectedPostIds.size} post{selectedPostIds.size > 1 ? 's' : ''} selected
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                value={bulkStatus}
+                onChange={(e) => {
+                  if (e.target.value) applyBulkStatus(e.target.value as PostStatus);
+                }}
+                className="bg-white/10 border border-white/20 text-white p-1.5 font-label-caps text-xs rounded focus:bg-[#1b1c1a]"
+              >
+                <option value="" className="text-black">Set status...</option>
+                <option value="not-started" className="text-black">Not started</option>
+                <option value="in-progress" className="text-black">In progress</option>
+                <option value="ready-to-post" className="text-black">Ready to post</option>
+                <option value="posted" className="text-black">Posted</option>
+              </select>
+
+              <select
+                value={bulkAssignee}
+                onChange={(e) => {
+                  if (e.target.value !== undefined) applyBulkAssignee(e.target.value);
+                }}
+                className="bg-white/10 border border-white/20 text-white p-1.5 font-label-caps text-xs rounded focus:bg-[#1b1c1a]"
+              >
+                <option value="" className="text-black">Reassign to...</option>
+                {teamMembers.map((m) => (
+                  <option key={m.id} value={m.name} className="text-black">{m.name}</option>
+                ))}
+              </select>
+
+              {onDeletePost && (
+                <button
+                  onClick={handleBulkDelete}
+                  className="px-3 py-1.5 bg-[#ba1a1a] hover:bg-[#931313] text-white font-label-caps text-xs font-bold rounded flex items-center gap-1.5 transition-colors shadow-xs"
+                >
+                  <span className="material-symbols-outlined text-sm">delete</span>
+                  <span>Delete ({selectedPostIds.size})</span>
+                </button>
+              )}
+
+              <button
+                onClick={clearSelection}
+                className="px-2.5 py-1.5 bg-white/10 hover:bg-white/20 text-white font-label-caps text-xs rounded transition-colors"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* MONTH VIEW */}
         {displayMode === 'month' && (
@@ -1149,6 +1242,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                           );
                         }
 
+                        const isSelected = selectedPostIds.has(post.id);
                         return (
                           <div
                             key={post.id}
@@ -1160,27 +1254,65 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                             }}
                             onClick={(e) => {
                               e.stopPropagation();
-                              setSelectedPostForInspector(post);
-                              onSelectPost(post);
+                              if (isSelectMode) {
+                                toggleSelectPost(post.id, e);
+                              } else {
+                                setSelectedPostForInspector(post);
+                                onSelectPost(post);
+                              }
                             }}
                             style={{ borderLeftColor: brand?.primaryColor || '#296c00' }}
-                            className="p-1.5 bg-white border border-[#bfcab4] border-l-4 shadow-2xs hover:shadow-md transition-all rounded-xs text-left cursor-grab active:cursor-grabbing hover:scale-[1.01]"
+                            className={`p-1.5 border border-l-4 shadow-2xs hover:shadow-md transition-all rounded-xs text-left cursor-pointer ${
+                              isSelected ? 'bg-[#f0fae8] ring-2 ring-[#296c00] border-[#296c00]' : 'bg-white border-[#bfcab4]'
+                            }`}
                           >
                             <div className="flex items-center justify-between gap-1 mb-0.5">
-                              <span
-                                className="font-label-caps text-[9px] font-bold uppercase truncate"
-                                style={{ color: brand?.primaryColor || '#296c00' }}
-                              >
-                                {brand?.shortCode || post.brandId}
-                              </span>
+                              <div className="flex items-center gap-1 min-w-0">
+                                {(isSelectMode || selectedPostIds.size > 0) && (
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={(e) => toggleSelectPost(post.id, e as any)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="w-3.5 h-3.5 text-[#296c00] border-[#bfcab4] rounded focus:ring-[#296c00] cursor-pointer"
+                                  />
+                                )}
+                                <span
+                                  className="font-label-caps text-[9px] font-bold uppercase truncate"
+                                  style={{ color: brand?.primaryColor || '#296c00' }}
+                                >
+                                  {brand?.shortCode || post.brandId}
+                                </span>
+                              </div>
                               <span className="font-code-sm text-[9px] text-[#707a67]">
                                 {post.scheduledTime}
                               </span>
                             </div>
 
-                            <p className="font-headline-md text-xs font-bold text-[#1b1c1a] line-clamp-1 leading-tight">
+                            <p className="font-headline-md text-[10px] text-[#1b1c1a] line-clamp-1 leading-snug font-bold">
                               {post.title}
                             </p>
+
+                            {/* Task Roles Badges */}
+                            {post.taskRoles && (post.taskRoles.designer || post.taskRoles.publisher || post.taskRoles.engagementLead) && (
+                              <div className="flex flex-wrap gap-1 mt-1 pt-1 border-t border-[#bfcab4]/40 text-[8px] font-label-caps">
+                                {post.taskRoles.designer && (
+                                  <span className={`px-1 py-0.2 rounded ${post.stageCompletion?.designDone ? 'bg-[#296c00] text-white' : 'bg-[#efeeea] text-[#404a39]'}`} title={`Designer: ${post.taskRoles.designer}`}>
+                                    🎨 {post.taskRoles.designer}
+                                  </span>
+                                )}
+                                {post.taskRoles.publisher && (
+                                  <span className={`px-1 py-0.2 rounded ${post.stageCompletion?.publishDone ? 'bg-[#296c00] text-white' : 'bg-[#efeeea] text-[#404a39]'}`} title={`Publisher: ${post.taskRoles.publisher}`}>
+                                    🚀 {post.taskRoles.publisher}
+                                  </span>
+                                )}
+                                {post.taskRoles.engagementLead && (
+                                  <span className={`px-1 py-0.2 rounded ${post.stageCompletion?.engagementDone ? 'bg-[#296c00] text-white' : 'bg-[#efeeea] text-[#404a39]'}`} title={`Engagement: ${post.taskRoles.engagementLead}`}>
+                                    💬 {post.taskRoles.engagementLead}
+                                  </span>
+                                )}
+                              </div>
+                            )}
 
                             {post.visualUrl && (
                               <div className="my-1 h-10 w-full rounded overflow-hidden border border-[#bfcab4] bg-[#faf9f5]">
@@ -1653,6 +1785,31 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 <span className="text-[#707a67]">Owner</span>
                 <span className="font-label-caps font-bold">{inspectorPost.assignees.length > 0 ? inspectorPost.assignees.join(', ') : 'Unassigned'}</span>
               </div>
+
+              {/* Inspector Task Roles */}
+              {inspectorPost.taskRoles && (inspectorPost.taskRoles.designer || inspectorPost.taskRoles.publisher || inspectorPost.taskRoles.engagementLead) && (
+                <div className="py-2 border-b border-[#bfcab4]/50 space-y-1 bg-[#faf9f5] p-2 rounded">
+                  <span className="font-label-caps text-[9px] text-[#296951] font-bold uppercase block">Specialized Roles</span>
+                  {inspectorPost.taskRoles.designer && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-[#707a67]">🎨 Designer</span>
+                      <span className="font-bold">{inspectorPost.taskRoles.designer} {inspectorPost.stageCompletion?.designDone ? '✓' : ''}</span>
+                    </div>
+                  )}
+                  {inspectorPost.taskRoles.publisher && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-[#707a67]">🚀 Publisher</span>
+                      <span className="font-bold">{inspectorPost.taskRoles.publisher} {inspectorPost.stageCompletion?.publishDone ? '✓' : ''}</span>
+                    </div>
+                  )}
+                  {inspectorPost.taskRoles.engagementLead && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-[#707a67]">💬 Engagement</span>
+                      <span className="font-bold">{inspectorPost.taskRoles.engagementLead} {inspectorPost.stageCompletion?.engagementDone ? '✓' : ''}</span>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="flex justify-between py-1 border-b border-[#bfcab4]/50">
                 <span className="text-[#707a67]">Status</span>

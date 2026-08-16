@@ -479,13 +479,17 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
                           type="checkbox"
                           checked={checked}
                           onChange={() => {
-                            const wasEmpty = editedPost.assignees.length === 0;
+                            const nextAssignees = checked
+                              ? editedPost.assignees.filter((n) => n !== m.name)
+                              : [...editedPost.assignees, m.name];
+                            const emails = nextAssignees
+                              .map((name) => teamMembers.find((tm) => tm.name === name)?.email)
+                              .filter((e): e is string => Boolean(e && e.trim()));
+                            const combined = Array.from(new Set(emails)).join(', ');
                             setEditedPost((prev) => ({
                               ...prev,
-                              assignees: checked
-                                ? prev.assignees.filter((n) => n !== m.name)
-                                : [...prev.assignees, m.name],
-                              reminderEmail: wasEmpty && !checked && m.email ? m.email : prev.reminderEmail
+                              assignees: nextAssignees,
+                              reminderEmail: combined || prev.reminderEmail
                             }));
                           }}
                           className="w-3.5 h-3.5 text-[#296c00] border-[#bfcab4] rounded focus:ring-[#296c00]"
@@ -517,6 +521,204 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
                 <option value="weekly:friday">Every Friday Quiz Series</option>
                 <option value="monthly">Monthly Broadcast</option>
               </select>
+            </div>
+          </div>
+
+          {/* TASK ROLES & HANDOFF TRACKING */}
+          <div className="bg-white p-4 border border-[#bfcab4] rounded space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-[#bfcab4]">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#296951]" style={{ fontSize: '18px' }}>alt_route</span>
+                <label className="font-label-caps text-[10px] text-[#296951] font-bold uppercase tracking-wider">
+                  Specialized Task Roles & Handoff Tracking
+                </label>
+              </div>
+              <span className="font-label-caps text-[9px] text-[#707a67] uppercase font-bold">Multi-person Workflow</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="font-label-caps text-[9px] text-[#707a67] uppercase font-bold block mb-1">
+                  🎨 Designer
+                </label>
+                <select
+                  value={editedPost.taskRoles?.designer || ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setEditedPost((prev) => ({
+                      ...prev,
+                      taskRoles: { ...prev.taskRoles, designer: val || undefined }
+                    }));
+                  }}
+                  className="w-full bg-[#faf9f5] border border-[#bfcab4] p-1.5 font-label-caps text-xs text-[#1b1c1a] focus:outline-none rounded"
+                >
+                  <option value="">Unassigned</option>
+                  {teamMembers.map((m) => (
+                    <option key={m.id} value={m.name}>{m.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="font-label-caps text-[9px] text-[#707a67] uppercase font-bold block mb-1">
+                  🚀 Publisher
+                </label>
+                <select
+                  value={editedPost.taskRoles?.publisher || ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setEditedPost((prev) => ({
+                      ...prev,
+                      taskRoles: { ...prev.taskRoles, publisher: val || undefined }
+                    }));
+                  }}
+                  className="w-full bg-[#faf9f5] border border-[#bfcab4] p-1.5 font-label-caps text-xs text-[#1b1c1a] focus:outline-none rounded"
+                >
+                  <option value="">Unassigned</option>
+                  {teamMembers.map((m) => (
+                    <option key={m.id} value={m.name}>{m.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="font-label-caps text-[9px] text-[#707a67] uppercase font-bold block mb-1">
+                  💬 Engagement Lead
+                </label>
+                <select
+                  value={editedPost.taskRoles?.engagementLead || ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setEditedPost((prev) => ({
+                      ...prev,
+                      taskRoles: { ...prev.taskRoles, engagementLead: val || undefined }
+                    }));
+                  }}
+                  className="w-full bg-[#faf9f5] border border-[#bfcab4] p-1.5 font-label-caps text-xs text-[#1b1c1a] focus:outline-none rounded"
+                >
+                  <option value="">Unassigned</option>
+                  {teamMembers.map((m) => (
+                    <option key={m.id} value={m.name}>{m.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Workflow Stage Completion Checklist */}
+            <div className="pt-2 border-t border-[#bfcab4]/50 grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <label className="flex items-center gap-2 p-2 bg-[#faf9f5] border border-[#bfcab4] rounded cursor-pointer hover:bg-[#efeeea]">
+                <input
+                  type="checkbox"
+                  checked={!!editedPost.stageCompletion?.designDone}
+                  onChange={() => {
+                    const actorName = activeTeammate?.name || 'Someone';
+                    const isDone = !editedPost.stageCompletion?.designDone;
+                    const timestamp = logTimestamp();
+                    const assigneeName = editedPost.taskRoles?.designer || actorName;
+                    setEditedPost((prev) => ({
+                      ...prev,
+                      stageCompletion: {
+                        ...prev.stageCompletion,
+                        designDone: isDone,
+                        designDoneAt: isDone ? timestamp : undefined,
+                        designDoneBy: isDone ? assigneeName : undefined
+                      },
+                      activityLog: [
+                        {
+                          id: `act-${Date.now()}`,
+                          actor: actorName,
+                          action: isDone ? `Marked Design complete (${assigneeName})` : 'Reopened Design stage',
+                          timestamp
+                        },
+                        ...prev.activityLog
+                      ]
+                    }));
+                  }}
+                  className="w-4 h-4 text-[#296c00] border-[#bfcab4] rounded"
+                />
+                <div className="flex flex-col">
+                  <span className="font-label-caps text-xs font-bold text-[#1b1c1a]">🎨 Design Done</span>
+                  {editedPost.stageCompletion?.designDoneAt && (
+                    <span className="text-[9px] text-[#707a67]">by {editedPost.stageCompletion.designDoneBy}</span>
+                  )}
+                </div>
+              </label>
+
+              <label className="flex items-center gap-2 p-2 bg-[#faf9f5] border border-[#bfcab4] rounded cursor-pointer hover:bg-[#efeeea]">
+                <input
+                  type="checkbox"
+                  checked={!!editedPost.stageCompletion?.publishDone}
+                  onChange={() => {
+                    const actorName = activeTeammate?.name || 'Someone';
+                    const isDone = !editedPost.stageCompletion?.publishDone;
+                    const timestamp = logTimestamp();
+                    const assigneeName = editedPost.taskRoles?.publisher || actorName;
+                    setEditedPost((prev) => ({
+                      ...prev,
+                      stageCompletion: {
+                        ...prev.stageCompletion,
+                        publishDone: isDone,
+                        publishDoneAt: isDone ? timestamp : undefined,
+                        publishDoneBy: isDone ? assigneeName : undefined
+                      },
+                      activityLog: [
+                        {
+                          id: `act-${Date.now()}`,
+                          actor: actorName,
+                          action: isDone ? `Marked Publish complete (${assigneeName})` : 'Reopened Publish stage',
+                          timestamp
+                        },
+                        ...prev.activityLog
+                      ]
+                    }));
+                  }}
+                  className="w-4 h-4 text-[#296c00] border-[#bfcab4] rounded"
+                />
+                <div className="flex flex-col">
+                  <span className="font-label-caps text-xs font-bold text-[#1b1c1a]">🚀 Published</span>
+                  {editedPost.stageCompletion?.publishDoneAt && (
+                    <span className="text-[9px] text-[#707a67]">by {editedPost.stageCompletion.publishDoneBy}</span>
+                  )}
+                </div>
+              </label>
+
+              <label className="flex items-center gap-2 p-2 bg-[#faf9f5] border border-[#bfcab4] rounded cursor-pointer hover:bg-[#efeeea]">
+                <input
+                  type="checkbox"
+                  checked={!!editedPost.stageCompletion?.engagementDone}
+                  onChange={() => {
+                    const actorName = activeTeammate?.name || 'Someone';
+                    const isDone = !editedPost.stageCompletion?.engagementDone;
+                    const timestamp = logTimestamp();
+                    const assigneeName = editedPost.taskRoles?.engagementLead || actorName;
+                    setEditedPost((prev) => ({
+                      ...prev,
+                      stageCompletion: {
+                        ...prev.stageCompletion,
+                        engagementDone: isDone,
+                        engagementDoneAt: isDone ? timestamp : undefined,
+                        engagementDoneBy: isDone ? assigneeName : undefined
+                      },
+                      activityLog: [
+                        {
+                          id: `act-${Date.now()}`,
+                          actor: actorName,
+                          action: isDone ? `Marked Engagement complete (${assigneeName})` : 'Reopened Engagement stage',
+                          timestamp
+                        },
+                        ...prev.activityLog
+                      ]
+                    }));
+                  }}
+                  className="w-4 h-4 text-[#296c00] border-[#bfcab4] rounded"
+                />
+                <div className="flex flex-col">
+                  <span className="font-label-caps text-xs font-bold text-[#1b1c1a]">💬 Engagement Monitored</span>
+                  {editedPost.stageCompletion?.engagementDoneAt && (
+                    <span className="text-[9px] text-[#707a67]">by {editedPost.stageCompletion.engagementDoneBy}</span>
+                  )}
+                </div>
+              </label>
             </div>
           </div>
 

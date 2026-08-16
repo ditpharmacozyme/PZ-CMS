@@ -57,6 +57,23 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
   const toggleAssignee = (name: string) => {
     setAssignees((prev) => (prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]));
   };
+
+  // Specialized Task Roles for multi-person workflows
+  const [designerRole, setDesignerRole] = useState<string>('');
+  const [publisherRole, setPublisherRole] = useState<string>('');
+  const [engagementRole, setEngagementRole] = useState<string>('');
+
+  // Auto-set reminder box with ALL selected assignees' emails
+  useEffect(() => {
+    if (!teamMembers || teamMembers.length === 0) return;
+    const emails = assignees
+      .map((name) => teamMembers.find((m) => m.name === name)?.email)
+      .filter((e): e is string => Boolean(e && e.trim()));
+    const combined = Array.from(new Set(emails)).join(', ');
+    if (combined) {
+      setReminderEmail(combined);
+    }
+  }, [assignees, teamMembers]);
   const [visualUrl, setVisualUrl] = useState('');
   const [activeStep, setActiveStep] = useState<1 | 2 | 3>(1);
 
@@ -201,6 +218,11 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
       emailReminderEnabled: !isBacklog,
       status: finalDate ? 'in-progress' : 'not-started',
       assignees,
+      taskRoles: (designerRole || publisherRole || engagementRole) ? {
+        designer: designerRole || undefined,
+        publisher: publisherRole || undefined,
+        engagementLead: engagementRole || undefined
+      } : undefined,
       visualUrl,
       templateId: selectedTemplateId || undefined,
       approved: false,
@@ -478,17 +500,70 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
                         <input
                           type="checkbox"
                           checked={checked}
-                          onChange={() => {
-                            const wasEmpty = assignees.length === 0;
-                            toggleAssignee(m.name);
-                            if (wasEmpty && m.email) setReminderEmail(m.email);
-                          }}
+                          onChange={() => toggleAssignee(m.name)}
                           className="w-4 h-4 text-[#296c00] border-[#bfcab4] rounded focus:ring-[#296c00]"
                         />
                         <span className="font-label-caps text-xs">{m.name} ({m.role})</span>
                       </label>
                     );
                   })}
+                </div>
+              </div>
+
+              {/* Task Roles & Handoff Breakdown */}
+              <div className="p-3 bg-[#faf9f5] border border-[#bfcab4] rounded space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-label-caps text-[10px] text-[#296951] font-bold uppercase tracking-wider">
+                    Specialized Task Roles & Handoff
+                  </span>
+                  <span className="text-[10px] text-[#707a67]">Optional</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <div>
+                    <label className="font-label-caps text-[9px] text-[#707a67] font-bold uppercase block mb-1">
+                      🎨 Designer
+                    </label>
+                    <select
+                      value={designerRole}
+                      onChange={(e) => setDesignerRole(e.target.value)}
+                      className="w-full bg-white border border-[#bfcab4] p-1.5 font-label-caps text-xs rounded"
+                    >
+                      <option value="">Unassigned</option>
+                      {teamMembers.map((m) => (
+                        <option key={m.id} value={m.name}>{m.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="font-label-caps text-[9px] text-[#707a67] font-bold uppercase block mb-1">
+                      🚀 Publisher
+                    </label>
+                    <select
+                      value={publisherRole}
+                      onChange={(e) => setPublisherRole(e.target.value)}
+                      className="w-full bg-white border border-[#bfcab4] p-1.5 font-label-caps text-xs rounded"
+                    >
+                      <option value="">Unassigned</option>
+                      {teamMembers.map((m) => (
+                        <option key={m.id} value={m.name}>{m.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="font-label-caps text-[9px] text-[#707a67] font-bold uppercase block mb-1">
+                      💬 Engagement Lead
+                    </label>
+                    <select
+                      value={engagementRole}
+                      onChange={(e) => setEngagementRole(e.target.value)}
+                      className="w-full bg-white border border-[#bfcab4] p-1.5 font-label-caps text-xs rounded"
+                    >
+                      <option value="">Unassigned</option>
+                      {teamMembers.map((m) => (
+                        <option key={m.id} value={m.name}>{m.name}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>
