@@ -1,0 +1,170 @@
+import React from 'react';
+import { BrandId } from '../../types';
+import { BRANDS } from '../../data/brands';
+import { toDateStr } from '../../utils/date';
+
+interface CalendarHeaderProps {
+  displayMode: 'month' | 'week' | 'list';
+  setDisplayMode: (mode: 'month' | 'week' | 'list') => void;
+  selectedBrandFilter: BrandId | 'all';
+  currentYear: number;
+  currentMonth: number;
+  monthName: string;
+  weekStart: Date;
+  onPrev: () => void;
+  onNext: () => void;
+  onToday: () => void;
+  onOpenNewPostModal: (date?: string) => void;
+  onCsvFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  csvFileInputRef: React.RefObject<HTMLInputElement | null>;
+  isUploading: boolean;
+  mobileBacklogOpen: boolean;
+  setMobileBacklogOpen: (open: boolean) => void;
+  backlogCount: number;
+  onDuplicateWeekForward: () => void;
+}
+
+export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
+  displayMode,
+  setDisplayMode,
+  selectedBrandFilter,
+  currentYear,
+  currentMonth,
+  monthName,
+  weekStart,
+  onPrev,
+  onNext,
+  onToday,
+  onOpenNewPostModal,
+  onCsvFileSelect,
+  csvFileInputRef,
+  isUploading,
+  mobileBacklogOpen,
+  setMobileBacklogOpen,
+  backlogCount,
+  onDuplicateWeekForward
+}) => {
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+
+  return (
+    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white p-3 sm:p-4 rounded-xl border border-[#bfcab4] shadow-xs">
+      {/* Hidden File Input for CSV Upload */}
+      <input
+        type="file"
+        ref={csvFileInputRef}
+        onChange={onCsvFileSelect}
+        accept=".csv,.txt"
+        className="hidden"
+      />
+
+      {/* Left: View Mode Toggle & Navigation */}
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        {/* Month / Week / List Selector */}
+        <div className="inline-flex p-1 bg-[#efeeea] rounded-lg border border-[#bfcab4]">
+          <button
+            onClick={() => setDisplayMode('month')}
+            className={`px-2.5 py-1 text-xs font-bold font-label-caps rounded-md transition-all ${
+              displayMode === 'month' ? 'bg-white text-[#1b1c1a] shadow-2xs' : 'text-[#707a67] hover:text-[#1b1c1a]'
+            }`}
+          >
+            Month
+          </button>
+          <button
+            onClick={() => setDisplayMode('week')}
+            className={`px-2.5 py-1 text-xs font-bold font-label-caps rounded-md transition-all ${
+              displayMode === 'week' ? 'bg-white text-[#1b1c1a] shadow-2xs' : 'text-[#707a67] hover:text-[#1b1c1a]'
+            }`}
+          >
+            Week
+          </button>
+          <button
+            onClick={() => setDisplayMode('list')}
+            className={`px-2.5 py-1 text-xs font-bold font-label-caps rounded-md transition-all ${
+              displayMode === 'list' ? 'bg-white text-[#1b1c1a] shadow-2xs' : 'text-[#707a67] hover:text-[#1b1c1a]'
+            }`}
+          >
+            List
+          </button>
+        </div>
+
+        {/* Navigation Buttons */}
+        <div className="flex items-center gap-1">
+          <button
+            onClick={onPrev}
+            className="w-8 h-8 rounded-lg border border-[#bfcab4] hover:bg-[#efeeea] flex items-center justify-center text-[#1b1c1a] transition-all"
+            title="Previous"
+          >
+            <span className="material-symbols-outlined text-sm">chevron_left</span>
+          </button>
+          <button
+            onClick={onToday}
+            className="px-2.5 py-1 text-xs font-bold font-label-caps rounded-lg border border-[#bfcab4] hover:bg-[#efeeea] text-[#1b1c1a] transition-all"
+          >
+            Today
+          </button>
+          <button
+            onClick={onNext}
+            className="w-8 h-8 rounded-lg border border-[#bfcab4] hover:bg-[#efeeea] flex items-center justify-center text-[#1b1c1a] transition-all"
+            title="Next"
+          >
+            <span className="material-symbols-outlined text-sm">chevron_right</span>
+          </button>
+        </div>
+
+        {/* Current Date Display */}
+        <h2 className="font-title-lg text-base sm:text-lg font-bold text-[#1b1c1a] ml-1">
+          {displayMode === 'month' && `${monthName} ${currentYear}`}
+          {displayMode === 'week' &&
+            `${weekStart.toLocaleDateString('default', { month: 'short', day: 'numeric' })} – ${weekEnd.toLocaleDateString(
+              'default',
+              { month: 'short', day: 'numeric', year: 'numeric' }
+            )}`}
+          {displayMode === 'list' && 'All Scheduled Posts'}
+        </h2>
+      </div>
+
+      {/* Right: Actions (Import, Week Duplicate, Mobile Backlog, + New Post) */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {displayMode === 'week' && (
+          <button
+            onClick={onDuplicateWeekForward}
+            className="px-3 py-1.5 text-xs font-bold font-label-caps rounded-lg border border-[#bfcab4] bg-[#efeeea] hover:bg-[#e4e2dc] text-[#404a39] flex items-center gap-1.5 transition-all"
+            title="Duplicate all posts in visible week to next week"
+          >
+            <span className="material-symbols-outlined text-sm">content_copy</span>
+            <span className="hidden sm:inline">Duplicate Week</span>
+          </button>
+        )}
+
+        <button
+          onClick={() => csvFileInputRef.current?.click()}
+          disabled={isUploading}
+          className="px-3 py-1.5 text-xs font-bold font-label-caps rounded-lg border border-[#bfcab4] bg-white hover:bg-[#efeeea] text-[#404a39] flex items-center gap-1.5 transition-all disabled:opacity-50"
+          title="Import Posts from CSV"
+        >
+          <span className="material-symbols-outlined text-sm">upload_file</span>
+          <span className="hidden sm:inline">{isUploading ? 'Importing...' : 'Import CSV'}</span>
+        </button>
+
+        {/* Mobile Backlog Toggle Button */}
+        <button
+          onClick={() => setMobileBacklogOpen(!mobileBacklogOpen)}
+          className="md:hidden px-3 py-1.5 text-xs font-bold font-label-caps rounded-lg border border-[#bfcab4] bg-[#efeeea] text-[#404a39] flex items-center gap-1.5"
+        >
+          <span className="material-symbols-outlined text-sm">lightbulb</span>
+          <span>Backlog ({backlogCount})</span>
+        </button>
+
+        {/* Primary + New Post Button */}
+        <button
+          onClick={() => onOpenNewPostModal()}
+          className="px-3.5 py-1.5 text-xs font-bold font-label-caps rounded-lg bg-[#296c00] hover:bg-[#205400] text-white flex items-center gap-1.5 shadow-xs transition-all active:scale-95"
+        >
+          <span className="material-symbols-outlined text-sm">add</span>
+          <span>New Post</span>
+        </button>
+      </div>
+    </div>
+  );
+};

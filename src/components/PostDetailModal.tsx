@@ -266,7 +266,10 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
       changed = true;
     }
 
-    const finalPost = changed ? { ...editedPost, activityLog: logs } : editedPost;
+    const finalPost: Post = {
+      ...(changed ? { ...editedPost, activityLog: logs } : editedPost),
+      emailReminderEnabled: !!editedPost.scheduledDate && (editedPost.emailReminderEnabled !== false)
+    };
     onSavePost(finalPost);
     onClose();
   };

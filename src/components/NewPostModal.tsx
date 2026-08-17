@@ -1,14 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Post, BrandId, Platform, SpecType, PostTemplate, ContentBankItem, TeamMember } from '../types';
 import { BRANDS, SPECS } from '../data/brands';
-import { toDateStr, todayStr, logTimestamp } from '../utils/date';
+import { todayStr, logTimestamp } from '../utils/date';
 import { uploadImage } from '../utils/uploadImage';
-import { supabase } from '../lib/supabase';
+import { useSmartMemory, PostDraft } from '../hooks/useSmartMemory';
 
 interface NewPostModalProps {
   initialDate?: string;
-  /** Pre-selected template, set when the user clicked "Use template". */
   initialTemplateId?: string;
+  initialDraft?: PostDraft | null;
   templates?: PostTemplate[];
   selectedBrandFilter?: BrandId | 'all';
   onAddPost: (newPost: Post) => void;
@@ -26,9 +26,16 @@ const PLATFORM_CONFIG: Record<Platform, { label: string; icon: string; color: st
   email: { label: 'Email Broadcast', icon: 'mail', color: '#d97706', bg: '#fffbeb' }
 };
 
+const TIME_PRESETS = [
+  { label: 'Morning (10:00 AM)', time: '10:00' },
+  { label: 'Afternoon (2:00 PM)', time: '14:00' },
+  { label: 'Evening (6:00 PM)', time: '18:00' }
+];
+
 export const NewPostModal: React.FC<NewPostModalProps> = ({
   initialDate,
   initialTemplateId,
+  initialDraft,
   templates = [],
   selectedBrandFilter = 'all',
   onAddPost,
@@ -37,173 +44,163 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
   teamMembers = [],
   activeTeammate = null
 }) => {
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
-  const [title, setTitle] = useState('');
+  const { saveDraft, clearDraft } = useSmartMemory();
+
+  const [title, setTitle] = useState(initialDraft?.title || '');
   const [brandId, setBrandId] = useState<BrandId>(
-    selectedBrandFilter === 'all' ? 'pharmacozyme' : selectedBrandFilter
+    initialDraft?.brandId || (selectedBrandFilter === 'all' ? 'pharmacozyme' : selectedBrandFilter)
   );
-  const [caption, setCaption] = useState('');
-  const [platform, setPlatform] = useState<Platform>('instagram');
+  const [caption, setCaption] = useState(initialDraft?.caption || '');
+  const [platform, setPlatform] = useState<Platform>(initialDraft?.platform || 'instagram');
   const [specType, setSpecType] = useState<SpecType>('feed-post');
 
-  // Date and Time calculation helpers
-  const [scheduledDate, setScheduledDate] = useState(initialDate || todayStr());
-  const [scheduledTime, setScheduledTime] = useState('10:00');
+  // Scheduling State
+  const [isBacklog, setIsBacklog] = useState<boolean>(!initialDate && !initialDraft?.scheduledDate);
+  const [scheduledDate, setScheduledDate] = useState(initialDraft?.scheduledDate || initialDate || todayStr());
+  const [scheduledTime, setScheduledTime] = useState(initialDraft?.scheduledTime || '10:00');
 
-  const initialAssignee = activeTeammate ? activeTeammate.name : (teamMembers && teamMembers.length > 0 ? teamMembers[0].name : '');
-  const initialEmail = activeTeammate ? activeTeammate.email || '' : (teamMembers && teamMembers.length > 0 ? teamMembers[0].email || '' : '');
-
-  const [assignees, setAssignees] = useState<string[]>(initialAssignee ? [initialAssignee] : []);
-  const toggleAssignee = (name: string) => {
-    setAssignees((prev) => (prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]));
-  };
-
-  // Specialized Task Roles for multi-person workflows
+  // Assignees & Roles
+  const defaultAssignee = activeTeammate ? activeTeammate.name : (teamMembers.length > 0 ? teamMembers[0].name : '');
+  const [assignees, setAssignees] = useState<string[]>(
+    initialDraft?.assignees || (defaultAssignee ? [defaultAssignee] : [])
+  );
   const [designerRole, setDesignerRole] = useState<string>('');
   const [publisherRole, setPublisherRole] = useState<string>('');
   const [engagementRole, setEngagementRole] = useState<string>('');
 
-  // Auto-set reminder box with ALL selected assignees' emails
+  // Email Reminder State
+  const [emailReminderEnabled, setEmailReminderEnabled] = useState<boolean>(true);
+  const initialEmail = activeTeammate?.email || (teamMembers.length > 0 ? teamMembers[0].email : '');
+  const [reminderEmail, setReminderEmail] = useState<string>(initialDraft?.reminderEmail || initialEmail || '');
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailStatus, setEmailStatus] = useState<string | null>(null);
+
+  // Visual Media
+  const [visualUrl, setVisualUrl] = useState(initialDraft?.visualUrl || '');
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Content Bank / Template Drawer
+  const [showBankDrawer, setShowBankDrawer] = useState(false);
+  const [bankSearchQuery, setBankSearchQuery] = useState('');
+
+  // Auto-sync reminder email when assignees change
   useEffect(() => {
     if (!teamMembers || teamMembers.length === 0) return;
     const emails = assignees
       .map((name) => teamMembers.find((m) => m.name === name)?.email)
       .filter((e): e is string => Boolean(e && e.trim()));
     const combined = Array.from(new Set(emails)).join(', ');
-    if (combined) {
+    if (combined && !reminderEmail) {
       setReminderEmail(combined);
     }
-  }, [assignees, teamMembers]);
-  const [visualUrl, setVisualUrl] = useState('');
-  const [activeStep, setActiveStep] = useState<1 | 2 | 3>(1);
+  }, [assignees, teamMembers, reminderEmail]);
 
-  // Content Bank Helper, Backlog toggles, and Email Reminder
-  const [showBankDrawer, setShowBankDrawer] = useState(false);
-  const [bankSearchQuery, setBankSearchQuery] = useState('');
-  const [isBacklog, setIsBacklog] = useState<boolean>(!initialDate);
-  const [reminderEmail, setReminderEmail] = useState<string>(initialEmail);
-
-  // File upload ref & test email state
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploadedFileName, setUploadedFileName] = useState<string>('');
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const [sendingEmail, setSendingEmail] = useState(false);
-  const [emailStatus, setEmailStatus] = useState<string | null>(null);
-
-  // Template autofill
-  const handleSelectTemplate = (tplId: string) => {
-    setSelectedTemplateId(tplId);
-    if (!tplId) return;
-    const tpl = templates.find((t) => t.id === tplId);
-    if (tpl) {
-      setTitle(tpl.title);
-      if (tpl.brandId !== 'shared') setBrandId(tpl.brandId);
-      setCaption(tpl.defaultCaption);
-      setPlatform(tpl.platform);
-      setSpecType(tpl.specType);
-      if (tpl.imagePreview) setVisualUrl(tpl.imagePreview);
+  // Apply initial template if supplied
+  useEffect(() => {
+    if (initialTemplateId) {
+      const tpl = templates.find((t) => t.id === initialTemplateId);
+      if (tpl) {
+        setTitle(tpl.title);
+        if (tpl.brandId !== 'shared') setBrandId(tpl.brandId);
+        setCaption(tpl.defaultCaption);
+        setPlatform(tpl.platform);
+        setSpecType(tpl.specType);
+        if (tpl.imagePreview) setVisualUrl(tpl.imagePreview);
+      }
     }
+  }, [initialTemplateId, templates]);
+
+  // Auto-save draft on changes
+  useEffect(() => {
+    if (title.trim() || caption.trim()) {
+      saveDraft({
+        title,
+        caption,
+        brandId,
+        platform,
+        scheduledDate: isBacklog ? '' : scheduledDate,
+        scheduledTime: isBacklog ? '' : scheduledTime,
+        assignees,
+        visualUrl,
+        reminderEmail
+      });
+    }
+  }, [title, caption, brandId, platform, isBacklog, scheduledDate, scheduledTime, assignees, visualUrl, reminderEmail, saveDraft]);
+
+  const toggleAssignee = (name: string) => {
+    setAssignees((prev) => (prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]));
   };
 
-  // Apply a template chosen from the Template Library before this modal opened.
-  useEffect(() => {
-    if (initialTemplateId) handleSelectTemplate(initialTemplateId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialTemplateId]);
-
-  // Upload to Drive and store only the returned URL — never base64.
+  // Image Upload
   const handleImageFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-
-    setUploadError(null);
     setIsUploading(true);
+    setUploadError(null);
     try {
-      const { url, fileName } = await uploadImage(file);
+      const { url } = await uploadImage(file);
       setVisualUrl(url);
-      setUploadedFileName(fileName);
     } catch (err: any) {
-      setUploadError(err?.message || 'Upload failed.');
+      setUploadError(err?.message || 'Failed to upload image.');
     } finally {
       setIsUploading(false);
     }
   };
 
-  // Send real test email reminder via Apps Script Proxy
+  // Send immediate test reminder email
   const handleSendTestEmail = async () => {
-    if (!supabase) {
-      setEmailStatus('❌ Supabase is not configured.');
+    const recipient = reminderEmail || initialEmail;
+    if (!recipient) {
+      setEmailStatus('Please enter a recipient email.');
       return;
     }
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData.session?.access_token;
-    if (!token) {
-      setEmailStatus('❌ No active session.');
-      return;
-    }
-
     setSendingEmail(true);
     setEmailStatus(null);
     try {
       const res = await fetch('/api/appscript/proxy', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           payload: {
             action: 'sendEmailReminder',
+            recipientEmail: recipient,
             post: {
-              title: title || 'New Instagram Campaign',
+              title: title || 'Untitled Post',
+              caption,
               brandId,
-              scheduledDate,
-              scheduledTime,
               platform,
-              caption: caption || 'Instagram post caption cue.',
-              assignees,
+              scheduledDate: isBacklog ? 'Backlog (Unscheduled)' : scheduledDate,
+              scheduledTime: isBacklog ? '' : scheduledTime,
               visualUrl,
-              reminderEmail
-            },
-            recipientEmail: reminderEmail
+              assignees: assignees.length > 0 ? assignees : ['Unassigned']
+            }
           }
         })
       });
       const data = await res.json();
-      if (res.ok && data?.data?.status === 'success') {
-        setEmailStatus(`✓ Email sent to ${reminderEmail}`);
+      if (data.status === 'success' || data.result === 'success') {
+        setEmailStatus(`✓ Test reminder sent to ${recipient}`);
       } else {
-        setEmailStatus(`❌ ${data?.data?.error || data?.message || data?.error || 'Failed to send'}`);
+        setEmailStatus(`Error: ${data.error || 'Failed to send'}`);
       }
     } catch (err: any) {
-      setEmailStatus(`❌ Error: ${err.message}`);
+      setEmailStatus(`Send failed: ${err.message}`);
     } finally {
       setSendingEmail(false);
     }
   };
 
-  // Date Shortcuts
-  const applyDateShortcut = (daysToAdd: number) => {
-    const d = new Date();
-    d.setDate(d.getDate() + daysToAdd);
-    setScheduledDate(toDateStr(d));
-  };
-
-  const applyNextMonday = () => {
-    const d = new Date();
-    const day = d.getDay();
-    const diff = (8 - day) % 7 || 7;
-    d.setDate(d.getDate() + diff);
-    setScheduledDate(toDateStr(d));
-  };
-
-  const handleCreate = () => {
-    if (!title.trim()) {
-      setActiveStep(1);
-      return;
-    }
+  // Form Submit
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) return;
 
     const finalDate = isBacklog ? '' : scheduledDate;
     const finalTime = isBacklog ? '' : scheduledTime;
+    const creatorName = activeTeammate ? activeTeammate.name : (defaultAssignee || 'Someone');
 
     const newPost: Post = {
       id: `post-${Date.now()}`,
@@ -214,186 +211,104 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
       specType,
       scheduledDate: finalDate,
       scheduledTime: finalTime,
-      reminderEmail,
-      emailReminderEnabled: !isBacklog,
-      status: finalDate ? 'in-progress' : 'not-started',
-      assignees,
-      taskRoles: (designerRole || publisherRole || engagementRole) ? {
+      status: 'not-started',
+      assignees: assignees.length > 0 ? assignees : (defaultAssignee ? [defaultAssignee] : []),
+      visualUrl,
+      approved: false,
+      emailReminderEnabled: !isBacklog && emailReminderEnabled,
+      reminderEmail: reminderEmail.trim(),
+      tags: [],
+      comments: [],
+      taskRoles: {
         designer: designerRole || undefined,
         publisher: publisherRole || undefined,
         engagementLead: engagementRole || undefined
-      } : undefined,
-      visualUrl,
-      templateId: selectedTemplateId || undefined,
-      approved: false,
-      comments: [],
+      },
+      stageCompletion: {
+        designDone: false,
+        publishDone: false,
+        engagementDone: false
+      },
       activityLog: [
         {
           id: `act-${Date.now()}`,
-          actor: activeTeammate?.name || assignees[0] || 'Someone',
-          action: finalDate ? `Scheduled reminder for ${finalDate} at ${finalTime}` : 'Created idea',
+          actor: creatorName,
+          action: finalDate ? `Scheduled for ${finalDate} at ${finalTime}` : 'Created backlog idea',
           timestamp: logTimestamp()
         }
-      ],
-      tags: []
+      ]
     };
 
     onAddPost(newPost);
+    clearDraft();
     onClose();
   };
 
-  // Human Readable Date
-  const formatReadableDate = (dateString: string) => {
-    try {
-      const parts = dateString.split('-');
-      if (parts.length === 3) {
-        const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-        return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
-      }
-      return dateString;
-    } catch {
-      return dateString;
-    }
-  };
+  const brand = BRANDS[brandId];
+  const activeSpec = SPECS[specType];
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end md:items-center justify-center md:p-4 overflow-hidden">
-      <div className="bg-[#FAF9F5] border border-[#bfcab4] w-full md:max-w-2xl rounded-t-2xl md:rounded-lg shadow-2xl overflow-hidden max-h-[96dvh] flex flex-col relative sheet-modal">
-        {isUploading && (
-          <div className="absolute inset-0 bg-[#FAF9F5]/75 backdrop-blur-xs z-50 flex flex-col items-center justify-center pointer-events-auto">
-            <div className="w-8 h-8 rounded-full border-2 border-[#296c00] border-t-transparent animate-spin mb-2" />
-            <p className="font-label-caps text-[10px] text-[#296c00] font-bold uppercase tracking-wider">Uploading Image...</p>
-          </div>
-        )}
-        {/* Drag handle (mobile only) */}
-        <div className="pt-3 pb-0 flex justify-center md:hidden">
-          <div className="sheet-handle" />
-        </div>
-
-        {/* Modal Header */}
-        <div className="px-4 py-3 sm:p-5 bg-white border-b border-[#bfcab4] flex items-center justify-between">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-fadeIn">
+      <div className="bg-[#FAF9F5] border border-[#bfcab4] rounded-2xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] text-[#1b1c1a]">
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-[#e5e4de] bg-white flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded bg-[#296c00]/10 flex items-center justify-center text-[#296c00]">
-              <span className="material-symbols-outlined text-xl">event_upcoming</span>
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-xs"
+              style={{ backgroundColor: brand?.primaryColor || '#296c00' }}
+            >
+              {brand?.logoUrl ? (
+                <img src={brand.logoUrl} alt={brand.name} className="w-6 h-6 object-contain" />
+              ) : (
+                <span className="material-symbols-outlined text-lg">{brand?.icon}</span>
+              )}
             </div>
             <div>
-              <h2 className="font-display-xl text-base sm:text-xl font-bold text-[#1b1c1a] leading-tight">
-                New Post
-              </h2>
-              <p className="font-label-caps text-[10px] text-[#707a67]">
-                {BRANDS[brandId]?.name || 'Ecosystem'}
-              </p>
+              <span className="font-label-caps text-[10px] text-[#296951] uppercase font-bold tracking-wider">
+                Create Content Post
+              </span>
+              <h3 className="font-display-xl text-lg font-bold text-[#1b1c1a]">
+                New Post for {brand?.name}
+              </h3>
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="w-10 h-10 flex items-center justify-center text-[#707a67] hover:text-[#1b1c1a] hover:bg-[#efeeea] rounded-full transition-colors"
-            title="Close Modal"
-          >
-            <span className="material-symbols-outlined text-xl">close</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowBankDrawer(!showBankDrawer)}
+              className="px-3 py-1.5 bg-[#efeeea] hover:bg-[#e5e4de] text-[#404a39] font-label-caps text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-sm">auto_stories</span>
+              <span className="hidden sm:inline">Swipe Copy</span>
+            </button>
+            <button
+              onClick={() => {
+                clearDraft();
+                onClose();
+              }}
+              className="p-1.5 text-[#707a67] hover:text-[#1b1c1a] rounded-lg transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-xl">close</span>
+            </button>
+          </div>
         </div>
 
-        {/* Wizard Stepper Tabs — labels truncate to icons on xs */}
-        <div className="flex border-b border-[#bfcab4] bg-[#f5f4ef]">
-          <button
-            onClick={() => setActiveStep(1)}
-            className={`flex-1 py-2.5 px-2 font-label-caps text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-colors ${
-              activeStep === 1
-                ? 'border-[#296c00] text-[#296c00] bg-white'
-                : 'border-transparent text-[#707a67] hover:text-[#1b1c1a]'
-            }`}
-          >
-            <span className="w-5 h-5 rounded-full bg-current/10 flex items-center justify-center text-[10px] flex-shrink-0">1</span>
-            <span className="hidden sm:inline">Content</span>
-            <span className="hidden sm:inline">&amp; Brand</span>
-          </button>
-
-          <button
-            onClick={() => setActiveStep(2)}
-            className={`flex-1 py-2.5 px-2 font-label-caps text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-colors ${
-              activeStep === 2
-                ? 'border-[#296c00] text-[#296c00] bg-white'
-                : 'border-transparent text-[#707a67] hover:text-[#1b1c1a]'
-            }`}
-          >
-            <span className="w-5 h-5 rounded-full bg-current/10 flex items-center justify-center text-[10px] flex-shrink-0">2</span>
-            <span className="hidden sm:inline">Schedule</span>
-            <span className="hidden sm:inline">&amp; Channel</span>
-          </button>
-
-          <button
-            onClick={() => setActiveStep(3)}
-            className={`flex-1 py-2.5 px-2 font-label-caps text-xs font-bold border-b-2 flex items-center justify-center gap-1 transition-colors ${
-              activeStep === 3
-                ? 'border-[#296c00] text-[#296c00] bg-white'
-                : 'border-transparent text-[#707a67] hover:text-[#1b1c1a]'
-            }`}
-          >
-            <span className="w-5 h-5 rounded-full bg-current/10 flex items-center justify-center text-[10px] flex-shrink-0">3</span>
-            <span className="hidden sm:inline">Visual</span>
-            <span className="hidden sm:inline">&amp; Specs</span>
-          </button>
-        </div>
-
-        {/* Modal Scrollable Content */}
-        <div className="p-4 sm:p-6 overflow-y-auto space-y-5 flex-1">
-          
-          {/* STEP 1: Content & Brand */}
-          {activeStep === 1 && (
-            <div className="space-y-4 animate-in fade-in duration-200">
-              {/* Template Quick Loader */}
-              {templates.length > 0 && (
-                <div className="p-3 bg-white border border-[#bfcab4] rounded space-y-1.5">
-                  <div className="flex justify-between items-center">
-                    <label className="font-label-caps text-[10px] text-[#296c00] font-bold uppercase flex items-center gap-1">
-                      <span className="material-symbols-outlined text-xs">auto_fix_high</span>
-                      Start From Template (Optional)
-                    </label>
-                    {selectedTemplateId && (
-                      <span className="text-[10px] text-[#296c00] font-bold">✓ Template Applied</span>
-                    )}
-                  </div>
-                  <select
-                    value={selectedTemplateId}
-                    onChange={(e) => handleSelectTemplate(e.target.value)}
-                    className="w-full bg-[#faf9f5] border border-[#bfcab4] p-2.5 font-label-caps text-xs text-[#1b1c1a] focus:outline-none rounded"
-                  >
-                    <option value="">-- Blank New Campaign Post --</option>
-                    {templates.map((tpl) => (
-                      <option key={tpl.id} value={tpl.id}>
-                        {tpl.title} ({tpl.category})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              {/* Title & Brand Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="sm:col-span-2 space-y-1">
-                  <label className="font-label-caps text-[10px] text-[#707a67] font-bold uppercase block">
-                    Post Title *
-                  </label>
-                  <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="e.g. World Health Day"
-                    className="w-full bg-white border border-[#bfcab4] p-2.5 font-bold text-xs focus:outline-none focus:border-[#296c00] rounded"
-                    autoFocus
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-label-caps text-[10px] text-[#707a67] font-bold uppercase block">
-                    Brand
+        {/* Form Body: 2-Column Responsive Layout */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* ── Left Column (Content, Brand, Media) ── */}
+            <div className="lg:col-span-7 space-y-5">
+              {/* Brand & Platform Selector */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold block mb-1">
+                    Target Brand
                   </label>
                   <select
                     value={brandId}
                     onChange={(e) => setBrandId(e.target.value as BrandId)}
-                    className="w-full bg-white border border-[#bfcab4] p-2.5 font-label-caps text-xs focus:outline-none focus:border-[#296c00] rounded"
+                    className="w-full bg-white border border-[#bfcab4] rounded-lg p-2.5 text-xs font-semibold text-[#1b1c1a] focus:ring-1 focus:ring-[#296c00] focus:outline-none"
                   >
                     {Object.values(BRANDS).map((b) => (
                       <option key={b.id} value={b.id}>
@@ -402,529 +317,390 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
                     ))}
                   </select>
                 </div>
+
+                <div>
+                  <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold block mb-1">
+                    Platform
+                  </label>
+                  <select
+                    value={platform}
+                    onChange={(e) => setPlatform(e.target.value as Platform)}
+                    className="w-full bg-white border border-[#bfcab4] rounded-lg p-2.5 text-xs font-semibold text-[#1b1c1a] focus:ring-1 focus:ring-[#296c00] focus:outline-none"
+                  >
+                    {Object.entries(PLATFORM_CONFIG).map(([key, cfg]) => (
+                      <option key={key} value={key}>
+                        {cfg.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Title */}
+              <div>
+                <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold block mb-1">
+                  Post Title / Headline *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. Lipase Enzyme Kinetics & Activation"
+                  className="w-full bg-white border border-[#bfcab4] rounded-lg p-2.5 text-sm font-semibold text-[#1b1c1a] placeholder:text-[#bfcab4] focus:ring-1 focus:ring-[#296c00] focus:outline-none"
+                />
               </div>
 
               {/* Caption */}
-              <div className="space-y-1">
-                <label className="font-label-caps text-[10px] text-[#707a67] font-bold uppercase block">
-                  Caption
-                </label>
-                <div className="relative">
-                  <textarea
-                    value={caption}
-                    onChange={(e) => setCaption(e.target.value)}
-                    rows={4}
-                    placeholder="Write your Instagram caption here..."
-                    className="w-full bg-white border border-[#bfcab4] p-3 text-xs leading-relaxed focus:outline-none focus:border-[#296c00] rounded"
-                  />
-                  {/* Swipe Copy Button */}
-                  <button
-                    type="button"
-                    onClick={() => setShowBankDrawer(!showBankDrawer)}
-                    className="absolute bottom-2 right-2 flex items-center gap-1 bg-[#efeeea] border border-[#bfcab4] text-[#296c00] text-[10px] font-label-caps font-bold px-2 py-1 rounded hover:bg-[#aceecf] transition-colors"
-                    title="Insert from Content Bank"
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>article</span>
-                    Swipe Copy
-                  </button>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold">
+                    Caption & Body Copy
+                  </label>
+                  <span className="text-[10px] text-[#707a67] font-code-sm">
+                    {caption.length} chars
+                  </span>
+                </div>
+                <textarea
+                  rows={4}
+                  value={caption}
+                  onChange={(e) => setCaption(e.target.value)}
+                  placeholder="Write the full post caption, medical rationale, hooks, and call-to-action..."
+                  className="w-full bg-white border border-[#bfcab4] rounded-lg p-2.5 text-xs text-[#1b1c1a] placeholder:text-[#bfcab4] focus:ring-1 focus:ring-[#296c00] focus:outline-none resize-y"
+                />
+              </div>
 
-                  {/* Swipe Copy Mini Drawer */}
-                  {showBankDrawer && (
-                    <div className="absolute z-10 bottom-10 right-0 w-72 max-h-64 overflow-y-auto bg-white border border-[#bfcab4] rounded shadow-xl">
-                      <div className="p-2 border-b border-[#bfcab4] flex gap-1.5 sticky top-0 bg-white">
-                        <input
-                          type="text"
-                          value={bankSearchQuery}
-                          onChange={(e) => setBankSearchQuery(e.target.value)}
-                          placeholder="Search copy..."
-                          className="flex-1 bg-[#faf9f5] border border-[#bfcab4] rounded px-2 py-1 text-[10px] focus:outline-none"
-                        />
-                        <button onClick={() => setShowBankDrawer(false)} className="text-[#707a67] hover:text-[#1b1c1a]">
-                          <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>close</span>
+              {/* Visual Attachment & Spec Dimension Helper */}
+              <div className="space-y-3 bg-white p-4 rounded-xl border border-[#e5e4de]">
+                <div className="flex items-center justify-between">
+                  <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold">
+                    Visual Attachment & Format
+                  </label>
+                  <select
+                    value={specType}
+                    onChange={(e) => setSpecType(e.target.value as SpecType)}
+                    className="bg-[#faf9f5] border border-[#bfcab4] rounded-md px-2 py-1 text-[11px] font-label-caps text-[#1b1c1a]"
+                  >
+                    {Object.values(SPECS).map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} ({s.dimensions})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Image Dropzone & Preview */}
+                <div className="flex items-center gap-4">
+                  <div className="w-24 h-24 rounded-lg bg-[#faf9f5] border-2 border-dashed border-[#bfcab4] overflow-hidden flex items-center justify-center relative flex-shrink-0">
+                    {visualUrl ? (
+                      <img src={visualUrl} alt="Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="material-symbols-outlined text-2xl text-[#bfcab4]">image</span>
+                    )}
+                  </div>
+
+                  <div className="flex-1 space-y-2">
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleImageFileUpload}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                        className="px-3 py-1.5 bg-[#efeeea] hover:bg-[#e5e4de] text-[#296c00] font-label-caps text-xs font-bold rounded-lg border border-[#bfcab4] transition-colors flex items-center gap-1 cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-sm">upload</span>
+                        <span>{isUploading ? 'Uploading...' : visualUrl ? 'Replace Image' : 'Upload Image'}</span>
+                      </button>
+                      {visualUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setVisualUrl('')}
+                          className="px-2 py-1 text-xs text-[#ba1a1a] hover:underline"
+                        >
+                          Remove
                         </button>
-                      </div>
-                      {contentBank
-                        .filter(item =>
-                          item.brandId === 'shared' || item.brandId === brandId
-                        )
-                        .filter(item =>
-                          !bankSearchQuery.trim() ||
-                          item.text.toLowerCase().includes(bankSearchQuery.toLowerCase()) ||
-                          item.tags?.some(t => t.toLowerCase().includes(bankSearchQuery.toLowerCase()))
-                        )
-                        .slice(0, 20)
-                        .map(item => (
-                          <button
-                            key={item.id}
-                            type="button"
-                            onClick={() => {
-                              setCaption(prev => prev + (prev ? '\n\n' : '') + item.text);
-                              setShowBankDrawer(false);
-                            }}
-                            className="w-full text-left px-3 py-2 text-[10px] text-[#1b1c1a] hover:bg-[#f0fae8] border-b border-[#bfcab4]/50 leading-relaxed"
-                          >
-                            <p className="line-clamp-3">{item.text}</p>
-                            {item.tags && item.tags.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-1">
-                                {item.tags.slice(0, 3).map(tag => (
-                                  <span key={tag} className="bg-[#efeeea] text-[#707a67] text-[9px] px-1 rounded">{tag}</span>
-                                ))}
-                              </div>
-                            )}
-                          </button>
-                        ))}
-                      {contentBank.filter(item => item.brandId === 'shared' || item.brandId === brandId).length === 0 && (
-                        <p className="p-3 text-[10px] text-[#707a67] text-center">No content bank items for this brand.</p>
                       )}
                     </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Assigned person(s) */}
-              <div className="space-y-1">
-                <label className="font-label-caps text-[10px] text-[#707a67] font-bold uppercase block">
-                  Assigned To {assignees.length > 0 && `(${assignees.length})`}
-                </label>
-                <div className="border border-[#bfcab4] rounded divide-y divide-[#bfcab4] max-h-40 overflow-y-auto">
-                  {(teamMembers && teamMembers.length > 0
-                    ? teamMembers
-                    : [{ id: 'h', name: 'Hamza Ansari', role: 'Brand & Content Lead', email: '' }, { id: 'o', name: 'Pharmacozyme Ops', role: 'Global Approver', email: '' }]
-                  ).map((m) => {
-                    const checked = assignees.includes(m.name);
-                    return (
-                      <label
-                        key={m.id}
-                        className="flex items-center gap-2.5 p-2.5 cursor-pointer hover:bg-[#faf9f5] transition-colors"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => toggleAssignee(m.name)}
-                          className="w-4 h-4 text-[#296c00] border-[#bfcab4] rounded focus:ring-[#296c00]"
-                        />
-                        <span className="font-label-caps text-xs">{m.name} ({m.role})</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Task Roles & Handoff Breakdown */}
-              <div className="p-3 bg-[#faf9f5] border border-[#bfcab4] rounded space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-label-caps text-[10px] text-[#296951] font-bold uppercase tracking-wider">
-                    Specialized Task Roles & Handoff
-                  </span>
-                  <span className="text-[10px] text-[#707a67]">Optional</span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                  <div>
-                    <label className="font-label-caps text-[9px] text-[#707a67] font-bold uppercase block mb-1">
-                      🎨 Designer
-                    </label>
-                    <select
-                      value={designerRole}
-                      onChange={(e) => setDesignerRole(e.target.value)}
-                      className="w-full bg-white border border-[#bfcab4] p-1.5 font-label-caps text-xs rounded"
-                    >
-                      <option value="">Unassigned</option>
-                      {teamMembers.map((m) => (
-                        <option key={m.id} value={m.name}>{m.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="font-label-caps text-[9px] text-[#707a67] font-bold uppercase block mb-1">
-                      🚀 Publisher
-                    </label>
-                    <select
-                      value={publisherRole}
-                      onChange={(e) => setPublisherRole(e.target.value)}
-                      className="w-full bg-white border border-[#bfcab4] p-1.5 font-label-caps text-xs rounded"
-                    >
-                      <option value="">Unassigned</option>
-                      {teamMembers.map((m) => (
-                        <option key={m.id} value={m.name}>{m.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="font-label-caps text-[9px] text-[#707a67] font-bold uppercase block mb-1">
-                      💬 Engagement Lead
-                    </label>
-                    <select
-                      value={engagementRole}
-                      onChange={(e) => setEngagementRole(e.target.value)}
-                      className="w-full bg-white border border-[#bfcab4] p-1.5 font-label-caps text-xs rounded"
-                    >
-                      <option value="">Unassigned</option>
-                      {teamMembers.map((m) => (
-                        <option key={m.id} value={m.name}>{m.name}</option>
-                      ))}
-                    </select>
+                    <p className="text-[10px] text-[#707a67]">
+                      Recommended: {activeSpec?.dimensions} • Max 5MB (JPG, PNG, WebP)
+                    </p>
+                    {uploadError && <p className="text-[10px] text-[#ba1a1a]">{uploadError}</p>}
                   </div>
                 </div>
               </div>
             </div>
-          )}
 
-          {/* STEP 2: Schedule & Channel */}
-          {activeStep === 2 && (
-            <div className="space-y-5 animate-in fade-in duration-200">
-              
-              {/* Target Platform Visual Selector */}
-              <div className="space-y-2">
-                <label className="font-label-caps text-[10px] text-[#707a67] font-bold uppercase block">
-                  Select Target Platform / Channel
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {(Object.keys(PLATFORM_CONFIG) as Platform[]).map((pKey) => {
-                    const cfg = PLATFORM_CONFIG[pKey];
-                    const isSelected = platform === pKey;
-                    return (
-                      <button
-                        key={pKey}
-                        type="button"
-                        onClick={() => setPlatform(pKey)}
-                        className={`p-3 rounded border text-left flex items-center gap-2.5 transition-all ${
-                          isSelected
-                            ? 'border-[#296c00] bg-white ring-2 ring-[#296c00]/20 shadow-xs'
-                            : 'border-[#bfcab4] bg-white hover:bg-[#efeeea]'
-                        }`}
-                      >
-                        <span
-                          className="material-symbols-outlined text-lg p-1.5 rounded"
-                          style={{ backgroundColor: cfg.bg, color: cfg.color }}
-                        >
-                          {cfg.icon}
-                        </span>
-                        <div>
-                          <div className="font-label-caps text-xs font-bold text-[#1b1c1a]">
-                            {cfg.label}
-                          </div>
-                          {isSelected && (
-                            <div className="text-[10px] text-[#296c00] font-bold">Selected</div>
-                          )}
-                        </div>
-                      </button>
-                    );
-                  })}
+            {/* ── Right Column (Scheduling, Email Reminders, Multi-Assignees & Roles) ── */}
+            <div className="lg:col-span-5 space-y-5">
+              {/* Scheduling Card */}
+              <div className="bg-white p-4 rounded-xl border border-[#e5e4de] space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-[#e5e4de]">
+                  <h4 className="font-display-xl text-sm font-bold text-[#1b1c1a] flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-base text-[#296c00]">event</span>
+                    <span>Schedule & Timing</span>
+                  </h4>
+                  <label className="flex items-center gap-1.5 text-xs font-label-caps text-[#707a67] cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={isBacklog}
+                      onChange={(e) => setIsBacklog(e.target.checked)}
+                      className="w-3.5 h-3.5 text-[#296c00] rounded focus:ring-[#296c00]"
+                    />
+                    <span>Save to Backlog (No Date)</span>
+                  </label>
                 </div>
-              </div>
 
-              {/* Backlog / Schedule Mode Toggle */}
-              <div className="flex items-center gap-3 p-4 bg-white border border-[#bfcab4] rounded shadow-2xs">
-                <input
-                  type="checkbox"
-                  id="new-post-backlog-toggle"
-                  checked={isBacklog}
-                  onChange={(e) => setIsBacklog(e.target.checked)}
-                  className="w-4 h-4 text-[#296c00] border-[#bfcab4] rounded focus:ring-[#296c00]"
-                />
-                <label
-                  htmlFor="new-post-backlog-toggle"
-                  className="font-label-caps text-xs font-bold text-[#1b1c1a] cursor-pointer select-none"
-                >
-                  📥 Save as Idea (no date yet)
-                </label>
-              </div>
-
-              {isBacklog ? (
-                <div className="p-4 bg-[#efeeea] border border-dashed border-[#bfcab4] rounded text-center text-xs text-[#707a67]">
-                  <span className="material-symbols-outlined text-xl mb-1 text-[#296c00]">lightbulb</span>
-                  <p>This post will be saved as an idea with no date.</p>
-                  <p className="mt-0.5">You can set a date later by dragging it onto the calendar.</p>
-                </div>
-              ) : (
-                <>
-                  {/* Date Presets + Picker */}
-                  <div className="p-4 bg-white border border-[#bfcab4] rounded space-y-3">
-                    <label className="font-label-caps text-[10px] text-[#296c00] font-bold uppercase block">
-                      📅 Target Publication Date
-                    </label>
-                    
-                    {/* Date Quick Shortcut Buttons */}
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() => applyDateShortcut(0)}
-                        className="px-3 py-1.5 bg-[#efeeea] border border-[#bfcab4] rounded text-xs font-label-caps font-bold text-[#1b1c1a] hover:bg-[#296c00] hover:text-white transition-colors"
-                      >
-                        Today
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => applyDateShortcut(1)}
-                        className="px-3 py-1.5 bg-[#efeeea] border border-[#bfcab4] rounded text-xs font-label-caps font-bold text-[#1b1c1a] hover:bg-[#296c00] hover:text-white transition-colors"
-                      >
-                        Tomorrow
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => applyDateShortcut(3)}
-                        className="px-3 py-1.5 bg-[#efeeea] border border-[#bfcab4] rounded text-xs font-label-caps font-bold text-[#1b1c1a] hover:bg-[#296c00] hover:text-white transition-colors"
-                      >
-                        +3 Days
-                      </button>
-                      <button
-                        type="button"
-                        onClick={applyNextMonday}
-                        className="px-3 py-1.5 bg-[#efeeea] border border-[#bfcab4] rounded text-xs font-label-caps font-bold text-[#1b1c1a] hover:bg-[#296c00] hover:text-white transition-colors"
-                      >
-                        Next Monday
-                      </button>
-                    </div>
-
-                    <div className="flex items-center gap-3 pt-1">
+                {!isBacklog && (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold block mb-1">
+                        Scheduled Date
+                      </label>
                       <input
                         type="date"
                         value={scheduledDate}
                         onChange={(e) => setScheduledDate(e.target.value)}
-                        className="flex-1 bg-[#faf9f5] border border-[#bfcab4] p-2.5 font-code-sm text-xs rounded focus:outline-none focus:border-[#296c00]"
+                        className="w-full bg-[#faf9f5] border border-[#bfcab4] rounded-lg p-2 text-xs font-semibold text-[#1b1c1a] focus:ring-1 focus:ring-[#296c00] focus:outline-none"
                       />
-                      <div className="text-xs font-body-md text-[#707a67] italic font-semibold">
-                        {formatReadableDate(scheduledDate)}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Time Presets + Picker */}
-                  <div className="p-4 bg-white border border-[#bfcab4] rounded space-y-3">
-                    <label className="font-label-caps text-[10px] text-[#296c00] font-bold uppercase block">
-                      ⏰ Reminder Time
-                    </label>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      {[
-                        { label: 'Morning', time: '09:00' },
-                        { label: 'Midday', time: '13:00' },
-                        { label: 'Afternoon', time: '16:00' },
-                        { label: 'Evening', time: '19:00' }
-                      ].map((slot) => (
-                        <button
-                          key={slot.time}
-                          type="button"
-                          onClick={() => setScheduledTime(slot.time)}
-                          className={`p-2 rounded border text-center transition-all ${
-                            scheduledTime === slot.time
-                              ? 'border-[#296c00] bg-[#296c00] text-white font-bold'
-                              : 'border-[#bfcab4] bg-[#faf9f5] text-[#1b1c1a] hover:bg-[#efeeea]'
-                          }`}
-                        >
-                          <div className="font-label-caps text-xs">{slot.time}</div>
-                          <div className="text-[10px] opacity-80">{slot.label}</div>
-                        </button>
-                      ))}
                     </div>
 
-                <div className="pt-1">
-                  <input
-                    type="time"
-                    value={scheduledTime}
-                    onChange={(e) => setScheduledTime(e.target.value)}
-                    className="w-full bg-[#faf9f5] border border-[#bfcab4] p-2.5 font-code-sm text-xs rounded focus:outline-none focus:border-[#296c00]"
-                  />
-                </div>
-              </div>
-
-                  {/* Email Reminder */}
-                  <div className="p-4 bg-white border border-[#296c00]/30 rounded space-y-2">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="material-symbols-outlined text-[#296c00]" style={{ fontSize: '16px' }}>mark_email_unread</span>
-                      <label className="font-label-caps text-[10px] text-[#296c00] font-bold uppercase block">
-                        Email Reminder for Instagram Posting
+                    <div>
+                      <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold block mb-1">
+                        Scheduled Time
                       </label>
-                    </div>
-                    <p className="font-body-md text-[10px] text-[#707a67]">
-                      We'll send a reminder to this address on the scheduled date so you can post manually on Instagram.
-                    </p>
-                    <div className="flex gap-1.5">
+                      <div className="flex gap-1.5 flex-wrap mb-2">
+                        {TIME_PRESETS.map((p) => (
+                          <button
+                            key={p.time}
+                            type="button"
+                            onClick={() => setScheduledTime(p.time)}
+                            className={`px-2 py-1 rounded text-[10px] font-label-caps font-bold transition-all cursor-pointer ${
+                              scheduledTime === p.time
+                                ? 'bg-[#296c00] text-white'
+                                : 'bg-[#efeeea] text-[#404a39] hover:bg-[#e4e2db]'
+                            }`}
+                          >
+                            {p.time}
+                          </button>
+                        ))}
+                      </div>
                       <input
-                        type="email"
-                        value={reminderEmail}
-                        onChange={(e) => setReminderEmail(e.target.value)}
-                        placeholder="e.g. team@pharmacozyme.com"
-                        className="flex-1 bg-[#faf9f5] border border-[#bfcab4] p-2.5 font-body-md text-xs rounded focus:outline-none focus:border-[#296c00]"
+                        type="time"
+                        value={scheduledTime}
+                        onChange={(e) => setScheduledTime(e.target.value)}
+                        className="w-full bg-[#faf9f5] border border-[#bfcab4] rounded-lg p-2 text-xs text-[#1b1c1a] focus:ring-1 focus:ring-[#296c00] focus:outline-none"
                       />
-                      <button
-                        type="button"
-                        onClick={handleSendTestEmail}
-                        disabled={sendingEmail}
-                        className="px-3 py-2 bg-[#296c00] text-white font-label-caps text-xs font-bold rounded hover:bg-[#1f5700] disabled:opacity-50 transition-all flex items-center gap-1 whitespace-nowrap"
-                        title="Send immediate test email reminder"
-                      >
-                        <span className="material-symbols-outlined text-sm">send</span>
-                        <span>{sendingEmail ? 'Sending...' : 'Test Email'}</span>
-                      </button>
-                    </div>
-                    {emailStatus && (
-                      <p className={`text-[10px] font-label-caps mt-1 font-bold ${emailStatus.includes('✓') ? 'text-[#296c00]' : 'text-[#ba1a1a]'}`}>
-                        {emailStatus}
-                      </p>
-                    )}
-                  </div>
-              </>
-          )}
-        </div>
-      )}
-
-          {/* STEP 3: Visual & Specs */}
-          {activeStep === 3 && (
-            <div className="space-y-4 animate-in fade-in duration-200">
-              
-              {/* Image format / spec */}
-              <div className="space-y-1">
-                <label className="font-label-caps text-[10px] text-[#707a67] font-bold uppercase block">
-                  Image Format
-                </label>
-                <select
-                  value={specType}
-                  onChange={(e) => setSpecType(e.target.value as SpecType)}
-                  className="w-full bg-white border border-[#bfcab4] p-2.5 font-label-caps text-xs rounded"
-                >
-                  {Object.values(SPECS).map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name} — {s.dimensions} ({s.aspectRatio})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Upload from device OR paste URL */}
-              <div className="space-y-2">
-                <label className="font-label-caps text-[10px] text-[#707a67] font-bold uppercase block">
-                  Image
-                </label>
-
-                {/* File upload button */}
-                <div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleImageFileUpload}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploading}
-                    className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-[#bfcab4] rounded p-4 text-[#296c00] hover:border-[#296c00] hover:bg-[#f0fdf4] transition-colors font-label-caps text-xs font-bold disabled:opacity-60"
-                  >
-                    <span className="material-symbols-outlined text-xl">upload_file</span>
-                    <span>{isUploading ? 'Uploading…' : 'Upload from your device'}</span>
-                  </button>
-                  {uploadedFileName && !isUploading && (
-                    <p className="mt-1 font-label-caps text-[10px] text-[#296c00] flex items-center gap-1">
-                      <span className="material-symbols-outlined text-sm">check_circle</span>
-                      {uploadedFileName}
-                    </p>
-                  )}
-                  {uploadError && (
-                    <p className="mt-1 text-[11px] font-body-md text-[#ba1a1a] bg-[#ffdad6] border border-[#ffb4ab] rounded p-2">
-                      {uploadError}
-                    </p>
-                  )}
-                </div>
-
-                {/* OR paste URL */}
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-px bg-[#bfcab4]" />
-                  <span className="font-label-caps text-[9px] text-[#707a67] uppercase">or paste a link</span>
-                  <div className="flex-1 h-px bg-[#bfcab4]" />
-                </div>
-                <input
-                  type="text"
-                  value={visualUrl}
-                  onChange={(e) => { setVisualUrl(e.target.value); setUploadedFileName(''); }}
-                  placeholder="https://drive.google.com/... or https://..."
-                  className="w-full bg-white border border-[#bfcab4] p-2.5 text-xs focus:outline-none focus:border-[#296c00] rounded"
-                />
-              </div>
-
-              {/* Visual Live Preview */}
-              {visualUrl && (
-                <div className="p-3 bg-white border border-[#bfcab4] rounded flex items-center gap-4">
-                  <div className="w-16 h-16 rounded overflow-hidden bg-[#efeeea] border border-[#bfcab4] flex-shrink-0">
-                    <img src={visualUrl} alt="Preview" draggable={false} className="w-full h-full object-cover" />
-                  </div>
-                  <div className="space-y-1 text-xs">
-                    <div className="font-bold text-[#1b1c1a]">Preview</div>
-                    <div className="font-label-caps text-[11px] text-[#707a67]">
-                      {uploadedFileName ? `Uploaded: ${uploadedFileName}` : 'Linked image'}
                     </div>
                   </div>
+                )}
+              </div>
+
+              {/* ── Email Reminder Card (Auto-Enabled & 1-Click Test) ── */}
+              {!isBacklog && (
+                <div className="bg-[#f7faf4] p-4 rounded-xl border border-[#296c00]/30 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="flex items-center gap-2 text-xs font-bold text-[#1b1c1a] cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={emailReminderEnabled}
+                        onChange={(e) => setEmailReminderEnabled(e.target.checked)}
+                        className="w-4 h-4 text-[#296c00] rounded focus:ring-[#296c00]"
+                      />
+                      <span>Enable Email Reminder</span>
+                    </label>
+                    <span className="font-label-caps text-[9px] bg-[#296c00] text-white px-2 py-0.5 rounded-full font-bold">
+                      Automated
+                    </span>
+                  </div>
+
+                  {emailReminderEnabled && (
+                    <div className="space-y-2 pt-1">
+                      <label className="font-label-caps text-[9px] text-[#707a67] uppercase font-bold block">
+                        Recipient Email(s)
+                      </label>
+                      <div className="flex gap-1.5">
+                        <input
+                          type="email"
+                          value={reminderEmail}
+                          onChange={(e) => setReminderEmail(e.target.value)}
+                          placeholder="e.g. hamzaansari4you@gmail.com"
+                          className="flex-1 bg-white border border-[#bfcab4] rounded-lg p-2 text-xs text-[#1b1c1a] focus:ring-1 focus:ring-[#296c00] focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleSendTestEmail}
+                          disabled={sendingEmail}
+                          className="px-2.5 py-1.5 bg-[#296c00] hover:bg-[#205400] text-white font-label-caps text-[10px] font-bold rounded-lg transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50 whitespace-nowrap"
+                          title="Send a real test reminder email right now"
+                        >
+                          <span className="material-symbols-outlined text-xs">send</span>
+                          <span>{sendingEmail ? 'Sending...' : 'Test Send'}</span>
+                        </button>
+                      </div>
+                      {emailStatus && (
+                        <p className={`text-[10px] font-bold ${emailStatus.includes('✓') ? 'text-[#296c00]' : 'text-[#ba1a1a]'}`}>
+                          {emailStatus}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
-          )}
 
-          {/* Summary card */}
-          <div className="p-3 bg-[#f0fdf4] border border-[#86efac] rounded flex items-center justify-between text-xs text-[#166534]">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-[#296c00]">verified</span>
-              <div>
-                <span className="font-bold">Summary: </span>
-                <span>
-                  {title ? `"${title}"` : 'Untitled Post'}{' '}
-                  {isBacklog ? 'saved as an idea (no date set).' : (
-                    <>
-                      reminder set for{' '}
-                      <strong className="underline">{formatReadableDate(scheduledDate)}</strong> at{' '}
-                      <strong>{scheduledTime}</strong> on{' '}
-                      <strong className="capitalize">{PLATFORM_CONFIG[platform]?.label || platform}</strong>.
-                    </>
-                  )}
-                </span>
+              {/* Team Assignees & Specialized Roles */}
+              <div className="bg-white p-4 rounded-xl border border-[#e5e4de] space-y-3">
+                <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold block">
+                  Assignees
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {teamMembers.map((m) => {
+                    const isSelected = assignees.includes(m.name);
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => toggleAssignee(m.name)}
+                        className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer ${
+                          isSelected
+                            ? 'bg-[#296c00] text-white shadow-xs'
+                            : 'bg-[#efeeea] text-[#404a39] hover:bg-[#e4e2db]'
+                        }`}
+                      >
+                        <span
+                          className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] font-bold text-white"
+                          style={{ backgroundColor: m.color || '#707a67' }}
+                        >
+                          {m.avatarInitials}
+                        </span>
+                        <span>{m.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Specialized Task Roles */}
+                <div className="pt-2 border-t border-[#e5e4de] space-y-2">
+                  <span className="font-label-caps text-[9px] text-[#707a67] uppercase font-bold block">
+                    Specialized Roles (Optional)
+                  </span>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <span className="text-[10px] text-[#707a67] block mb-0.5">🎨 Designer</span>
+                      <select
+                        value={designerRole}
+                        onChange={(e) => setDesignerRole(e.target.value)}
+                        className="w-full bg-[#faf9f5] border border-[#bfcab4] rounded p-1 text-[11px]"
+                      >
+                        <option value="">None</option>
+                        {teamMembers.map((m) => (
+                          <option key={m.id} value={m.name}>
+                            {m.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-[#707a67] block mb-0.5">🚀 Publisher</span>
+                      <select
+                        value={publisherRole}
+                        onChange={(e) => setPublisherRole(e.target.value)}
+                        className="w-full bg-[#faf9f5] border border-[#bfcab4] rounded p-1 text-[11px]"
+                      >
+                        <option value="">None</option>
+                        {teamMembers.map((m) => (
+                          <option key={m.id} value={m.name}>
+                            {m.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-[#707a67] block mb-0.5">💬 Lead</span>
+                      <select
+                        value={engagementRole}
+                        onChange={(e) => setEngagementRole(e.target.value)}
+                        className="w-full bg-[#faf9f5] border border-[#bfcab4] rounded p-1 text-[11px]"
+                      >
+                        <option value="">None</option>
+                        {teamMembers.map((m) => (
+                          <option key={m.id} value={m.name}>
+                            {m.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Modal Footer Controls — sticky sheet action bar */}
-        <div className="sheet-action-bar flex-wrap">
-          <div className="flex items-center gap-2 flex-1">
-            {activeStep > 1 && (
-              <button
-                type="button"
-                onClick={() => setActiveStep((prev) => (prev - 1) as 1 | 2)}
-                className="px-3 py-2.5 min-h-[48px] border border-[#bfcab4] font-label-caps text-xs rounded hover:bg-[#efeeea] flex items-center gap-1 font-bold"
-              >
-                <span className="material-symbols-outlined text-sm">arrow_back</span>
-                <span className="hidden sm:inline">Back</span>
-              </button>
-            )}
-            {activeStep < 3 && (
-              <button
-                type="button"
-                onClick={() => setActiveStep((prev) => (prev + 1) as 2 | 3)}
-                className="flex-1 sm:flex-none px-3 py-2.5 min-h-[48px] bg-[#efeeea] border border-[#bfcab4] font-label-caps text-xs rounded hover:bg-[#296c00] hover:text-white transition-colors flex items-center justify-center gap-1 font-bold"
-              >
-                <span>Next</span>
-                <span className="material-symbols-outlined text-sm">arrow_forward</span>
-              </button>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
+          {/* Modal Footer Actions */}
+          <div className="flex items-center justify-between pt-4 border-t border-[#e5e4de]">
             <button
               type="button"
-              onClick={onClose}
-              className="px-4 py-2.5 min-h-[48px] border border-[#bfcab4] font-label-caps text-xs rounded hover:bg-[#efeeea] font-bold"
+              onClick={() => {
+                clearDraft();
+                onClose();
+              }}
+              className="px-4 py-2.5 text-xs font-label-caps font-bold text-[#707a67] hover:text-[#1b1c1a] rounded-lg transition-colors cursor-pointer"
             >
               Cancel
             </button>
+
             <button
-              type="button"
-              onClick={handleCreate}
-              className="px-5 py-2.5 min-h-[48px] bg-[#296c00] text-white font-label-caps text-xs font-bold rounded shadow-xs hover:bg-[#1f5700] active:scale-95 transition-all flex items-center gap-1.5"
+              type="submit"
+              className="px-6 py-2.5 bg-[#296c00] hover:bg-[#205400] text-white font-label-caps text-xs font-bold rounded-xl shadow-md transition-all active:scale-95 flex items-center gap-2 cursor-pointer"
             >
-              <span className="material-symbols-outlined text-sm">send</span>
-              <span>Save Post</span>
+              <span className="material-symbols-outlined text-base">add_circle</span>
+              <span>{isBacklog ? 'Add to Idea Backlog' : 'Schedule Post'}</span>
             </button>
           </div>
-        </div>
+        </form>
+
+        {/* Swipe Copy / Content Bank Drawer */}
+        {showBankDrawer && (
+          <div className="border-t border-[#e5e4de] bg-[#f7f6f2] p-4 max-h-60 overflow-y-auto space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="font-label-caps text-xs font-bold text-[#296c00] uppercase">
+                Insert Copy from Content Bank
+              </span>
+              <input
+                type="text"
+                value={bankSearchQuery}
+                onChange={(e) => setBankSearchQuery(e.target.value)}
+                placeholder="Search copy items..."
+                className="bg-white border border-[#bfcab4] rounded-md px-2 py-1 text-xs w-48"
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {contentBank
+                .filter((item) =>
+                  !bankSearchQuery || item.text.toLowerCase().includes(bankSearchQuery.toLowerCase())
+                )
+                .slice(0, 6)
+                .map((item) => (
+                  <div
+                    key={item.id}
+                    onClick={() => {
+                      setCaption(item.text);
+                      setShowBankDrawer(false);
+                    }}
+                    className="p-2.5 bg-white border border-[#bfcab4] rounded-lg cursor-pointer hover:border-[#296c00] transition-colors"
+                  >
+                    <p className="text-xs text-[#1b1c1a] line-clamp-2">{item.text}</p>
+                    <span className="text-[9px] text-[#707a67] mt-1 block">Click to insert</span>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

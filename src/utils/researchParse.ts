@@ -194,7 +194,8 @@ function normalizeDate(dStr: string): string {
 export function convertCsvRowsToPosts(
   rows: CalendarCsvRow[],
   fallbackBrand?: BrandId | 'shared',
-  defaultOwner?: string
+  defaultOwner?: string,
+  defaultOwnerEmail?: string
 ): Post[] {
   const now = Date.now();
   const timestamp = logTimestamp();
@@ -210,6 +211,7 @@ export function convertCsvRowsToPosts(
 
     const ownerName = row.owner?.trim() || defaultOwner || '';
     const assignees = ownerName ? [ownerName] : [];
+    const scheduledDate = normalizeDate(row.date || '');
 
     const post: Post = {
       id: `post-csv-${now}-${idx}-${Math.random().toString(36).substring(2, 6)}`,
@@ -218,12 +220,14 @@ export function convertCsvRowsToPosts(
       caption: row.description?.trim() || '',
       platform: normalizePlatform(row.platform || ''),
       specType: normalizeSpecType(row.content_type || ''),
-      scheduledDate: normalizeDate(row.date || ''),
+      scheduledDate,
       scheduledTime: '10:00',
       status: normalizeStatus(row.status || ''),
       assignees,
       visualUrl: '',
       approved: row.status?.toLowerCase().includes('posted') || false,
+      emailReminderEnabled: !!scheduledDate,
+      reminderEmail: defaultOwnerEmail || '',
       comments: [],
       activityLog: [
         {
