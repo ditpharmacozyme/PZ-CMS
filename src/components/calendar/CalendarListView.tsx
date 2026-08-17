@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Post, PostStatus } from '../../types';
 import { BRANDS } from '../../data/brands';
 import { STATUS_CONFIG } from '../../utils/statusConfig';
-import { todayStr } from '../../utils/date';
+import { todayStr, logTimestamp } from '../../utils/date';
 
 function getPostStatusConfig(post: Post) {
   const isOverdue =
@@ -11,6 +11,8 @@ function getPostStatusConfig(post: Post) {
     (post.status === 'not-started' || post.status === 'in-progress');
   return isOverdue ? STATUS_CONFIG['overdue'] : STATUS_CONFIG[post.status] || STATUS_CONFIG['not-started'];
 }
+
+const ALL_STATUSES: PostStatus[] = ['not-started', 'in-progress', 'ready-to-post', 'posted'];
 
 interface CalendarListViewProps {
   filteredCalendarPosts: Post[];
@@ -24,6 +26,7 @@ interface CalendarListViewProps {
   onClearSelection: () => void;
   onSelectPost: (post: Post) => void;
   onDeletePost?: (postId: string) => void;
+  onSavePost?: (post: Post) => void;
   onToggleSelect: (postId: string, e: React.MouseEvent | React.ChangeEvent) => void;
   setSelectedPostIds: (fn: (prev: Set<string>) => Set<string>) => void;
 }
@@ -40,13 +43,254 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
   onClearSelection,
   onSelectPost,
   onDeletePost,
+  onSavePost,
   onToggleSelect,
   setSelectedPostIds
 }) => {
+  const [showPastPosts, setShowPastPosts] = useState(false);
+  const [activeStatusMenuPostId, setActiveStatusMenuPostId] = useState<string | null>(null);
+
+  const today = todayStr();
+
+  // Partition posts into Today/Upcoming and Past
+  const todayAndUpcomingPosts = filteredCalendarPosts
+    .filter((p) => !p.scheduledDate || p.scheduledDate >= today)
+    .sort((a, b) => (a.scheduledDate || '').localeCompare(b.scheduledDate || '') || (a.scheduledTime || '').localeCompare(b.scheduledTime || ''));
+
+  const pastPosts = filteredCalendarPosts
+    .filter((p) => p.scheduledDate && p.scheduledDate < today)
+    .sort((a, b) => (b.scheduledDate || '').localeCompare(a.scheduledDate || ''));
+
   const allSelected = filteredCalendarPosts.length > 0 && selectedPostIds.size === filteredCalendarPosts.length;
 
+  const handleQuickStatusSelect = (post: Post, newStatus: PostStatus, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setActiveStatusMenuPostId(null);
+    if (onSavePost) {
+      onSavePost({
+        ...post,
+        status: newStatus,
+        activityLog: [
+          {
+            id: `act-${Date.now()}`,
+            actor: post.assignees[0] || 'Teammate',
+            action: `Changed status to "${newStatus.replace(/-/g, ' ')}"`,
+            timestamp: logTimestamp()
+          },
+          ...post.activityLog
+        ]
+      });
+    }
+  };
+
+  const handleQuickStageToggle = (post: Post, stage: 'design' | 'publish' | 'engagement', e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!onSavePost) return;
+    const current = post.stageCompletion || {};
+    const updated = { ...current };
+    if (stage === 'design') updated.designDone = !current.designDone;
+    if (stage === 'publish') updated.publishDone = !current.publishDone;
+    if (stage === 'engagement') updated.engagementDone = !current.engagementDone;
+
+    onSavePost({
+      ...post,
+      stageCompletion: updated,
+      activityLog: [
+        {
+          id: `act-${Date.now()}`,
+          actor: post.assignees[0] || 'Teammate',
+          action: `Toggled ${stage} stage`,
+          timestamp: logTimestamp()
+        },
+        ...post.activityLog
+      ]
+    });
+  };
+
+  const renderPostRow = (post: Post, isPast = false) => {
+    const brand = BRANDS[post.brandId];
+    const isSelected = selectedPostIds.has(post.id);
+    const statusCfg = getPostStatusConfig(post);
+    const isToday = post.scheduledDate === today;
+
+    return (
+      <div
+        key={post.id}
+        onClick={(e) => {
+          if (isSelectMode || e.ctrlKey || e.metaKey || e.shiftKey) {
+            onToggleSelect(post.id, e);
+          } else {
+            onSelectPost(post);
+          }
+        }}
+        className={`p-3 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-2.5 sm:gap-3 transition-all cursor-pointer relative ${
+          isSelected
+            ? 'bg-[#f0fae8] ring-1 ring-[#296c00]'
+            : isToday
+            ? 'bg-white border-l-4 border-l-[#296c00] hover:bg-[#faf9f5]'
+            : isPast
+            ? 'bg-[#faf9f5]/80 opacity-75 hover:opacity-100 hover:bg-white'
+            : 'bg-white hover:bg-[#faf9f5]'
+        }`}
+      >
+        {/* Checkbox (desktop) */}
+        <span className="hidden md:flex w-7 flex-shrink-0">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onClick={(e) => onToggleSelect(post.id, e)}
+            onChange={() => {}}
+            className="w-4 h-4 text-[#296c00] border-[#bfcab4] rounded focus:ring-[#296c00] cursor-pointer"
+          />
+        </span>
+
+        {/* Date & Brand chip */}
+        <div className="flex items-center justify-between md:block md:w-32 font-code-sm text-xs text-[#1b1c1a]">
+          <div className="flex items-center gap-1.5">
+            {isToday && (
+              <span className="bg-[#296c00] text-white font-label-caps text-[9px] font-bold px-1.5 py-0.2 rounded uppercase">
+                Today
+              </span>
+            )}
+            <span className="font-bold">
+              {post.scheduledDate || 'Backlog'} {post.scheduledTime ? `(${post.scheduledTime})` : ''}
+            </span>
+          </div>
+          <span
+            className="md:hidden px-2 py-0.5 font-label-caps text-[9px] uppercase font-bold rounded text-white"
+            style={{ backgroundColor: brand?.primaryColor || '#296c00' }}
+          >
+            {brand?.shortCode || post.brandId}
+          </span>
+        </div>
+
+        {/* Brand (desktop) */}
+        <div className="hidden md:block w-28">
+          <span
+            className="px-2 py-0.5 font-label-caps text-[9px] uppercase font-bold rounded text-white inline-block"
+            style={{ backgroundColor: brand?.primaryColor || '#296c00' }}
+          >
+            {brand?.name || post.brandId}
+          </span>
+        </div>
+
+        {/* Title, Caption & Quick Stage Icons */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <h4 className="font-headline-md text-xs sm:text-sm font-bold text-[#1b1c1a] truncate">{post.title}</h4>
+            {post.approved && <span className="text-[10px] text-[#296c00] font-bold">✓ Approved</span>}
+          </div>
+          <p className="font-body-md text-xs text-[#707a67] line-clamp-1 mt-0.5">{post.caption || 'No caption'}</p>
+
+          {/* Quick Stage Badges */}
+          {post.taskRoles && (post.taskRoles.designer || post.taskRoles.publisher) && (
+            <div className="flex items-center gap-1.5 mt-1 text-[9px]">
+              {post.taskRoles.designer && (
+                <button
+                  type="button"
+                  onClick={(e) => handleQuickStageToggle(post, 'design', e)}
+                  className={`px-1.5 py-0.2 rounded cursor-pointer transition-all ${
+                    post.stageCompletion?.designDone ? 'bg-[#296c00] text-white font-bold' : 'bg-[#efeeea] text-[#404a39]'
+                  }`}
+                  title="Click to toggle Design done"
+                >
+                  🎨 {post.taskRoles.designer} {post.stageCompletion?.designDone ? '✓' : ''}
+                </button>
+              )}
+              {post.taskRoles.publisher && (
+                <button
+                  type="button"
+                  onClick={(e) => handleQuickStageToggle(post, 'publish', e)}
+                  className={`px-1.5 py-0.2 rounded cursor-pointer transition-all ${
+                    post.stageCompletion?.publishDone ? 'bg-[#296c00] text-white font-bold' : 'bg-[#efeeea] text-[#404a39]'
+                  }`}
+                  title="Click to toggle Publish done"
+                >
+                  🚀 {post.taskRoles.publisher} {post.stageCompletion?.publishDone ? '✓' : ''}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Status Dropdown / Pill */}
+        <div className="flex items-center justify-between md:contents">
+          <div className="md:w-32 relative">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveStatusMenuPostId(activeStatusMenuPostId === post.id ? null : post.id);
+              }}
+              className="font-label-caps text-[10px] font-bold uppercase px-2.5 py-1 rounded-full flex items-center justify-center gap-1.5 cursor-pointer transition-transform hover:scale-105"
+              style={{ backgroundColor: statusCfg.bgColor, color: statusCfg.color }}
+              title="Click to change status"
+            >
+              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: statusCfg.color }} />
+              <span>{statusCfg.label}</span>
+              <span className="material-symbols-outlined text-[10px]">arrow_drop_down</span>
+            </button>
+
+            {/* 1-Click Status Dropdown Menu */}
+            {activeStatusMenuPostId === post.id && (
+              <div
+                className="absolute left-0 top-8 z-50 bg-white border border-[#bfcab4] shadow-xl rounded-lg p-1 space-y-0.5 min-w-[135px] animate-fadeIn"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {ALL_STATUSES.map((st) => {
+                  const cfg = STATUS_CONFIG[st];
+                  return (
+                    <button
+                      key={st}
+                      type="button"
+                      onClick={(e) => handleQuickStatusSelect(post, st, e)}
+                      className="w-full text-left px-2 py-1.5 rounded text-[10px] font-label-caps font-bold hover:bg-[#efeeea] flex items-center gap-1.5 transition-colors cursor-pointer"
+                      style={{ color: cfg.color }}
+                    >
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cfg.color }} />
+                      <span>{cfg.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div className="md:w-28 font-body-md text-xs text-[#404a39]">
+            {post.assignees.length > 0 ? post.assignees.join(', ') : 'Unassigned'}
+          </div>
+
+          <div className="md:w-32 text-right flex items-center justify-end gap-1.5">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelectPost(post);
+              }}
+              className="text-[#296c00] font-label-caps text-xs font-bold hover:bg-[#296c00] hover:text-white px-2.5 py-1 bg-[#efeeea] rounded-lg transition-colors cursor-pointer"
+            >
+              Edit
+            </button>
+            {onDeletePost && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (confirm(`Are you sure you want to delete post "${post.title}"?`)) {
+                    onDeletePost(post.id);
+                  }
+                }}
+                className="text-[#ba1a1a] font-label-caps text-xs font-bold hover:bg-[#ba1a1a] hover:text-white px-2 py-1 bg-[#ffdad6] rounded-lg transition-colors cursor-pointer"
+              >
+                Delete
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="bg-white border border-[#bfcab4] shadow-xs rounded-sm overflow-hidden">
+    <div className="bg-white border border-[#e5e4de] shadow-xs rounded-xl overflow-hidden">
       {/* In-list bulk action bar */}
       {selectedPostIds.size > 0 && (
         <div className="p-3 bg-[#f0fae8] border-b border-[#296c00]/30 flex flex-wrap items-center gap-2 sm:gap-3">
@@ -54,7 +298,7 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
           <select
             value={bulkStatus}
             onChange={(e) => e.target.value && onApplyBulkStatus(e.target.value as PostStatus)}
-            className="bg-white border border-[#bfcab4] px-2 py-1.5 font-label-caps text-xs rounded min-h-[36px]"
+            className="bg-white border border-[#bfcab4] px-2 py-1.5 font-label-caps text-xs rounded-lg min-h-[36px]"
           >
             <option value="">Set status…</option>
             <option value="not-started">Not started</option>
@@ -65,7 +309,7 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
           <select
             value={bulkAssignee}
             onChange={(e) => e.target.value && onApplyBulkAssignee(e.target.value)}
-            className="bg-white border border-[#bfcab4] px-2 py-1.5 font-label-caps text-xs rounded min-h-[36px]"
+            className="bg-white border border-[#bfcab4] px-2 py-1.5 font-label-caps text-xs rounded-lg min-h-[36px]"
           >
             <option value="">Reassign to…</option>
             {uniqueAssignees.map((a) => (
@@ -74,7 +318,7 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
           </select>
           <button
             onClick={onClearSelection}
-            className="ml-auto text-[#707a67] font-label-caps text-xs hover:text-[#1b1c1a] px-2 py-1.5"
+            className="ml-auto text-[#707a67] font-label-caps text-xs hover:text-[#1b1c1a] px-2 py-1.5 cursor-pointer"
           >
             Clear selection
           </button>
@@ -82,7 +326,7 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
       )}
 
       {/* Column Headers (desktop) */}
-      <div className="p-3 sm:p-4 bg-[#efeeea] border-b border-[#bfcab4] hidden md:flex items-center justify-between font-label-caps text-xs font-bold text-[#1b1c1a]">
+      <div className="p-3 sm:p-4 bg-[#f7f6f2] border-b border-[#e5e4de] hidden md:flex items-center justify-between font-label-caps text-xs font-bold text-[#1b1c1a]">
         <span className="w-7 flex-shrink-0">
           <input
             type="checkbox"
@@ -92,133 +336,54 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
                 allSelected ? () => new Set() : () => new Set(filteredCalendarPosts.map((p) => p.id))
               )
             }
-            className="w-4 h-4"
+            className="w-4 h-4 cursor-pointer"
           />
         </span>
-        <span className="w-28">DATE & TIME</span>
-        <span className="w-32">BRAND</span>
+        <span className="w-32">DATE & TIME</span>
+        <span className="w-28">BRAND</span>
         <span className="flex-1">TITLE & CAPTION</span>
-        <span className="w-28">STATUS</span>
+        <span className="w-32">STATUS</span>
         <span className="w-28">ASSIGNEE</span>
-        <span className="w-20 text-right">ACTION</span>
+        <span className="w-32 text-right">ACTION</span>
       </div>
 
-      {/* Rows */}
-      <div className="divide-y divide-[#bfcab4]">
-        {filteredCalendarPosts.length === 0 ? (
+      {/* ── Today & Upcoming Posts Section (Always Shown First) ── */}
+      <div className="divide-y divide-[#f0eee6]">
+        {todayAndUpcomingPosts.length === 0 && pastPosts.length === 0 ? (
           <div className="p-8 text-center text-xs font-body-md text-[#707a67]">
             No scheduled posts match current filters or search parameters.
           </div>
         ) : (
-          filteredCalendarPosts.map((post) => {
-            const brand = BRANDS[post.brandId];
-            const isSelected = selectedPostIds.has(post.id);
-            const statusCfg = getPostStatusConfig(post);
-
-            return (
-              <div
-                key={post.id}
-                onClick={(e) => {
-                  if (isSelectMode || e.ctrlKey || e.metaKey || e.shiftKey) {
-                    onToggleSelect(post.id, e);
-                  } else {
-                    onSelectPost(post);
-                  }
-                }}
-                className={`p-3 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-2.5 sm:gap-3 transition-colors cursor-pointer ${
-                  isSelected ? 'bg-[#f0fae8]' : 'hover:bg-[#faf9f5]'
-                }`}
-              >
-                {/* Checkbox (desktop) */}
-                <span className="hidden md:flex w-7 flex-shrink-0">
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onClick={(e) => onToggleSelect(post.id, e)}
-                    onChange={() => {}}
-                    className="w-4 h-4"
-                  />
-                </span>
-
-                {/* Date & Brand chip (mobile shows inline) */}
-                <div className="flex items-center justify-between md:block md:w-28 font-code-sm text-xs text-[#1b1c1a]">
-                  <span className="font-bold">
-                    {post.scheduledDate} ({post.scheduledTime})
-                  </span>
-                  <span
-                    className="md:hidden px-2 py-0.5 font-label-caps text-[9px] uppercase font-bold rounded text-white"
-                    style={{ backgroundColor: brand?.primaryColor || '#296c00' }}
-                  >
-                    {brand?.shortCode}
-                  </span>
-                </div>
-
-                {/* Brand (desktop) */}
-                <div className="hidden md:block w-32">
-                  <span
-                    className="px-2 py-1 font-label-caps text-[10px] uppercase font-bold rounded text-white inline-block"
-                    style={{ backgroundColor: brand?.primaryColor || '#296c00' }}
-                  >
-                    {brand?.name}
-                  </span>
-                </div>
-
-                {/* Title & Caption */}
-                <div className="flex-1">
-                  <h4 className="font-headline-md text-xs sm:text-sm font-bold text-[#1b1c1a]">{post.title}</h4>
-                  <p className="font-body-md text-xs text-[#707a67] line-clamp-1 mt-0.5">{post.caption}</p>
-                </div>
-
-                {/* Status & Assignee & Actions */}
-                <div className="flex items-center justify-between md:contents">
-                  <div className="md:w-28">
-                    <span
-                      className="font-label-caps text-[10px] font-bold uppercase px-2 py-1 rounded flex items-center justify-center gap-1"
-                      style={{ backgroundColor: statusCfg.bgColor, color: statusCfg.color }}
-                    >
-                      {statusCfg.icon && (
-                        <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>
-                          {statusCfg.icon}
-                        </span>
-                      )}
-                      {statusCfg.label}
-                    </span>
-                  </div>
-
-                  <div className="md:w-28 font-body-md text-xs text-[#404a39]">
-                    {post.assignees.length > 0 ? post.assignees.join(', ') : 'Unassigned'}
-                  </div>
-
-                  <div className="md:w-36 text-right flex items-center justify-end gap-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelectPost(post);
-                      }}
-                      className="text-[#296c00] font-label-caps text-xs font-bold hover:underline px-2 py-1 bg-[#efeeea] rounded"
-                    >
-                      Edit
-                    </button>
-                    {onDeletePost && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (confirm(`Are you sure you want to delete post "${post.title}"?`)) {
-                            onDeletePost(post.id);
-                          }
-                        }}
-                        className="text-[#ba1a1a] font-label-caps text-xs font-bold hover:underline px-2 py-1 bg-[#ffdad6] rounded"
-                      >
-                        Delete
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })
+          todayAndUpcomingPosts.map((post) => renderPostRow(post, false))
         )}
       </div>
+
+      {/* ── Collapsible Past Posts Section (Hidden by Default) ── */}
+      {pastPosts.length > 0 && (
+        <div className="border-t-2 border-[#e5e4de] bg-[#faf9f5]">
+          <button
+            type="button"
+            onClick={() => setShowPastPosts(!showPastPosts)}
+            className="w-full p-3.5 flex items-center justify-between hover:bg-[#efeeea] text-[#707a67] hover:text-[#1b1c1a] transition-colors cursor-pointer"
+          >
+            <div className="flex items-center gap-2 font-label-caps text-xs font-bold uppercase tracking-wider">
+              <span className="material-symbols-outlined text-sm transition-transform" style={{ transform: showPastPosts ? 'rotate(90deg)' : 'none' }}>
+                chevron_right
+              </span>
+              <span>Past Scheduled Posts ({pastPosts.length})</span>
+            </div>
+            <span className="text-[11px] font-medium text-[#707a67]">
+              {showPastPosts ? 'Click to collapse' : 'Click to show previous posts'}
+            </span>
+          </button>
+
+          {showPastPosts && (
+            <div className="divide-y divide-[#f0eee6] border-t border-[#e5e4de]">
+              {pastPosts.map((post) => renderPostRow(post, true))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

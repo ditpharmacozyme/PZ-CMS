@@ -34,7 +34,13 @@ const AVATAR_COLORS = [
 ];
 
 function getInitials(name: string): string {
-  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  return name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '?';
+}
+
+function canAccessSettings(member: TeamMember | null): boolean {
+  if (!member) return false;
+  const role = (member.userRole || member.role || '').toLowerCase();
+  return role.includes('admin') || role.includes('owner') || role.includes('manager');
 }
 
 export const TopNav: React.FC<TopNavProps> = ({
@@ -231,11 +237,11 @@ export const TopNav: React.FC<TopNavProps> = ({
             />
           </div>
 
-          {/* Settings — visible to Admin and Manager only */}
-          {(activeTeammate?.userRole === 'Admin' || activeTeammate?.userRole === 'Manager') && (
+          {/* Settings — visible to Admin, Owner, and Manager */}
+          {canAccessSettings(activeTeammate) && (
             <button
               onClick={() => { setShowSettingsModal(true); setSettingsTab('team'); }}
-              className="hidden sm:flex p-2 min-w-[40px] min-h-[40px] flex items-center justify-center text-[#404a39] hover:bg-[#efeeea] rounded-full transition-colors"
+              className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center text-[#404a39] hover:bg-[#efeeea] rounded-full transition-colors cursor-pointer"
               title="Settings"
             >
               <span className="material-symbols-outlined text-xl">settings</span>
@@ -245,7 +251,7 @@ export const TopNav: React.FC<TopNavProps> = ({
           {/* Mark as Posted — hidden on mobile */}
           <button
             onClick={onPublishNow}
-            className="hidden sm:block bg-[#296c00] text-white font-label-caps text-xs font-bold px-3 sm:px-4 py-2 rounded shadow-xs hover:bg-[#1f5700] active:scale-95 transition-all min-h-[38px] whitespace-nowrap"
+            className="hidden sm:block bg-[#296c00] text-white font-label-caps text-xs font-bold px-3 sm:px-4 py-2 rounded shadow-xs hover:bg-[#1f5700] active:scale-95 transition-all min-h-[38px] whitespace-nowrap cursor-pointer"
           >
             Mark Posted
           </button>
@@ -254,7 +260,7 @@ export const TopNav: React.FC<TopNavProps> = ({
           <div className="relative">
             <button
               onClick={() => setShowActiveTeammatePopover(!showActiveTeammatePopover)}
-              className="flex items-center gap-1.5 p-1 hover:bg-[#efeeea] rounded-full sm:rounded-lg transition-all focus:outline-none min-h-[38px]"
+              className="flex items-center gap-1.5 p-1 hover:bg-[#efeeea] rounded-full sm:rounded-lg transition-all focus:outline-none min-h-[38px] cursor-pointer"
               title={`Logged in as: ${activeTeammate ? activeTeammate.name : 'Guest'}`}
             >
               <div
@@ -282,7 +288,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                     <span className="material-symbols-outlined text-[#296c00] text-lg">account_circle</span>
                     <h3 className="font-label-caps text-[10px] font-bold text-[#1b1c1a] uppercase tracking-wider">Authenticated Profile</h3>
                   </div>
-                  <button onClick={() => setShowActiveTeammatePopover(false)} className="text-[#707a67] hover:text-[#1b1c1a] p-0.5">
+                  <button onClick={() => setShowActiveTeammatePopover(false)} className="text-[#707a67] hover:text-[#1b1c1a] p-0.5 cursor-pointer">
                     <span className="material-symbols-outlined text-sm">close</span>
                   </button>
                 </div>
@@ -299,24 +305,24 @@ export const TopNav: React.FC<TopNavProps> = ({
                       <p className="text-xs font-bold text-[#1b1c1a] truncate">{activeTeammate.name}</p>
                       <p className="text-[10px] text-[#707a67] truncate">{activeTeammate.email}</p>
                       <span className="inline-block mt-1 font-label-caps text-[8px] font-bold uppercase bg-[#296c00]/15 text-[#296c00] px-1.5 py-0.5 rounded">
-                        {activeTeammate.userRole || 'Editor'}
+                        {activeTeammate.userRole || 'Admin'}
                       </span>
                     </div>
                   </div>
                 )}
 
-                {/* Settings — mobile only; desktop has the dedicated header icon */}
-                {(activeTeammate?.userRole === 'Admin' || activeTeammate?.userRole === 'Manager') && (
+                {/* Settings — accessible directly from profile menu for Admins/Managers */}
+                {canAccessSettings(activeTeammate) && (
                   <button
                     onClick={() => {
                       setShowActiveTeammatePopover(false);
                       setShowSettingsModal(true);
                       setSettingsTab('team');
                     }}
-                    className="sm:hidden w-full flex items-center justify-center gap-2 bg-[#efeeea] hover:bg-[#bfcab4]/40 text-[#1b1c1a] font-label-caps text-xs font-bold py-2 px-3 rounded transition-colors"
+                    className="w-full flex items-center justify-center gap-2 bg-[#efeeea] hover:bg-[#bfcab4]/40 text-[#1b1c1a] font-label-caps text-xs font-bold py-2.5 px-3 rounded-lg transition-colors cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-sm">settings</span>
-                    <span>Settings</span>
+                    <span>Studio Settings</span>
                   </button>
                 )}
 

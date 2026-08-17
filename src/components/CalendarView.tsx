@@ -507,6 +507,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             uniqueAssignees={uniqueAssignees}
             onClearFilters={() => { setStatusFilter('all'); setPlatformFilter('all'); setAssigneeFilter('all'); }}
             hasActiveFilters={hasActiveFilters}
+            activeTeammate={activeTeammate}
           />
 
           {/* Bulk Actions (select mode banner + floating bar) */}
@@ -564,6 +565,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 onPlaceholderClick={handlePlaceholderClick}
                 onImageUpload={handleImageFileUpload}
                 teamMembers={teamMembers}
+                onSavePost={onSavePost}
               />
             </div>
           )}
@@ -587,6 +589,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               onOpenNewPostModal={onOpenNewPostModal}
               onToggleSelect={toggleSelectPost}
               teamMembers={teamMembers}
+              onSavePost={onSavePost}
             />
           )}
 
@@ -604,6 +607,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               onClearSelection={clearSelection}
               onSelectPost={(post) => { setSelectedPostForInspector(post); onSelectPost(post); }}
               onDeletePost={onDeletePost}
+              onSavePost={onSavePost}
               onToggleSelect={toggleSelectPost}
               setSelectedPostIds={setSelectedPostIds}
             />

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { PostTemplate, BrandId, Platform } from '../types';
 import { BRANDS } from '../data/brands';
 import { uploadImage } from '../utils/uploadImage';
@@ -12,6 +12,25 @@ interface TemplateLibraryProps {
   selectedBrandFilter: BrandId | 'all';
 }
 
+const TEMPLATE_CATEGORIES = [
+  { id: 'all', label: 'All Templates', icon: 'grid_view' },
+  { id: 'Clinical', label: 'Clinical & Case Studies', icon: 'biotech' },
+  { id: 'Education', label: 'Education & Flashcards', icon: 'school' },
+  { id: 'Interactive', label: 'Quizzes & Diagnostics', icon: 'quiz' },
+  { id: 'Carousels', label: 'Carousels & Slides', icon: 'view_carousel' },
+  { id: 'Editorial', label: 'Protocols & Alerts', icon: 'newspaper' },
+  { id: 'Patient-Facing', label: 'Patient Guides', icon: 'health_and_safety' },
+  { id: 'Brand-Ops', label: 'Brand Highlights', icon: 'stars' }
+];
+
+const PLATFORM_ICONS: Record<string, string> = {
+  instagram: 'photo_camera',
+  linkedin: 'work',
+  twitter: 'tag',
+  web: 'language',
+  email: 'mail'
+};
+
 export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
   templates,
   onUseTemplate,
@@ -21,18 +40,20 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
   selectedBrandFilter
 }) => {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [activeBrandFilter, setActiveBrandFilter] = useState<BrandId | 'all' | 'shared'>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [showCreateTemplateModal, setShowCreateTemplateModal] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<PostTemplate | null>(null);
 
-  // New Template Form state
+  // Form State
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [newBrandId, setNewBrandId] = useState<BrandId | 'shared'>('shared');
-  const [newCategory, setNewCategory] = useState<PostTemplate['category']>('Clinical');
+  const [newCategory, setNewCategory] = useState<string>('Clinical');
   const [newPlatform, setNewPlatform] = useState<Platform>('instagram');
   const [newCaption, setNewCaption] = useState('');
   const [newImagePreview, setNewImagePreview] = useState('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [newTags, setNewTags] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
@@ -53,30 +74,55 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
     }
   };
 
-  const filteredTemplates = templates.filter((tpl) => {
-    if (selectedBrandFilter !== 'all' && tpl.brandId !== 'shared' && tpl.brandId !== selectedBrandFilter) {
-      return false;
-    }
-    if (categoryFilter !== 'all' && tpl.category !== categoryFilter) {
-      return false;
-    }
-    return true;
-  });
+  // Filter Templates
+  const filteredTemplates = useMemo(() => {
+    return templates.filter((tpl) => {
+      // Global app brand filter
+      if (selectedBrandFilter !== 'all' && tpl.brandId !== 'shared' && tpl.brandId !== selectedBrandFilter) {
+        return false;
+      }
+      // Local brand filter
+      if (activeBrandFilter !== 'all' && tpl.brandId !== activeBrandFilter) {
+        return false;
+      }
+      // Category filter
+      if (categoryFilter !== 'all') {
+        const catMatch = tpl.category.toLowerCase().includes(categoryFilter.toLowerCase()) ||
+          (categoryFilter === 'Carousels' && (tpl.title.toLowerCase().includes('carousel') || tpl.description.toLowerCase().includes('carousel')));
+        if (!catMatch) return false;
+      }
+      // Search query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const titleMatch = tpl.title.toLowerCase().includes(q);
+        const descMatch = tpl.description.toLowerCase().includes(q);
+        const captionMatch = (tpl.defaultCaption || '').toLowerCase().includes(q);
+        const tagMatch = (tpl.tags || []).some((t) => t.toLowerCase().includes(q));
+        if (!titleMatch && !descMatch && !captionMatch && !tagMatch) return false;
+      }
+      return true;
+    });
+  }, [templates, selectedBrandFilter, activeBrandFilter, categoryFilter, searchQuery]);
 
   const handleCreateTemplate = () => {
     if (!newTitle.trim()) return;
+    const tagArray = newTags
+      .split(',')
+      .map((t) => t.trim().replace(/^#/, ''))
+      .filter(Boolean);
+
     const tpl: PostTemplate = {
       id: `tpl-${Date.now()}`,
       title: newTitle.trim(),
       description: newDesc.trim() || 'Custom template.',
       brandId: newBrandId,
-      category: newCategory,
+      category: newCategory as any,
       platform: newPlatform,
       specType: 'feed-post',
       defaultCaption: newCaption.trim(),
-      tags: [newCategory],
+      tags: tagArray.length > 0 ? tagArray : [newCategory],
       imagePreview: newImagePreview.trim(),
-      usesCount: 1
+      usesCount: 0
     };
     onSaveNewTemplate(tpl);
     setShowCreateTemplateModal(false);
@@ -90,20 +136,37 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
     setNewBrandId(tpl.brandId);
     setNewCategory(tpl.category);
     setNewPlatform(tpl.platform);
-    setNewCaption(tpl.defaultCaption);
-    setNewImagePreview(tpl.imagePreview);
+    setNewCaption(tpl.defaultCaption || '');
+    setNewImagePreview(tpl.imagePreview || '');
+    setNewTags((tpl.tags || []).join(', '));
+  };
+
+  const handleDuplicateTemplate = (tpl: PostTemplate) => {
+    const dup: PostTemplate = {
+      ...tpl,
+      id: `tpl-${Date.now()}`,
+      title: `${tpl.title} (Copy)`,
+      usesCount: 0
+    };
+    onSaveNewTemplate(dup);
   };
 
   const handleSaveEditedTemplate = () => {
     if (!editingTemplate || !newTitle.trim()) return;
+    const tagArray = newTags
+      .split(',')
+      .map((t) => t.trim().replace(/^#/, ''))
+      .filter(Boolean);
+
     const updated: PostTemplate = {
       ...editingTemplate,
       title: newTitle.trim(),
       description: newDesc.trim() || editingTemplate.description,
       brandId: newBrandId,
-      category: newCategory,
+      category: newCategory as any,
       platform: newPlatform,
       defaultCaption: newCaption.trim(),
+      tags: tagArray.length > 0 ? tagArray : editingTemplate.tags,
       imagePreview: newImagePreview.trim() || editingTemplate.imagePreview
     };
     onUpdateTemplate(updated);
@@ -116,6 +179,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
     setNewDesc('');
     setNewCaption('');
     setNewImagePreview('');
+    setNewTags('');
     setNewBrandId('shared');
     setNewCategory('Clinical');
     setNewPlatform('instagram');
@@ -124,15 +188,21 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
 
   return (
     <div className="p-4 md:p-8 space-y-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#bfcab4]">
+      {/* ── Header ── */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#e5e4de]">
         <div>
-          <span className="font-label-caps text-xs text-[#296951] uppercase font-bold tracking-widest">
-            Reusable formats
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[#296c00] text-xl">quiz</span>
+            <span className="font-label-caps text-xs text-[#296c00] uppercase font-bold tracking-widest">
+              Standardized Blueprint Hub
+            </span>
+          </div>
           <h2 className="font-display-xl text-2xl md:text-3xl text-[#1b1c1a] font-bold mt-1">
-            Templates
+            Template Library
           </h2>
+          <p className="font-body-md text-xs text-[#707a67] mt-0.5">
+            Pre-structured formats, copy formulas, and layouts for high-performing pharmaceutical and educational posts.
+          </p>
         </div>
 
         <button
@@ -140,295 +210,393 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
             resetForm();
             setShowCreateTemplateModal(true);
           }}
-          className="bg-[#296c00] text-white font-label-caps text-xs px-4 py-2.5 rounded shadow-sm hover:bg-[#1f5700] transition-all flex items-center gap-2 font-bold"
+          className="bg-[#296c00] hover:bg-[#205400] text-white font-label-caps text-xs px-4 py-2.5 rounded-xl shadow-xs transition-all flex items-center gap-2 font-bold cursor-pointer"
         >
-          <span className="material-symbols-outlined text-sm">add_box</span>
+          <span className="material-symbols-outlined text-base">add_box</span>
           <span>+ Create New Template</span>
         </button>
       </div>
 
-      {/* Category Filter Pills */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2">
-        {['all', 'Clinical', 'Interactive', 'Editorial', 'Patient-Facing', 'Internal'].map((cat) => (
+      {/* ── Search & Filter Controls ── */}
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-[#f7f6f2] p-3 rounded-xl border border-[#e5e4de]">
+        {/* Search */}
+        <div className="relative flex-1 min-w-[220px]">
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#707a67]">
+            search
+          </span>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search templates by title, description, hashtag..."
+            className="w-full pl-9 pr-4 py-2 text-xs bg-white border border-[#bfcab4] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#296c00] text-[#1b1c1a] placeholder-[#707a67]"
+          />
+        </div>
+
+        {/* Brand Selector Tabs */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0">
           <button
-            key={cat}
-            onClick={() => setCategoryFilter(cat)}
-            className={`px-4 py-1.5 font-label-caps text-xs rounded transition-all whitespace-nowrap ${
-              categoryFilter === cat
-                ? 'bg-[#296c00] text-white font-bold shadow-xs'
+            onClick={() => setActiveBrandFilter('all')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-label-caps font-bold transition-all cursor-pointer whitespace-nowrap ${
+              activeBrandFilter === 'all'
+                ? 'bg-[#296c00] text-white shadow-xs'
                 : 'bg-white border border-[#bfcab4] text-[#404a39] hover:bg-[#efeeea]'
             }`}
           >
-            {cat === 'all' ? 'All Template Categories' : cat}
+            All Brands
+          </button>
+          <button
+            onClick={() => setActiveBrandFilter('shared')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-label-caps font-bold transition-all cursor-pointer whitespace-nowrap ${
+              activeBrandFilter === 'shared'
+                ? 'bg-[#296c00] text-white shadow-xs'
+                : 'bg-white border border-[#bfcab4] text-[#404a39] hover:bg-[#efeeea]'
+            }`}
+          >
+            Shared Ecosystem
+          </button>
+          {Object.entries(BRANDS).map(([id, b]) => (
+            <button
+              key={id}
+              onClick={() => setActiveBrandFilter(id as BrandId)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-label-caps font-bold transition-all cursor-pointer whitespace-nowrap ${
+                activeBrandFilter === id
+                  ? 'bg-[#296c00] text-white shadow-xs'
+                  : 'bg-white border border-[#bfcab4] text-[#404a39] hover:bg-[#efeeea]'
+              }`}
+            >
+              {b.shortCode}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Category Filter Pills ── */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+        {TEMPLATE_CATEGORIES.map((cat) => (
+          <button
+            key={cat.id}
+            onClick={() => setCategoryFilter(cat.id)}
+            className={`px-3.5 py-2 font-label-caps text-xs rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+              categoryFilter === cat.id
+                ? 'bg-[#1b1c1a] text-white font-bold shadow-md'
+                : 'bg-white border border-[#e5e4de] text-[#404a39] hover:bg-[#efeeea]'
+            }`}
+          >
+            <span className="material-symbols-outlined text-sm">{cat.icon}</span>
+            <span>{cat.label}</span>
           </button>
         ))}
       </div>
 
-      {/* Template Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredTemplates.map((template) => {
-          const brand = template.brandId !== 'shared' ? BRANDS[template.brandId] : null;
+      {/* ── Template Cards Grid ── */}
+      {filteredTemplates.length === 0 ? (
+        <div className="bg-white border border-[#e5e4de] rounded-2xl p-12 text-center text-[#707a67] space-y-3">
+          <span className="material-symbols-outlined text-4xl text-[#bfcab4]">layers_clear</span>
+          <h3 className="font-display-xl text-base font-bold text-[#1b1c1a]">No templates found</h3>
+          <p className="text-xs max-w-sm mx-auto">
+            Try adjusting your search query, category filter, or create a brand-new template blueprint.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredTemplates.map((template) => {
+            const brand = template.brandId !== 'shared' ? BRANDS[template.brandId] : null;
+            const platformIcon = PLATFORM_ICONS[template.platform] || 'photo_camera';
 
-          return (
-            <div
-              key={template.id}
-              className="bg-white border border-[#bfcab4] rounded overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
-            >
-              {/* Image Preview */}
-              <div className="h-48 w-full bg-[#efeeea] border-b border-[#bfcab4] relative overflow-hidden flex items-center justify-center">
-                {template.imagePreview ? (
-                  <img
-                    src={template.imagePreview}
-                    alt={template.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                ) : (
-                  <span className="material-symbols-outlined text-4xl text-[#bfcab4]">image</span>
-                )}
-                <span className="absolute top-3 left-3 bg-[#1b1c1a] text-white font-label-caps text-[9px] px-2 py-0.5 rounded font-bold uppercase">
-                  {template.category}
-                </span>
+            return (
+              <div
+                key={template.id}
+                className="bg-white border border-[#e5e4de] rounded-2xl overflow-hidden shadow-xs hover:shadow-md hover:border-[#bfcab4] transition-all flex flex-col justify-between group"
+              >
+                {/* Visual Header / Thumbnail */}
+                <div className="h-44 w-full bg-[#f7f6f2] border-b border-[#e5e4de] relative overflow-hidden flex items-center justify-center">
+                  {template.imagePreview ? (
+                    <img
+                      src={template.imagePreview}
+                      alt={template.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="text-center p-4 text-[#bfcab4] space-y-1">
+                      <span className="material-symbols-outlined text-4xl">auto_stories</span>
+                      <p className="font-label-caps text-[9px] uppercase font-bold tracking-wider">
+                        {template.category} Template
+                      </p>
+                    </div>
+                  )}
 
-                <span
-                  className="absolute top-3 right-3 text-white font-label-caps text-[9px] px-2 py-0.5 rounded font-bold uppercase shadow-xs"
-                  style={{ backgroundColor: brand?.primaryColor || '#5a38f0' }}
-                >
-                  {brand ? brand.shortCode : 'SHARED ECOSYSTEM'}
-                </span>
-              </div>
+                  {/* Badges */}
+                  <div className="absolute top-3 left-3 flex items-center gap-1.5">
+                    <span className="bg-[#1b1c1a]/90 text-white font-label-caps text-[9px] px-2 py-0.5 rounded-full font-bold uppercase backdrop-blur-xs flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[10px]">{platformIcon}</span>
+                      <span>{template.category}</span>
+                    </span>
+                  </div>
 
-              {/* Template Details */}
-              <div className="p-5 space-y-3 flex-1 flex flex-col justify-between">
-                <div>
-                  <div className="flex justify-between items-start mb-1">
-                    <h3 className="font-headline-md text-base font-bold text-[#1b1c1a]">
+                  <span
+                    className="absolute top-3 right-3 text-white font-label-caps text-[9px] px-2.5 py-0.5 rounded-full font-bold uppercase shadow-xs"
+                    style={{ backgroundColor: brand?.primaryColor || '#296c00' }}
+                  >
+                    {brand ? brand.name : 'Shared Ecosystem'}
+                  </span>
+
+                  {template.usesCount > 0 && (
+                    <div className="absolute bottom-2 right-2 bg-black/70 text-white font-code-sm text-[9px] px-2 py-0.5 rounded-full backdrop-blur-xs flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[10px] text-[#78d24b]">trending_up</span>
+                      <span>{template.usesCount} uses</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Body Details */}
+                <div className="p-5 space-y-3 flex-1 flex flex-col justify-between">
+                  <div>
+                    <h3 className="font-headline-md text-base font-bold text-[#1b1c1a] group-hover:text-[#296c00] transition-colors leading-snug">
                       {template.title}
                     </h3>
-                    <span className="font-code-sm text-[10px] text-[#707a67] bg-[#efeeea] px-1.5 py-0.5 rounded">
-                      {template.usesCount} Uses
-                    </span>
+                    <p className="font-body-md text-xs text-[#707a67] line-clamp-2 mt-1 leading-relaxed">
+                      {template.description}
+                    </p>
                   </div>
 
-                  <p className="font-body-md text-xs text-[#707a67] line-clamp-2">
-                    {template.description}
-                  </p>
-                </div>
-
-                {/* Default Caption Preview Box */}
-                <div className="p-2.5 bg-[#faf9f5] border border-[#bfcab4] rounded text-[11px] font-body-md text-[#404a39] italic line-clamp-2">
-                  "{template.defaultCaption}"
-                </div>
-
-                {/* Tags */}
-                <div className="flex flex-wrap gap-1 pt-1">
-                  {template.tags.map((tag, idx) => (
-                    <span
-                      key={idx}
-                      className="font-label-caps text-[9px] bg-[#efeeea] border border-[#bfcab4] px-1.5 py-0.5 rounded text-[#707a67]"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-
-                {/* Action Buttons Row */}
-                <div className="pt-2 border-t border-[#bfcab4] space-y-2">
-                  <button
-                    onClick={() => onUseTemplate(template)}
-                    className="w-full bg-[#296c00] text-white font-label-caps text-xs font-bold py-2.5 rounded shadow-xs hover:bg-[#1f5700] transition-colors flex items-center justify-center gap-2"
-                  >
-                    <span className="material-symbols-outlined text-sm">content_paste</span>
-                    <span>Use Template for New Post</span>
-                  </button>
-
-                  <div className="flex items-center gap-2 pt-1">
-                    <button
-                      onClick={() => handleOpenEditModal(template)}
-                      className="flex-1 bg-[#efeeea] border border-[#bfcab4] text-[#1b1c1a] font-label-caps text-[11px] font-bold py-1.5 rounded hover:bg-[#bfcab4]/30 transition-colors flex items-center justify-center gap-1"
-                    >
-                      <span className="material-symbols-outlined text-xs">edit</span>
-                      <span>Edit</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (confirm(`Are you sure you want to delete template "${template.title}"?`)) {
-                          onDeleteTemplate(template.id);
-                        }
-                      }}
-                      className="flex-1 bg-[#ffdad6] text-[#ba1a1a] font-label-caps text-[11px] font-bold py-1.5 rounded hover:bg-[#ba1a1a] hover:text-white transition-colors flex items-center justify-center gap-1"
-                    >
-                      <span className="material-symbols-outlined text-xs">delete</span>
-                      <span>Delete</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Create / Edit Template Modal */}
-      {(showCreateTemplateModal || editingTemplate) && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white border border-[#bfcab4] max-w-lg w-full p-6 rounded shadow-2xl relative space-y-4 my-8">
-            <button
-              onClick={() => {
-                setShowCreateTemplateModal(false);
-                setEditingTemplate(null);
-              }}
-              className="absolute top-4 right-4 text-[#707a67] hover:text-[#1b1c1a]"
-            >
-              <span className="material-symbols-outlined">close</span>
-            </button>
-
-            <h2 className="font-headline-md text-lg font-bold text-[#1b1c1a]">
-              {editingTemplate ? 'Edit Reusable Post Template' : 'Save Reusable Post Template'}
-            </h2>
-
-            <div className="space-y-3 text-xs font-body-md">
-              <div>
-                <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
-                  Template Name
-                </label>
-                <input
-                  type="text"
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder="e.g. Oncology Protocol Alert V3"
-                  className="w-full bg-[#faf9f5] border border-[#bfcab4] p-2 text-xs font-bold focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
-                  Description
-                </label>
-                <input
-                  type="text"
-                  value={newDesc}
-                  onChange={(e) => setNewDesc(e.target.value)}
-                  placeholder="Brief description of when to use this template"
-                  className="w-full bg-[#faf9f5] border border-[#bfcab4] p-2 text-xs focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
-                  Category
-                </label>
-                <select
-                  value={newCategory}
-                  onChange={(e) => setNewCategory(e.target.value as PostTemplate['category'])}
-                  className="w-full bg-[#faf9f5] border border-[#bfcab4] p-2 font-label-caps text-xs focus:outline-none"
-                >
-                  <option value="Clinical">Clinical</option>
-                  <option value="Interactive">Interactive</option>
-                  <option value="Editorial">Editorial</option>
-                  <option value="Patient-Facing">Patient-Facing</option>
-                  <option value="Internal">Internal</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
-                  Target Ecosystem Brand
-                </label>
-                <select
-                  value={newBrandId}
-                  onChange={(e) => setNewBrandId(e.target.value as BrandId | 'shared')}
-                  className="w-full bg-[#faf9f5] border border-[#bfcab4] p-2 font-label-caps text-xs focus:outline-none"
-                >
-                  <option value="shared">Shared Ecosystem (All Brands)</option>
-                  {Object.values(BRANDS).map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold">
-                  Template Image
-                </label>
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleImageFileUpload}
-                />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploading}
-                  className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-[#bfcab4] rounded p-3 text-[#296c00] hover:border-[#296c00] hover:bg-[#f0fdf4] transition-colors font-label-caps text-xs font-bold disabled:opacity-60"
-                >
-                  <span className="material-symbols-outlined text-lg">
-                    {isUploading ? 'hourglass_empty' : 'upload_file'}
-                  </span>
-                  <span>{isUploading ? 'Uploading…' : 'Upload from your device'}</span>
-                </button>
-                {uploadError && (
-                  <p className="text-[11px] text-[#ba1a1a] bg-[#ffdad6] border border-[#ffb4ab] rounded p-2">
-                    {uploadError}
-                  </p>
-                )}
-
-                {newImagePreview && (
-                  <div className="flex items-center gap-2 p-2 bg-[#faf9f5] border border-[#bfcab4] rounded">
-                    <div className="w-10 h-10 rounded overflow-hidden bg-[#efeeea] border border-[#bfcab4] flex-shrink-0">
-                      <img src={newImagePreview} alt="Preview" draggable={false} className="w-full h-full object-cover" />
+                  {/* Caption Preview */}
+                  {template.defaultCaption && (
+                    <div className="p-3 bg-[#faf9f5] border border-[#e5e4de] rounded-xl text-[11px] font-body-md text-[#404a39] italic line-clamp-2">
+                      "{template.defaultCaption}"
                     </div>
-                    <span className="text-[10px] text-[#707a67] truncate flex-1">{newImagePreview}</span>
+                  )}
+
+                  {/* Tags */}
+                  {template.tags && template.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {template.tags.map((tag, idx) => (
+                        <span
+                          key={idx}
+                          className="font-label-caps text-[9px] bg-[#efeeea] px-2 py-0.5 rounded-md text-[#707a67] font-medium"
+                        >
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="pt-3 border-t border-[#f0eee6] space-y-2">
+                    <button
+                      onClick={() => onUseTemplate(template)}
+                      className="w-full bg-[#296c00] hover:bg-[#205400] text-white font-label-caps text-xs font-bold py-2.5 rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-sm">post_add</span>
+                      <span>Use Blueprint for New Post</span>
+                    </button>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleDuplicateTemplate(template)}
+                        className="flex-1 bg-[#f7f6f2] hover:bg-[#efeeea] border border-[#e5e4de] text-[#1b1c1a] font-label-caps text-[11px] font-bold py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                        title="Duplicate template"
+                      >
+                        <span className="material-symbols-outlined text-xs">content_copy</span>
+                        <span>Copy</span>
+                      </button>
+                      <button
+                        onClick={() => handleOpenEditModal(template)}
+                        className="flex-1 bg-[#f7f6f2] hover:bg-[#efeeea] border border-[#e5e4de] text-[#1b1c1a] font-label-caps text-[11px] font-bold py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-xs">edit</span>
+                        <span>Edit</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm(`Are you sure you want to delete template "${template.title}"?`)) {
+                            onDeleteTemplate(template.id);
+                          }
+                        }}
+                        className="p-1.5 bg-[#ffdad6] hover:bg-[#ba1a1a] text-[#ba1a1a] hover:text-white rounded-lg transition-colors cursor-pointer flex items-center justify-center"
+                        title="Delete template"
+                      >
+                        <span className="material-symbols-outlined text-xs">delete</span>
+                      </button>
+                    </div>
                   </div>
-                )}
-
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-px bg-[#bfcab4]" />
-                  <span className="text-[9px] uppercase text-[#707a67]">or paste a link</span>
-                  <div className="flex-1 h-px bg-[#bfcab4]" />
                 </div>
-                <input
-                  type="text"
-                  value={newImagePreview}
-                  onChange={(e) => setNewImagePreview(e.target.value)}
-                  placeholder="https://... or Drive URL"
-                  className="w-full bg-[#faf9f5] border border-[#bfcab4] p-2 text-xs focus:outline-none"
-                />
               </div>
+            );
+          })}
+        </div>
+      )}
 
-              <div>
-                <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
-                  Default Boilerplate Caption
-                </label>
-                <textarea
-                  value={newCaption}
-                  onChange={(e) => setNewCaption(e.target.value)}
-                  rows={3}
-                  placeholder="Write reusable caption boilerplate with [PLACEHOLDERS]..."
-                  className="w-full bg-[#faf9f5] border border-[#bfcab4] p-2 text-xs focus:outline-none"
-                />
+      {/* ── Create / Edit Template Modal ── */}
+      {(showCreateTemplateModal || editingTemplate) && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-fadeIn">
+          <div className="bg-white border border-[#bfcab4] max-w-xl w-full p-6 rounded-2xl shadow-2xl relative space-y-4 my-8 animate-slideUp">
+            <div className="flex items-center justify-between pb-3 border-b border-[#e5e4de]">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#296c00]">
+                  {editingTemplate ? 'edit_note' : 'add_box'}
+                </span>
+                <h2 className="font-headline-md text-base font-bold text-[#1b1c1a]">
+                  {editingTemplate ? 'Edit Reusable Post Template' : 'Create New Reusable Template'}
+                </h2>
               </div>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-3 border-t border-[#bfcab4]">
               <button
                 onClick={() => {
                   setShowCreateTemplateModal(false);
                   setEditingTemplate(null);
                 }}
-                className="px-4 py-2 border border-[#bfcab4] font-label-caps text-xs rounded hover:bg-[#efeeea]"
+                className="p-1.5 text-[#707a67] hover:text-[#1b1c1a] cursor-pointer"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <div className="space-y-3.5 text-xs font-body-md">
+              <div>
+                <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
+                  Template Name *
+                </label>
+                <input
+                  type="text"
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  placeholder="e.g. Clinical Study Carousel Blueprint"
+                  className="w-full bg-[#faf9f5] border border-[#bfcab4] rounded-lg p-2 text-xs font-bold text-[#1b1c1a] focus:outline-none focus:border-[#296c00]"
+                />
+              </div>
+
+              <div>
+                <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
+                  Description / Purpose
+                </label>
+                <input
+                  type="text"
+                  value={newDesc}
+                  onChange={(e) => setNewDesc(e.target.value)}
+                  placeholder="e.g. 5-slide carousel breaking down mechanism of action with diagnostic callout."
+                  className="w-full bg-[#faf9f5] border border-[#bfcab4] rounded-lg p-2 text-xs text-[#1b1c1a] focus:outline-none focus:border-[#296c00]"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div>
+                  <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
+                    Brand Ecosystem
+                  </label>
+                  <select
+                    value={newBrandId}
+                    onChange={(e) => setNewBrandId(e.target.value as any)}
+                    className="w-full bg-[#faf9f5] border border-[#bfcab4] rounded-lg p-2 text-xs font-label-caps font-bold"
+                  >
+                    <option value="shared">Shared (All Brands)</option>
+                    {Object.entries(BRANDS).map(([id, b]) => (
+                      <option key={id} value={id}>
+                        {b.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
+                    Category
+                  </label>
+                  <select
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    className="w-full bg-[#faf9f5] border border-[#bfcab4] rounded-lg p-2 text-xs font-label-caps font-bold"
+                  >
+                    <option value="Clinical">Clinical & Case Studies</option>
+                    <option value="Education">Education & Flashcards</option>
+                    <option value="Interactive">Quizzes & Diagnostics</option>
+                    <option value="Carousels">Carousels & Slides</option>
+                    <option value="Editorial">Protocols & Alerts</option>
+                    <option value="Patient-Facing">Patient Guides</option>
+                    <option value="Brand-Ops">Brand Highlights</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
+                    Platform
+                  </label>
+                  <select
+                    value={newPlatform}
+                    onChange={(e) => setNewPlatform(e.target.value as Platform)}
+                    className="w-full bg-[#faf9f5] border border-[#bfcab4] rounded-lg p-2 text-xs font-label-caps font-bold"
+                  >
+                    <option value="instagram">Instagram</option>
+                    <option value="linkedin">LinkedIn</option>
+                    <option value="twitter">Twitter / X</option>
+                    <option value="web">Website / Blog</option>
+                    <option value="email">Email Broadcast</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
+                  Default Caption Formula / Hook
+                </label>
+                <textarea
+                  rows={4}
+                  value={newCaption}
+                  onChange={(e) => setNewCaption(e.target.value)}
+                  placeholder="[HOOK]: Did you know that...? &#10;&#10;[CLINICAL INSIGHT]: &#10;1. Point A &#10;2. Point B &#10;&#10;[CTA]: Save this guide for your clinical rounds."
+                  className="w-full bg-[#faf9f5] border border-[#bfcab4] rounded-lg p-2.5 text-xs font-body-md text-[#1b1c1a] focus:outline-none focus:border-[#296c00]"
+                />
+              </div>
+
+              <div>
+                <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
+                  Default Hashtags / Tags (comma-separated)
+                </label>
+                <input
+                  type="text"
+                  value={newTags}
+                  onChange={(e) => setNewTags(e.target.value)}
+                  placeholder="Pharmacology, StudyGuide, MedicalEducation, BioTech"
+                  className="w-full bg-[#faf9f5] border border-[#bfcab4] rounded-lg p-2 text-xs text-[#1b1c1a] focus:outline-none focus:border-[#296c00]"
+                />
+              </div>
+
+              <div>
+                <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
+                  Thumbnail / Visual Layout Reference
+                </label>
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="text"
+                    value={newImagePreview}
+                    onChange={(e) => setNewImagePreview(e.target.value)}
+                    placeholder="https://... or upload below"
+                    className="flex-1 bg-[#faf9f5] border border-[#bfcab4] rounded-lg p-2 text-xs text-[#1b1c1a] focus:outline-none"
+                  />
+                  <label className="bg-[#efeeea] border border-[#bfcab4] text-[#296c00] px-3 py-2 rounded-lg font-label-caps text-xs font-bold hover:bg-[#296c00] hover:text-white transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap">
+                    <span className="material-symbols-outlined text-sm">upload</span>
+                    <span>{isUploading ? 'Uploading...' : 'Upload'}</span>
+                    <input type="file" accept="image/*" onChange={handleImageFileUpload} className="hidden" />
+                  </label>
+                </div>
+                {uploadError && <p className="text-[10px] text-[#ba1a1a] mt-1">{uploadError}</p>}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#e5e4de]">
+              <button
+                onClick={() => {
+                  setShowCreateTemplateModal(false);
+                  setEditingTemplate(null);
+                }}
+                className="px-4 py-2 font-label-caps text-xs font-bold text-[#707a67] hover:bg-[#efeeea] rounded-xl cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={editingTemplate ? handleSaveEditedTemplate : handleCreateTemplate}
-                className="px-4 py-2 bg-[#296c00] text-white font-label-caps text-xs font-bold rounded hover:bg-[#1f5700]"
+                className="px-5 py-2 bg-[#296c00] hover:bg-[#205400] text-white font-label-caps text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
               >
-                {editingTemplate ? 'Update Template' : 'Save Template'}
+                {editingTemplate ? 'Save Changes' : 'Create Template'}
               </button>
             </div>
           </div>

@@ -1,8 +1,8 @@
-import React, { useRef } from 'react';
-import { Post } from '../../types';
+import React, { useState, useRef } from 'react';
+import { Post, PostStatus } from '../../types';
 import { BRANDS } from '../../data/brands';
 import { STATUS_CONFIG } from '../../utils/statusConfig';
-import { todayStr } from '../../utils/date';
+import { todayStr, logTimestamp } from '../../utils/date';
 
 export function getPostStatusConfig(post: Post) {
   const isOverdue =
@@ -20,6 +20,8 @@ const PLATFORM_ICONS: Record<string, string> = {
   email: 'mail'
 };
 
+const ALL_STATUSES: PostStatus[] = ['not-started', 'in-progress', 'ready-to-post', 'posted'];
+
 interface PostCardProps {
   post: Post;
   isSelected?: boolean;
@@ -28,6 +30,7 @@ interface PostCardProps {
   onSelectPost: (post: Post, e: React.MouseEvent) => void;
   onToggleSelect?: (postId: string, e: React.MouseEvent | React.ChangeEvent) => void;
   onPlaceholderClick?: (post: Post) => void;
+  onQuickUpdatePost?: (updatedPost: Post) => void;
   variant?: 'month' | 'week' | 'list' | 'mobile-list';
   onTouchStart?: (e: React.TouchEvent) => void;
   onTouchMove?: (e: React.TouchEvent) => void;
@@ -43,6 +46,7 @@ export const PostCard: React.FC<PostCardProps> = ({
   onSelectPost,
   onToggleSelect,
   onPlaceholderClick,
+  onQuickUpdatePost,
   variant = 'month',
   onTouchStart,
   onTouchMove,
@@ -51,6 +55,7 @@ export const PostCard: React.FC<PostCardProps> = ({
 }) => {
   const brand = BRANDS[post.brandId];
   const statusCfg = getPostStatusConfig(post);
+  const [showStatusMenu, setShowStatusMenu] = useState(false);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -76,6 +81,54 @@ export const PostCard: React.FC<PostCardProps> = ({
       longPressTimerRef.current = null;
     }
     if (onTouchEnd) onTouchEnd(e);
+  };
+
+  // 1-Click Quick Status Change
+  const handleQuickStatusSelect = (newStatus: PostStatus, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowStatusMenu(false);
+    if (onQuickUpdatePost) {
+      onQuickUpdatePost({
+        ...post,
+        status: newStatus,
+        activityLog: [
+          {
+            id: `act-${Date.now()}`,
+            actor: post.assignees[0] || 'Teammate',
+            action: `Quick updated status to "${newStatus.replace(/-/g, ' ')}"`,
+            timestamp: logTimestamp()
+          },
+          ...post.activityLog
+        ]
+      });
+    }
+  };
+
+  // 1-Click Quick Stage Toggle (🎨 / 🚀 / 💬)
+  const handleQuickStageToggle = (stage: 'design' | 'publish' | 'engagement', e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!onQuickUpdatePost) return;
+
+    const currentStage = post.stageCompletion || {};
+    const updatedStage = { ...currentStage };
+
+    if (stage === 'design') updatedStage.designDone = !currentStage.designDone;
+    if (stage === 'publish') updatedStage.publishDone = !currentStage.publishDone;
+    if (stage === 'engagement') updatedStage.engagementDone = !currentStage.engagementDone;
+
+    onQuickUpdatePost({
+      ...post,
+      stageCompletion: updatedStage,
+      activityLog: [
+        {
+          id: `act-${Date.now()}`,
+          actor: post.assignees[0] || 'Teammate',
+          action: `Toggled ${stage} stage to ${updatedStage[`${stage}Done` as keyof typeof updatedStage] ? 'completed' : 'pending'}`,
+          timestamp: logTimestamp()
+        },
+        ...post.activityLog
+      ]
+    });
   };
 
   // Render placeholder ghost card
@@ -122,7 +175,7 @@ export const PostCard: React.FC<PostCardProps> = ({
           }
         }}
         style={{ borderLeftColor: brand?.primaryColor || statusCfg.color }}
-        className={`p-3 bg-white border border-[#e5e4de] border-l-4 rounded-lg shadow-2xs flex items-center justify-between gap-3 active:scale-[0.99] transition-all cursor-pointer ${
+        className={`p-3 bg-white border border-[#e5e4de] border-l-4 rounded-lg shadow-2xs flex items-center justify-between gap-3 active:scale-[0.99] transition-all cursor-pointer relative ${
           isSelected ? 'bg-[#f0fae8] ring-2 ring-[#296c00] border-[#296c00]' : 'hover:border-[#bfcab4]'
         }`}
       >
@@ -149,34 +202,72 @@ export const PostCard: React.FC<PostCardProps> = ({
                 <span className="material-symbols-outlined text-[11px]">{platformIcon}</span>
                 <span>{post.scheduledTime || '10:00'}</span>
               </span>
-              <span
-                className="font-label-caps text-[8px] font-bold uppercase px-1.5 py-0.2 rounded"
+
+              {/* 1-Click Status Chip */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowStatusMenu(!showStatusMenu);
+                }}
+                className="font-label-caps text-[8px] font-bold uppercase px-1.5 py-0.2 rounded cursor-pointer transition-transform hover:scale-105"
                 style={{ backgroundColor: statusCfg.bgColor, color: statusCfg.color }}
+                title="Click to change status"
               >
-                {statusCfg.label}
-              </span>
+                {statusCfg.label} ▾
+              </button>
+
               {post.approved && (
                 <span className="text-[10px] text-[#296c00] font-bold">✓ Approved</span>
               )}
             </div>
+
             <h4 className="font-semibold text-xs text-[#1b1c1a] line-clamp-1">{post.title}</h4>
 
+            {/* Quick Interactive Task Roles */}
             {post.taskRoles && (post.taskRoles.designer || post.taskRoles.publisher || post.taskRoles.engagementLead) && (
               <div className="flex flex-wrap gap-1 mt-1 text-[9px]">
                 {post.taskRoles.designer && (
-                  <span className="px-1.5 py-0.5 rounded bg-[#efeeea] text-[#404a39]">
-                    🎨 {post.taskRoles.designer}
-                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => handleQuickStageToggle('design', e)}
+                    className={`px-1.5 py-0.5 rounded transition-all cursor-pointer ${
+                      post.stageCompletion?.designDone
+                        ? 'bg-[#296c00] text-white font-bold'
+                        : 'bg-[#efeeea] text-[#404a39] hover:bg-[#e4e2db]'
+                    }`}
+                    title={`Design: ${post.taskRoles.designer} (Click to toggle complete)`}
+                  >
+                    🎨 {post.taskRoles.designer} {post.stageCompletion?.designDone ? '✓' : ''}
+                  </button>
                 )}
                 {post.taskRoles.publisher && (
-                  <span className="px-1.5 py-0.5 rounded bg-[#efeeea] text-[#404a39]">
-                    🚀 {post.taskRoles.publisher}
-                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => handleQuickStageToggle('publish', e)}
+                    className={`px-1.5 py-0.5 rounded transition-all cursor-pointer ${
+                      post.stageCompletion?.publishDone
+                        ? 'bg-[#296c00] text-white font-bold'
+                        : 'bg-[#efeeea] text-[#404a39] hover:bg-[#e4e2db]'
+                    }`}
+                    title={`Publisher: ${post.taskRoles.publisher} (Click to toggle complete)`}
+                  >
+                    🚀 {post.taskRoles.publisher} {post.stageCompletion?.publishDone ? '✓' : ''}
+                  </button>
                 )}
                 {post.taskRoles.engagementLead && (
-                  <span className="px-1.5 py-0.5 rounded bg-[#efeeea] text-[#404a39]">
-                    💬 {post.taskRoles.engagementLead}
-                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => handleQuickStageToggle('engagement', e)}
+                    className={`px-1.5 py-0.5 rounded transition-all cursor-pointer ${
+                      post.stageCompletion?.engagementDone
+                        ? 'bg-[#296c00] text-white font-bold'
+                        : 'bg-[#efeeea] text-[#404a39] hover:bg-[#e4e2db]'
+                    }`}
+                    title={`Lead: ${post.taskRoles.engagementLead} (Click to toggle complete)`}
+                  >
+                    💬 {post.taskRoles.engagementLead} {post.stageCompletion?.engagementDone ? '✓' : ''}
+                  </button>
                 )}
               </div>
             )}
@@ -190,11 +281,35 @@ export const PostCard: React.FC<PostCardProps> = ({
         >
           {initials}
         </div>
+
+        {/* 1-Click Status Floating Menu */}
+        {showStatusMenu && (
+          <div
+            className="absolute left-10 top-8 z-50 bg-white border border-[#bfcab4] shadow-xl rounded-lg p-1 space-y-0.5 min-w-[130px] animate-fadeIn"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {ALL_STATUSES.map((st) => {
+              const cfg = STATUS_CONFIG[st];
+              return (
+                <button
+                  key={st}
+                  type="button"
+                  onClick={(e) => handleQuickStatusSelect(st, e)}
+                  className="w-full text-left px-2 py-1.5 rounded text-[10px] font-label-caps font-bold hover:bg-[#efeeea] flex items-center gap-1.5 transition-colors cursor-pointer"
+                  style={{ color: cfg.color }}
+                >
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cfg.color }} />
+                  <span>{cfg.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     );
   }
 
-  // ── Month / Week Default Compact Chip View (De-congested & Modern) ──
+  // ── Month / Week Default Compact Chip View ──
   return (
     <div
       draggable={!isMobileDevice}
@@ -215,7 +330,7 @@ export const PostCard: React.FC<PostCardProps> = ({
         }
       }}
       style={{ borderLeftColor: brand?.primaryColor || '#296c00' }}
-      className={`p-1.5 border border-l-3 rounded-md shadow-2xs hover:shadow-xs transition-all text-left cursor-pointer group select-none ${
+      className={`p-1.5 border border-l-3 rounded-md shadow-2xs hover:shadow-xs transition-all text-left cursor-pointer group select-none relative ${
         isSelected
           ? 'bg-[#f0fae8] ring-2 ring-[#296c00] border-[#296c00]'
           : 'bg-white border-[#e5e4de] hover:border-[#bfcab4] hover:bg-[#faf9f5]'
@@ -261,26 +376,75 @@ export const PostCard: React.FC<PostCardProps> = ({
         {post.title}
       </p>
 
-      {/* Bottom row: Compact Status Dot + Task Roles + Assignee initials */}
+      {/* Bottom row: Interactive Status Popover + Quick Roles + Assignee */}
       <div className="flex items-center justify-between mt-1 pt-0.5 border-t border-[#f0eee6] text-[8px]">
-        {/* Status Dot + Short Label */}
-        <div className="flex items-center gap-1 min-w-0">
-          <span
-            className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-            style={{ backgroundColor: statusCfg.color }}
-            title={`Status: ${statusCfg.label}`}
-          />
-          <span
-            className="truncate font-medium text-[8px] text-[#707a67]"
+        {/* Status Dot Button */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowStatusMenu(!showStatusMenu);
+            }}
+            className="flex items-center gap-1 min-w-0 hover:bg-[#efeeea] px-1 py-0.2 rounded transition-colors cursor-pointer"
+            title="Click to update status"
           >
-            {statusCfg.label}
-          </span>
+            <span
+              className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+              style={{ backgroundColor: statusCfg.color }}
+            />
+            <span className="truncate font-medium text-[8px] text-[#707a67]">
+              {statusCfg.label}
+            </span>
+          </button>
+
+          {/* 1-Click Status Popover */}
+          {showStatusMenu && (
+            <div
+              className="absolute left-0 bottom-5 z-50 bg-white border border-[#bfcab4] shadow-xl rounded-lg p-1 space-y-0.5 min-w-[125px] animate-fadeIn"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {ALL_STATUSES.map((st) => {
+                const cfg = STATUS_CONFIG[st];
+                return (
+                  <button
+                    key={st}
+                    type="button"
+                    onClick={(e) => handleQuickStatusSelect(st, e)}
+                    className="w-full text-left px-2 py-1 rounded text-[9px] font-label-caps font-bold hover:bg-[#efeeea] flex items-center gap-1.5 transition-colors cursor-pointer"
+                    style={{ color: cfg.color }}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: cfg.color }} />
+                    <span>{cfg.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
-        {/* Assignee initials badge */}
+        {/* Assignee initials badge & Quick Stage Toggles */}
         <div className="flex items-center gap-0.5 flex-shrink-0">
-          {post.taskRoles?.designer && <span title={`Designer: ${post.taskRoles.designer}`}>🎨</span>}
-          {post.taskRoles?.publisher && <span title={`Publisher: ${post.taskRoles.publisher}`}>🚀</span>}
+          {post.taskRoles?.designer && (
+            <button
+              type="button"
+              onClick={(e) => handleQuickStageToggle('design', e)}
+              className={`text-[8px] p-0.5 rounded cursor-pointer ${post.stageCompletion?.designDone ? 'opacity-100' : 'opacity-40 hover:opacity-80'}`}
+              title={`Designer: ${post.taskRoles.designer} (Click to toggle)`}
+            >
+              🎨
+            </button>
+          )}
+          {post.taskRoles?.publisher && (
+            <button
+              type="button"
+              onClick={(e) => handleQuickStageToggle('publish', e)}
+              className={`text-[8px] p-0.5 rounded cursor-pointer ${post.stageCompletion?.publishDone ? 'opacity-100' : 'opacity-40 hover:opacity-80'}`}
+              title={`Publisher: ${post.taskRoles.publisher} (Click to toggle)`}
+            >
+              🚀
+            </button>
+          )}
           <span
             className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-white font-bold text-[7px]"
             style={{ backgroundColor: brand?.primaryColor || '#296c00' }}
