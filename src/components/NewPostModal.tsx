@@ -4,6 +4,7 @@ import { BRANDS, SPECS } from '../data/brands';
 import { todayStr, logTimestamp } from '../utils/date';
 import { uploadImage } from '../utils/uploadImage';
 import { useSmartMemory, PostDraft } from '../hooks/useSmartMemory';
+import { supabase } from '../lib/supabase';
 
 interface NewPostModalProps {
   initialDate?: string;
@@ -160,9 +161,16 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
     setSendingEmail(true);
     setEmailStatus(null);
     try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (supabase) {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData.session?.access_token;
+        if (token) headers.Authorization = `Bearer ${token}`;
+      }
+
       const res = await fetch('/api/appscript/proxy', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           payload: {
             action: 'sendEmailReminder',
@@ -181,10 +189,10 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
         })
       });
       const data = await res.json();
-      if (data.status === 'success' || data.result === 'success') {
+      if (res.ok && (data.status === 'success' || data.result === 'success' || data?.data?.status === 'success')) {
         setEmailStatus(`✓ Test reminder sent to ${recipient}`);
       } else {
-        setEmailStatus(`Error: ${data.error || 'Failed to send'}`);
+        setEmailStatus(`❌ ${data?.data?.error || data?.message || data?.error || 'Failed to send'}`);
       }
     } catch (err: any) {
       setEmailStatus(`Send failed: ${err.message}`);
