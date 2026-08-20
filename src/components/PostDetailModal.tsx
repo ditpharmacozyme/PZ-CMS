@@ -35,7 +35,6 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
   const [newCommentText, setNewCommentText] = useState('');
   const [commentAuthor, setCommentAuthor] = useState(defaultAuthor);
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
-  const [approvalWarning, setApprovalWarning] = useState<string | null>(null);
   const [showBankDrawer, setShowBankDrawer] = useState(false);
   const [bankSearchQuery, setBankSearchQuery] = useState('');
   const [sendingEmail, setSendingEmail] = useState(false);
@@ -140,43 +139,6 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
     } finally {
       setIsUploading(false);
     }
-  };
-
-  // Handle Approval Sign-Off Toggle
-  const handleToggleApproval = () => {
-    const isAllowed = activeTeammate?.userRole === 'Admin' || activeTeammate?.userRole === 'Manager';
-    if (!isAllowed) {
-      setApprovalWarning(`Permission Denied: Only Admin or Manager roles can approve posts. You are currently logged in as ${activeTeammate?.userRole || 'Editor'}.`);
-      return;
-    }
-
-    const nextApproved = !editedPost.approved;
-    const approverName = activeTeammate
-      ? `${activeTeammate.name} (${activeTeammate.role})`
-      : (teamMembers && teamMembers.length > 0 ? `${teamMembers[0].name} (${teamMembers[0].role})` : 'Team');
-    const actorName = activeTeammate ? activeTeammate.name : approverName;
-    setApprovalWarning(null);
-    const nextPost: Post = {
-      ...editedPost,
-      approved: nextApproved,
-      approvedBy: nextApproved ? approverName : undefined,
-      approvedAt: nextApproved ? logTimestamp() : undefined,
-      activityLog: [
-        {
-          id: `act-${Date.now()}`,
-          actor: actorName,
-          action: nextApproved ? 'Approved this post' : 'Removed approval',
-          timestamp: logTimestamp()
-        },
-        ...editedPost.activityLog
-      ]
-    };
-    setEditedPost(nextPost);
-    // Approve/unapprove persists immediately (unlike other fields, which wait
-    // for Save Changes) — the button reads as a final action, so it should
-    // behave like one, and it lets a DB-level rejection surface right away
-    // instead of being silently bundled into a later save.
-    onSavePost(nextPost);
   };
 
   // Handle a stage checkbox flip -- persists immediately (see comment at the
@@ -381,53 +343,10 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
             <p className="text-[11px] font-body-md text-[#707a67]">
               Updates automatically as Design and Publish are checked off below.
             </p>
-
-            {/* Advisory Approval Warning Banner (non-blocking) */}
-            {approvalWarning && (
-              <div className="p-3 bg-[#fff8e1] border border-[#c77a00] text-[#c77a00] rounded flex items-center justify-between text-xs font-body-md">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-base">info</span>
-                  <span>{approvalWarning}</span>
-                </div>
-                <button
-                  onClick={() => setApprovalWarning(null)}
-                  className="text-[#c77a00] font-label-caps text-[10px] px-2 py-1 rounded border border-[#c77a00] hover:bg-[#c77a00]/10"
-                >
-                  Dismiss
-                </button>
-              </div>
-            )}
           </div>
 
-          {/* APPROVAL GATE & ASSIGNEE ROW */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Approval Box — advisory only, never blocks status or scheduling (PRD §5.4) */}
-            <div className="p-3 bg-white border border-[#bfcab4] rounded flex flex-col justify-between">
-              <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold mb-1">
-                Approved
-              </label>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-label-caps text-xs font-bold text-[#1b1c1a]">
-                    {editedPost.approved ? 'Yes' : 'Not yet'}
-                  </p>
-                  {editedPost.approvedBy && (
-                    <p className="text-[10px] font-body-md text-[#707a67]">{editedPost.approvedBy}</p>
-                  )}
-                </div>
-                <button
-                  onClick={handleToggleApproval}
-                  className={`px-3 py-1.5 font-label-caps text-xs rounded font-bold uppercase transition-all ${
-                    editedPost.approved
-                      ? 'bg-[#aceecf] text-[#07513b] border border-[#296c00]'
-                      : 'bg-[#296c00] text-white hover:bg-[#1f5700]'
-                  }`}
-                >
-                  {editedPost.approved ? 'Approved' : 'Approve'}
-                </button>
-              </div>
-            </div>
-
+          {/* ASSIGNEE & RECURRENCE ROW */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Assignee Box */}
             <div className="space-y-1 bg-white p-3 border border-[#bfcab4] rounded">
               <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold">

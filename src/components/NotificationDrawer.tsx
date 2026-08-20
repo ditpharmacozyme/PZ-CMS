@@ -30,7 +30,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
 
     notifications.forEach(n => {
       if (n.type === 'overdue') groups['Overdue'].push(n);
-      else if (n.type === 'approval' || n.type === 'unassigned') groups['Action Needed'].push(n);
+      else if (n.type === 'unassigned') groups['Action Needed'].push(n);
       else if (n.type === 'due_soon') groups['Upcoming'].push(n);
       else groups['Updates'].push(n);
     });
@@ -98,7 +98,6 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
                               {n.type === 'overdue' && <span className="material-symbols-outlined text-[#ba1a1a] text-[14px]">error</span>}
-                              {n.type === 'approval' && <span className="material-symbols-outlined text-[#935c00] text-[14px]">pending_actions</span>}
                               {n.type === 'stage_complete' && <span className="material-symbols-outlined text-[#296c00] text-[14px]">check_circle</span>}
                               {n.type === 'due_soon' && <span className="material-symbols-outlined text-[#0061a4] text-[14px]">schedule</span>}
                               

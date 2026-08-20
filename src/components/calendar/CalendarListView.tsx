@@ -131,7 +131,6 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <h4 className="font-headline-md text-xs sm:text-sm font-bold text-[#1b1c1a] truncate">{post.title}</h4>
-            {post.approved && <span className="text-[10px] text-[#296c00] font-bold">✓ Approved</span>}
           </div>
           <p className="font-body-md text-xs text-[#707a67] line-clamp-1 mt-0.5">{post.caption || 'No caption'}</p>
 

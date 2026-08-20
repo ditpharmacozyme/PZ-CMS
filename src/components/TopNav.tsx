@@ -655,11 +655,6 @@ export const TopNav: React.FC<TopNavProps> = ({
               {/* ── SYSTEM TAB ── */}
               {settingsTab === 'system' && (
                 <div className="space-y-4 text-xs font-body-md text-[#404a39]">
-                  <div className="p-3 bg-[#faf9f5] border border-[#bfcab4] rounded">
-                    <p className="font-label-caps text-[10px] text-[#296c00] font-bold mb-1 uppercase">Approver</p>
-                    <p>All posts go through one approver: <strong>{teamMembers && teamMembers.length > 0 ? teamMembers[0].name : 'Team Lead'}</strong>. One sign-off covers all 5 brands.</p>
-                  </div>
-
                   <div className="p-3 bg-[#faf9f5] border border-[#bfcab4] rounded space-y-2">
                     <p className="font-label-caps text-[10px] text-[#296c00] font-bold uppercase">Google Drive / Apps Script</p>
                     <p>Images upload straight to Google Drive via Apps Script — nothing is stored on this device.</p>

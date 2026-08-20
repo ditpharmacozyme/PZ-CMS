@@ -44,11 +44,12 @@ export function usePosts(
     showToast(`Saved "${updatedPost.title}"`);
 
     if (activeTeammate) {
+      // post_approved stays a valid AuditActionType so historical entries still
+      // render (see AuditLogView) -- but nothing writes new ones anymore now
+      // that approval is gone from the UI; status_changed/post_edited cover it.
       const actionType =
         existing && existing.status !== updatedPost.status
           ? 'status_changed'
-          : existing && !existing.approved && updatedPost.approved
-          ? 'post_approved'
           : 'post_edited';
 
       logAuditEvent(

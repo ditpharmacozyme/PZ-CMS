@@ -654,7 +654,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   ['Owner', <span key="owner" className="font-label-caps font-bold">{inspectorPost.assignees.length > 0 ? inspectorPost.assignees.join(', ') : 'Unassigned'}</span>],
                   ['Status', (() => { const st = getPostStatusConfig(inspectorPost); return <span key="status" className="font-label-caps text-[10px] font-bold uppercase px-2 py-0.5 rounded flex items-center gap-1" style={{ backgroundColor: st.bgColor, color: st.color }}>{st.icon && <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>{st.icon}</span>}{st.label}</span>; })()],
                   ['Reminder', <span key="reminder" className="font-code-sm font-bold text-[#296951]">{inspectorPost.scheduledDate ? `${inspectorPost.scheduledDate} ${inspectorPost.scheduledTime || '10:00'}` : 'No date set'}</span>],
-                  ['Approved', <span key="approved" className={`font-label-caps font-bold ${inspectorPost.approved ? 'text-[#296c00]' : 'text-[#707a67]'}`}>{inspectorPost.approved ? 'Yes' : 'Not yet'}</span>],
                 ].map(([label, value]) => (
                   <div key={label as string} className="flex justify-between py-1 border-b border-[#bfcab4]/50">
                     <span className="text-[#707a67]">{label}</span>

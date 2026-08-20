@@ -85,19 +85,6 @@ export function generateNotifications(posts: Post[]): Omit<AppNotification, 'rea
       });
     }
 
-    // Approval needed
-    if (deriveStatus(post) === 'ready-to-post' && !post.approved) {
-      notifications.push({
-        id: `approval-${post.id}`,
-        type: 'approval',
-        title: post.title,
-        message: `Ready to post but needs approval.`,
-        date: post.scheduledDate,
-        postId: post.id,
-        brandId: post.brandId
-      });
-    }
-
     // Note: a `stage_complete` notification used to fire here whenever ANY
     // stage was done. It was a standing status line, not an event -- once a
     // single stage was ticked it stayed in the list forever, since nothing

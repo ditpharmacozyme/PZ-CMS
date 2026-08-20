@@ -542,12 +542,6 @@ export const GoogleAppsScriptHub: React.FC<GoogleAppsScriptHubProps> = ({
                   <span className="text-[#707a67]">Total posts:</span>
                   <span className="font-bold text-[#1b1c1a]">{posts.length}</span>
                 </div>
-                <div className="flex justify-between font-label-caps">
-                  <span className="text-[#707a67]">Approved:</span>
-                  <span className="font-bold text-[#296c00]">
-                    {posts.filter((p) => p.approved).length}
-                  </span>
-                </div>
               </div>
 
               <button

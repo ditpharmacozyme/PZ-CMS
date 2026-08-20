@@ -165,10 +165,6 @@ export const PostCard: React.FC<PostCardProps> = ({
               >
                 {statusCfg.label}
               </span>
-
-              {post.approved && (
-                <span className="text-[10px] text-[#296c00] font-bold">✓ Approved</span>
-              )}
             </div>
 
             <h4 className="font-semibold text-xs text-[#1b1c1a] line-clamp-1">{post.title}</h4>
@@ -288,11 +284,6 @@ export const PostCard: React.FC<PostCardProps> = ({
           <span className="font-code-sm text-[8px] text-[#707a67]">
             {post.scheduledTime || '10:00'}
           </span>
-          {post.approved && (
-            <span className="text-[9px] text-[#296c00] font-bold" title="Approved">
-              ✓
-            </span>
-          )}
         </div>
       </div>
 

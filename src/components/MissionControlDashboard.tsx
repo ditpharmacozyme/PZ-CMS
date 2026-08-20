@@ -45,8 +45,7 @@ export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = (
     const posted = assigned.filter(p => deriveStatus(p) === 'posted').length;
     const ready = assigned.filter(p => deriveStatus(p) === 'ready-to-post').length;
     const inProg = assigned.filter(p => deriveStatus(p) === 'in-progress').length;
-    const approvals = posts.filter(p => p.approved && p.approvedBy?.startsWith(member.name)).length;
-    return { member, total: assigned.length, posted, ready, inProg, approvals };
+    return { member, total: assigned.length, posted, ready, inProg };
   }).sort((a, b) => b.total - a.total);
 
   // Next 5 upcoming reminders, soonest first -- was raw array order over ALL
@@ -335,7 +334,7 @@ export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = (
           </div>
         ) : (
           <div className="divide-y divide-[#bfcab4]">
-            {teamStats.map(({ member, total, posted, ready, inProg, approvals }, idx) => {
+            {teamStats.map(({ member, total, posted, ready, inProg }, idx) => {
               const isSelected = selectedTeammateName === member.name;
               return (
                 <div
@@ -380,10 +379,6 @@ export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = (
                     <div className="text-center px-1 hidden sm:block">
                       <div className="font-display-xl text-base font-bold text-[#c77a00]">{inProg}</div>
                       <div className="font-label-caps text-[8px] text-[#707a67] uppercase">Active</div>
-                    </div>
-                    <div className="text-center px-1 hidden sm:block">
-                      <div className="font-display-xl text-base font-bold text-[#7c3aed]">{approvals}</div>
-                      <div className="font-label-caps text-[8px] text-[#707a67] uppercase">Sign-Offs</div>
                     </div>
                   </div>
 

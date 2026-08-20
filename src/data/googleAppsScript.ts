@@ -265,7 +265,7 @@ function handleSyncMultiTabSheets(data) {
   
   var headers = [
     "ID", "Brand", "Title", "Platform", "Scheduled Date", "Scheduled Time",
-    "Status", "Assignee", "Approved", "Reminder Email", "Visual URL", "Caption", "Updated At"
+    "Status", "Assignee", "Reminder Email", "Visual URL", "Caption", "Updated At"
   ];
   
   TAB_CONFIGS.forEach(function(cfg) {
@@ -317,7 +317,6 @@ function handleSyncMultiTabSheets(data) {
           p.scheduledTime || "--:--",
           p.status || "",
           (p.assignees && p.assignees.length) ? p.assignees.join(", ") : "Unassigned",
-          p.approved ? "YES" : "NO",
           p.reminderEmail || "",
           p.visualUrl || "",
           p.caption || "",
