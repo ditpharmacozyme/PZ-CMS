@@ -25,6 +25,10 @@ export default defineConfig(() => {
     test: {
       environment: 'jsdom',
       setupFiles: ['./src/test/setup.ts'],
+      // Vitest's default exclude covers node_modules/dist/.git but not
+      // .gitignore, so a leftover SDD worktree under .claude/worktrees/
+      // would otherwise get scanned as a second, stale copy of every test.
+      exclude: ['**/node_modules/**', '**/dist/**', '**/.git/**', '**/.claude/**'],
     },
   };
 });
