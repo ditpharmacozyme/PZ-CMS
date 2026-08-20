@@ -63,8 +63,20 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
     return otherBrands.some((b) => text.includes(b.name.toLowerCase()));
   }, [editedPost.caption, editedPost.title, editedPost.brandId]);
 
-  // Send real test email reminder via Apps Script Proxy
+  // Send real test email reminder via Apps Script Proxy.
+  // No hardcoded fallback recipient -- if reminderEmail is empty there is no
+  // real address to send to, so we ask for one instead of silently mailing
+  // a shared inbox that may not even exist anymore.
   const handleSendTestEmail = async () => {
+    // Matches the same fallback the Reminder Email input displays, so this
+    // never rejects an address the user can plainly see on screen.
+    const recipient = (
+      editedPost.reminderEmail || (teamMembers && teamMembers.length > 0 ? teamMembers[0].email : '') || ''
+    ).trim();
+    if (!recipient) {
+      setEmailStatus('Add a reminder email first.');
+      return;
+    }
     if (!supabase) {
       setEmailStatus('❌ Supabase is not configured.');
       return;
@@ -86,13 +98,13 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
           payload: {
             action: 'sendEmailReminder',
             post: editedPost,
-            recipientEmail: editedPost.reminderEmail || 'team@pharmacozyme.com'
+            recipientEmail: recipient
           }
         })
       });
       const data = await res.json();
       if (res.ok && data?.data?.status === 'success') {
-        setEmailStatus(`✓ Email sent to ${editedPost.reminderEmail || 'team@pharmacozyme.com'}`);
+        setEmailStatus(`✓ Email sent to ${recipient}`);
       } else {
         setEmailStatus(`❌ ${data?.data?.error || data?.message || data?.error || 'Failed to send'}`);
       }
@@ -299,7 +311,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
             <div className="md:col-span-2 space-y-1">
               <label className="font-label-caps text-[10px] sm:text-xs text-[#707a67] uppercase font-bold">
-                Campaign / Post Title
+                Title
               </label>
               <input
                 type="text"
@@ -311,7 +323,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
 
             <div className="space-y-1">
               <label className="font-label-caps text-[10px] sm:text-xs text-[#707a67] uppercase font-bold">
-                Assigned Ecosystem Brand
+                Brand
               </label>
               <select
                 value={editedPost.brandId}
@@ -345,69 +357,51 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
             </p>
           </div>
 
-          {/* ASSIGNEE & RECURRENCE ROW */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Assignee Box */}
-            <div className="space-y-1 bg-white p-3 border border-[#bfcab4] rounded">
-              <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold">
-                Assignees {editedPost.assignees.length > 0 && `(${editedPost.assignees.length})`}
-              </label>
-              {teamMembers && teamMembers.length > 0 ? (
-                <div className="border border-[#bfcab4] rounded divide-y divide-[#bfcab4] max-h-28 overflow-y-auto">
-                  {teamMembers.map((m) => {
-                    const checked = editedPost.assignees.includes(m.name);
-                    return (
-                      <label
-                        key={m.id}
-                        className="flex items-center gap-2 p-1.5 cursor-pointer hover:bg-[#faf9f5] transition-colors"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => {
-                            const nextAssignees = checked
-                              ? editedPost.assignees.filter((n) => n !== m.name)
-                              : [...editedPost.assignees, m.name];
-                            const emails = nextAssignees
-                              .map((name) => teamMembers.find((tm) => tm.name === name)?.email)
-                              .filter((e): e is string => Boolean(e && e.trim()));
-                            const combined = Array.from(new Set(emails)).join(', ');
-                            setEditedPost((prev) => ({
-                              ...prev,
-                              assignees: nextAssignees,
-                              reminderEmail: combined || prev.reminderEmail
-                            }));
-                          }}
-                          className="w-3.5 h-3.5 text-[#296c00] border-[#bfcab4] rounded focus:ring-[#296c00]"
-                        />
-                        <span className="font-body-md text-[11px] text-[#1b1c1a] truncate">{m.name} ({m.role})</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="text-[11px] font-body-md text-[#707a67] italic p-1.5">
-                  Add people in Settings → Team to assign this post.
-                </p>
-              )}
-            </div>
-
-            {/* Recurrence Rule Box */}
-            <div className="space-y-1 bg-white p-3 border border-[#bfcab4] rounded">
-              <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold">
-                Recurrence Rule
-              </label>
-              <select
-                value={editedPost.recurrenceRule || 'none'}
-                onChange={(e) => setEditedPost({ ...editedPost, recurrenceRule: e.target.value })}
-                className="w-full bg-[#faf9f5] border border-[#bfcab4] p-1.5 font-label-caps text-xs text-[#1b1c1a] focus:outline-none"
-              >
-                <option value="none">One-time Post</option>
-                <option value="weekly:monday">Every Monday Series</option>
-                <option value="weekly:friday">Every Friday Quiz Series</option>
-                <option value="monthly">Monthly Broadcast</option>
-              </select>
-            </div>
+          {/* ASSIGNEES -- Recurrence Rule moved into the scheduling card below,
+              so it reads as one scheduling concept with date/time rather than
+              a separate box. */}
+          <div className="space-y-1 bg-white p-3 border border-[#bfcab4] rounded">
+            <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold">
+              Assignees {editedPost.assignees.length > 0 && `(${editedPost.assignees.length})`}
+            </label>
+            {teamMembers && teamMembers.length > 0 ? (
+              <div className="border border-[#bfcab4] rounded divide-y divide-[#bfcab4] max-h-28 overflow-y-auto">
+                {teamMembers.map((m) => {
+                  const checked = editedPost.assignees.includes(m.name);
+                  return (
+                    <label
+                      key={m.id}
+                      className="flex items-center gap-2 p-1.5 cursor-pointer hover:bg-[#faf9f5] transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => {
+                          const nextAssignees = checked
+                            ? editedPost.assignees.filter((n) => n !== m.name)
+                            : [...editedPost.assignees, m.name];
+                          const emails = nextAssignees
+                            .map((name) => teamMembers.find((tm) => tm.name === name)?.email)
+                            .filter((e): e is string => Boolean(e && e.trim()));
+                          const combined = Array.from(new Set(emails)).join(', ');
+                          setEditedPost((prev) => ({
+                            ...prev,
+                            assignees: nextAssignees,
+                            reminderEmail: combined || prev.reminderEmail
+                          }));
+                        }}
+                        className="w-3.5 h-3.5 text-[#296c00] border-[#bfcab4] rounded focus:ring-[#296c00]"
+                      />
+                      <span className="font-body-md text-[11px] text-[#1b1c1a] truncate">{m.name} ({m.role})</span>
+                    </label>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-[11px] font-body-md text-[#707a67] italic p-1.5">
+                Add people in Settings → Team to assign this post.
+              </p>
+            )}
           </div>
 
           {/* TASK ROLES & HANDOFF TRACKING */}
@@ -416,7 +410,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[#296951]" style={{ fontSize: '18px' }}>alt_route</span>
                 <label className="font-label-caps text-[10px] text-[#296951] font-bold uppercase tracking-wider">
-                  Specialized Task Roles & Handoff Tracking
+                  Who does what
                 </label>
               </div>
               <span className="font-label-caps text-[9px] text-[#707a67] uppercase font-bold">Multi-person Workflow</span>
@@ -469,7 +463,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
 
               <div>
                 <label className="font-label-caps text-[9px] text-[#707a67] uppercase font-bold block mb-1">
-                  💬 Engagement Lead
+                  💬 Engagement
                 </label>
                 <select
                   value={editedPost.taskRoles?.engagementLead || ''}
@@ -581,6 +575,25 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
 
             <div className="space-y-1">
               <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold">
+                Repeat this post
+              </label>
+              <select
+                value={editedPost.recurrenceRule || 'none'}
+                onChange={(e) => setEditedPost({ ...editedPost, recurrenceRule: e.target.value })}
+                className="w-full bg-[#faf9f5] border border-[#bfcab4] p-1.5 font-label-caps text-xs text-[#1b1c1a] focus:outline-none rounded"
+              >
+                {/* Values are parsed as exact strings by CalendarView.tsx and
+                    PostCard.tsx (ghost "repeating slot" placeholders) --
+                    only the visible label text changes here. */}
+                <option value="none">Doesn't repeat</option>
+                <option value="weekly:monday">Every Monday</option>
+                <option value="weekly:friday">Every Friday</option>
+                <option value="monthly">Every month</option>
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold">
                 Target Platform
               </label>
               <select
@@ -622,7 +635,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
                   type="email"
                   value={editedPost.reminderEmail || (teamMembers && teamMembers.length > 0 ? teamMembers[0].email : '') || ''}
                   onChange={(e) => setEditedPost({ ...editedPost, reminderEmail: e.target.value })}
-                  placeholder="e.g. hamzaansari4you@gmail.com"
+                  placeholder="e.g. name@example.com"
                   className="flex-1 bg-[#faf9f5] border border-[#bfcab4] p-1.5 font-body-md text-xs text-[#1b1c1a] rounded"
                 />
                 <button
@@ -660,7 +673,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold">
-                  Post Caption & Editorial Copy
+                  Caption
                 </label>
                 {isCrossBrandMention && (
                   <span className="text-[10px] font-label-caps text-[#ba1a1a] bg-[#ffdad6] px-1.5 py-0.5 rounded font-bold">
@@ -677,18 +690,19 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
                   placeholder="Write caption here..."
                   className="w-full bg-white border border-[#bfcab4] p-3 font-body-md text-xs text-[#1b1c1a] focus:border-[#296c00] focus:outline-none"
                 />
-                {/* Swipe Copy Button */}
+                {/* Reuse saved copy button -- same action + same label as NewPostModal's
+                    Step 2, so it doesn't read as a second, differently-named feature. */}
                 <button
                   type="button"
                   onClick={() => setShowBankDrawer(!showBankDrawer)}
                   className="absolute bottom-2 right-2 flex items-center gap-1 bg-[#efeeea] border border-[#bfcab4] text-[#296c00] text-[10px] font-label-caps font-bold px-2 py-1 rounded hover:bg-[#aceecf] transition-colors"
-                  title="Insert from Content Bank"
+                  title="Reuse saved copy"
                 >
                   <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>article</span>
-                  Swipe Copy
+                  Reuse saved copy
                 </button>
 
-                {/* Swipe Copy Mini Drawer */}
+                {/* Reuse saved copy mini drawer */}
                 {showBankDrawer && (
                   <div className="absolute z-10 bottom-10 right-0 w-72 max-h-64 overflow-y-auto bg-white border border-[#bfcab4] rounded shadow-xl">
                     <div className="p-2 border-b border-[#bfcab4] flex gap-1.5 sticky top-0 bg-white">
@@ -774,10 +788,10 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
               </div>
             </div>
 
-            {/* Visual Media Attachment */}
+            {/* Image */}
             <div className="space-y-3">
               <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold">
-                Visual Media Attachment
+                Image
               </label>
 
               {/* Preview Box */}
@@ -785,7 +799,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
                 {editedPost.visualUrl ? (
                   <img
                     src={editedPost.visualUrl}
-                    alt="Visual Attachment"
+                    alt="Post image"
                     draggable={false}
                     className="w-full h-full object-cover"
                   />

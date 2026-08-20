@@ -31,6 +31,18 @@ const PLATFORM_ICONS: Record<string, string> = {
   email: 'mail'
 };
 
+// Exactly the PostTemplate['category'] union (src/types.ts) -- unlike
+// TEMPLATE_CATEGORIES above (used for browsing/filtering existing templates,
+// which may include legacy free-text values), this list is what the
+// create/edit form is allowed to write, so it must never drift from the type.
+const TEMPLATE_FORM_CATEGORIES: { value: PostTemplate['category']; label: string }[] = [
+  { value: 'Clinical', label: 'Clinical & Case Studies' },
+  { value: 'Interactive', label: 'Quizzes & Diagnostics' },
+  { value: 'Editorial', label: 'Protocols & Alerts' },
+  { value: 'Patient-Facing', label: 'Patient Guides' },
+  { value: 'Internal', label: 'Internal / Team Use' }
+];
+
 export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
   templates,
   onUseTemplate,
@@ -51,13 +63,16 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
   const titleInputRef = useRef<HTMLInputElement>(null);
   const [newDesc, setNewDesc] = useState('');
   const [newBrandId, setNewBrandId] = useState<BrandId | 'shared'>('shared');
-  const [newCategory, setNewCategory] = useState<string>('Clinical');
+  const [newCategory, setNewCategory] = useState<PostTemplate['category']>('Clinical');
   const [newPlatform, setNewPlatform] = useState<Platform>('instagram');
   const [newCaption, setNewCaption] = useState('');
   const [newImagePreview, setNewImagePreview] = useState('');
   const [newTags, setNewTags] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  // Caption / Tags / Image (plus Description & Platform) live behind this
+  // disclosure -- only Name, Brand, Category are always visible.
+  const [showMoreOptions, setShowMoreOptions] = useState(false);
 
   const handleImageFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -124,7 +139,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
       title: newTitle.trim(),
       description: newDesc.trim() || 'Custom template.',
       brandId: newBrandId,
-      category: newCategory as any,
+      category: newCategory,
       platform: newPlatform,
       specType: 'feed-post',
       defaultCaption: newCaption.trim(),
@@ -148,6 +163,9 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
     setNewCaption(tpl.defaultCaption || '');
     setNewImagePreview(tpl.imagePreview || '');
     setNewTags((tpl.tags || []).join(', '));
+    // Open with "More options" already expanded when there's existing
+    // caption/tags/image content to see, so editing doesn't hide data.
+    setShowMoreOptions(Boolean(tpl.defaultCaption?.trim() || (tpl.tags && tpl.tags.length > 0) || tpl.imagePreview?.trim()));
   };
 
   const handleDuplicateTemplate = (tpl: PostTemplate) => {
@@ -178,7 +196,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
       title: newTitle.trim(),
       description: newDesc.trim() || editingTemplate.description,
       brandId: newBrandId,
-      category: newCategory as any,
+      category: newCategory,
       platform: newPlatform,
       defaultCaption: newCaption.trim(),
       tags: tagArray.length > 0 ? tagArray : editingTemplate.tags,
@@ -200,6 +218,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
     setNewCategory('Clinical');
     setNewPlatform('instagram');
     setUploadError(null);
+    setShowMoreOptions(false);
   };
 
   return (
@@ -488,27 +507,14 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                 )}
               </div>
 
-              <div>
-                <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
-                  Description / Purpose
-                </label>
-                <input
-                  type="text"
-                  value={newDesc}
-                  onChange={(e) => setNewDesc(e.target.value)}
-                  placeholder="e.g. 5-slide carousel breaking down mechanism of action with diagnostic callout."
-                  className="w-full bg-[#faf9f5] border border-[#bfcab4] rounded-lg p-2 text-xs text-[#1b1c1a] focus:outline-none focus:border-[#296c00]"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div>
                   <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
-                    Brand Ecosystem
+                    Brand
                   </label>
                   <select
                     value={newBrandId}
-                    onChange={(e) => setNewBrandId(e.target.value as any)}
+                    onChange={(e) => setNewBrandId(e.target.value as BrandId | 'shared')}
                     className="w-full bg-[#faf9f5] border border-[#bfcab4] rounded-lg p-2 text-xs font-label-caps font-bold"
                   >
                     <option value="shared">Shared (All Brands)</option>
@@ -526,83 +532,107 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                   </label>
                   <select
                     value={newCategory}
-                    onChange={(e) => setNewCategory(e.target.value)}
+                    onChange={(e) => setNewCategory(e.target.value as PostTemplate['category'])}
                     className="w-full bg-[#faf9f5] border border-[#bfcab4] rounded-lg p-2 text-xs font-label-caps font-bold"
                   >
-                    <option value="Clinical">Clinical & Case Studies</option>
-                    <option value="Education">Education & Flashcards</option>
-                    <option value="Interactive">Quizzes & Diagnostics</option>
-                    <option value="Carousels">Carousels & Slides</option>
-                    <option value="Editorial">Protocols & Alerts</option>
-                    <option value="Patient-Facing">Patient Guides</option>
-                    <option value="Brand-Ops">Brand Highlights</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
-                    Platform
-                  </label>
-                  <select
-                    value={newPlatform}
-                    onChange={(e) => setNewPlatform(e.target.value as Platform)}
-                    className="w-full bg-[#faf9f5] border border-[#bfcab4] rounded-lg p-2 text-xs font-label-caps font-bold"
-                  >
-                    <option value="instagram">Instagram</option>
-                    <option value="linkedin">LinkedIn</option>
-                    <option value="twitter">Twitter / X</option>
-                    <option value="web">Website / Blog</option>
-                    <option value="email">Email Broadcast</option>
+                    {TEMPLATE_FORM_CATEGORIES.map((c) => (
+                      <option key={c.value} value={c.value}>{c.label}</option>
+                    ))}
                   </select>
                 </div>
               </div>
 
-              <div>
-                <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
-                  Default Caption Formula / Hook
-                </label>
-                <textarea
-                  rows={4}
-                  value={newCaption}
-                  onChange={(e) => setNewCaption(e.target.value)}
-                  placeholder="[HOOK]: Did you know that...? &#10;&#10;[CLINICAL INSIGHT]: &#10;1. Point A &#10;2. Point B &#10;&#10;[CTA]: Save this guide for your clinical rounds."
-                  className="w-full bg-[#faf9f5] border border-[#bfcab4] rounded-lg p-2.5 text-xs font-body-md text-[#1b1c1a] focus:outline-none focus:border-[#296c00]"
-                />
-              </div>
+              <button
+                type="button"
+                onClick={() => setShowMoreOptions((v) => !v)}
+                className="flex items-center gap-1.5 text-[#296c00] font-label-caps text-[10px] font-bold uppercase cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-sm">
+                  {showMoreOptions ? 'expand_less' : 'expand_more'}
+                </span>
+                <span>{showMoreOptions ? 'Hide more options' : 'More options (description, platform, caption, tags, image)'}</span>
+              </button>
 
-              <div>
-                <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
-                  Default Hashtags / Tags (comma-separated)
-                </label>
-                <input
-                  type="text"
-                  value={newTags}
-                  onChange={(e) => setNewTags(e.target.value)}
-                  placeholder="Pharmacology, StudyGuide, MedicalEducation, BioTech"
-                  className="w-full bg-[#faf9f5] border border-[#bfcab4] rounded-lg p-2 text-xs text-[#1b1c1a] focus:outline-none focus:border-[#296c00]"
-                />
-              </div>
+              {showMoreOptions && (
+                <div className="space-y-3.5 pt-1">
+                  <div>
+                    <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
+                      Description / Purpose
+                    </label>
+                    <input
+                      type="text"
+                      value={newDesc}
+                      onChange={(e) => setNewDesc(e.target.value)}
+                      placeholder="e.g. 5-slide carousel breaking down mechanism of action with diagnostic callout."
+                      className="w-full bg-[#faf9f5] border border-[#bfcab4] rounded-lg p-2 text-xs text-[#1b1c1a] focus:outline-none focus:border-[#296c00]"
+                    />
+                  </div>
 
-              <div>
-                <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
-                  Thumbnail / Visual Layout Reference
-                </label>
-                <div className="flex gap-2 items-center">
-                  <input
-                    type="text"
-                    value={newImagePreview}
-                    onChange={(e) => setNewImagePreview(e.target.value)}
-                    placeholder="https://... or upload below"
-                    className="flex-1 bg-[#faf9f5] border border-[#bfcab4] rounded-lg p-2 text-xs text-[#1b1c1a] focus:outline-none"
-                  />
-                  <label className="bg-[#efeeea] border border-[#bfcab4] text-[#296c00] px-3 py-2 rounded-lg font-label-caps text-xs font-bold hover:bg-[#296c00] hover:text-white transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap">
-                    <span className="material-symbols-outlined text-sm">upload</span>
-                    <span>{isUploading ? 'Uploading...' : 'Upload'}</span>
-                    <input type="file" accept="image/*" onChange={handleImageFileUpload} className="hidden" />
-                  </label>
+                  <div>
+                    <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
+                      Platform
+                    </label>
+                    <select
+                      value={newPlatform}
+                      onChange={(e) => setNewPlatform(e.target.value as Platform)}
+                      className="w-full bg-[#faf9f5] border border-[#bfcab4] rounded-lg p-2 text-xs font-label-caps font-bold"
+                    >
+                      <option value="instagram">Instagram</option>
+                      <option value="linkedin">LinkedIn</option>
+                      <option value="twitter">Twitter / X</option>
+                      <option value="web">Website / Blog</option>
+                      <option value="email">Email Broadcast</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
+                      Caption
+                    </label>
+                    <textarea
+                      rows={4}
+                      value={newCaption}
+                      onChange={(e) => setNewCaption(e.target.value)}
+                      placeholder="[HOOK]: Did you know that...? &#10;&#10;[CLINICAL INSIGHT]: &#10;1. Point A &#10;2. Point B &#10;&#10;[CTA]: Save this guide for your clinical rounds."
+                      className="w-full bg-[#faf9f5] border border-[#bfcab4] rounded-lg p-2.5 text-xs font-body-md text-[#1b1c1a] focus:outline-none focus:border-[#296c00]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
+                      Tags (comma-separated)
+                    </label>
+                    <input
+                      type="text"
+                      value={newTags}
+                      onChange={(e) => setNewTags(e.target.value)}
+                      placeholder="Pharmacology, StudyGuide, MedicalEducation, BioTech"
+                      className="w-full bg-[#faf9f5] border border-[#bfcab4] rounded-lg p-2 text-xs text-[#1b1c1a] focus:outline-none focus:border-[#296c00]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
+                      Image
+                    </label>
+                    <div className="flex gap-2 items-center">
+                      <input
+                        type="text"
+                        value={newImagePreview}
+                        onChange={(e) => setNewImagePreview(e.target.value)}
+                        placeholder="https://... or upload below"
+                        className="flex-1 bg-[#faf9f5] border border-[#bfcab4] rounded-lg p-2 text-xs text-[#1b1c1a] focus:outline-none"
+                      />
+                      <label className="bg-[#efeeea] border border-[#bfcab4] text-[#296c00] px-3 py-2 rounded-lg font-label-caps text-xs font-bold hover:bg-[#296c00] hover:text-white transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap">
+                        <span className="material-symbols-outlined text-sm">upload</span>
+                        <span>{isUploading ? 'Uploading...' : 'Upload'}</span>
+                        <input type="file" accept="image/*" onChange={handleImageFileUpload} className="hidden" />
+                      </label>
+                    </div>
+                    {uploadError && <p className="text-[10px] text-[#ba1a1a] mt-1">{uploadError}</p>}
+                  </div>
                 </div>
-                {uploadError && <p className="text-[10px] text-[#ba1a1a] mt-1">{uploadError}</p>}
-              </div>
+              )}
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#e5e4de]">

@@ -50,22 +50,26 @@ interface TextFieldProps extends Omit<React.InputHTMLAttributes<HTMLInputElement
   onChange: (value: string) => void;
 }
 
-export const TextField: React.FC<TextFieldProps> = ({ label, required, hint, error, value, onChange, id, ...rest }) => {
-  const autoId = useId();
-  const inputId = id || autoId;
-  return (
-    <Field label={label} required={required} hint={hint} error={error} htmlFor={inputId}>
-      <input
-        id={inputId}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        aria-invalid={Boolean(error)}
-        className={inputBaseClass(Boolean(error))}
-        {...rest}
-      />
-    </Field>
-  );
-};
+export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>(
+  ({ label, required, hint, error, value, onChange, id, ...rest }, ref) => {
+    const autoId = useId();
+    const inputId = id || autoId;
+    return (
+      <Field label={label} required={required} hint={hint} error={error} htmlFor={inputId}>
+        <input
+          ref={ref}
+          id={inputId}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          aria-invalid={Boolean(error)}
+          className={inputBaseClass(Boolean(error))}
+          {...rest}
+        />
+      </Field>
+    );
+  }
+);
+TextField.displayName = 'TextField';
 
 interface TextAreaFieldProps extends Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, 'onChange'> {
   label: string;

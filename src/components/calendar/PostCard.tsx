@@ -84,7 +84,10 @@ export const PostCard: React.FC<PostCardProps> = ({
     onQuickUpdatePost(toggleStage(post, stage, currentUserName || 'Someone'));
   };
 
-  // Render placeholder ghost card
+  // Render placeholder ghost card. The underlying post.title still carries a
+  // " (Slot)" suffix internally (CalendarView.tsx uses it to strip back to the
+  // series title on materialize) -- only the visible copy changes here, not
+  // that data.
   if ((post as any).isPlaceholder) {
     return (
       <div
@@ -94,14 +97,14 @@ export const PostCard: React.FC<PostCardProps> = ({
         }}
         style={{ borderLeftColor: brand?.primaryColor || '#bfcab4' }}
         className="p-1.5 bg-[#faf9f5] border border-dashed border-[#bfcab4] border-l-3 hover:border-[#296c00] hover:bg-[#f0fae8] transition-all rounded-md text-left opacity-70 hover:opacity-100 cursor-pointer group"
-        title="Click to schedule this repeating slot"
+        title="Repeating slot — click to create"
       >
         <div className="flex items-center gap-1.5">
           <span className="material-symbols-outlined text-xs text-[#707a67] group-hover:text-[#296c00]">
             replay
           </span>
           <p className="text-[10px] font-medium text-[#707a67] group-hover:text-[#1b1c1a] truncate leading-tight">
-            {post.title}
+            Repeating slot — click to create
           </p>
         </div>
       </div>
