@@ -1,30 +1,37 @@
-import React, { useEffect, useState } from 'react';
-import { BrandId } from '../types';
-import { BRANDS } from '../data/brands';
+import React, { useState } from 'react';
 
-export type NavTab = 'my-work' | 'calendar' | 'templates' | 'brand-kit' | 'assets' | 'telemetry' | 'appscript' | 'content-bank' | 'research' | 'audit';
+export type NavTab = 'my-work' | 'calendar' | 'templates' | 'brand-kit' | 'assets' | 'dashboard' | 'integrations' | 'content-bank' | 'research' | 'audit';
 
 interface SideNavProps {
   currentTab: NavTab;
   onSelectTab: (tab: NavTab) => void;
-  selectedBrandFilter: BrandId | 'all';
-  onSelectBrandFilter: (brand: BrandId | 'all') => void;
   onOpenNewPostModal: () => void;
   className?: string;
   isMobileOpen?: boolean;
   onCloseMobile?: () => void;
 }
 
-const NAV_ITEMS: { tab: NavTab; label: string; icon: string }[] = [
+type NavItem = { tab: NavTab; label: string; icon: string };
+
+// The six primary pages — always visible, one click away regardless of
+// which brand is currently selected in TopNav's brand picker.
+const NAV_ITEMS: NavItem[] = [
   { tab: 'my-work', label: 'My Work', icon: 'checklist' },
-  { tab: 'telemetry', label: 'Dashboard', icon: 'monitoring' },
+  { tab: 'dashboard', label: 'Dashboard', icon: 'monitoring' },
   { tab: 'calendar', label: 'Calendar', icon: 'calendar_month' },
   { tab: 'templates', label: 'Templates', icon: 'quiz' },
   { tab: 'content-bank', label: 'Content Bank', icon: 'article' },
-  { tab: 'research', label: 'Research & Plans', icon: 'lightbulb' },
+  { tab: 'research', label: 'Research & Plans', icon: 'lightbulb' }
+];
+
+// Secondary pages, tucked behind a collapsed "More" disclosure — two clicks
+// (open More, then select) instead of one, in exchange for a shorter primary
+// list.
+const MORE_ITEMS: NavItem[] = [
   { tab: 'brand-kit', label: 'Brand Kit', icon: 'palette' },
   { tab: 'assets', label: 'Assets', icon: 'layers' },
-  { tab: 'audit', label: 'Activity Log', icon: 'shield_person' }
+  { tab: 'audit', label: 'Activity Log', icon: 'shield_person' },
+  { tab: 'integrations', label: 'Integrations', icon: 'terminal' }
 ];
 
 const COLLAPSE_KEY = 'pz_sidenav_collapsed';
@@ -32,15 +39,11 @@ const COLLAPSE_KEY = 'pz_sidenav_collapsed';
 export const SideNav: React.FC<SideNavProps> = ({
   currentTab,
   onSelectTab,
-  selectedBrandFilter,
-  onSelectBrandFilter,
   onOpenNewPostModal,
   className = '',
   isMobileOpen = false,
   onCloseMobile
 }) => {
-  const brandList = Object.values(BRANDS);
-
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     try {
       return localStorage.getItem(COLLAPSE_KEY) === 'true';
@@ -49,13 +52,10 @@ export const SideNav: React.FC<SideNavProps> = ({
     }
   });
 
-  // Which group's nav items are expanded — follows the active brand filter
-  // so the sidebar always shows where you are, but can be toggled shut.
-  const [expandedGroup, setExpandedGroup] = useState<BrandId | 'all'>(selectedBrandFilter);
-
-  useEffect(() => {
-    setExpandedGroup(selectedBrandFilter);
-  }, [selectedBrandFilter]);
+  // "More" section — collapsed by default, independent of the desktop
+  // icon-only collapse above (that one hides labels app-wide; this one just
+  // tucks away four secondary pages).
+  const [moreOpen, setMoreOpen] = useState(false);
 
   const toggleCollapsed = () => {
     setCollapsed((prev) => {
@@ -69,22 +69,54 @@ export const SideNav: React.FC<SideNavProps> = ({
     });
   };
 
-  const selectGroup = (group: BrandId | 'all') => {
-    onSelectBrandFilter(group);
-    setExpandedGroup((prev) => (prev === group ? prev : group));
-    if (collapsed) setCollapsed(false);
+  const toggleMore = () => {
+    if (collapsed) {
+      // Icon-only mode never shows expanded sub-items (same rule the old
+      // brand-group expansion followed) — so clicking "More" while
+      // collapsed un-collapses the sidebar first, otherwise the click
+      // would appear to do nothing.
+      setCollapsed(false);
+      try {
+        localStorage.setItem(COLLAPSE_KEY, 'false');
+      } catch {
+        // localStorage unavailable — collapse state just won't persist
+      }
+      setMoreOpen(true);
+    } else {
+      setMoreOpen((prev) => !prev);
+    }
   };
 
-  const selectNavItem = (group: BrandId | 'all', tab: NavTab) => {
-    onSelectBrandFilter(group);
+  const selectNavItem = (tab: NavTab) => {
     onSelectTab(tab);
     if (onCloseMobile) onCloseMobile();
   };
 
-  const groups: { id: BrandId | 'all'; label: string; shortCode: string; icon: string; logoUrl?: string; color?: string }[] = [
-    { id: 'all', label: 'All 5 Brands', shortCode: 'ALL', icon: 'hub' },
-    ...brandList.map((b) => ({ id: b.id, label: b.name, shortCode: b.shortCode, icon: b.icon, logoUrl: b.logoUrl, color: b.primaryColor }))
-  ];
+  const renderNavButton = (item: NavItem) => {
+    const isActive = currentTab === item.tab;
+    return (
+      <button
+        key={item.tab}
+        onClick={() => selectNavItem(item.tab)}
+        title={collapsed ? item.label : undefined}
+        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-left transition-all text-xs font-label-caps min-h-[44px] active:scale-[0.98] ${
+          collapsed ? 'justify-center px-0' : ''
+        } ${
+          isActive
+            ? 'nav-item-active bg-[#aceecf] text-[#07513b] font-bold shadow-xs'
+            : 'text-[#404a39] hover:bg-[#e9e8e4]'
+        }`}
+      >
+        <span
+          className={`material-symbols-outlined text-lg flex-shrink-0 ${isActive ? 'filled' : ''}`}
+          style={{ color: isActive ? '#07513b' : undefined }}
+        >
+          {item.icon}
+        </span>
+        {!collapsed && <span className="text-sm md:text-xs flex-1 truncate">{item.label}</span>}
+      </button>
+    );
+  };
 
   return (
     <>
@@ -145,76 +177,59 @@ export const SideNav: React.FC<SideNavProps> = ({
           </div>
         </div>
 
-        {/* Brand Groups — each expands to its own nav items, so brand switching
-            and page navigation happen in one place instead of two separate lists. */}
+        {/* Flat page list — brand selection lives in TopNav now, entirely
+            independent of which page is open. */}
         <nav className={`flex-1 space-y-1 overflow-y-auto scrollbar-thin ${collapsed ? 'px-2' : 'px-3'}`}>
-          {groups.map((group) => {
-            const isGroupSelected = selectedBrandFilter === group.id;
-            const isExpanded = !collapsed && expandedGroup === group.id;
+          {NAV_ITEMS.map(renderNavButton)}
 
-            return (
-              <div key={group.id}>
-                <button
-                  onClick={() => selectGroup(group.id)}
-                  title={collapsed ? group.label : undefined}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-left transition-all text-xs font-label-caps min-h-[44px] active:scale-[0.98] ${
-                    collapsed ? 'justify-center px-0' : ''
-                  } ${
-                    isGroupSelected
-                      ? 'bg-[#aceecf] text-[#07513b] font-bold shadow-xs'
-                      : 'text-[#404a39] hover:bg-[#e9e8e4]'
-                  }`}
-                >
-                  {group.logoUrl ? (
-                    <div className="w-5 h-5 rounded bg-white p-0.5 border border-[#bfcab4]/60 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                      <img src={group.logoUrl} alt={group.label} className="w-full h-full object-contain" />
-                    </div>
-                  ) : (
-                    <span className="material-symbols-outlined text-lg flex-shrink-0" style={{ color: group.color }}>
-                      {group.icon}
-                    </span>
-                  )}
-                  {!collapsed && (
-                    <>
-                      <span className="truncate flex-1">{group.label}</span>
+          <div>
+            <button
+              onClick={toggleMore}
+              title={collapsed ? 'More' : undefined}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-left transition-all text-xs font-label-caps min-h-[44px] active:scale-[0.98] ${
+                collapsed ? 'justify-center px-0' : ''
+              } text-[#404a39] hover:bg-[#e9e8e4]`}
+            >
+              <span className="material-symbols-outlined text-lg flex-shrink-0">more_horiz</span>
+              {!collapsed && (
+                <>
+                  <span className="truncate flex-1">More</span>
+                  <span
+                    className={`material-symbols-outlined text-base flex-shrink-0 transition-transform ${moreOpen ? 'rotate-180' : ''}`}
+                  >
+                    expand_more
+                  </span>
+                </>
+              )}
+            </button>
+
+            {!collapsed && moreOpen && (
+              <div className="ml-4 pl-3 border-l-2 border-[#bfcab4] mt-1 mb-2 space-y-0.5">
+                {MORE_ITEMS.map((item) => {
+                  const isActive = currentTab === item.tab;
+                  return (
+                    <button
+                      key={item.tab}
+                      onClick={() => selectNavItem(item.tab)}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded text-left font-label-caps text-xs transition-all min-h-[40px] active:scale-[0.98] ${
+                        isActive
+                          ? 'nav-item-active text-[#296c00] font-bold'
+                          : 'text-[#404a39] hover:bg-[#e9e8e4]'
+                      }`}
+                    >
                       <span
-                        className={`material-symbols-outlined text-base flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                        className={`material-symbols-outlined text-base ${isActive ? 'filled' : ''}`}
+                        style={{ color: isActive ? '#296c00' : undefined }}
                       >
-                        expand_more
+                        {item.icon}
                       </span>
-                    </>
-                  )}
-                </button>
-
-                {isExpanded && (
-                  <div className="ml-4 pl-3 border-l-2 border-[#bfcab4] mt-1 mb-2 space-y-0.5">
-                    {NAV_ITEMS.map((item) => {
-                      const isActive = currentTab === item.tab && isGroupSelected;
-                      return (
-                        <button
-                          key={item.tab}
-                          onClick={() => selectNavItem(group.id, item.tab)}
-                          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded text-left font-label-caps text-xs transition-all min-h-[40px] active:scale-[0.98] ${
-                            isActive
-                              ? 'nav-item-active text-[#296c00] font-bold'
-                              : 'text-[#404a39] hover:bg-[#e9e8e4]'
-                          }`}
-                        >
-                          <span
-                            className={`material-symbols-outlined text-base ${isActive ? 'filled' : ''}`}
-                            style={{ color: isActive ? '#296c00' : undefined }}
-                          >
-                            {item.icon}
-                          </span>
-                          <span className="text-sm md:text-xs flex-1 truncate">{item.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
+                      <span className="text-sm md:text-xs flex-1 truncate">{item.label}</span>
+                    </button>
+                  );
+                })}
               </div>
-            );
-          })}
+            )}
+          </div>
         </nav>
 
         {/* Action & Footer */}

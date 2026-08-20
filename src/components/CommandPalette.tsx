@@ -28,8 +28,8 @@ const TAB_ITEMS: { tab: NavTab; label: string; icon: string }[] = [
   { tab: 'research', label: 'Go to Research & Plans', icon: 'lightbulb' },
   { tab: 'brand-kit', label: 'Go to Brand Kit', icon: 'palette' },
   { tab: 'assets', label: 'Go to Assets', icon: 'layers' },
-  { tab: 'telemetry', label: 'Go to Dashboard', icon: 'monitoring' },
-  { tab: 'appscript', label: 'Go to Integrations', icon: 'terminal' }
+  { tab: 'dashboard', label: 'Go to Dashboard', icon: 'monitoring' },
+  { tab: 'integrations', label: 'Go to Integrations', icon: 'terminal' }
 ];
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({

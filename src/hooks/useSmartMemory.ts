@@ -15,6 +15,22 @@ const STORAGE_KEYS = {
   RECENT_POST_IDS: 'pz_smart_recent_post_ids',
 };
 
+// Phase 7 flattened-nav rename: the NavTab ids 'telemetry' and 'appscript'
+// became 'dashboard' and 'integrations'. Existing installs may still have
+// the old id sitting in localStorage under ACTIVE_TAB — remap it on read
+// rather than bumping the storage key again, so the rest of a returning
+// user's smart-memory state (draft, recents, calendar prefs, brand filter)
+// isn't reset just to fix this one field.
+const LEGACY_TAB_REMAP: Record<string, NavTab> = {
+  telemetry: 'dashboard',
+  appscript: 'integrations',
+};
+
+export function remapLegacyTab(rawTab: string | null): NavTab | null {
+  if (!rawTab) return null;
+  return (LEGACY_TAB_REMAP[rawTab] as NavTab | undefined) ?? (rawTab as NavTab);
+}
+
 export interface PostDraft {
   title: string;
   caption: string;
@@ -32,7 +48,7 @@ export function useSmartMemory() {
   // ── Tab & Brand Persistence ──────────────────────────────────────────────────
   const [persistedTab, setPersistedTab] = useState<NavTab>(() => {
     if (typeof window === 'undefined') return 'my-work';
-    return (localStorage.getItem(STORAGE_KEYS.ACTIVE_TAB) as NavTab) || 'my-work';
+    return remapLegacyTab(localStorage.getItem(STORAGE_KEYS.ACTIVE_TAB)) || 'my-work';
   });
 
   const [persistedBrand, setPersistedBrand] = useState<BrandId | 'all'>(() => {

@@ -423,8 +423,6 @@ export function App() {
       <SideNav
         currentTab={currentTab}
         onSelectTab={setCurrentTab}
-        selectedBrandFilter={selectedBrandFilter}
-        onSelectBrandFilter={setSelectedBrandFilter}
         onOpenNewPostModal={() => { setNewPostInitialDate(undefined); setIsNewPostModalOpen(true); }}
         isMobileOpen={mobileNavOpen}
         onCloseMobile={() => setMobileNavOpen(false)}
@@ -442,6 +440,7 @@ export function App() {
           onOpenNewPostModal={() => { setNewPostInitialDate(undefined); setIsNewPostModalOpen(true); }}
           onToggleMobileNav={() => setMobileNavOpen(!mobileNavOpen)}
           selectedBrandFilter={selectedBrandFilter}
+          onSelectBrandFilter={setSelectedBrandFilter}
           onPublishNow={handlePublishNow}
           onResetData={handleResetData}
           onSelectTab={setCurrentTab}
@@ -499,10 +498,10 @@ export function App() {
           {currentTab === 'assets' && (
             <AssetLibrary assets={assets} selectedBrandFilter={selectedBrandFilter} onAddAsset={handleAddAsset} onUpdateAsset={handleUpdateAsset} onDeleteAsset={handleDeleteAsset} />
           )}
-          {currentTab === 'telemetry' && (
+          {currentTab === 'dashboard' && (
             <MissionControlDashboard posts={posts} teamMembers={teamMembers} onOpenNewPostModal={() => { setNewPostInitialDate(undefined); setIsNewPostModalOpen(true); }} onSelectPost={handleSelectPost} onDeletePost={handleDeletePost} activeTeammate={activeTeammate} />
           )}
-          {currentTab === 'appscript' && (
+          {currentTab === 'integrations' && (
             <GoogleAppsScriptHub posts={posts} onUploadComplete={(newUrl) => showToast(`Asset uploaded! Direct URL: ${newUrl}`)} />
           )}
           {currentTab === 'content-bank' && (
@@ -555,13 +554,13 @@ export function App() {
           </span>
           <span className="bottom-tab-label mt-1">New</span>
         </button>
-        <button className={`bottom-tab-item ${currentTab === 'content-bank' ? 'active' : ''}`} onClick={() => setCurrentTab('content-bank')} aria-label="Content Bank">
-          <span className="material-symbols-outlined text-xl">article</span>
-          <span className="bottom-tab-label">Copy</span>
-        </button>
         <button className={`bottom-tab-item ${currentTab === 'templates' ? 'active' : ''}`} onClick={() => setCurrentTab('templates')} aria-label="Templates">
           <span className="material-symbols-outlined text-xl">quiz</span>
           <span className="bottom-tab-label">Templates</span>
+        </button>
+        <button className="bottom-tab-item" onClick={() => setMobileNavOpen(true)} aria-label="More">
+          <span className="material-symbols-outlined text-xl">menu</span>
+          <span className="bottom-tab-label">More</span>
         </button>
       </nav>
     </div>

@@ -15,6 +15,7 @@ interface TopNavProps {
   onOpenNewPostModal: () => void;
   onToggleMobileNav: () => void;
   selectedBrandFilter: BrandId | 'all';
+  onSelectBrandFilter: (brand: BrandId | 'all') => void;
   onPublishNow: () => void;
   onResetData: () => void;
   onSelectTab?: (tab: NavTab) => void;
@@ -53,6 +54,7 @@ export const TopNav: React.FC<TopNavProps> = ({
   onOpenNewPostModal,
   onToggleMobileNav,
   selectedBrandFilter,
+  onSelectBrandFilter,
   onPublishNow,
   onResetData,
   onSelectTab,
@@ -69,6 +71,15 @@ export const TopNav: React.FC<TopNavProps> = ({
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [showActiveTeammatePopover, setShowActiveTeammatePopover] = useState(false);
+  const [showBrandPicker, setShowBrandPicker] = useState(false);
+
+  // Brand picker options — same shape as the brand-group list SideNav used
+  // to render before Phase 7 moved brand selection up here: an 'all' option
+  // plus every BRANDS entry, independent of page navigation.
+  const brandOptions: { id: BrandId | 'all'; label: string; shortCode: string; icon: string; logoUrl?: string; color?: string }[] = [
+    { id: 'all', label: 'All 5 Brands', shortCode: 'ALL', icon: 'hub' },
+    ...Object.values(BRANDS).map((b) => ({ id: b.id, label: b.name, shortCode: b.shortCode, icon: b.icon, logoUrl: b.logoUrl, color: b.primaryColor }))
+  ];
 
   // Team management local state
   const [settingsTab, setSettingsTab] = useState<'team' | 'system'>('team');
@@ -146,19 +157,74 @@ export const TopNav: React.FC<TopNavProps> = ({
             <span className="material-symbols-outlined text-2xl">menu</span>
           </button>
 
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#296c00] text-2xl hidden sm:inline-block">science</span>
-            <div>
-              <p className="font-headline-md text-base sm:text-lg font-bold text-[#296c00] tracking-tight leading-none">
-                {selectedBrandFilter === 'all'
-                  ? 'All 5 Brands'
-                  : (BRANDS[selectedBrandFilter]?.name || 'Pharmacozyme')}
-              </p>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="font-label-caps text-[9px] text-[#707a67] uppercase tracking-wider">Brand-Ops Studio</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-[#78d24b] animate-pulse flex-shrink-0" />
+          <div className="relative">
+            <button
+              onClick={() => setShowBrandPicker((prev) => !prev)}
+              className="flex items-center gap-2 pr-1.5 py-1 rounded-lg hover:bg-[#efeeea] active:bg-[#e0dfdb] transition-colors cursor-pointer"
+              title="Switch brand"
+              aria-haspopup="listbox"
+              aria-expanded={showBrandPicker}
+            >
+              <span className="material-symbols-outlined text-[#296c00] text-2xl hidden sm:inline-block">science</span>
+              <div className="text-left">
+                <p className="font-headline-md text-base sm:text-lg font-bold text-[#296c00] tracking-tight leading-none flex items-center gap-1">
+                  {selectedBrandFilter === 'all'
+                    ? 'All 5 Brands'
+                    : (BRANDS[selectedBrandFilter]?.name || 'Pharmacozyme')}
+                  <span className="material-symbols-outlined text-base text-[#707a67]">arrow_drop_down</span>
+                </p>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="font-label-caps text-[9px] text-[#707a67] uppercase tracking-wider">Brand-Ops Studio</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#78d24b] animate-pulse flex-shrink-0" />
+                </div>
               </div>
-            </div>
+            </button>
+
+            {showBrandPicker && (
+              <>
+                <div
+                  onClick={() => setShowBrandPicker(false)}
+                  className="fixed inset-0 z-40"
+                  aria-hidden="true"
+                />
+                <div
+                  role="listbox"
+                  className="absolute left-0 top-full mt-1 w-56 bg-white border border-[#bfcab4] shadow-2xl rounded-lg z-50 p-1.5 space-y-0.5 max-h-[70vh] overflow-y-auto"
+                >
+                  {brandOptions.map((opt) => {
+                    const isSelected = selectedBrandFilter === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        role="option"
+                        aria-selected={isSelected}
+                        onClick={() => {
+                          onSelectBrandFilter(opt.id);
+                          setShowBrandPicker(false);
+                        }}
+                        className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded text-left font-label-caps text-xs transition-colors ${
+                          isSelected
+                            ? 'bg-[#aceecf] text-[#07513b] font-bold'
+                            : 'text-[#404a39] hover:bg-[#efeeea]'
+                        }`}
+                      >
+                        {opt.logoUrl ? (
+                          <div className="w-5 h-5 rounded bg-white p-0.5 border border-[#bfcab4]/60 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                            <img src={opt.logoUrl} alt={opt.label} className="w-full h-full object-contain" />
+                          </div>
+                        ) : (
+                          <span className="material-symbols-outlined text-lg flex-shrink-0" style={{ color: opt.color }}>
+                            {opt.icon}
+                          </span>
+                        )}
+                        <span className="truncate flex-1">{opt.label}</span>
+                        {isSelected && <span className="material-symbols-outlined text-base flex-shrink-0">check</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -660,7 +726,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                     <p>Images upload straight to Google Drive via Apps Script — nothing is stored on this device.</p>
                     {onSelectTab && (
                       <button
-                        onClick={() => { onSelectTab('appscript'); setShowSettingsModal(false); }}
+                        onClick={() => { onSelectTab('integrations'); setShowSettingsModal(false); }}
                         className="w-full mt-1 bg-[#296c00] text-white py-2 px-3 font-label-caps text-xs rounded hover:bg-[#1f5700] font-bold flex items-center justify-center gap-1.5"
                       >
                         <span className="material-symbols-outlined text-sm">terminal</span>
