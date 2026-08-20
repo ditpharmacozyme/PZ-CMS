@@ -52,10 +52,12 @@ export const SideNav: React.FC<SideNavProps> = ({
     }
   });
 
-  // "More" section — collapsed by default, independent of the desktop
-  // icon-only collapse above (that one hides labels app-wide; this one just
-  // tucks away four secondary pages).
-  const [moreOpen, setMoreOpen] = useState(false);
+  // "More" section — starts open if the current page lives inside it (so a
+  // reload landing on e.g. Brand Kit doesn't leave the whole sidebar with no
+  // active-state indicator at all), collapsed otherwise. Independent of the
+  // desktop icon-only collapse above (that one hides labels app-wide; this
+  // one just tucks away four secondary pages).
+  const [moreOpen, setMoreOpen] = useState(() => MORE_ITEMS.some((i) => i.tab === currentTab));
 
   const toggleCollapsed = () => {
     setCollapsed((prev) => {
@@ -74,13 +76,11 @@ export const SideNav: React.FC<SideNavProps> = ({
       // Icon-only mode never shows expanded sub-items (same rule the old
       // brand-group expansion followed) — so clicking "More" while
       // collapsed un-collapses the sidebar first, otherwise the click
-      // would appear to do nothing.
+      // would appear to do nothing. In-memory only — deliberately does NOT
+      // touch COLLAPSE_KEY, so a single "More" tap can't permanently clear
+      // the user's saved desktop collapse preference (this reverts on
+      // reload, same as the old brand-group expansion behavior did).
       setCollapsed(false);
-      try {
-        localStorage.setItem(COLLAPSE_KEY, 'false');
-      } catch {
-        // localStorage unavailable — collapse state just won't persist
-      }
       setMoreOpen(true);
     } else {
       setMoreOpen((prev) => !prev);
@@ -103,7 +103,7 @@ export const SideNav: React.FC<SideNavProps> = ({
           collapsed ? 'justify-center px-0' : ''
         } ${
           isActive
-            ? 'nav-item-active bg-[#aceecf] text-[#07513b] font-bold shadow-xs'
+            ? 'bg-[#aceecf] text-[#07513b] font-bold shadow-xs'
             : 'text-[#404a39] hover:bg-[#e9e8e4]'
         }`}
       >
@@ -183,25 +183,42 @@ export const SideNav: React.FC<SideNavProps> = ({
           {NAV_ITEMS.map(renderNavButton)}
 
           <div>
-            <button
-              onClick={toggleMore}
-              title={collapsed ? 'More' : undefined}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-left transition-all text-xs font-label-caps min-h-[44px] active:scale-[0.98] ${
-                collapsed ? 'justify-center px-0' : ''
-              } text-[#404a39] hover:bg-[#e9e8e4]`}
-            >
-              <span className="material-symbols-outlined text-lg flex-shrink-0">more_horiz</span>
-              {!collapsed && (
-                <>
-                  <span className="truncate flex-1">More</span>
+            {(() => {
+              // "Your active page lives inside a collapsed More section" —
+              // the More button itself needs to signal this, since none of
+              // the primary items nor the (hidden) More items can.
+              const activeInMore = !moreOpen && MORE_ITEMS.some((i) => i.tab === currentTab);
+              return (
+                <button
+                  onClick={toggleMore}
+                  title={collapsed ? 'More' : undefined}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-left transition-all text-xs font-label-caps min-h-[44px] active:scale-[0.98] ${
+                    collapsed ? 'justify-center px-0' : ''
+                  } ${
+                    activeInMore
+                      ? 'bg-[#aceecf] text-[#07513b] font-bold shadow-xs'
+                      : 'text-[#404a39] hover:bg-[#e9e8e4]'
+                  }`}
+                >
                   <span
-                    className={`material-symbols-outlined text-base flex-shrink-0 transition-transform ${moreOpen ? 'rotate-180' : ''}`}
+                    className={`material-symbols-outlined text-lg flex-shrink-0 ${activeInMore ? 'filled' : ''}`}
+                    style={{ color: activeInMore ? '#07513b' : undefined }}
                   >
-                    expand_more
+                    more_horiz
                   </span>
-                </>
-              )}
-            </button>
+                  {!collapsed && (
+                    <>
+                      <span className="truncate flex-1">More</span>
+                      <span
+                        className={`material-symbols-outlined text-base flex-shrink-0 transition-transform ${moreOpen ? 'rotate-180' : ''}`}
+                      >
+                        expand_more
+                      </span>
+                    </>
+                  )}
+                </button>
+              );
+            })()}
 
             {!collapsed && moreOpen && (
               <div className="ml-4 pl-3 border-l-2 border-[#bfcab4] mt-1 mb-2 space-y-0.5">
