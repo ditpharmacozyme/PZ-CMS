@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Post, BrandId, PostStatus, Platform, SpecType, PostComment, ContentBankItem, TeamMember } from '../types';
+import { Post, BrandId, Platform, SpecType, PostComment, ContentBankItem, TeamMember } from '../types';
 import { BRANDS, SPECS } from '../data/brands';
 import { logTimestamp } from '../utils/date';
 import { uploadImage } from '../utils/uploadImage';
 import { supabase } from '../lib/supabase';
+import { getPostStatusConfig } from '../utils/statusConfig';
+import { setStageDone, Stage } from '../utils/stages';
 
 interface PostDetailModalProps {
   post: Post;
@@ -15,15 +17,6 @@ interface PostDetailModalProps {
   teamMembers?: TeamMember[];
   activeTeammate?: TeamMember | null;
 }
-
-import { STATUS_CONFIG } from '../utils/statusConfig';
-
-const PIPELINE_STATUSES: { value: PostStatus; label: string; color: string }[] = [
-  { value: 'not-started', label: STATUS_CONFIG['not-started'].label, color: STATUS_CONFIG['not-started'].color },
-  { value: 'in-progress', label: STATUS_CONFIG['in-progress'].label, color: STATUS_CONFIG['in-progress'].color },
-  { value: 'ready-to-post', label: STATUS_CONFIG['ready-to-post'].label, color: STATUS_CONFIG['ready-to-post'].color },
-  { value: 'posted', label: STATUS_CONFIG['posted'].label, color: STATUS_CONFIG['posted'].color }
-];
 
 export const PostDetailModal: React.FC<PostDetailModalProps> = ({
   post,
@@ -149,32 +142,6 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
     }
   };
 
-  // Handle Status Pipeline Change (Non-blocking - soft advisory warning only)
-  const handleStatusChange = (newStatus: PostStatus) => {
-    if ((newStatus === 'ready-to-post' || newStatus === 'posted') && !editedPost.approved) {
-      setApprovalWarning(
-        'Advisory: This post has not been signed off. You can still proceed, but approval is recommended before posting.'
-      );
-      // Non-blocking — continue the status update
-    } else {
-      setApprovalWarning(null);
-    }
-    const actorName = activeTeammate ? activeTeammate.name : (editedPost.assignees[0] || 'Someone');
-    setEditedPost((prev) => ({
-      ...prev,
-      status: newStatus,
-      activityLog: [
-        {
-          id: `act-${Date.now()}`,
-          actor: actorName,
-          action: `Changed status to "${newStatus.replace(/-/g, ' ')}"`,
-          timestamp: logTimestamp()
-        },
-        ...prev.activityLog
-      ]
-    }));
-  };
-
   // Handle Approval Sign-Off Toggle
   const handleToggleApproval = () => {
     const isAllowed = activeTeammate?.userRole === 'Admin' || activeTeammate?.userRole === 'Manager';
@@ -209,6 +176,19 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
     // for Save Changes) — the button reads as a final action, so it should
     // behave like one, and it lets a DB-level rejection surface right away
     // instead of being silently bundled into a later save.
+    onSavePost(nextPost);
+  };
+
+  // Handle a stage checkbox flip -- persists immediately (see comment at the
+  // checkbox grid) via the same utils/stages.ts mutator the calendar quick
+  // toggles use, so both paths stamp *DoneAt/*DoneBy and recompute status
+  // identically.
+  const handleStageToggle = (stage: Stage) => {
+    const actorName = activeTeammate?.name || 'Someone';
+    const current = editedPost.stageCompletion || {};
+    const isDone = stage === 'design' ? current.designDone : stage === 'publish' ? current.publishDone : current.engagementDone;
+    const nextPost = setStageDone(editedPost, stage, !isDone, actorName);
+    setEditedPost(nextPost);
     onSavePost(nextPost);
   };
 
@@ -385,40 +365,22 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
             </div>
           </div>
 
-          {/* STATUS PIPELINE STEPPER */}
-          <div className="bg-white p-3 sm:p-4 border border-[#bfcab4] rounded shadow-xs space-y-3">
+          {/* STATUS -- derived from the stage checkboxes below, not set here */}
+          <div className="bg-white p-3 sm:p-4 border border-[#bfcab4] rounded shadow-xs space-y-2">
             <div className="flex items-center justify-between">
               <label className="font-label-caps text-xs text-[#296c00] uppercase font-bold">
                 Status
               </label>
-              <span className="font-label-caps text-[10px] sm:text-xs font-bold text-[#1b1c1a] uppercase bg-[#efeeea] px-2 py-0.5 border border-[#bfcab4] rounded capitalize">
-                {editedPost.status.replace(/-/g, ' ')}
+              <span
+                className="font-label-caps text-[10px] sm:text-xs font-bold uppercase px-2 py-0.5 rounded"
+                style={{ backgroundColor: getPostStatusConfig(editedPost).bgColor, color: getPostStatusConfig(editedPost).color }}
+              >
+                {getPostStatusConfig(editedPost).label}
               </span>
             </div>
-
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-thin">
-              {PIPELINE_STATUSES.map((st, idx) => {
-                const isActive = editedPost.status === st.value;
-                const currentIdx = PIPELINE_STATUSES.findIndex(s => s.value === editedPost.status);
-                const isPassed = currentIdx >= idx;
-
-                return (
-                  <button
-                    key={st.value}
-                    onClick={() => handleStatusChange(st.value)}
-                    className={`flex-1 min-w-[100px] sm:min-w-[110px] min-h-[40px] py-2 px-1 text-center font-label-caps text-[10px] font-bold uppercase transition-all border rounded flex-shrink-0 ${
-                      isActive
-                        ? 'bg-[#296c00] text-white border-[#296c00] shadow-xs'
-                        : isPassed
-                        ? 'bg-[#aceecf] text-[#07513b] border-[#bfcab4]'
-                        : 'bg-[#faf9f5] text-[#707a67] border-[#bfcab4] hover:bg-[#efeeea]'
-                    }`}
-                  >
-                    {idx + 1}. {st.label}
-                  </button>
-                );
-              })}
-            </div>
+            <p className="text-[11px] font-body-md text-[#707a67]">
+              Updates automatically as Design and Publish are checked off below.
+            </p>
 
             {/* Advisory Approval Warning Banner (non-blocking) */}
             {approvalWarning && (
@@ -609,36 +571,17 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
               </div>
             </div>
 
-            {/* Workflow Stage Completion Checklist */}
+            {/* Workflow Stage Completion Checklist -- persists immediately
+                (like the calendar quick-toggles), unlike the rest of this
+                form which waits for Save Changes, because status derives
+                from these the instant they change (see utils/postStatus.ts)
+                and a stale local-only status would be actively misleading. */}
             <div className="pt-2 border-t border-[#bfcab4]/50 grid grid-cols-1 sm:grid-cols-3 gap-2">
               <label className="flex items-center gap-2 p-2 bg-[#faf9f5] border border-[#bfcab4] rounded cursor-pointer hover:bg-[#efeeea]">
                 <input
                   type="checkbox"
                   checked={!!editedPost.stageCompletion?.designDone}
-                  onChange={() => {
-                    const actorName = activeTeammate?.name || 'Someone';
-                    const isDone = !editedPost.stageCompletion?.designDone;
-                    const timestamp = logTimestamp();
-                    const assigneeName = editedPost.taskRoles?.designer || actorName;
-                    setEditedPost((prev) => ({
-                      ...prev,
-                      stageCompletion: {
-                        ...prev.stageCompletion,
-                        designDone: isDone,
-                        designDoneAt: isDone ? timestamp : undefined,
-                        designDoneBy: isDone ? assigneeName : undefined
-                      },
-                      activityLog: [
-                        {
-                          id: `act-${Date.now()}`,
-                          actor: actorName,
-                          action: isDone ? `Marked Design complete (${assigneeName})` : 'Reopened Design stage',
-                          timestamp
-                        },
-                        ...prev.activityLog
-                      ]
-                    }));
-                  }}
+                  onChange={() => handleStageToggle('design')}
                   className="w-4 h-4 text-[#296c00] border-[#bfcab4] rounded"
                 />
                 <div className="flex flex-col">
@@ -653,30 +596,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
                 <input
                   type="checkbox"
                   checked={!!editedPost.stageCompletion?.publishDone}
-                  onChange={() => {
-                    const actorName = activeTeammate?.name || 'Someone';
-                    const isDone = !editedPost.stageCompletion?.publishDone;
-                    const timestamp = logTimestamp();
-                    const assigneeName = editedPost.taskRoles?.publisher || actorName;
-                    setEditedPost((prev) => ({
-                      ...prev,
-                      stageCompletion: {
-                        ...prev.stageCompletion,
-                        publishDone: isDone,
-                        publishDoneAt: isDone ? timestamp : undefined,
-                        publishDoneBy: isDone ? assigneeName : undefined
-                      },
-                      activityLog: [
-                        {
-                          id: `act-${Date.now()}`,
-                          actor: actorName,
-                          action: isDone ? `Marked Publish complete (${assigneeName})` : 'Reopened Publish stage',
-                          timestamp
-                        },
-                        ...prev.activityLog
-                      ]
-                    }));
-                  }}
+                  onChange={() => handleStageToggle('publish')}
                   className="w-4 h-4 text-[#296c00] border-[#bfcab4] rounded"
                 />
                 <div className="flex flex-col">
@@ -691,30 +611,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
                 <input
                   type="checkbox"
                   checked={!!editedPost.stageCompletion?.engagementDone}
-                  onChange={() => {
-                    const actorName = activeTeammate?.name || 'Someone';
-                    const isDone = !editedPost.stageCompletion?.engagementDone;
-                    const timestamp = logTimestamp();
-                    const assigneeName = editedPost.taskRoles?.engagementLead || actorName;
-                    setEditedPost((prev) => ({
-                      ...prev,
-                      stageCompletion: {
-                        ...prev.stageCompletion,
-                        engagementDone: isDone,
-                        engagementDoneAt: isDone ? timestamp : undefined,
-                        engagementDoneBy: isDone ? assigneeName : undefined
-                      },
-                      activityLog: [
-                        {
-                          id: `act-${Date.now()}`,
-                          actor: actorName,
-                          action: isDone ? `Marked Engagement complete (${assigneeName})` : 'Reopened Engagement stage',
-                          timestamp
-                        },
-                        ...prev.activityLog
-                      ]
-                    }));
-                  }}
+                  onChange={() => handleStageToggle('engagement')}
                   className="w-4 h-4 text-[#296c00] border-[#bfcab4] rounded"
                 />
                 <div className="flex flex-col">

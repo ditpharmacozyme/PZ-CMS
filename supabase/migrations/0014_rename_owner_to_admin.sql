@@ -1,56 +1,60 @@
 -- Migration: Rename Owner role to Admin
 -- Updates any existing team_members that have the 'Owner' user_role to 'Admin'
+--
+-- ROOT-CAUSE NOTE (added after this migration was found to abort on first
+-- run): the role-change guard trigger installed in 0009/0011 calls
+-- private.enforce_team_role_change() -- this migration originally tried to
+-- update that logic but wrote CREATE OR REPLACE FUNCTION
+-- public.enforce_team_role_change() (wrong schema), which created a dead,
+-- never-wired function while the real private-schema one kept its old
+-- 'Owner'-only check. The UPDATE below changes every row's user_role, which
+-- fires that guard; run from the SQL editor (no authenticated session)
+-- current_user_role() is null, so the guard always rejected it and this
+-- migration aborted before creating anything -- which is also why 0015/0016
+-- (including the get_due_reminders/mark_reminder_sent RPCs the email
+-- reminder trigger depends on) never got applied. Fixed by disabling the
+-- guard trigger for just this bulk rename, and by correctly replacing
+-- private.enforce_team_role_change() (not a stray public copy) so future
+-- role changes check for 'Admin' instead of a role string nothing can ever
+-- match again post-rename.
+
+alter table public.team_members disable trigger team_members_enforce_role_change;
 
 UPDATE public.team_members
 SET user_role = 'Admin'
 WHERE user_role = 'Owner';
 
--- Also update the enforce_team_role_change trigger function to check for Admin instead of Owner
-CREATE OR REPLACE FUNCTION public.enforce_team_role_change()
-RETURNS trigger AS $$
-DECLARE
-  current_user_email text;
-  current_user_role text;
-  admin_count int;
-BEGIN
-  -- Get the current authenticated user's email
-  current_user_email := auth.email();
+alter table public.team_members enable trigger team_members_enforce_role_change;
 
-  -- Look up their role in the team_members table
-  SELECT user_role INTO current_user_role
-  FROM public.team_members
-  WHERE email = current_user_email
-  LIMIT 1;
+-- Replace the guard the trigger actually calls (private schema, matches
+-- 0009/0011) so it checks for 'Admin' instead of 'Owner', keeping 0011's
+-- last-remaining-role guard.
+create or replace function private.enforce_team_role_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if new.user_role is distinct from old.user_role
+     and coalesce((select private.current_user_role()), '') <> 'Admin' then
+    raise exception 'Only an Admin can change a team member''s role.'
+      using errcode = '42501';
+  end if;
 
-  -- 1. Must be Admin or Manager to modify roles at all
-  IF current_user_role NOT IN ('Admin', 'Manager') THEN
-    RAISE EXCEPTION 'Permission denied: Only Admin or Manager can modify team members';
-  END IF;
+  if old.user_role = 'Admin'
+     and new.user_role is distinct from old.user_role
+     and not exists (
+       select 1 from public.team_members
+       where user_role = 'Admin' and id <> old.id
+     ) then
+    raise exception 'Cannot change the role of the last remaining Admin.'
+      using errcode = '23514';
+  end if;
 
-  -- 2. If trying to grant Admin, caller must be Admin
-  IF NEW.user_role = 'Admin' AND current_user_role != 'Admin' THEN
-    RAISE EXCEPTION 'Permission denied: Only Admin can grant Admin role';
-  END IF;
-
-  -- 3. If demoting or modifying an existing Admin
-  IF TG_OP = 'UPDATE' AND OLD.user_role = 'Admin' THEN
-    -- Only Admin can modify another Admin
-    IF current_user_role != 'Admin' THEN
-      RAISE EXCEPTION 'Permission denied: Only Admin can modify an Admin';
-    END IF;
-
-    -- If they are demoting an Admin, ensure it's not the LAST Admin
-    IF NEW.user_role != 'Admin' THEN
-      SELECT count(*) INTO admin_count FROM public.team_members WHERE user_role = 'Admin';
-      IF admin_count <= 1 THEN
-        RAISE EXCEPTION 'Permission denied: Cannot demote the last Admin';
-      END IF;
-    END IF;
-  END IF;
-
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+  return new;
+end;
+$$;
 
 -- And update the prevent_last_owner_deletion trigger function
 CREATE OR REPLACE FUNCTION public.prevent_last_admin_deletion()

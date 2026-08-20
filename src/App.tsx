@@ -58,6 +58,9 @@ import { useNotifications } from './hooks/useNotifications';
 import { useSmartMemory } from './hooks/useSmartMemory';
 import { logTimestamp } from './utils/date';
 import { logAuditEvent, buildAuditEvent } from './utils/audit';
+import { ConfirmProvider } from './components/ui/ConfirmDialog';
+import { deriveStatus } from './utils/postStatus';
+import { setStageDone } from './utils/stages';
 
 interface ToastState {
   message: string;
@@ -339,10 +342,17 @@ export function App() {
   };
 
   // ── Publish Now ───────────────────────────────────────────────────────────────
+  // Status is derived from the stage checkboxes (see utils/postStatus.ts), so
+  // "publish now" means marking the Publish stage done, not writing `status`
+  // directly -- writing status alone would just get overridden the next time
+  // anything recomputes it from the (still-unset) stages.
   const handlePublishNow = () => {
-    const toMarkPosted = posts.filter((p) => p.status === 'ready-to-post');
-    setPosts((prev) => prev.map((p) => (p.status === 'ready-to-post' ? { ...p, status: 'posted' } : p)));
-    toMarkPosted.forEach((p) => upsertRemotePost({ ...p, status: 'posted' }));
+    const actorName = activeTeammate?.name || 'Someone';
+    const toMarkPosted = posts
+      .filter((p) => deriveStatus(p) === 'ready-to-post')
+      .map((p) => setStageDone(p, 'publish', true, actorName));
+    setPosts((prev) => prev.map((p) => toMarkPosted.find((u) => u.id === p.id) || p));
+    toMarkPosted.forEach((p) => upsertRemotePost(p));
     showToast('Marked all "Ready to post" items as posted.');
   };
 
@@ -387,6 +397,7 @@ export function App() {
 
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
+    <ConfirmProvider>
     <div className="min-h-screen bg-[#FAF9F5] text-[#1b1c1a] font-body-md flex flex-col md:flex-row">
       {/* Toast */}
       {toast && (
@@ -545,6 +556,7 @@ export function App() {
         </button>
       </nav>
     </div>
+    </ConfirmProvider>
   );
 }
 

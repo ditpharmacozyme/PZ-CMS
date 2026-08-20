@@ -21,6 +21,7 @@ interface CalendarWeekViewProps {
   onToggleSelect: (postId: string, e: React.MouseEvent | React.ChangeEvent) => void;
   teamMembers: TeamMember[];
   onSavePost?: (post: Post) => void;
+  currentUserName?: string;
 }
 
 export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
@@ -40,7 +41,8 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
   onOpenNewPostModal,
   onToggleSelect,
   teamMembers,
-  onSavePost
+  onSavePost,
+  currentUserName
 }) => {
   return (
     <div className="hidden md:block">
@@ -151,6 +153,7 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                     }}
                     onToggleSelect={onToggleSelect}
                     onQuickUpdatePost={onSavePost}
+                    currentUserName={currentUserName}
                     variant="week"
                   />
                 ))}

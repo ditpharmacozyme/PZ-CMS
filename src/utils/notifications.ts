@@ -1,5 +1,6 @@
 import { Post, AppNotification } from '../types';
-import { fromDateStr, todayStr } from './date';
+import { fromDateStr, todayStr, isOverdue } from './date';
+import { deriveStatus } from './postStatus';
 
 const DUE_SOON_WINDOW_DAYS = 3;
 
@@ -19,7 +20,7 @@ export function generateNotifications(posts: Post[]): Omit<AppNotification, 'rea
 
   // Due soon — scheduled within the next few days and not already posted.
   for (const post of scheduled) {
-    if (post.status === 'posted') continue;
+    if (deriveStatus(post) === 'posted') continue;
     const date = fromDateStr(post.scheduledDate);
     if (date >= today && date <= windowEnd) {
       notifications.push({
@@ -38,7 +39,7 @@ export function generateNotifications(posts: Post[]): Omit<AppNotification, 'rea
 
   // Unassigned but dated — someone needs to own this before it's due.
   for (const post of scheduled) {
-    if (post.assignees.length > 0 || post.status === 'posted') continue;
+    if (post.assignees.length > 0 || deriveStatus(post) === 'posted') continue;
     notifications.push({
       id: `unassigned-${post.id}`,
       type: 'unassigned',
@@ -69,10 +70,10 @@ export function generateNotifications(posts: Post[]): Omit<AppNotification, 'rea
     }
   }
 
-  const todayIso = todayStr();
   for (const post of scheduled) {
-    // Overdue
-    if (post.scheduledDate < todayIso && (post.status === 'not-started' || post.status === 'in-progress')) {
+    // Overdue — shares the one overdue rule with the status chips (utils/date.ts
+    // isOverdue), so the bell and the calendar can never disagree on what's late.
+    if (isOverdue(post)) {
       notifications.push({
         id: `overdue-${post.id}`,
         type: 'overdue',
@@ -85,7 +86,7 @@ export function generateNotifications(posts: Post[]): Omit<AppNotification, 'rea
     }
 
     // Approval needed
-    if (post.status === 'ready-to-post' && !post.approved) {
+    if (deriveStatus(post) === 'ready-to-post' && !post.approved) {
       notifications.push({
         id: `approval-${post.id}`,
         type: 'approval',
@@ -97,25 +98,12 @@ export function generateNotifications(posts: Post[]): Omit<AppNotification, 'rea
       });
     }
 
-    // Stage Complete (just tracking if any are done, for demo/awareness)
-    if (post.stageCompletion) {
-      const stages = [];
-      if (post.stageCompletion.designDone) stages.push('Design');
-      if (post.stageCompletion.publishDone) stages.push('Publishing');
-      if (post.stageCompletion.engagementDone) stages.push('Engagement');
-
-      if (stages.length > 0) {
-        notifications.push({
-          id: `stage-${post.id}`,
-          type: 'stage_complete',
-          title: post.title,
-          message: `${stages.join(', ')} complete.`,
-          date: post.scheduledDate,
-          postId: post.id,
-          brandId: post.brandId
-        });
-      }
-    }
+    // Note: a `stage_complete` notification used to fire here whenever ANY
+    // stage was done. It was a standing status line, not an event -- once a
+    // single stage was ticked it stayed in the list forever, since nothing
+    // ever made the condition false again. Removed rather than fixed in
+    // place; the 'stage_complete' type stays in AppNotification/NotificationDrawer
+    // so historical entries already in someone's stored list still render.
   }
 
   return notifications.sort((a, b) => a.date.localeCompare(b.date));

@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Post, TeamMember } from '../types';
 import { toDateStr } from '../utils/date';
 import { getRecentActivity } from '../utils/activity';
+import { deriveStatus } from '../utils/postStatus';
 
 interface MissionControlDashboardProps {
   posts: Post[];
@@ -25,17 +26,17 @@ export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = (
     return posts.filter(p => p.assignees.includes(selectedTeammateName));
   }, [posts, selectedTeammateName]);
 
-  const readyToPostCount = filteredPosts.filter((p) => p.status === 'ready-to-post').length;
-  const inProgressCount = filteredPosts.filter((p) => p.status === 'in-progress').length;
-  const postedCount = filteredPosts.filter((p) => p.status === 'posted').length;
+  const readyToPostCount = filteredPosts.filter((p) => deriveStatus(p) === 'ready-to-post').length;
+  const inProgressCount = filteredPosts.filter((p) => deriveStatus(p) === 'in-progress').length;
+  const postedCount = filteredPosts.filter((p) => deriveStatus(p) === 'posted').length;
   const backlogCount = filteredPosts.filter((p) => !p.scheduledDate).length;
 
   // Team performance: count posts assigned to each person
   const teamStats = teamMembers.map(member => {
     const assigned = posts.filter(p => p.assignees.includes(member.name));
-    const posted = assigned.filter(p => p.status === 'posted').length;
-    const ready = assigned.filter(p => p.status === 'ready-to-post').length;
-    const inProg = assigned.filter(p => p.status === 'in-progress').length;
+    const posted = assigned.filter(p => deriveStatus(p) === 'posted').length;
+    const ready = assigned.filter(p => deriveStatus(p) === 'ready-to-post').length;
+    const inProg = assigned.filter(p => deriveStatus(p) === 'in-progress').length;
     const approvals = posts.filter(p => p.approved && p.approvedBy?.startsWith(member.name)).length;
     return { member, total: assigned.length, posted, ready, inProg, approvals };
   }).sort((a, b) => b.total - a.total);

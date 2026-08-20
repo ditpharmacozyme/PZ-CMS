@@ -1,5 +1,28 @@
 @import "tailwindcss";
 
+/* ─── Shared UI Primitive Tokens ───
+   Used by src/components/ui/*. Purely additive — every existing bg-[#hex]
+   arbitrary value elsewhere in the app keeps working unchanged. Existing
+   components are not mass-rewritten to use these; they pick them up as they
+   adopt the ui/ primitives. */
+@theme {
+  --color-surface: #FAF9F5;
+  --color-raised: #ffffff;
+  --color-muted: #efeeea;
+  --color-line: #bfcab4;
+  --color-line-subtle: #e5e4de;
+  --color-ink: #1b1c1a;
+  --color-ink-muted: #707a67;
+  --color-ink-soft: #404a39;
+  --color-accent: #296c00;
+  --color-accent-hover: #1f5700;
+  --color-accent-soft: #aceecf;
+  --color-danger: #ba1a1a;
+  --color-danger-soft: #ffdad6;
+  --color-warn: #935c00;
+  --color-warn-soft: #ffddb0;
+}
+
 /* ─── Premium Unified Font System ─── */
 @layer utilities {
   .font-display-xl {

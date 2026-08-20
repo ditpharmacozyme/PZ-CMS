@@ -47,6 +47,8 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
 
   // Form State
   const [newTitle, setNewTitle] = useState('');
+  const [titleError, setTitleError] = useState<string | null>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
   const [newDesc, setNewDesc] = useState('');
   const [newBrandId, setNewBrandId] = useState<BrandId | 'shared'>('shared');
   const [newCategory, setNewCategory] = useState<string>('Clinical');
@@ -105,7 +107,13 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
   }, [templates, selectedBrandFilter, activeBrandFilter, categoryFilter, searchQuery]);
 
   const handleCreateTemplate = () => {
-    if (!newTitle.trim()) return;
+    if (!newTitle.trim()) {
+      // Used to silently do nothing — now it says why and focuses the field.
+      setTitleError('Give this template a name so the team can find it.');
+      titleInputRef.current?.focus();
+      return;
+    }
+    setTitleError(null);
     const tagArray = newTags
       .split(',')
       .map((t) => t.trim().replace(/^#/, ''))
@@ -131,6 +139,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
 
   const handleOpenEditModal = (tpl: PostTemplate) => {
     setEditingTemplate(tpl);
+    setTitleError(null);
     setNewTitle(tpl.title);
     setNewDesc(tpl.description);
     setNewBrandId(tpl.brandId);
@@ -152,7 +161,13 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
   };
 
   const handleSaveEditedTemplate = () => {
-    if (!editingTemplate || !newTitle.trim()) return;
+    if (!editingTemplate) return;
+    if (!newTitle.trim()) {
+      setTitleError('Give this template a name so the team can find it.');
+      titleInputRef.current?.focus();
+      return;
+    }
+    setTitleError(null);
     const tagArray = newTags
       .split(',')
       .map((t) => t.trim().replace(/^#/, ''))
@@ -176,6 +191,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
 
   const resetForm = () => {
     setNewTitle('');
+    setTitleError(null);
     setNewDesc('');
     setNewCaption('');
     setNewImagePreview('');
@@ -457,12 +473,19 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                   Template Name *
                 </label>
                 <input
+                  ref={titleInputRef}
                   type="text"
                   value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
+                  onChange={(e) => { setNewTitle(e.target.value); if (titleError) setTitleError(null); }}
                   placeholder="e.g. Clinical Study Carousel Blueprint"
-                  className="w-full bg-[#faf9f5] border border-[#bfcab4] rounded-lg p-2 text-xs font-bold text-[#1b1c1a] focus:outline-none focus:border-[#296c00]"
+                  aria-invalid={Boolean(titleError)}
+                  className={`w-full bg-[#faf9f5] border rounded-lg p-2 text-xs font-bold text-[#1b1c1a] focus:outline-none ${
+                    titleError ? 'border-[#ba1a1a] focus:border-[#ba1a1a]' : 'border-[#bfcab4] focus:border-[#296c00]'
+                  }`}
                 />
+                {titleError && (
+                  <p role="alert" className="text-[10px] text-[#ba1a1a] mt-1">{titleError}</p>
+                )}
               </div>
 
               <div>

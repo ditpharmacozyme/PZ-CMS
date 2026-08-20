@@ -1,16 +1,9 @@
 import React from 'react';
 import { Post, TeamMember } from '../../types';
 import { BRANDS } from '../../data/brands';
-import { STATUS_CONFIG } from '../../utils/statusConfig';
+import { getPostStatusConfig } from '../../utils/statusConfig';
 import { todayStr, fromDateStr } from '../../utils/date';
-
-function getPostStatusConfig(post: Post) {
-  const isOverdue =
-    post.scheduledDate &&
-    post.scheduledDate < todayStr() &&
-    (post.status === 'not-started' || post.status === 'in-progress');
-  return isOverdue ? STATUS_CONFIG['overdue'] : STATUS_CONFIG[post.status] || STATUS_CONFIG['not-started'];
-}
+import { toggleStage, Stage } from '../../utils/stages';
 
 interface CalendarCell {
   dateStr: string;
@@ -31,6 +24,9 @@ interface MobileDateStripViewProps {
   onToggleSelect: (postId: string, e?: React.MouseEvent) => void;
   onLongPressPost: (postId: string) => void;
   teamMembers: TeamMember[];
+  onSavePost?: (post: Post) => void;
+  /** Name of the person currently using the app, for *DoneBy attribution on quick toggles. */
+  currentUserName?: string;
 }
 
 export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
@@ -45,8 +41,16 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
   isSelectMode,
   onToggleSelect,
   onLongPressPost,
-  teamMembers
+  teamMembers,
+  onSavePost,
+  currentUserName
 }) => {
+  const handleQuickStageToggle = (post: Post, stage: Stage, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!onSavePost) return;
+    onSavePost(toggleStage(post, stage, currentUserName || 'Someone'));
+  };
+
   return (
     <div className="md:hidden flex flex-col">
       {/* Horizontal Date Strip */}
@@ -211,31 +215,37 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
                         (post.taskRoles.designer || post.taskRoles.publisher || post.taskRoles.engagementLead) && (
                           <div className="flex flex-wrap gap-1 mt-2 text-[9px] font-label-caps">
                             {post.taskRoles.designer && (
-                              <span
-                                className={`px-1.5 py-0.5 rounded ${
+                              <button
+                                type="button"
+                                onClick={(e) => handleQuickStageToggle(post, 'design', e)}
+                                className={`px-1.5 py-0.5 rounded cursor-pointer ${
                                   post.stageCompletion?.designDone ? 'bg-[#296c00] text-white' : 'bg-[#efeeea] text-[#404a39]'
                                 }`}
                               >
                                 🎨 {post.taskRoles.designer}
-                              </span>
+                              </button>
                             )}
                             {post.taskRoles.publisher && (
-                              <span
-                                className={`px-1.5 py-0.5 rounded ${
+                              <button
+                                type="button"
+                                onClick={(e) => handleQuickStageToggle(post, 'publish', e)}
+                                className={`px-1.5 py-0.5 rounded cursor-pointer ${
                                   post.stageCompletion?.publishDone ? 'bg-[#296c00] text-white' : 'bg-[#efeeea] text-[#404a39]'
                                 }`}
                               >
                                 🚀 {post.taskRoles.publisher}
-                              </span>
+                              </button>
                             )}
                             {post.taskRoles.engagementLead && (
-                              <span
-                                className={`px-1.5 py-0.5 rounded ${
+                              <button
+                                type="button"
+                                onClick={(e) => handleQuickStageToggle(post, 'engagement', e)}
+                                className={`px-1.5 py-0.5 rounded cursor-pointer ${
                                   post.stageCompletion?.engagementDone ? 'bg-[#296c00] text-white' : 'bg-[#efeeea] text-[#404a39]'
                                 }`}
                               >
                                 💬 {post.taskRoles.engagementLead}
-                              </span>
+                              </button>
                             )}
                           </div>
                         )}

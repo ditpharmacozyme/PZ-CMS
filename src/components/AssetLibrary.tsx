@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { BrandAsset, BrandId } from '../types';
 import { BRANDS } from '../data/brands';
+import { Modal } from './ui/Modal';
+import { TextField, SelectField } from './ui/Field';
+import { Button } from './ui/Button';
+import { useConfirm } from './ui/ConfirmDialog';
 
 interface AssetLibraryProps {
   assets: BrandAsset[];
@@ -10,6 +14,13 @@ interface AssetLibraryProps {
   onDeleteAsset: (assetId: string) => void;
 }
 
+const ASSET_TYPE_OPTIONS: { value: BrandAsset['type']; label: string }[] = [
+  { value: 'vector_pack', label: 'Vector Pack' },
+  { value: 'logo', label: 'Logo / Monogram' },
+  { value: 'font', label: 'Typography Font' },
+  { value: 'spec_sheet', label: 'Spec Sheet / Manual' },
+];
+
 export const AssetLibrary: React.FC<AssetLibraryProps> = ({
   assets,
   selectedBrandFilter,
@@ -17,17 +28,24 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
   onUpdateAsset,
   onDeleteAsset
 }) => {
+  const confirm = useConfirm();
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
   const [editingAsset, setEditingAsset] = useState<BrandAsset | null>(null);
 
   // Form states
   const [title, setTitle] = useState('');
+  const [titleError, setTitleError] = useState<string | null>(null);
   const [brandId, setBrandId] = useState<BrandId>('pharmacozyme');
   const [type, setType] = useState<BrandAsset['type']>('vector_pack');
   const [fileType, setFileType] = useState('SVG / Vector');
   const [size, setSize] = useState('1.5 MB');
   const [url, setUrl] = useState('');
+
+  const isDirty = editingAsset
+    ? title !== editingAsset.title || brandId !== editingAsset.brandId || type !== editingAsset.type ||
+      fileType !== editingAsset.fileType || size !== editingAsset.size || url !== editingAsset.url
+    : Boolean(title.trim() || url.trim());
 
   const filteredAssets = assets.filter((asset) => {
     if (selectedBrandFilter !== 'all' && asset.brandId !== selectedBrandFilter) return false;
@@ -37,6 +55,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
 
   const resetForm = () => {
     setTitle('');
+    setTitleError(null);
     setBrandId('pharmacozyme');
     setType('vector_pack');
     setFileType('SVG / Vector');
@@ -51,6 +70,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
 
   const handleOpenEditModal = (asset: BrandAsset) => {
     setEditingAsset(asset);
+    setTitleError(null);
     setTitle(asset.title);
     setBrandId(asset.brandId);
     setType(asset.type);
@@ -59,8 +79,16 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
     setUrl(asset.url);
   };
 
+  const closeModal = () => {
+    setShowAddModal(false);
+    setEditingAsset(null);
+  };
+
   const handleSaveAsset = () => {
-    if (!title.trim()) return;
+    if (!title.trim()) {
+      setTitleError('Give this asset a name so the team can find it.');
+      return;
+    }
     if (editingAsset) {
       const updated: BrandAsset = {
         ...editingAsset,
@@ -72,7 +100,6 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
         url: url.trim() || '#'
       };
       onUpdateAsset(updated);
-      setEditingAsset(null);
     } else {
       const newAsset: BrandAsset = {
         id: `asset-${Date.now()}`,
@@ -84,9 +111,20 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
         url: url.trim() || '#'
       };
       onAddAsset(newAsset);
-      setShowAddModal(false);
     }
     resetForm();
+    closeModal();
+  };
+
+  const handleDeleteAsset = async (asset: BrandAsset) => {
+    const ok = await confirm({
+      title: `Delete "${asset.title}"?`,
+      body: "This can't be undone.",
+      confirmLabel: 'Delete',
+      cancelLabel: 'Keep it',
+      tone: 'danger',
+    });
+    if (ok) onDeleteAsset(asset.id);
   };
 
   return (
@@ -176,11 +214,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
                     <span>Edit</span>
                   </button>
                   <button
-                    onClick={() => {
-                      if (confirm(`Delete asset "${asset.title}"?`)) {
-                        onDeleteAsset(asset.id);
-                      }
-                    }}
+                    onClick={() => handleDeleteAsset(asset)}
                     className="flex-1 bg-[#ffdad6] text-[#ba1a1a] font-label-caps text-[11px] font-bold py-1 rounded hover:bg-[#ba1a1a] hover:text-white transition-colors flex items-center justify-center gap-1"
                   >
                     <span className="material-symbols-outlined text-xs">delete</span>
@@ -194,130 +228,73 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
       </div>
 
       {/* Add / Edit Asset Modal */}
-      {(showAddModal || editingAsset) && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white border border-[#bfcab4] max-w-md w-full p-6 rounded shadow-2xl relative space-y-4 my-8">
-            <button
-              onClick={() => {
-                setShowAddModal(false);
-                setEditingAsset(null);
-              }}
-              className="absolute top-4 right-4 text-[#707a67] hover:text-[#1b1c1a]"
-            >
-              <span className="material-symbols-outlined">close</span>
-            </button>
-
-            <h2 className="font-headline-md text-lg font-bold text-[#1b1c1a]">
-              {editingAsset ? 'Edit Brand Asset' : 'Add New Brand Asset'}
-            </h2>
-
-            <div className="space-y-3 text-xs font-body-md">
-              <div>
-                <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
-                  Asset Name
-                </label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Vector Primary Logo Kit 2026"
-                  className="w-full bg-[#faf9f5] border border-[#bfcab4] p-2 text-xs font-bold focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
-                  Brand Owner
-                </label>
-                <select
-                  value={brandId}
-                  onChange={(e) => setBrandId(e.target.value as BrandId)}
-                  className="w-full bg-[#faf9f5] border border-[#bfcab4] p-2 font-label-caps text-xs focus:outline-none"
-                >
-                  {Object.values(BRANDS).map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
-                  Asset Type Category
-                </label>
-                <select
-                  value={type}
-                  onChange={(e) => setType(e.target.value as BrandAsset['type'])}
-                  className="w-full bg-[#faf9f5] border border-[#bfcab4] p-2 font-label-caps text-xs focus:outline-none"
-                >
-                  <option value="vector_pack">Vector Pack</option>
-                  <option value="logo">Logo / Monogram</option>
-                  <option value="font">Typography Font</option>
-                  <option value="spec_sheet">Spec Sheet / Manual</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
-                  File Format Label
-                </label>
-                <input
-                  type="text"
-                  value={fileType}
-                  onChange={(e) => setFileType(e.target.value)}
-                  placeholder="e.g. SVG / EPS / PNG"
-                  className="w-full bg-[#faf9f5] border border-[#bfcab4] p-2 text-xs focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
-                  File Size / Spec
-                </label>
-                <input
-                  type="text"
-                  value={size}
-                  onChange={(e) => setSize(e.target.value)}
-                  placeholder="e.g. 4.2 MB"
-                  className="w-full bg-[#faf9f5] border border-[#bfcab4] p-2 text-xs focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
-                  Google Drive / Direct Asset URL
-                </label>
-                <input
-                  type="text"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder="https://drive.google.com/..."
-                  className="w-full bg-[#faf9f5] border border-[#bfcab4] p-2 text-xs focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-3 border-t border-[#bfcab4]">
-              <button
-                onClick={() => {
-                  setShowAddModal(false);
-                  setEditingAsset(null);
-                }}
-                className="px-4 py-2 border border-[#bfcab4] font-label-caps text-xs rounded hover:bg-[#efeeea]"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveAsset}
-                className="px-4 py-2 bg-[#296c00] text-white font-label-caps text-xs font-bold rounded hover:bg-[#1f5700]"
-              >
-                {editingAsset ? 'Update Asset' : 'Add Asset'}
-              </button>
-            </div>
+      <Modal
+        isOpen={showAddModal || Boolean(editingAsset)}
+        onClose={closeModal}
+        title={editingAsset ? 'Edit Brand Asset' : 'Add New Brand Asset'}
+        size="sm"
+        isDirty={isDirty}
+        dirtyPrompt={{
+          title: 'Discard this asset?',
+          body: "Your changes haven't been saved.",
+          confirmLabel: 'Discard',
+          cancelLabel: 'Keep editing',
+        }}
+        footer={
+          <div className="flex justify-end gap-2 w-full">
+            <Button variant="secondary" onClick={closeModal}>Cancel</Button>
+            <Button variant="primary" onClick={handleSaveAsset}>
+              {editingAsset ? 'Update Asset' : 'Add Asset'}
+            </Button>
           </div>
+        }
+      >
+        <div className="space-y-3.5">
+          <TextField
+            label="Asset name"
+            required
+            value={title}
+            onChange={(v) => { setTitle(v); if (titleError) setTitleError(null); }}
+            error={titleError}
+            placeholder="e.g. Vector Primary Logo Kit 2026"
+          />
+
+          <SelectField
+            label="Brand"
+            value={brandId}
+            onChange={(v) => setBrandId(v as BrandId)}
+            options={Object.values(BRANDS).map((b) => ({ value: b.id, label: b.name }))}
+          />
+
+          <SelectField
+            label="Asset type"
+            value={type}
+            onChange={(v) => setType(v as BrandAsset['type'])}
+            options={ASSET_TYPE_OPTIONS}
+          />
+
+          <TextField
+            label="File format"
+            value={fileType}
+            onChange={setFileType}
+            placeholder="e.g. SVG / EPS / PNG"
+          />
+
+          <TextField
+            label="File size"
+            value={size}
+            onChange={setSize}
+            placeholder="e.g. 4.2 MB"
+          />
+
+          <TextField
+            label="Link (Google Drive or direct URL)"
+            value={url}
+            onChange={setUrl}
+            placeholder="https://drive.google.com/..."
+          />
         </div>
-      )}
+      </Modal>
     </div>
   );
 };

@@ -9,8 +9,13 @@ export function useNotifications(posts: Post[]) {
   );
 
   useEffect(() => {
-    const generated = generateNotifications(posts) as AppNotification[];
-    setNotifications((prev) => mergeNotifications(prev, generated));
+    // mergeNotifications(fresh, previous) maps over its FIRST argument. This
+    // used to be called as mergeNotifications(prev, generated) -- swapped --
+    // so freshly generated notifications were discarded every render and the
+    // bell showed whatever was in localStorage (nothing, on a first run,
+    // since INITIAL_NOTIFICATIONS is []). Fixed: generated goes first.
+    const generated = generateNotifications(posts);
+    setNotifications((prev) => mergeNotifications(generated, prev));
   }, [posts]);
 
   useEffect(() => {

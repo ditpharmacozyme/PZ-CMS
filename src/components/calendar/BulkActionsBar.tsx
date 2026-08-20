@@ -1,5 +1,4 @@
 import React from 'react';
-import { PostStatus } from '../../types';
 
 interface BulkActionsBarProps {
   selectedCount: number;
@@ -7,8 +6,6 @@ interface BulkActionsBarProps {
   setIsSelectMode: (val: boolean) => void;
   onSelectAll: () => void;
   onClearSelection: () => void;
-  bulkStatus: PostStatus | '';
-  onApplyBulkStatus: (status: PostStatus) => void;
   bulkAssignee: string;
   onApplyBulkAssignee: (assignee: string) => void;
   onBulkDelete: () => void;
@@ -21,8 +18,6 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
   setIsSelectMode,
   onSelectAll,
   onClearSelection,
-  bulkStatus,
-  onApplyBulkStatus,
   bulkAssignee,
   onApplyBulkAssignee,
   onBulkDelete,
@@ -67,21 +62,6 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
           >
             Select All
           </button>
-
-          {/* Status Dropdown */}
-          <select
-            value={bulkStatus}
-            onChange={(e) => {
-              if (e.target.value) onApplyBulkStatus(e.target.value as PostStatus);
-            }}
-            className="bg-[#2a2b27] text-white text-xs font-label-caps py-1 px-2 rounded border border-[#404a39] focus:outline-none focus:ring-1 focus:ring-[#90da75]"
-          >
-            <option value="">Set Status...</option>
-            <option value="not-started">Not Started</option>
-            <option value="in-progress">In Progress</option>
-            <option value="ready-to-post">Ready to Post</option>
-            <option value="posted">Posted</option>
-          </select>
 
           {/* Assignee Dropdown */}
           <select

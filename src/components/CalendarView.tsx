@@ -4,7 +4,8 @@ import { BRANDS, SPECS } from '../data/brands';
 import { toDateStr, todayStr, fromDateStr, mondayFirstDay, startOfWeek, logTimestamp } from '../utils/date';
 import { uploadImage } from '../utils/uploadImage';
 import { parseCalendarCsv, convertCsvRowsToPosts } from '../utils/researchParse';
-import { STATUS_CONFIG } from '../utils/statusConfig';
+import { getPostStatusConfig } from '../utils/statusConfig';
+import { deriveStatus } from '../utils/postStatus';
 import { CalendarHeader } from './calendar/CalendarHeader';
 import { CalendarFilters } from './calendar/CalendarFilters';
 import { BulkActionsBar } from './calendar/BulkActionsBar';
@@ -13,14 +14,6 @@ import { MobileDateStripView } from './calendar/MobileDateStripView';
 import { CalendarWeekView } from './calendar/CalendarWeekView';
 import { CalendarListView } from './calendar/CalendarListView';
 import { IdeaBacklog } from './calendar/IdeaBacklog';
-
-function getPostStatusConfig(post: Post) {
-  const isOverdue =
-    post.scheduledDate &&
-    post.scheduledDate < todayStr() &&
-    (post.status === 'not-started' || post.status === 'in-progress');
-  return isOverdue ? STATUS_CONFIG['overdue'] : STATUS_CONFIG[post.status] || STATUS_CONFIG['not-started'];
-}
 
 interface CalendarViewProps {
   posts: Post[];
@@ -48,7 +41,7 @@ interface PostFilters {
 
 function matchesFilters(post: Post, f: PostFilters): boolean {
   if (f.brand !== 'all' && post.brandId !== f.brand) return false;
-  if (f.status !== 'all' && post.status !== f.status) return false;
+  if (f.status !== 'all' && deriveStatus(post) !== f.status) return false;
   if (f.platform !== 'all' && post.platform !== f.platform) return false;
   if (f.assignee !== 'all' && !post.assignees.includes(f.assignee)) return false;
   const query = f.search.trim().toLowerCase();
@@ -91,7 +84,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   // ── Multi-Select State ──────────────────────────────────────────────────────
   const [selectedPostIds, setSelectedPostIds] = useState<Set<string>>(new Set());
   const [isSelectMode, setIsSelectMode] = useState(false);
-  const [bulkStatus, setBulkStatus] = useState<PostStatus | ''>('');
   const [bulkAssignee, setBulkAssignee] = useState<string>('');
   const [lastSelectedPostId, setLastSelectedPostId] = useState<string | null>(null);
 
@@ -112,6 +104,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
   // ── Derived Data ────────────────────────────────────────────────────────────
   const defaultAssignee = teamMembers.length > 0 ? teamMembers[0].name : '';
+  // Whoever is logged in, for *DoneBy attribution on quick stage toggles.
+  const currentUserName = activeTeammate?.name || 'Someone';
   const isMobileDevice = typeof window !== 'undefined' && window.innerWidth < 768;
 
   const backlogPosts = useMemo(() => posts.filter((p) => !p.scheduledDate), [posts]);
@@ -382,16 +376,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
   const clearSelection = () => {
     setSelectedPostIds(new Set());
-    setBulkStatus('');
     setBulkAssignee('');
-  };
-
-  const applyBulkStatus = (status: PostStatus) => {
-    filteredCalendarPosts.filter((p) => selectedPostIds.has(p.id)).forEach((post) => {
-      onSavePost({ ...post, status, activityLog: [{ id: `act-${Date.now()}-${post.id}`, actor: post.assignees[0] || defaultAssignee || 'Someone', action: `Changed status to "${status.replace(/-/g, ' ')}" (bulk update)`, timestamp: logTimestamp() }, ...post.activityLog] });
-    });
-    setBulkStatus('');
-    clearSelection();
   };
 
   const applyBulkAssignee = (assignee: string) => {
@@ -517,8 +502,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             setIsSelectMode={setIsSelectMode}
             onSelectAll={() => setSelectedPostIds(new Set(filteredCalendarPosts.map((p) => p.id)))}
             onClearSelection={clearSelection}
-            bulkStatus={bulkStatus}
-            onApplyBulkStatus={applyBulkStatus}
             bulkAssignee={bulkAssignee}
             onApplyBulkAssignee={applyBulkAssignee}
             onBulkDelete={handleBulkDelete}
@@ -548,6 +531,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 onToggleSelect={toggleSelectPost}
                 onLongPressPost={(postId) => { setIsSelectMode(true); if (!selectedPostIds.has(postId)) toggleSelectPost(postId); }}
                 teamMembers={teamMembers}
+                onSavePost={onSavePost}
+                currentUserName={currentUserName}
               />
               {/* Desktop Month Grid */}
               <CalendarMonthView
@@ -566,6 +551,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 onImageUpload={handleImageFileUpload}
                 teamMembers={teamMembers}
                 onSavePost={onSavePost}
+                currentUserName={currentUserName}
               />
             </div>
           )}
@@ -590,6 +576,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               onToggleSelect={toggleSelectPost}
               teamMembers={teamMembers}
               onSavePost={onSavePost}
+              currentUserName={currentUserName}
             />
           )}
 
@@ -599,8 +586,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               filteredCalendarPosts={filteredCalendarPosts}
               selectedPostIds={selectedPostIds}
               isSelectMode={isSelectMode}
-              bulkStatus={bulkStatus}
-              onApplyBulkStatus={applyBulkStatus}
               bulkAssignee={bulkAssignee}
               onApplyBulkAssignee={applyBulkAssignee}
               uniqueAssignees={uniqueAssignees}
@@ -610,6 +595,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               onSavePost={onSavePost}
               onToggleSelect={toggleSelectPost}
               setSelectedPostIds={setSelectedPostIds}
+              currentUserName={currentUserName}
             />
           )}
         </div>

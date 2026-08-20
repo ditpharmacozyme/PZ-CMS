@@ -1,25 +1,14 @@
 import React, { useState } from 'react';
-import { Post, PostStatus } from '../../types';
+import { Post } from '../../types';
 import { BRANDS } from '../../data/brands';
-import { STATUS_CONFIG } from '../../utils/statusConfig';
-import { todayStr, logTimestamp } from '../../utils/date';
-
-function getPostStatusConfig(post: Post) {
-  const isOverdue =
-    post.scheduledDate &&
-    post.scheduledDate < todayStr() &&
-    (post.status === 'not-started' || post.status === 'in-progress');
-  return isOverdue ? STATUS_CONFIG['overdue'] : STATUS_CONFIG[post.status] || STATUS_CONFIG['not-started'];
-}
-
-const ALL_STATUSES: PostStatus[] = ['not-started', 'in-progress', 'ready-to-post', 'posted'];
+import { getPostStatusConfig } from '../../utils/statusConfig';
+import { todayStr } from '../../utils/date';
+import { toggleStage, Stage } from '../../utils/stages';
 
 interface CalendarListViewProps {
   filteredCalendarPosts: Post[];
   selectedPostIds: Set<string>;
   isSelectMode: boolean;
-  bulkStatus: PostStatus | '';
-  onApplyBulkStatus: (status: PostStatus) => void;
   bulkAssignee: string;
   onApplyBulkAssignee: (assignee: string) => void;
   uniqueAssignees: string[];
@@ -29,14 +18,14 @@ interface CalendarListViewProps {
   onSavePost?: (post: Post) => void;
   onToggleSelect: (postId: string, e: React.MouseEvent | React.ChangeEvent) => void;
   setSelectedPostIds: (fn: (prev: Set<string>) => Set<string>) => void;
+  /** Name of the person currently using the app, for *DoneBy attribution on quick toggles. */
+  currentUserName?: string;
 }
 
 export const CalendarListView: React.FC<CalendarListViewProps> = ({
   filteredCalendarPosts,
   selectedPostIds,
   isSelectMode,
-  bulkStatus,
-  onApplyBulkStatus,
   bulkAssignee,
   onApplyBulkAssignee,
   uniqueAssignees,
@@ -45,10 +34,10 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
   onDeletePost,
   onSavePost,
   onToggleSelect,
-  setSelectedPostIds
+  setSelectedPostIds,
+  currentUserName
 }) => {
   const [showPastPosts, setShowPastPosts] = useState(false);
-  const [activeStatusMenuPostId, setActiveStatusMenuPostId] = useState<string | null>(null);
 
   const today = todayStr();
 
@@ -63,48 +52,12 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
 
   const allSelected = filteredCalendarPosts.length > 0 && selectedPostIds.size === filteredCalendarPosts.length;
 
-  const handleQuickStatusSelect = (post: Post, newStatus: PostStatus, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setActiveStatusMenuPostId(null);
-    if (onSavePost) {
-      onSavePost({
-        ...post,
-        status: newStatus,
-        activityLog: [
-          {
-            id: `act-${Date.now()}`,
-            actor: post.assignees[0] || 'Teammate',
-            action: `Changed status to "${newStatus.replace(/-/g, ' ')}"`,
-            timestamp: logTimestamp()
-          },
-          ...post.activityLog
-        ]
-      });
-    }
-  };
-
-  const handleQuickStageToggle = (post: Post, stage: 'design' | 'publish' | 'engagement', e: React.MouseEvent) => {
+  // Status is derived from the stages (see utils/postStatus.ts), so it's
+  // display-only here -- toggling a stage is the only quick action left.
+  const handleQuickStageToggle = (post: Post, stage: Stage, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!onSavePost) return;
-    const current = post.stageCompletion || {};
-    const updated = { ...current };
-    if (stage === 'design') updated.designDone = !current.designDone;
-    if (stage === 'publish') updated.publishDone = !current.publishDone;
-    if (stage === 'engagement') updated.engagementDone = !current.engagementDone;
-
-    onSavePost({
-      ...post,
-      stageCompletion: updated,
-      activityLog: [
-        {
-          id: `act-${Date.now()}`,
-          actor: post.assignees[0] || 'Teammate',
-          action: `Toggled ${stage} stage`,
-          timestamp: logTimestamp()
-        },
-        ...post.activityLog
-      ]
-    });
+    onSavePost(toggleStage(post, stage, currentUserName || 'Someone'));
   };
 
   const renderPostRow = (post: Post, isPast = false) => {
@@ -183,7 +136,7 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
           <p className="font-body-md text-xs text-[#707a67] line-clamp-1 mt-0.5">{post.caption || 'No caption'}</p>
 
           {/* Quick Stage Badges */}
-          {post.taskRoles && (post.taskRoles.designer || post.taskRoles.publisher) && (
+          {post.taskRoles && (post.taskRoles.designer || post.taskRoles.publisher || post.taskRoles.engagementLead) && (
             <div className="flex items-center gap-1.5 mt-1 text-[9px]">
               {post.taskRoles.designer && (
                 <button
@@ -209,51 +162,33 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
                   🚀 {post.taskRoles.publisher} {post.stageCompletion?.publishDone ? '✓' : ''}
                 </button>
               )}
+              {post.taskRoles.engagementLead && (
+                <button
+                  type="button"
+                  onClick={(e) => handleQuickStageToggle(post, 'engagement', e)}
+                  className={`px-1.5 py-0.2 rounded cursor-pointer transition-all ${
+                    post.stageCompletion?.engagementDone ? 'bg-[#296c00] text-white font-bold' : 'bg-[#efeeea] text-[#404a39]'
+                  }`}
+                  title="Click to toggle Engagement done"
+                >
+                  💬 {post.taskRoles.engagementLead} {post.stageCompletion?.engagementDone ? '✓' : ''}
+                </button>
+              )}
             </div>
           )}
         </div>
 
-        {/* Status Dropdown / Pill */}
+        {/* Status Pill (display only -- derives from the stages above) */}
         <div className="flex items-center justify-between md:contents">
           <div className="md:w-32 relative">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setActiveStatusMenuPostId(activeStatusMenuPostId === post.id ? null : post.id);
-              }}
-              className="font-label-caps text-[10px] font-bold uppercase px-2.5 py-1 rounded-full flex items-center justify-center gap-1.5 cursor-pointer transition-transform hover:scale-105"
+            <span
+              className="font-label-caps text-[10px] font-bold uppercase px-2.5 py-1 rounded-full flex items-center justify-center gap-1.5 w-fit"
               style={{ backgroundColor: statusCfg.bgColor, color: statusCfg.color }}
-              title="Click to change status"
+              title="Updates automatically as design/publish are checked"
             >
               <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: statusCfg.color }} />
               <span>{statusCfg.label}</span>
-              <span className="material-symbols-outlined text-[10px]">arrow_drop_down</span>
-            </button>
-
-            {/* 1-Click Status Dropdown Menu */}
-            {activeStatusMenuPostId === post.id && (
-              <div
-                className="absolute left-0 top-8 z-50 bg-white border border-[#bfcab4] shadow-xl rounded-lg p-1 space-y-0.5 min-w-[135px] animate-fadeIn"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {ALL_STATUSES.map((st) => {
-                  const cfg = STATUS_CONFIG[st];
-                  return (
-                    <button
-                      key={st}
-                      type="button"
-                      onClick={(e) => handleQuickStatusSelect(post, st, e)}
-                      className="w-full text-left px-2 py-1.5 rounded text-[10px] font-label-caps font-bold hover:bg-[#efeeea] flex items-center gap-1.5 transition-colors cursor-pointer"
-                      style={{ color: cfg.color }}
-                    >
-                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cfg.color }} />
-                      <span>{cfg.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+            </span>
           </div>
 
           <div className="md:w-28 font-body-md text-xs text-[#404a39]">
@@ -295,17 +230,6 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
       {selectedPostIds.size > 0 && (
         <div className="p-3 bg-[#f0fae8] border-b border-[#296c00]/30 flex flex-wrap items-center gap-2 sm:gap-3">
           <span className="font-label-caps text-xs font-bold text-[#296c00]">{selectedPostIds.size} selected</span>
-          <select
-            value={bulkStatus}
-            onChange={(e) => e.target.value && onApplyBulkStatus(e.target.value as PostStatus)}
-            className="bg-white border border-[#bfcab4] px-2 py-1.5 font-label-caps text-xs rounded-lg min-h-[36px]"
-          >
-            <option value="">Set status…</option>
-            <option value="not-started">Not started</option>
-            <option value="in-progress">In progress</option>
-            <option value="ready-to-post">Ready to post</option>
-            <option value="posted">Posted</option>
-          </select>
           <select
             value={bulkAssignee}
             onChange={(e) => e.target.value && onApplyBulkAssignee(e.target.value)}

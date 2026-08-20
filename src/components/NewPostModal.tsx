@@ -48,6 +48,8 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
   const { saveDraft, clearDraft } = useSmartMemory();
 
   const [title, setTitle] = useState(initialDraft?.title || '');
+  const [titleError, setTitleError] = useState<string | null>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
   const [brandId, setBrandId] = useState<BrandId>(
     initialDraft?.brandId || (selectedBrandFilter === 'all' ? 'pharmacozyme' : selectedBrandFilter)
   );
@@ -204,7 +206,14 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
   // Form Submit
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!title.trim()) {
+      // Used to be a silent `return` here — the button appeared to do
+      // nothing. Now it says why, and puts focus where the fix goes.
+      setTitleError("Give this post a title so the team can find it.");
+      titleInputRef.current?.focus();
+      return;
+    }
+    setTitleError(null);
 
     const finalDate = isBacklog ? '' : scheduledDate;
     const finalTime = isBacklog ? '' : scheduledTime;
@@ -350,13 +359,20 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
                   Post Title / Headline *
                 </label>
                 <input
+                  ref={titleInputRef}
                   type="text"
                   required
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  onChange={(e) => { setTitle(e.target.value); if (titleError) setTitleError(null); }}
                   placeholder="e.g. Lipase Enzyme Kinetics & Activation"
-                  className="w-full bg-white border border-[#bfcab4] rounded-lg p-2.5 text-sm font-semibold text-[#1b1c1a] placeholder:text-[#bfcab4] focus:ring-1 focus:ring-[#296c00] focus:outline-none"
+                  aria-invalid={Boolean(titleError)}
+                  className={`w-full bg-white border rounded-lg p-2.5 text-sm font-semibold text-[#1b1c1a] placeholder:text-[#bfcab4] focus:ring-1 focus:outline-none ${
+                    titleError ? 'border-[#ba1a1a] focus:ring-[#ba1a1a]' : 'border-[#bfcab4] focus:ring-[#296c00]'
+                  }`}
                 />
+                {titleError && (
+                  <p role="alert" className="text-[11px] text-[#ba1a1a] mt-1">{titleError}</p>
+                )}
               </div>
 
               {/* Caption */}

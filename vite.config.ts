@@ -18,5 +18,13 @@ export default defineConfig(() => {
       // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
     },
+    // Vitest reads its config from this same file. `globals: false` (the
+    // default) is deliberate -- tsconfig.json has no "include" key, so adding
+    // "types": ["vitest/globals"] there to support global test/expect would be
+    // a riskier edit than just importing them explicitly in each test file.
+    test: {
+      environment: 'jsdom',
+      setupFiles: ['./src/test/setup.ts'],
+    },
   };
 });

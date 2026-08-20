@@ -6,6 +6,9 @@
  * call. Everything here works off local time instead.
  */
 
+import { Post } from '../types';
+import { deriveStatus } from './postStatus';
+
 /** Format a Date as a local `YYYY-MM-DD` string. */
 export function toDateStr(d: Date): string {
   const year = d.getFullYear();
@@ -44,4 +47,22 @@ export function startOfWeek(d: Date): Date {
 export function logTimestamp(): string {
   const d = new Date();
   return `${toDateStr(d)} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+/**
+ * True when a post's own date has passed and it still isn't posted.
+ *
+ * This used to be re-implemented in four different components as `status ===
+ * 'not-started' || 'in-progress'`, which meant a post stuck at `ready-to-post`
+ * past its date was NEVER flagged overdue -- the one state that most clearly
+ * means "someone forgot to actually post it". The real rule is simpler: any
+ * status other than `posted`, once the date has passed, is late.
+ *
+ * Checks the derived status (utils/postStatus.ts), not the raw stored
+ * `post.status` field, for the same reason getPostStatusConfig does: status
+ * is no longer directly settable, so the derived value is the only one that
+ * can't go stale.
+ */
+export function isOverdue(post: Post): boolean {
+  return Boolean(post.scheduledDate) && post.scheduledDate < todayStr() && deriveStatus(post) !== 'posted';
 }
