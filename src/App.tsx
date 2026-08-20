@@ -42,6 +42,7 @@ import { TemplateLibrary } from './components/TemplateLibrary';
 import { BrandControlCenter } from './components/BrandControlCenter';
 import { AssetLibrary } from './components/AssetLibrary';
 import { MissionControlDashboard } from './components/MissionControlDashboard';
+import { MyWork } from './components/MyWork';
 import { GoogleAppsScriptHub } from './components/GoogleAppsScriptHub';
 import { PostDetailModal } from './components/PostDetailModal';
 import { NewPostModal } from './components/NewPostModal';
@@ -466,6 +467,15 @@ export function App() {
         />
 
         <main className="flex-1 overflow-x-hidden mobile-content-pad">
+          {currentTab === 'my-work' && (
+            <MyWork
+              posts={posts}
+              activeTeammate={activeTeammate}
+              selectedBrandFilter={selectedBrandFilter}
+              onSelectPost={handleSelectPost}
+              onSavePost={handleSavePost}
+            />
+          )}
           {currentTab === 'calendar' && (
             <CalendarView
               posts={posts}
@@ -491,7 +501,7 @@ export function App() {
             <AssetLibrary assets={assets} selectedBrandFilter={selectedBrandFilter} onAddAsset={handleAddAsset} onUpdateAsset={handleUpdateAsset} onDeleteAsset={handleDeleteAsset} />
           )}
           {currentTab === 'telemetry' && (
-            <MissionControlDashboard posts={posts} teamMembers={teamMembers} onOpenNewPostModal={() => { setNewPostInitialDate(undefined); setIsNewPostModalOpen(true); }} onSelectPost={handleSelectPost} onDeletePost={handleDeletePost} />
+            <MissionControlDashboard posts={posts} teamMembers={teamMembers} onOpenNewPostModal={() => { setNewPostInitialDate(undefined); setIsNewPostModalOpen(true); }} onSelectPost={handleSelectPost} onDeletePost={handleDeletePost} activeTeammate={activeTeammate} />
           )}
           {currentTab === 'appscript' && (
             <GoogleAppsScriptHub posts={posts} onUploadComplete={(newUrl) => showToast(`Asset uploaded! Direct URL: ${newUrl}`)} />

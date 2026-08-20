@@ -14,6 +14,9 @@ interface CalendarFiltersProps {
   onClearFilters: () => void;
   hasActiveFilters: boolean;
   activeTeammate?: TeamMember | null;
+  /** Whether the "My Posts" quick chip is active -- driven by isMine (utils/postOwnership.ts), not the plain assignee dropdown, so it also catches taskRoles-only work. */
+  isMyPostsActive: boolean;
+  onToggleMyPosts: () => void;
 }
 
 export const CalendarFilters: React.FC<CalendarFiltersProps> = ({
@@ -28,7 +31,9 @@ export const CalendarFilters: React.FC<CalendarFiltersProps> = ({
   uniqueAssignees,
   onClearFilters,
   hasActiveFilters,
-  activeTeammate
+  activeTeammate,
+  isMyPostsActive,
+  onToggleMyPosts
 }) => {
   const [showMobileFilterSheet, setShowMobileFilterSheet] = useState(false);
 
@@ -36,20 +41,8 @@ export const CalendarFilters: React.FC<CalendarFiltersProps> = ({
     (statusFilter !== 'all' ? 1 : 0) +
     (platformFilter !== 'all' ? 1 : 0) +
     (assigneeFilter !== 'all' ? 1 : 0) +
+    (isMyPostsActive ? 1 : 0) +
     (searchQuery.trim() ? 1 : 0);
-
-  const isMyPostsActive = Boolean(
-    activeTeammate && assigneeFilter === activeTeammate.name
-  );
-
-  const toggleMyPosts = () => {
-    if (!activeTeammate) return;
-    if (isMyPostsActive) {
-      setAssigneeFilter('all');
-    } else {
-      setAssigneeFilter(activeTeammate.name);
-    }
-  };
 
   return (
     <>
@@ -73,7 +66,7 @@ export const CalendarFilters: React.FC<CalendarFiltersProps> = ({
         {activeTeammate && (
           <button
             type="button"
-            onClick={toggleMyPosts}
+            onClick={onToggleMyPosts}
             className={`px-3 py-1.5 rounded-lg text-xs font-label-caps font-bold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
               isMyPostsActive
                 ? 'bg-[#296c00] text-white shadow-xs'

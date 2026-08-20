@@ -6,6 +6,7 @@ import { uploadImage } from '../utils/uploadImage';
 import { parseCalendarCsv, convertCsvRowsToPosts } from '../utils/researchParse';
 import { getPostStatusConfig } from '../utils/statusConfig';
 import { deriveStatus } from '../utils/postStatus';
+import { isMine } from '../utils/postOwnership';
 import { CalendarHeader } from './calendar/CalendarHeader';
 import { CalendarFilters } from './calendar/CalendarFilters';
 import { BulkActionsBar } from './calendar/BulkActionsBar';
@@ -37,6 +38,8 @@ interface PostFilters {
   platform: Platform | 'all';
   assignee: string;
   search: string;
+  onlyMine: boolean;
+  activeTeammate: TeamMember | null;
 }
 
 function matchesFilters(post: Post, f: PostFilters): boolean {
@@ -44,6 +47,7 @@ function matchesFilters(post: Post, f: PostFilters): boolean {
   if (f.status !== 'all' && deriveStatus(post) !== f.status) return false;
   if (f.platform !== 'all' && post.platform !== f.platform) return false;
   if (f.assignee !== 'all' && !post.assignees.includes(f.assignee)) return false;
+  if (f.onlyMine && !isMine(post, f.activeTeammate)) return false;
   const query = f.search.trim().toLowerCase();
   if (query) {
     const haystack = [post.title, post.caption, ...post.assignees, ...post.tags];
@@ -80,6 +84,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const [statusFilter, setStatusFilter] = useState<PostStatus | 'all'>('all');
   const [platformFilter, setPlatformFilter] = useState<Platform | 'all'>('all');
   const [assigneeFilter, setAssigneeFilter] = useState<string>('all');
+  const [onlyMine, setOnlyMine] = useState<boolean>(false);
 
   // ── Multi-Select State ──────────────────────────────────────────────────────
   const [selectedPostIds, setSelectedPostIds] = useState<Set<string>>(new Set());
@@ -112,8 +117,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const calendarPosts = useMemo(() => posts.filter((p) => !!p.scheduledDate), [posts]);
 
   const filters: PostFilters = useMemo(
-    () => ({ brand: selectedBrandFilter, status: statusFilter, platform: platformFilter, assignee: assigneeFilter, search: searchQuery }),
-    [selectedBrandFilter, statusFilter, platformFilter, assigneeFilter, searchQuery]
+    () => ({ brand: selectedBrandFilter, status: statusFilter, platform: platformFilter, assignee: assigneeFilter, search: searchQuery, onlyMine, activeTeammate }),
+    [selectedBrandFilter, statusFilter, platformFilter, assigneeFilter, searchQuery, onlyMine, activeTeammate]
   );
 
   const filteredBacklogPosts = useMemo(() => backlogPosts.filter((p) => matchesFilters(p, filters)), [backlogPosts, filters]);
@@ -423,7 +428,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     });
   };
 
-  const hasActiveFilters = statusFilter !== 'all' || platformFilter !== 'all' || assigneeFilter !== 'all' || !!searchQuery.trim();
+  const hasActiveFilters = statusFilter !== 'all' || platformFilter !== 'all' || assigneeFilter !== 'all' || onlyMine || !!searchQuery.trim();
   const inspectorPost = selectedPostForInspector;
 
   return (
@@ -490,9 +495,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             assigneeFilter={assigneeFilter}
             setAssigneeFilter={setAssigneeFilter}
             uniqueAssignees={uniqueAssignees}
-            onClearFilters={() => { setStatusFilter('all'); setPlatformFilter('all'); setAssigneeFilter('all'); }}
+            onClearFilters={() => { setStatusFilter('all'); setPlatformFilter('all'); setAssigneeFilter('all'); setOnlyMine(false); }}
             hasActiveFilters={hasActiveFilters}
             activeTeammate={activeTeammate}
+            isMyPostsActive={onlyMine}
+            onToggleMyPosts={() => setOnlyMine((v) => !v)}
           />
 
           {/* Bulk Actions (select mode banner + floating bar) */}

@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { Post, TeamMember } from '../types';
-import { toDateStr } from '../utils/date';
+import { toDateStr, todayStr } from '../utils/date';
 import { getRecentActivity } from '../utils/activity';
 import { deriveStatus } from '../utils/postStatus';
+import { isMine } from '../utils/postOwnership';
 
 interface MissionControlDashboardProps {
   posts: Post[];
@@ -10,6 +11,7 @@ interface MissionControlDashboardProps {
   onOpenNewPostModal: () => void;
   onSelectPost?: (post: Post) => void;
   onDeletePost?: (postId: string) => void;
+  activeTeammate?: TeamMember | null;
 }
 
 export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = ({
@@ -17,29 +19,46 @@ export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = (
   teamMembers,
   onOpenNewPostModal,
   onSelectPost,
-  onDeletePost
+  onDeletePost,
+  activeTeammate = null
 }) => {
   const [selectedTeammateName, setSelectedTeammateName] = useState<string | null>(null);
 
+  const selectedTeammate = useMemo(
+    () => teamMembers.find((m) => m.name === selectedTeammateName) || null,
+    [teamMembers, selectedTeammateName]
+  );
+
   const filteredPosts = useMemo(() => {
-    if (!selectedTeammateName) return posts;
-    return posts.filter(p => p.assignees.includes(selectedTeammateName));
-  }, [posts, selectedTeammateName]);
+    if (!selectedTeammate) return posts;
+    return posts.filter(p => isMine(p, selectedTeammate));
+  }, [posts, selectedTeammate]);
 
   const readyToPostCount = filteredPosts.filter((p) => deriveStatus(p) === 'ready-to-post').length;
   const inProgressCount = filteredPosts.filter((p) => deriveStatus(p) === 'in-progress').length;
   const postedCount = filteredPosts.filter((p) => deriveStatus(p) === 'posted').length;
   const backlogCount = filteredPosts.filter((p) => !p.scheduledDate).length;
 
-  // Team performance: count posts assigned to each person
+  // Team performance: count posts assigned to each person (assignees or taskRoles -- see isMine)
   const teamStats = teamMembers.map(member => {
-    const assigned = posts.filter(p => p.assignees.includes(member.name));
+    const assigned = posts.filter(p => isMine(p, member));
     const posted = assigned.filter(p => deriveStatus(p) === 'posted').length;
     const ready = assigned.filter(p => deriveStatus(p) === 'ready-to-post').length;
     const inProg = assigned.filter(p => deriveStatus(p) === 'in-progress').length;
     const approvals = posts.filter(p => p.approved && p.approvedBy?.startsWith(member.name)).length;
     return { member, total: assigned.length, posted, ready, inProg, approvals };
   }).sort((a, b) => b.total - a.total);
+
+  // Next 5 upcoming reminders, soonest first -- was raw array order over ALL
+  // filtered posts (including past ones), so "Upcoming Posts" could show
+  // stale, already-past reminders ahead of ones actually coming up.
+  const upcomingPosts = useMemo(() => {
+    const todayIso = todayStr();
+    return filteredPosts
+      .filter((p) => p.scheduledDate && p.scheduledDate >= todayIso)
+      .sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate) || (a.scheduledTime || '').localeCompare(b.scheduledTime || ''))
+      .slice(0, 5);
+  }, [filteredPosts]);
 
   // Real 14-day view: how many posts land on each of the next 14 days.
   const upcomingDays = useMemo(() => {
@@ -81,13 +100,30 @@ export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = (
           </p>
         </div>
 
-        <button
-          onClick={onOpenNewPostModal}
-          className="bg-[#296c00] text-white font-label-caps text-xs px-4 py-2.5 rounded shadow-sm hover:bg-[#1f5700] transition-all flex items-center gap-2 font-bold"
-        >
-          <span className="material-symbols-outlined text-sm">add_task</span>
-          <span>New Post</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {activeTeammate && (
+            <button
+              type="button"
+              onClick={() => setSelectedTeammateName(selectedTeammateName === activeTeammate.name ? null : activeTeammate.name)}
+              className={`px-3 py-2.5 rounded text-xs font-label-caps font-bold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+                selectedTeammateName === activeTeammate.name
+                  ? 'bg-[#296c00] text-white shadow-xs'
+                  : 'bg-white border border-[#bfcab4] text-[#404a39] hover:bg-[#efeeea]'
+              }`}
+              title="Filter dashboard stats to your own posts"
+            >
+              <span className="material-symbols-outlined text-sm">person</span>
+              <span>My Posts</span>
+            </button>
+          )}
+          <button
+            onClick={onOpenNewPostModal}
+            className="bg-[#296c00] text-white font-label-caps text-xs px-4 py-2.5 rounded shadow-sm hover:bg-[#1f5700] transition-all flex items-center gap-2 font-bold"
+          >
+            <span className="material-symbols-outlined text-sm">add_task</span>
+            <span>New Post</span>
+          </button>
+        </div>
       </div>
 
       {selectedTeammateName && (
@@ -171,14 +207,14 @@ export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = (
           </h3>
 
           <div className="space-y-3">
-            {filteredPosts.length === 0 ? (
+            {upcomingPosts.length === 0 ? (
               <div className="py-8 text-center">
                 <span className="material-symbols-outlined text-3xl text-[#bfcab4] block mb-2">notifications_none</span>
                 <p className="font-label-caps text-[10px] text-[#707a67] uppercase">No posts yet</p>
                 <p className="font-body-md text-xs text-[#707a67] mt-1">No upcoming posts found matching filters.</p>
               </div>
             ) : (
-              filteredPosts.slice(0, 5).map((post) => (
+              upcomingPosts.map((post) => (
                 <div key={post.id} className="p-3 bg-[#faf9f5] border border-[#bfcab4] rounded text-xs space-y-2">
                   <div className="flex justify-between items-start gap-2">
                     <span className="font-label-caps font-bold text-[#296c00] truncate max-w-[140px]">

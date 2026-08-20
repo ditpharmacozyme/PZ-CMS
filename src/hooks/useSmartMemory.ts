@@ -3,7 +3,10 @@ import { BrandId, Post, PostStatus, Platform } from '../types';
 import { NavTab } from '../components/SideNav';
 
 const STORAGE_KEYS = {
-  ACTIVE_TAB: 'pz_smart_active_tab',
+  // Bumped from pz_smart_active_tab so existing installs (which already have
+  // a stored tab under the old key) also land on the new 'my-work' default,
+  // instead of silently keeping 'calendar' forever.
+  ACTIVE_TAB: 'pz_smart_active_tab_v2',
   BRAND_FILTER: 'pz_smart_brand_filter',
   CALENDAR_DISPLAY_MODE: 'pz_smart_cal_mode',
   CALENDAR_STATUS_FILTER: 'pz_smart_cal_status',
@@ -28,8 +31,8 @@ export interface PostDraft {
 export function useSmartMemory() {
   // ── Tab & Brand Persistence ──────────────────────────────────────────────────
   const [persistedTab, setPersistedTab] = useState<NavTab>(() => {
-    if (typeof window === 'undefined') return 'calendar';
-    return (localStorage.getItem(STORAGE_KEYS.ACTIVE_TAB) as NavTab) || 'calendar';
+    if (typeof window === 'undefined') return 'my-work';
+    return (localStorage.getItem(STORAGE_KEYS.ACTIVE_TAB) as NavTab) || 'my-work';
   });
 
   const [persistedBrand, setPersistedBrand] = useState<BrandId | 'all'>(() => {
