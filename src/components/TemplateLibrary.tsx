@@ -12,16 +12,16 @@ interface TemplateLibraryProps {
   selectedBrandFilter: BrandId | 'all';
 }
 
-const TEMPLATE_CATEGORIES = [
-  { id: 'all', label: 'All Templates', icon: 'grid_view' },
-  { id: 'Clinical', label: 'Clinical & Case Studies', icon: 'biotech' },
-  { id: 'Education', label: 'Education & Flashcards', icon: 'school' },
-  { id: 'Interactive', label: 'Quizzes & Diagnostics', icon: 'quiz' },
-  { id: 'Carousels', label: 'Carousels & Slides', icon: 'view_carousel' },
-  { id: 'Editorial', label: 'Protocols & Alerts', icon: 'newspaper' },
-  { id: 'Patient-Facing', label: 'Patient Guides', icon: 'health_and_safety' },
-  { id: 'Brand-Ops', label: 'Brand Highlights', icon: 'stars' }
-];
+// Icons/labels for the real PostTemplate['category'] union -- reused below
+// to build the browse-filter chips so every value the create form can write
+// (including 'Internal') always has a matching chip to find it again.
+const CATEGORY_CHIP_META: Record<PostTemplate['category'], { label: string; icon: string }> = {
+  Clinical: { label: 'Clinical & Case Studies', icon: 'biotech' },
+  Interactive: { label: 'Quizzes & Diagnostics', icon: 'quiz' },
+  Editorial: { label: 'Protocols & Alerts', icon: 'newspaper' },
+  'Patient-Facing': { label: 'Patient Guides', icon: 'health_and_safety' },
+  Internal: { label: 'Internal / Team Use', icon: 'lock' }
+};
 
 const PLATFORM_ICONS: Record<string, string> = {
   instagram: 'photo_camera',
@@ -31,17 +31,13 @@ const PLATFORM_ICONS: Record<string, string> = {
   email: 'mail'
 };
 
-// Exactly the PostTemplate['category'] union (src/types.ts) -- unlike
-// TEMPLATE_CATEGORIES above (used for browsing/filtering existing templates,
-// which may include legacy free-text values), this list is what the
-// create/edit form is allowed to write, so it must never drift from the type.
-const TEMPLATE_FORM_CATEGORIES: { value: PostTemplate['category']; label: string }[] = [
-  { value: 'Clinical', label: 'Clinical & Case Studies' },
-  { value: 'Interactive', label: 'Quizzes & Diagnostics' },
-  { value: 'Editorial', label: 'Protocols & Alerts' },
-  { value: 'Patient-Facing', label: 'Patient Guides' },
-  { value: 'Internal', label: 'Internal / Team Use' }
-];
+// Exactly the PostTemplate['category'] union (src/types.ts), derived from
+// CATEGORY_CHIP_META above so the create/edit form's options and the browse
+// chips can never drift apart again -- this is what the form is allowed to
+// write, so it must never include a legacy/invalid value.
+const TEMPLATE_FORM_CATEGORIES: { value: PostTemplate['category']; label: string }[] = (
+  Object.keys(CATEGORY_CHIP_META) as PostTemplate['category'][]
+).map((value) => ({ value, label: CATEGORY_CHIP_META[value].label }));
 
 export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
   templates,
@@ -120,6 +116,25 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
       return true;
     });
   }, [templates, selectedBrandFilter, activeBrandFilter, categoryFilter, searchQuery]);
+
+  // Browse-filter chips: always include every real PostTemplate['category']
+  // union value (so a template can always be found again by category, even
+  // before/without live data in it -- e.g. 'Internal' right after this fix),
+  // plus any distinct category value still present in live `templates` data
+  // that ISN'T a real union member (legacy rows saved before the create-form
+  // bug fix, e.g. old 'Education'/'Carousels'/'Brand-Ops' values) so those
+  // templates stay filterable without letting new ones be written with them.
+  const categoryChips = useMemo(() => {
+    const knownValues = Object.keys(CATEGORY_CHIP_META) as PostTemplate['category'][];
+    const legacyValues = Array.from(
+      new Set(templates.map((tpl) => tpl.category).filter((c) => !knownValues.includes(c)))
+    );
+    return [
+      { id: 'all', label: 'All Templates', icon: 'grid_view' },
+      ...knownValues.map((id) => ({ id, label: CATEGORY_CHIP_META[id].label, icon: CATEGORY_CHIP_META[id].icon })),
+      ...legacyValues.map((id) => ({ id, label: id, icon: 'label' }))
+    ];
+  }, [templates]);
 
   const handleCreateTemplate = () => {
     if (!newTitle.trim()) {
@@ -308,7 +323,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
 
       {/* ── Category Filter Pills ── */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-        {TEMPLATE_CATEGORIES.map((cat) => (
+        {categoryChips.map((cat) => (
           <button
             key={cat.id}
             onClick={() => setCategoryFilter(cat.id)}

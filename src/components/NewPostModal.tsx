@@ -338,9 +338,26 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
     onClose();
   };
 
+  const isLastStep = step === STEPS.length - 1;
+
+  // Single Enter-to-advance / Enter-to-submit path. The primary footer button
+  // is a real type="submit" associated to this form via the `form` attribute
+  // (Modal renders `footer` as a sibling of `children`, not nested inside
+  // it), so pressing Enter in any text/date/time/email field in the step
+  // body -- the exact "button appears to do nothing" failure this phase
+  // exists to eliminate -- reaches this handler instead of being silently
+  // swallowed.
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isLastStep) {
+      handleSubmit();
+    } else {
+      handleNext();
+    }
+  };
+
   const brand = BRANDS[brandId];
   const activeSpec = SPECS[specType];
-  const isLastStep = step === STEPS.length - 1;
 
   const filteredBankItems = contentBank
     .filter((item) => !bankSearchQuery || item.text.toLowerCase().includes(bankSearchQuery.toLowerCase()))
@@ -380,11 +397,11 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
               </Button>
             )}
             {isLastStep ? (
-              <Button type="button" variant="primary" icon="add_circle" onClick={handleSubmit}>
+              <Button type="submit" form="new-post-form" variant="primary" icon="add_circle">
                 {isBacklog ? 'Add to idea backlog' : 'Schedule post'}
               </Button>
             ) : (
-              <Button type="button" variant="primary" iconRight="arrow_forward" onClick={handleNext}>
+              <Button type="submit" form="new-post-form" variant="primary" iconRight="arrow_forward">
                 Next
               </Button>
             )}
@@ -392,7 +409,7 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
         </div>
       }
     >
-      <div className="space-y-5">
+      <form id="new-post-form" onSubmit={handleFormSubmit} className="space-y-5">
         <Stepper steps={STEPS} currentIndex={step} furthestIndex={furthestStep} onStepClick={handleStepClick} />
 
         {/* ── Step 1: What are you posting? ── */}
@@ -685,7 +702,7 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
             )}
           </div>
         )}
-      </div>
+      </form>
     </Modal>
   );
 };
