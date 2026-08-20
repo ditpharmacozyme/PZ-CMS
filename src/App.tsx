@@ -471,7 +471,6 @@ export function App() {
             <MyWork
               posts={posts}
               activeTeammate={activeTeammate}
-              selectedBrandFilter={selectedBrandFilter}
               onSelectPost={handleSelectPost}
               onSavePost={handleSavePost}
             />
@@ -542,9 +541,9 @@ export function App() {
 
       {/* Mobile Bottom Tab Bar */}
       <nav className="bottom-tab-bar" aria-label="Mobile navigation">
-        <button className={`bottom-tab-item ${currentTab === 'telemetry' ? 'active' : ''}`} onClick={() => setCurrentTab('telemetry')} aria-label="Dashboard">
-          <span className="material-symbols-outlined text-xl">monitoring</span>
-          <span className="bottom-tab-label">Dash</span>
+        <button className={`bottom-tab-item ${currentTab === 'my-work' ? 'active' : ''}`} onClick={() => setCurrentTab('my-work')} aria-label="My Work">
+          <span className="material-symbols-outlined text-xl">checklist</span>
+          <span className="bottom-tab-label">My Work</span>
         </button>
         <button className={`bottom-tab-item ${currentTab === 'calendar' ? 'active' : ''}`} onClick={() => setCurrentTab('calendar')} aria-label="Calendar">
           <span className="material-symbols-outlined text-xl">calendar_month</span>
