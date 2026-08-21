@@ -39,6 +39,18 @@ export function usePosts(
 
   const handleSavePost = (updatedPost: Post) => {
     const existing = posts.find((p) => p.id === updatedPost.id);
+
+    // Rescheduling a post that already auto-sent its reminder must re-arm it --
+    // otherwise reminder_sent_at stays stamped forever and get_due_reminders
+    // (0016_reminder_rpcs.sql) permanently excludes it, even after the date/time
+    // changes to a new, not-yet-due slot.
+    if (
+      existing?.reminderSentAt &&
+      (existing.scheduledDate !== updatedPost.scheduledDate || existing.scheduledTime !== updatedPost.scheduledTime)
+    ) {
+      updatedPost = { ...updatedPost, reminderSentAt: undefined };
+    }
+
     setPosts((prev) => prev.map((p) => (p.id === updatedPost.id ? updatedPost : p)));
     upsertRemotePost(updatedPost);
     showToast(`Saved "${updatedPost.title}"`);
