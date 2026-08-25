@@ -82,7 +82,7 @@ Output ONLY a JSON object with this exact schema (no markdown fences, raw JSON):
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',
       contents: systemPrompt,
     });
 
@@ -188,7 +188,7 @@ Each object must have this exact schema:
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',
       contents: prompt,
     });
 
