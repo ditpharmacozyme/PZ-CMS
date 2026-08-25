@@ -6,6 +6,7 @@ import { uploadImage } from '../utils/uploadImage';
 import { useSmartMemory, PostDraft } from '../hooks/useSmartMemory';
 import { supabase } from '../lib/supabase';
 import { Modal } from './ui/Modal';
+import { generateCaptionWithAI, refineCaptionWithAI } from '../services/aiService';
 import { TextField, TextAreaField, SelectField } from './ui/Field';
 import { Button } from './ui/Button';
 import { Stepper, StepDef } from './ui/Stepper';
@@ -100,6 +101,55 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
   // Content Bank / Swipe Copy Drawer
   const [showBankDrawer, setShowBankDrawer] = useState(false);
   const [bankSearchQuery, setBankSearchQuery] = useState('');
+
+  // AI Assistant Drawer State
+  const [showAiDrawer, setShowAiDrawer] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  const handleGenerateAiCaption = async () => {
+    setIsGeneratingAi(true);
+    setAiError(null);
+    try {
+      const res = await generateCaptionWithAI({
+        brandId,
+        topic: aiPrompt || title || 'Medical bio-tech update',
+        platform,
+        currentCaption: caption
+      });
+      const combined = `${res.caption}${res.cta ? `\n\n${res.cta}` : ''}${res.hashtags.length > 0 ? `\n\n${res.hashtags.join(' ')}` : ''}`;
+      setCaption(combined);
+      setShowAiDrawer(false);
+      setAiPrompt('');
+    } catch (err: any) {
+      setAiError(err?.message || 'Failed to generate AI caption.');
+    } finally {
+      setIsGeneratingAi(false);
+    }
+  };
+
+  const handleRefineAiCaption = async (action: 'fix-grammar' | 'make-shorter' | 'add-hashtags' | 'add-cta' | 'make-more-clinical' | 'expand') => {
+    if (!caption.trim()) {
+      setAiError('Write or paste a draft caption first to refine it.');
+      return;
+    }
+    setIsGeneratingAi(true);
+    setAiError(null);
+    try {
+      const updated = await refineCaptionWithAI({
+        brandId,
+        caption,
+        action
+      });
+      setCaption(updated);
+      setShowAiDrawer(false);
+    } catch (err: any) {
+      setAiError(err?.message || 'Failed to refine caption.');
+    } finally {
+      setIsGeneratingAi(false);
+    }
+  };
 
   // Auto-sync reminder email when assignees change
   useEffect(() => {
@@ -459,15 +509,125 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
                   Write the caption and attach an image, or reuse something from the content bank.
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowBankDrawer((v) => !v)}
-                className="px-2.5 py-1.5 bg-[var(--color-muted)] hover:bg-[var(--color-line)] text-[var(--color-ink-soft)] font-label-caps text-[10px] font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer flex-shrink-0"
-              >
-                <span className="material-symbols-outlined text-sm">auto_stories</span>
-                <span>Reuse saved copy</span>
-              </button>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAiDrawer((v) => !v);
+                    setShowBankDrawer(false);
+                  }}
+                  className="px-2.5 py-1.5 bg-[#296c00]/10 hover:bg-[#296c00]/20 text-[#296c00] font-label-caps text-[10px] font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer border border-[#296c00]/30"
+                >
+                  <span className="material-symbols-outlined text-sm">auto_awesome</span>
+                  <span>AI Assist</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowBankDrawer((v) => !v);
+                    setShowAiDrawer(false);
+                  }}
+                  className="px-2.5 py-1.5 bg-[var(--color-muted)] hover:bg-[var(--color-line)] text-[var(--color-ink-soft)] font-label-caps text-[10px] font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-sm">auto_stories</span>
+                  <span>Reuse saved copy</span>
+                </button>
+              </div>
             </div>
+
+            {/* AI Assistant Drawer */}
+            {showAiDrawer && (
+              <div className="border border-[#296c00]/30 rounded-lg bg-[#f5faf2] p-3.5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-label-caps text-[10px] font-bold text-[#296c00] uppercase flex items-center gap-1">
+                    <span className="material-symbols-outlined text-sm">auto_awesome</span>
+                    <span>Gemini AI Copy Writer</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowAiDrawer(false)}
+                    className="text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] p-0.5"
+                  >
+                    <span className="material-symbols-outlined text-sm">close</span>
+                  </button>
+                </div>
+
+                {aiError && (
+                  <div className="p-2 rounded bg-[#ffdad6] text-[#ba1a1a] text-[11px]">
+                    {aiError}
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={aiPrompt}
+                      onChange={(e) => setAiPrompt(e.target.value)}
+                      placeholder={`e.g. Focus on ${BRANDS[brandId]?.name} clinical efficacy and protocol updates...`}
+                      className="flex-1 bg-white border border-[#bfcab4] rounded px-3 py-1.5 text-xs text-[#1b1c1a] focus:outline-none focus:border-[#296c00]"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleGenerateAiCaption}
+                      disabled={isGeneratingAi}
+                      className="bg-[#296c00] text-white px-3 py-1.5 rounded font-label-caps text-xs font-bold hover:bg-[#1f5700] disabled:opacity-50 transition-colors flex items-center gap-1 cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-sm">sparkles</span>
+                      <span>{isGeneratingAi ? 'Writing...' : 'Generate'}</span>
+                    </button>
+                  </div>
+
+                  {caption.trim() && (
+                    <div className="pt-2 border-t border-[#296c00]/20">
+                      <p className="text-[10px] font-label-caps text-[#707a67] uppercase font-bold mb-1.5">Quick Tone & Copy Refinements:</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleRefineAiCaption('make-more-clinical')}
+                          disabled={isGeneratingAi}
+                          className="px-2 py-1 bg-white border border-[#bfcab4] hover:bg-[#efeeea] text-[#1b1c1a] font-label-caps text-[9px] font-bold rounded transition-colors"
+                        >
+                          🔬 Make More Clinical
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRefineAiCaption('add-hashtags')}
+                          disabled={isGeneratingAi}
+                          className="px-2 py-1 bg-white border border-[#bfcab4] hover:bg-[#efeeea] text-[#1b1c1a] font-label-caps text-[9px] font-bold rounded transition-colors"
+                        >
+                          # Add Hashtags
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRefineAiCaption('add-cta')}
+                          disabled={isGeneratingAi}
+                          className="px-2 py-1 bg-white border border-[#bfcab4] hover:bg-[#efeeea] text-[#1b1c1a] font-label-caps text-[9px] font-bold rounded transition-colors"
+                        >
+                          🎯 Add Call-to-Action
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRefineAiCaption('make-shorter')}
+                          disabled={isGeneratingAi}
+                          className="px-2 py-1 bg-white border border-[#bfcab4] hover:bg-[#efeeea] text-[#1b1c1a] font-label-caps text-[9px] font-bold rounded transition-colors"
+                        >
+                          ✂️ Shorten
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRefineAiCaption('fix-grammar')}
+                          disabled={isGeneratingAi}
+                          className="px-2 py-1 bg-white border border-[#bfcab4] hover:bg-[#efeeea] text-[#1b1c1a] font-label-caps text-[9px] font-bold rounded transition-colors"
+                        >
+                          ✨ Fix Grammar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             <TextAreaField
               label="Caption"

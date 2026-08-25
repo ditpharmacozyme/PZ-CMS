@@ -35,6 +35,7 @@ import {
 import { supabase } from './lib/supabase';
 import { BRANDS } from './data/brands';
 import { applyBrandTypography } from './utils/brandTypography';
+import { exportPostsToCSV, exportFullWorkspaceJSON } from './utils/export';
 import { SideNav, NavTab } from './components/SideNav';
 import { TopNav } from './components/TopNav';
 import { CalendarView } from './components/CalendarView';
@@ -452,6 +453,8 @@ export function App() {
           isImportingData={importingData}
           activeTeammate={activeTeammate}
           onLogout={handleLogout}
+          onExportCSV={() => exportPostsToCSV(posts)}
+          onExportJSON={() => exportFullWorkspaceJSON(posts, templates, contentBank, researchItems)}
         />
 
         {/* Smart Memory & Work Continuation Ribbon */}

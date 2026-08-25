@@ -59,7 +59,7 @@ export const BRANDS: Record<BrandId, BrandConfig> = {
     accentColor: '#FF66C4',
     surfaceColor: '#F8F5FF',
     icon: 'medication',
-    logoUrl: '/logos/MED-Q Logo.png.png',
+    logoUrl: '/logos/MED-Q Logo.png',
     description: 'Weekly diagnostic challenges, oncology protocol alerts, and high-precision clinical deployment.',
     voiceRules: [
       'Diagnostic, direct, and action-oriented for unit teams.',
