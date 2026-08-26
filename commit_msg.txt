@@ -1,7 +1,0 @@
-refactor: remove AI assistant feature completely
-
-- Remove AI Assist drawer, button, and handlers from NewPostModal.tsx
-- Remove Gemini AI Assistant settings card from TopNav.tsx
-- Delete src/services/aiService.ts
-- Remove VITE_GEMINI_API_KEY from .env.example
-- Retain 1-click CSV/JSON workspace backup export and all core studio functionality
