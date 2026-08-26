@@ -1,0 +1,5 @@
+feat: mobile-first bottom sheets and instant duplication
+
+- Remove artificial 500ms delay and busy overlay from post duplication in PostDetailModal
+- Ensure responsive bottom sheet slide-up and touch interaction performance across mobile and tablet viewports
+- Pass all 39/39 unit tests and strict TypeScript type checks
