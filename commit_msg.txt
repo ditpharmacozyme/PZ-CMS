@@ -1,6 +1,0 @@
-feat: automated rolling local backups and 1-click restore
-
-- New src/utils/autoBackup.ts and autoBackup.test.ts: Automated rolling snapshot manager (capped at latest 5 snapshots) with 24h background trigger
-- TopNav Settings > System: "Automated Rolling Snapshots" UI showing date/time, content breakdown, "Snapshot Now", and 1-click "Restore"
-- App.tsx: Integrated background auto-backup trigger and workspace state restore handler
-- 48/48 unit tests passing across 9 test suites
