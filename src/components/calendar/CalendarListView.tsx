@@ -4,6 +4,7 @@ import { BRANDS } from '../../data/brands';
 import { getPostStatusConfig } from '../../utils/statusConfig';
 import { todayStr } from '../../utils/date';
 import { toggleStage, Stage } from '../../utils/stages';
+import { getPostTimeConflict } from '../../utils/brandConflicts';
 
 interface CalendarListViewProps {
   filteredCalendarPosts: Post[];
@@ -65,6 +66,7 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
     const isSelected = selectedPostIds.has(post.id);
     const statusCfg = getPostStatusConfig(post);
     const isToday = post.scheduledDate === today;
+    const timeConflict = getPostTimeConflict(post, filteredCalendarPosts);
 
     return (
       <div
@@ -98,8 +100,8 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
         </span>
 
         {/* Date & Brand chip */}
-        <div className="flex items-center justify-between md:block md:w-32 font-code-sm text-xs text-[#1b1c1a]">
-          <div className="flex items-center gap-1.5">
+        <div className="flex items-center justify-between md:block md:w-36 font-code-sm text-xs text-[#1b1c1a]">
+          <div className="flex items-center gap-1.5 flex-wrap">
             {isToday && (
               <span className="bg-[#296c00] text-white font-label-caps text-[9px] font-bold px-1.5 py-0.2 rounded uppercase">
                 Today
@@ -108,6 +110,14 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
             <span className="font-bold">
               {post.scheduledDate || 'Backlog'} {post.scheduledTime ? `(${post.scheduledTime})` : ''}
             </span>
+            {timeConflict.hasClash && (
+              <span
+                className="font-label-caps text-[8px] bg-[#ffdad6] text-[#ba1a1a] px-1 py-0.2 rounded font-bold"
+                title={`Time collision with "${timeConflict.conflictingPost?.title}"`}
+              >
+                ⚠️ Clash
+              </span>
+            )}
           </div>
           <span
             className="md:hidden px-2 py-0.5 font-label-caps text-[9px] uppercase font-bold rounded text-white"

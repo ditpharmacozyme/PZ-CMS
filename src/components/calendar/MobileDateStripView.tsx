@@ -4,6 +4,7 @@ import { BRANDS } from '../../data/brands';
 import { getPostStatusConfig } from '../../utils/statusConfig';
 import { todayStr, fromDateStr } from '../../utils/date';
 import { toggleStage, Stage } from '../../utils/stages';
+import { getDayBrandSummary } from '../../utils/brandConflicts';
 
 interface CalendarCell {
   dateStr: string;
@@ -51,6 +52,9 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
     onSavePost(toggleStage(post, stage, currentUserName || 'Someone'));
   };
 
+  const selectedDayPosts = postsByDate[selectedMobileDate] || [];
+  const selectedDaySummary = getDayBrandSummary(selectedDayPosts);
+
   return (
     <div className="md:hidden flex flex-col">
       {/* Horizontal Date Strip */}
@@ -64,6 +68,7 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
             const isSelected = cell.dateStr === selectedMobileDate;
             const isToday = cell.dateStr === todayIso;
             const dayPosts = cell.dateStr ? postsByDate[cell.dateStr] || [] : [];
+            const summary = getDayBrandSummary(dayPosts);
 
             return (
               <button
@@ -79,6 +84,20 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
               >
                 <span className="font-label-caps text-[9px] uppercase font-bold opacity-80">{dayShort}</span>
                 <span className="font-headline-md text-base font-bold mt-0.5">{dayNum}</span>
+
+                {/* Brand Color Dots below date */}
+                {summary.distinctBrandIds.length > 0 && (
+                  <div className="flex items-center gap-0.5 mt-1">
+                    {summary.distinctBrandIds.map((bId) => (
+                      <span
+                        key={bId}
+                        className="w-1.5 h-1.5 rounded-full"
+                        style={{ backgroundColor: BRANDS[bId]?.primaryColor || '#296c00' }}
+                      />
+                    ))}
+                  </div>
+                )}
+
                 {dayPosts.length > 0 && (
                   <div
                     className={`absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center font-label-caps text-[8px] font-bold ${
@@ -95,7 +114,7 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
 
       {/* Selected Day Posts List */}
       <div className="p-3 sm:p-4 bg-[#faf9f5]">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-3">
           <h3 className="font-headline-md text-lg font-bold text-[#1b1c1a]">
             {fromDateStr(selectedMobileDate).toLocaleDateString('default', {
               weekday: 'long',
@@ -105,15 +124,34 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
           </h3>
           <button
             onClick={() => onOpenNewPostModal(selectedMobileDate)}
-            className="flex items-center gap-1 text-[#296c00] font-label-caps text-xs font-bold bg-[#f0fae8] px-3 py-1.5 rounded-full hover:bg-[#aceecf] transition-colors"
+            className="flex items-center gap-1 text-[#296c00] font-label-caps text-xs font-bold bg-[#f0fae8] px-3 py-1.5 rounded-full hover:bg-[#aceecf] transition-colors cursor-pointer"
           >
             <span className="material-symbols-outlined text-sm">add</span>
             New Post
           </button>
         </div>
 
+        {/* Multi-Brand / Time Clash Alert Banner on Mobile */}
+        {selectedDaySummary.hasCollision && (
+          <div className="mb-3 p-2.5 rounded-lg bg-white border border-[#bfcab4] flex items-center justify-between gap-2 shadow-2xs">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="font-label-caps text-[10px] font-bold uppercase text-[#296c00] bg-[#f0fae8] px-1.5 py-0.5 rounded">
+                {selectedDaySummary.brandCount} Brands
+              </span>
+              <p className="text-xs text-[#404a39] truncate">
+                {selectedDaySummary.brandNames.join(' • ')}
+              </p>
+            </div>
+            {selectedDaySummary.timeClashes.length > 0 && (
+              <span className="text-[10px] font-label-caps font-bold text-[#ba1a1a] bg-[#ffdad6] px-2 py-0.5 rounded whitespace-nowrap">
+                ⚠️ Time Conflict
+              </span>
+            )}
+          </div>
+        )}
+
         {(() => {
-          const dayPosts = postsByDate[selectedMobileDate] || [];
+          const dayPosts = selectedDayPosts;
           if (dayPosts.length === 0) {
             return (
               <div className="text-center py-10 text-[#707a67] bg-white border border-[#bfcab4] rounded-lg">

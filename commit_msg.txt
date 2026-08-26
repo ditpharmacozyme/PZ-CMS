@@ -1,0 +1,8 @@
+feat: multi-brand collision and schedule timing indicators
+
+- New src/utils/brandConflicts.ts and brandConflicts.test.ts: Analyzes day posts for multi-brand density and exact schedule time clashes
+- CalendarMonthView: Render individual brand color pips, multi-brand collision pills, and time clash alert badges
+- CalendarWeekView: Add brand color pips, collision badges, and time clash alerts in weekday column headers
+- MobileDateStripView: Add multi-brand color dots in horizontal date strip and day collision/clash banner on mobile
+- CalendarListView: Flag exact schedule time clashes on post rows
+- 43/43 tests passing with 0 TypeScript errors

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Post, TeamMember } from '../../types';
 import { BRANDS } from '../../data/brands';
+import { getDayBrandSummary } from '../../utils/brandConflicts';
 import { PostCard } from './PostCard';
 
 interface CalendarCell {
@@ -66,8 +67,7 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
       <div className="grid grid-cols-7 bg-[#e5e4de] gap-[1px]">
         {calendarCells.map((cell, idx) => {
           const dayPosts = cell.dateStr ? postsByDate[cell.dateStr] || [] : [];
-          const distinctBrands = new Set(dayPosts.map((p) => p.brandId));
-          const isCollision = distinctBrands.size > 1;
+          const brandSummary = getDayBrandSummary(dayPosts);
           const isToday = cell.dateStr === todayIso;
           const isExpanded = expandedDate === cell.dateStr;
 
@@ -102,9 +102,9 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                 touchHoverDate && touchHoverDate === cell.dateStr ? 'ring-2 ring-[#296c00] bg-[#f0fae8]' : ''
               }`}
             >
-              {/* Date Header: Date Number + Brand Collisions + Quick Actions */}
+              {/* Date Header: Date Number + Brand Pips + Collisions + Time Clashes */}
               <div className="flex items-center justify-between mb-1.5">
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 flex-wrap">
                   <span
                     className={`font-label-caps text-xs font-bold transition-all ${
                       isToday
@@ -117,12 +117,36 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                     {cell.dayNum}
                   </span>
 
-                  {isCollision && (
+                  {/* Brand Color Dots for scheduled posts */}
+                  {brandSummary.distinctBrandIds.length > 0 && (
+                    <div className="flex items-center -space-x-1" title={brandSummary.brandNames.join(', ')}>
+                      {brandSummary.distinctBrandIds.map((bId) => (
+                        <span
+                          key={bId}
+                          className="w-2 h-2 rounded-full ring-1 ring-white"
+                          style={{ backgroundColor: BRANDS[bId]?.primaryColor || '#296c00' }}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Multi-Brand Collision Pill */}
+                  {brandSummary.hasCollision && (
                     <span
                       className="font-label-caps text-[8px] bg-[#f3f2ee] border border-[#bfcab4] text-[#404a39] px-1 py-0.2 rounded font-bold"
-                      title={`${distinctBrands.size} brands posting on this day`}
+                      title={`${brandSummary.brandCount} brands scheduled: ${brandSummary.brandNames.join(', ')}`}
                     >
-                      {distinctBrands.size} brands
+                      {brandSummary.brandCount} brands
+                    </span>
+                  )}
+
+                  {/* Time Clash Alert Pip */}
+                  {brandSummary.timeClashes.length > 0 && (
+                    <span
+                      className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#ffdad6] text-[#ba1a1a] text-[10px] font-bold"
+                      title={`Time conflict: ${brandSummary.timeClashes.map((c) => c.time).join(', ')}`}
+                    >
+                      ⚠️
                     </span>
                   )}
                 </div>

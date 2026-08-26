@@ -1,6 +1,8 @@
 import React from 'react';
 import { Post, TeamMember } from '../../types';
+import { BRANDS } from '../../data/brands';
 import { toDateStr, todayStr } from '../../utils/date';
+import { getDayBrandSummary } from '../../utils/brandConflicts';
 import { PostCard } from './PostCard';
 
 interface CalendarWeekViewProps {
@@ -103,6 +105,7 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
           dayDate.setDate(dayDate.getDate() + i);
           const dateStr = toDateStr(dayDate);
           const dayPosts = postsByDate[dateStr] || [];
+          const brandSummary = getDayBrandSummary(dayPosts);
           const isToday = dateStr === todayIso;
 
           return (
@@ -125,13 +128,49 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
               } ${touchHoverDate === dateStr ? 'ring-2 ring-[#296c00] bg-[#f0fae8]' : ''}`}
             >
               {/* Day Header */}
-              <div className="pb-1.5 mb-2 border-b border-[#e5e4de] flex justify-between items-center flex-shrink-0">
-                <span className={`font-label-caps text-xs font-bold ${isToday ? 'text-[#296c00]' : 'text-[#1b1c1a]'}`}>
-                  {dayDate.toLocaleDateString('default', { weekday: 'short' })} {dayDate.getDate()}
-                </span>
+              <div className="pb-1.5 mb-2 border-b border-[#e5e4de] flex justify-between items-center flex-shrink-0 gap-1">
+                <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                  <span className={`font-label-caps text-xs font-bold ${isToday ? 'text-[#296c00]' : 'text-[#1b1c1a]'}`}>
+                    {dayDate.toLocaleDateString('default', { weekday: 'short' })} {dayDate.getDate()}
+                  </span>
+
+                  {/* Brand Color Dots */}
+                  {brandSummary.distinctBrandIds.length > 0 && (
+                    <div className="flex items-center -space-x-1" title={brandSummary.brandNames.join(', ')}>
+                      {brandSummary.distinctBrandIds.map((bId) => (
+                        <span
+                          key={bId}
+                          className="w-2 h-2 rounded-full ring-1 ring-white"
+                          style={{ backgroundColor: BRANDS[bId]?.primaryColor || '#296c00' }}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Multi-Brand Collision Pill */}
+                  {brandSummary.hasCollision && (
+                    <span
+                      className="font-label-caps text-[8px] bg-[#f3f2ee] border border-[#bfcab4] text-[#404a39] px-1 py-0.2 rounded font-bold"
+                      title={`${brandSummary.brandCount} brands scheduled`}
+                    >
+                      {brandSummary.brandCount}b
+                    </span>
+                  )}
+
+                  {/* Time Clash Alert Pip */}
+                  {brandSummary.timeClashes.length > 0 && (
+                    <span
+                      className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-[#ffdad6] text-[#ba1a1a] text-[9px] font-bold"
+                      title={`Time conflict: ${brandSummary.timeClashes.map((c) => c.time).join(', ')}`}
+                    >
+                      ⚠️
+                    </span>
+                  )}
+                </div>
+
                 <button
                   onClick={() => onOpenNewPostModal(dateStr)}
-                  className="text-[#296c00] hover:bg-[#efeeea] p-1 rounded-lg flex items-center justify-center cursor-pointer"
+                  className="text-[#296c00] hover:bg-[#efeeea] p-1 rounded-lg flex items-center justify-center cursor-pointer flex-shrink-0"
                   title="Add post"
                 >
                   <span className="material-symbols-outlined text-sm">add</span>
