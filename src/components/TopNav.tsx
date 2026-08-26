@@ -77,12 +77,6 @@ export const TopNav: React.FC<TopNavProps> = ({
   const [showActiveTeammatePopover, setShowActiveTeammatePopover] = useState(false);
   const [showBrandPicker, setShowBrandPicker] = useState(false);
 
-  // Gemini API key state
-  const [geminiKey, setGeminiKey] = useState<string>(() => {
-    return typeof window !== 'undefined' ? localStorage.getItem('pz_gemini_api_key') || '' : '';
-  });
-  const [geminiSaved, setGeminiSaved] = useState(false);
-
   // Brand picker options — same shape as the brand-group list SideNav used
   // to render before Phase 7 moved brand selection up here: an 'all' option
   // plus every BRANDS entry, independent of page navigation.
@@ -779,49 +773,6 @@ export const TopNav: React.FC<TopNavProps> = ({
                         Not connected — data stays on this device only. Set VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY to share it with the team.
                       </p>
                     )}
-                  </div>
-
-                  {/* Gemini AI Assistant Configuration */}
-                  <div className="p-3 bg-[#faf9f5] border border-[#bfcab4] rounded space-y-2">
-                    <div className="flex items-center justify-between">
-                      <p className="font-label-caps text-[10px] text-[#296c00] font-bold uppercase flex items-center gap-1">
-                        <span className="material-symbols-outlined text-sm">auto_awesome</span>
-                        <span>Zero-Cost Gemini AI Assistant</span>
-                      </p>
-                      <a
-                        href="https://aistudio.google.com/"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-[10px] text-[#296c00] hover:underline font-bold"
-                      >
-                        Get Free Key ↗
-                      </a>
-                    </div>
-                    <p className="text-[11px] text-[#707a67]">
-                      Google Gemini API offers 1,500 requests/day at $0 cost. Save your key below to unlock AI caption writing, tone refining, and doc parsing.
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="password"
-                        value={geminiKey}
-                        onChange={(e) => {
-                          setGeminiKey(e.target.value);
-                          setGeminiSaved(false);
-                        }}
-                        placeholder="AIzaSy..."
-                        className="flex-1 bg-white border border-[#bfcab4] px-2.5 py-1.5 rounded text-xs focus:outline-none focus:border-[#296c00]"
-                      />
-                      <button
-                        onClick={() => {
-                          localStorage.setItem('pz_gemini_api_key', geminiKey.trim());
-                          setGeminiSaved(true);
-                          setTimeout(() => setGeminiSaved(false), 3000);
-                        }}
-                        className="bg-[#296c00] text-white px-3 py-1.5 rounded font-label-caps text-xs font-bold hover:bg-[#1f5700] transition-colors"
-                      >
-                        {geminiSaved ? 'Saved!' : 'Save Key'}
-                      </button>
-                    </div>
                   </div>
 
                   {/* Data Export & Backup */}
