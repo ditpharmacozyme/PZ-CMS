@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppNotification, BrandId, TeamMember } from '../types';
 import { BRANDS } from '../data/brands';
 import { NavTab } from './SideNav';
 import { provisionTeamMemberAccount } from '../utils/storage';
 import { NotificationDrawer } from './NotificationDrawer';
+import { getRollingBackups, deleteRollingBackup, RollingBackupSummary, WorkspaceBackupPayload } from '../utils/autoBackup';
 
 interface TopNavProps {
   searchQuery: string;
@@ -29,6 +30,8 @@ interface TopNavProps {
   onLogout?: () => void;
   onExportCSV?: () => void;
   onExportJSON?: () => void;
+  onCreateSnapshotNow?: () => void;
+  onRestoreSnapshot?: (payload: WorkspaceBackupPayload) => void;
 }
 
 const AVATAR_COLORS = [
@@ -69,13 +72,22 @@ export const TopNav: React.FC<TopNavProps> = ({
   activeTeammate,
   onLogout,
   onExportCSV,
-  onExportJSON
+  onExportJSON,
+  onCreateSnapshotNow,
+  onRestoreSnapshot
 }) => {
   const [showNotificationsPopover, setShowNotificationsPopover] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [showActiveTeammatePopover, setShowActiveTeammatePopover] = useState(false);
   const [showBrandPicker, setShowBrandPicker] = useState(false);
+  const [rollingBackups, setRollingBackups] = useState<RollingBackupSummary[]>([]);
+
+  useEffect(() => {
+    if (showSettingsModal) {
+      setRollingBackups(getRollingBackups());
+    }
+  }, [showSettingsModal]);
 
   // Brand picker options — same shape as the brand-group list SideNav used
   // to render before Phase 7 moved brand selection up here: an 'all' option
@@ -804,6 +816,79 @@ export const TopNav: React.FC<TopNavProps> = ({
                         </button>
                       )}
                     </div>
+                  </div>
+
+                  {/* Automated Rolling Local Backups */}
+                  <div className="p-3 bg-[#faf9f5] border border-[#bfcab4] rounded space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <p className="font-label-caps text-[10px] text-[#296c00] font-bold uppercase flex items-center gap-1">
+                        <span className="material-symbols-outlined text-sm">history</span>
+                        <span>Automated Rolling Snapshots</span>
+                      </p>
+                      {onCreateSnapshotNow && (
+                        <button
+                          onClick={() => {
+                            onCreateSnapshotNow();
+                            setRollingBackups(getRollingBackups());
+                          }}
+                          className="px-2 py-1 bg-white border border-[#bfcab4] hover:bg-[#296c00] hover:text-white text-[#1b1c1a] font-label-caps text-[10px] font-bold rounded transition-colors flex items-center gap-1 cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-xs">add</span>
+                          <span>Snapshot Now</span>
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-[#707a67]">
+                      Silent background snapshots stored in offline storage (keeps latest 5 versions). 1-click restore if a mistake happens.
+                    </p>
+
+                    {rollingBackups.length === 0 ? (
+                      <p className="text-[10px] text-[#707a67] italic bg-white p-2 rounded border border-[#e5e4de]">
+                        No local snapshots yet. A snapshot is created automatically every 24h or click &quot;Snapshot Now&quot;.
+                      </p>
+                    ) : (
+                      <div className="space-y-1.5 max-h-36 overflow-y-auto">
+                        {rollingBackups.map((b) => (
+                          <div
+                            key={b.id}
+                            className="p-2 bg-white border border-[#e5e4de] rounded flex items-center justify-between gap-2"
+                          >
+                            <div className="min-w-0">
+                              <p className="font-label-caps text-[10px] font-bold text-[#1b1c1a]">
+                                {new Date(b.timestamp).toLocaleString()}
+                              </p>
+                              <p className="text-[9px] text-[#707a67]">
+                                {b.postCount} posts • {b.copyCount} copy items • {b.planCount} plans
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              {onRestoreSnapshot && (
+                                <button
+                                  onClick={() => {
+                                    if (confirm(`Restore workspace from snapshot taken on ${new Date(b.timestamp).toLocaleString()}? This will update your current active session.`)) {
+                                      onRestoreSnapshot(b.data);
+                                      setShowSettingsModal(false);
+                                    }
+                                  }}
+                                  className="px-2 py-1 bg-[#f0fae8] text-[#296c00] hover:bg-[#aceecf] font-label-caps text-[9px] font-bold rounded cursor-pointer transition-colors"
+                                >
+                                  Restore
+                                </button>
+                              )}
+                              <button
+                                onClick={() => {
+                                  setRollingBackups(deleteRollingBackup(b.id));
+                                }}
+                                className="p-1 text-[#707a67] hover:text-[#ba1a1a] cursor-pointer transition-colors"
+                                title="Delete snapshot"
+                              >
+                                <span className="material-symbols-outlined text-xs">delete</span>
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div className="pt-2 border-t border-[#bfcab4] flex flex-col sm:flex-row sm:items-center justify-between gap-3">

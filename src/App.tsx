@@ -36,6 +36,7 @@ import { supabase } from './lib/supabase';
 import { BRANDS } from './data/brands';
 import { applyBrandTypography } from './utils/brandTypography';
 import { exportPostsToCSV, exportFullWorkspaceJSON } from './utils/export';
+import { checkAndTriggerAutoBackup, saveRollingBackup, WorkspaceBackupPayload } from './utils/autoBackup';
 import { SideNav, NavTab } from './components/SideNav';
 import { TopNav } from './components/TopNav';
 import { CalendarView } from './components/CalendarView';
@@ -397,6 +398,53 @@ export function App() {
     }
   };
 
+  // ── Automated Rolling Local Backups ──────────────────────────────────────────
+  useEffect(() => {
+    if (posts.length > 0) {
+      checkAndTriggerAutoBackup({
+        version: '1.0',
+        timestamp: new Date().toISOString(),
+        posts,
+        contentBank,
+        researchPlans: researchItems,
+        templates,
+        teamMembers
+      });
+    }
+  }, [posts, contentBank, researchItems, templates, teamMembers]);
+
+  const handleCreateSnapshotNow = () => {
+    saveRollingBackup({
+      version: '1.0',
+      timestamp: new Date().toISOString(),
+      posts,
+      contentBank,
+      researchPlans: researchItems,
+      templates,
+      teamMembers
+    });
+    showToast('Manual backup snapshot created successfully!');
+  };
+
+  const handleRestoreSnapshot = async (payload: WorkspaceBackupPayload) => {
+    if (payload.posts && payload.posts.length > 0) {
+      setPosts(payload.posts);
+    }
+    if (payload.contentBank) {
+      setContentBank(payload.contentBank);
+      saveStoredContentBank(payload.contentBank);
+    }
+    if (payload.researchPlans) {
+      setResearchItems(payload.researchPlans);
+      saveStoredResearchItems(payload.researchPlans);
+    }
+    if (payload.templates) {
+      setTemplates(payload.templates);
+      saveStoredTemplates(payload.templates);
+    }
+    showToast('Workspace successfully restored from snapshot!');
+  };
+
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
     <ConfirmProvider>
@@ -455,6 +503,8 @@ export function App() {
           onLogout={handleLogout}
           onExportCSV={() => exportPostsToCSV(posts)}
           onExportJSON={() => exportFullWorkspaceJSON(posts, templates, contentBank, researchItems)}
+          onCreateSnapshotNow={handleCreateSnapshotNow}
+          onRestoreSnapshot={handleRestoreSnapshot}
         />
 
         {/* Smart Memory & Work Continuation Ribbon */}
