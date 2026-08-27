@@ -30,6 +30,12 @@ export const GOOGLE_APPS_SCRIPT_CODE = `/**
  * 13. In the app's Integrations tab, click "Enable Scheduled Reminders" once — this installs a
  *     trigger that runs sendDueReminders() every 5 minutes, sending each post's reminder
  *     around its own scheduled time instead of only when someone clicks "Send" by hand.
+ * 14. REQUIRED once migration 0018 is applied: in Apps Script -> Project Settings ->
+ *     Script Properties, add a property named REMINDER_RPC_SECRET whose value is the
+ *     output of this SQL in the Supabase SQL editor:
+ *        select value from private.app_secrets where name = 'reminder_rpc_secret';
+ *     The reminder RPCs reject the call without it, so the trigger sends nothing until
+ *     this is set. (Optional: REMINDER_TIMEZONE to override the default Asia/Karachi.)
  */
 
 // Global Configuration
@@ -434,18 +440,24 @@ function sendDueReminders() {
   var today = Utilities.formatDate(new Date(), TIMEZONE, "yyyy-MM-dd");
   var nowStr = Utilities.formatDate(new Date(), TIMEZONE, "yyyy-MM-dd HH:mm");
 
+  var RPC_SECRET = reminderRpcSecret();
+  if (!RPC_SECRET) {
+    Logger.log("sendDueReminders: REMINDER_RPC_SECRET script property is not set -- see migration 0018. Skipping.");
+    return;
+  }
+
   // p_as_of_date uses lte (not eq) so a reminder that was due while this
   // trigger happened to be down still goes out on the next run, instead of
   // being silently skipped forever. Goes through the get_due_reminders RPC
   // (not a raw table select) because posts RLS only allows the
   // authenticated role -- this script has no Supabase Auth session, only
   // the anon key, so a raw select would always come back empty. The RPC is
-  // SECURITY DEFINER and grants anon just this one fixed, minimal-column
-  // query -- see migration 0016_reminder_rpcs.sql.
+  // SECURITY DEFINER and now also requires a shared secret so a leaked anon
+  // key alone can't enumerate reminders -- see migration 0018.
   var res = UrlFetchApp.fetch(SUPABASE_URL + "/rest/v1/rpc/get_due_reminders", {
     method: "post",
     headers: supabaseHeaders(),
-    payload: JSON.stringify({ p_as_of_date: today }),
+    payload: JSON.stringify({ p_as_of_date: today, p_secret: RPC_SECRET }),
     muteHttpExceptions: true
   });
 
@@ -510,12 +522,21 @@ function supabaseHeaders() {
   };
 }
 
+/**
+ * Shared secret for the reminder RPCs (migration 0018). Must equal the value
+ * of private.app_secrets.reminder_rpc_secret in the database. Set it as a
+ * REMINDER_RPC_SECRET script property (Project Settings -> Script Properties).
+ */
+function reminderRpcSecret() {
+  return PropertiesService.getScriptProperties().getProperty("REMINDER_RPC_SECRET") || "";
+}
+
 /** Stamp reminder_sent_at so this post is never emailed twice (via RPC -- see sendDueReminders). */
 function markReminderSent(postId) {
   UrlFetchApp.fetch(SUPABASE_URL + "/rest/v1/rpc/mark_reminder_sent", {
     method: "post",
     headers: supabaseHeaders(),
-    payload: JSON.stringify({ p_post_id: postId }),
+    payload: JSON.stringify({ p_post_id: postId, p_secret: reminderRpcSecret() }),
     muteHttpExceptions: true
   });
 }
