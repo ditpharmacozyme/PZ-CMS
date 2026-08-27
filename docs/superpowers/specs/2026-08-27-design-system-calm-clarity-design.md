@@ -63,14 +63,16 @@ Direction **A — Calm Clarity** with the **V3 "full card"** calendar post chip.
 Legacy `@theme` names still referenced by `ui/` primitives (`--color-raised`, `--color-line`,
 `--color-danger-soft`, etc.) are kept as aliases so `ui/Button.tsx` etc. need no edits.
 
-### 2.2 Typography — Inter only
+### 2.2 Typography
+
+> **Amended 2026-08-27 (user, during execution):** display + headline use **Bricolage Grotesque** (distinctive grotesque, Inter fallback); body / labels / buttons / chips stay **Inter**; data stays **Space Mono**. The rest of this section stands.
 
 Hierarchy comes from **size + weight**, never letter-casing or monospace.
 
 | Utility (kept name, redefined) | Spec |
 |---|---|
-| `.font-display-xl` | Inter 700, 24px equiv, `-0.02em` |
-| `.font-headline-md` | Inter 600, `-0.01em` |
+| `.font-display-xl` | Bricolage Grotesque 700, 24px equiv, `-0.02em` |
+| `.font-headline-md` | Bricolage Grotesque 600, `-0.01em` |
 | `.font-label-caps` | **Inter 500, normal case, `letter-spacing: 0`, `text-transform: none`** |
 | `.font-body-md` | Inter 400 |
 | `.font-code-sm` | Space Mono 400, 0.72rem — **data only** (IDs, versions, %, timestamps) |

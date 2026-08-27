@@ -130,22 +130,24 @@ git commit -m "$(printf 'feat(design): Calm Clarity color tokens + base styles\n
 ## Task 2: Foundations — typography utilities + shared component classes
 
 **Files:**
-- Modify: `src/index.css:26-48` (`.font-*` utilities), `:152-178` (`.brand-chip`, `.status-pill`), `:225-273` (`.btn-primary`, `.btn-danger`, `.stamp-badge`), `:342-363` (`.tag-pill`), `:144-150` (`.warm-shadow*`)
+- Modify: `src/index.css:26-48` (`.font-*` utilities), `:152-178` (`.brand-chip`, `.status-pill`), `:225-273` (`.btn-primary`, `.btn-danger`, `.stamp-badge`), `:342-363` (`.tag-pill`), `:144-150` (`.warm-shadow*`), `:105-119` (scrollbar), plus any other retired hex still in the file (Step 7)
 
 **Interfaces:**
 - Consumes: tokens from Task 1
-- Produces: `.font-display-xl` / `.font-headline-md` / `.font-label-caps` / `.font-body-md` / `.font-code-sm` — all now Inter-based (except `font-code-sm` = Space Mono), no `text-transform`, no letter-spacing on labels. Consumed by every component and by `ui/Button.tsx`.
+- Produces: `.font-display-xl` / `.font-headline-md` — **Bricolage Grotesque** (display face); `.font-label-caps` / `.font-body-md` — Inter; `.font-code-sm` — Space Mono. No `text-transform`, no letter-spacing on labels. Consumed by every component and by `ui/Button.tsx`.
+
+> **Font ruling (supersedes spec §2.2 "Inter only"):** the user chose "distinctive headings + Inter body". Display + headline utilities use **`'Bricolage Grotesque'`** with an `'Inter', ...sans-serif` fallback stack. Everything else (body, labels, buttons, chips) stays Inter. `font-code-sm` stays Space Mono.
 
 - [ ] **Step 1: Replace the five font utilities** (`src/index.css:27-48`, inside `@layer utilities`) with:
 
 ```css
   .font-display-xl {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Bricolage Grotesque', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-weight: 700;
     letter-spacing: -0.02em;
   }
   .font-headline-md {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Bricolage Grotesque', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-weight: 600;
     letter-spacing: -0.01em;
   }
@@ -210,16 +212,18 @@ Leave the `.font-specimen-*`, `.font-poppins`, `.font-montserrat`, `.font-amster
 }
 ```
 
-- [ ] **Step 7: Run the gate**
+- [ ] **Step 7: Sweep residual retired hex in `src/index.css`.** The Phase B script (Task 4/5) only touches `.ts`/`.tsx`, so `index.css` needs a manual pass. Run `grep -niE "#(bfcab4|707a67|404a39|faf9f5|efeeea|e5e4de|f7f6f2|f0eee6|f3f2ee|ba1a1a|935c00|ffddb0|ffdad6|296c00|205400|1f5700|aceecf|78d24b|296951|f7f6f0|f0fae8)" src/index.css`. For each hit replace with the token equivalent: sage/olive greys → `#E9E9E7` (borders) or `#5F5F5B` (text) or `#F4F4F3` (fills) by role; the scrollbar `track #f3f2ee` → `#F1F1F0`, `thumb #bfcab4` → `#D8D8D5`; greens → `var(--color-accent)` / `#15803D` by role (all scrollbar/hover greens are accent). Leave `#1b1c1a`, `rgba(0,0,0,…)`, and `.font-specimen-*` alone. Re-run the grep — expect zero.
+
+- [ ] **Step 8: Run the gate**
 
 Run: `npx tsc --noEmit && npx vitest run && npm run build`
 Expected: tsc clean · `73 passed` · build clean
 
-- [ ] **Step 8: Visual check**
+- [ ] **Step 9: Visual check**
 
-`npm run dev` → all body text and labels are now **Inter, sentence case** (no monospace all-caps); primary buttons are **indigo**, not green; timestamps / IDs that use `.font-code-sm` are still monospace. Tabs, chips, nav labels readable in mixed case.
+`npm run dev` → body text and labels are **Inter, sentence case** (no monospace all-caps); page headings / section titles are **Bricolage Grotesque**; primary buttons are **indigo**, not green; timestamps / IDs that use `.font-code-sm` are still monospace; scrollbars are neutral grey. Tabs, chips, nav labels readable in mixed case.
 
-- [ ] **Step 9: Commit**
+- [ ] **Step 10: Commit**
 
 ```bash
 git add src/index.css
@@ -228,7 +232,7 @@ git commit -m "$(printf 'feat(design): Inter type scale + reskin shared componen
 
 ---
 
-## Task 3: Trim unused Google Font families
+## Task 3: Adjust Google Font families (add Bricolage Grotesque, drop unused)
 
 **Files:**
 - Modify: `index.html` (the `fonts.googleapis.com/css2?family=...` `<link>`)
@@ -249,7 +253,15 @@ Brand specimen fonts in `brands.ts` currently in use: **Nunito Sans, Montserrat,
 
 - [ ] **Step 2: For each of `Fredoka+One`, `Rajdhani`, `Plus+Jakarta+Sans`** — if `grep` in Step 1 shows zero `.font-fredoka` / `.font-rajdhani` usages in `src/`, and `Plus Jakarta Sans` appears only as a `.font-specimen-*` *fallback* in `src/index.css:50-61`, they can be dropped. If `Plus Jakarta Sans` is still a fallback there, either keep it in the URL **or** change those fallbacks to `'Inter'` first (preferred — do it in this step, `src/index.css:52,56,60`).
 
-- [ ] **Step 3: Rewrite the first `<link href="https://fonts.googleapis.com/css2?...">`** in `index.html` to request only: `Inter:wght@400;500;600;700`, `Space+Grotesk:wght@400;500;600;700`, `Space+Mono:ital,wght@0,400;0,700;1,400`, `Montserrat:ital,wght@0,300..900;1,300..900`, `New+Amsterdam`, `Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000`, `Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400`, plus `&display=swap`. Leave the second `<link>` (Material Symbols) unchanged.
+- [ ] **Step 3: Rewrite the first `<link href="https://fonts.googleapis.com/css2?...">`** in `index.html` to request only these families (plus `&display=swap`), leaving the second `<link>` (Material Symbols) unchanged:
+  - `Inter:wght@400;500;600;700` — UI body / labels
+  - `Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700` — **new**, UI display + headings
+  - `Space+Mono:ital,wght@0,400;0,700;1,400` — data
+  - `Space+Grotesk:wght@400;500;600;700` — brand specimen (PillZ, PrescriptionZ)
+  - `Montserrat:ital,wght@0,300..900;1,300..900` — brand specimen (PZ Academy)
+  - `New+Amsterdam` — brand specimen (MED-Q)
+  - `Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000` — brand specimen (Pharmacozyme, PillZ/RxZ body)
+  - `Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400` — brand specimen (Pharmacozyme/PZ Academy/MED-Q body)
 
 - [ ] **Step 4: Run the gate**
 
@@ -258,13 +270,13 @@ Expected: tsc clean · `73 passed` · build clean
 
 - [ ] **Step 5: Visual check**
 
-`npm run dev` → app UI unchanged (Inter everywhere). Open **Brand Kit / Brand Control Center**, cycle through all 5 brands, confirm each specimen preview still renders its brand font (Montserrat, New Amsterdam, etc.) and nothing falls back to Times/serif.
+`npm run dev` → UI headings render in **Bricolage Grotesque** (a slightly condensed, characterful grotesque — not Inter); body/labels in Inter; nothing falls back to serif. Open **Brand Kit / Brand Control Center**, cycle all 5 brands, confirm each specimen preview still renders its brand font (Montserrat, New Amsterdam, etc.).
 
 - [ ] **Step 6: Commit**
 
 ```bash
 git add index.html src/index.css
-git commit -m "$(printf 'chore(design): drop unused webfont families\n\nCo-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>')"
+git commit -m "$(printf 'chore(design): add Bricolage Grotesque, drop unused webfont families\n\nCo-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>')"
 ```
 
 ---
@@ -764,8 +776,8 @@ git commit -m "$(printf 'feat: open / copy-link actions for template images\n\nC
 - [ ] **Step 1: Retired-hex grep**
 
 Run: `npx vitest run src/utils/paletteGuard.test.ts` and
-`grep -rniE "#(296c00|205400|1f5700|bfcab4|707a67|404a39|faf9f5|efeeea|e5e4de|ba1a1a|935c00|aceecf|78d24b|296951|f0fae8|f7f6f0)" src --include=*.tsx --include=*.ts | grep -v ".test."`
-Expected: guard PASS; grep returns only `src/utils/statusConfig.ts` is already fixed → **zero** lines. Any hit outside `brands.ts` is a defect — fix it and re-commit.
+`grep -rniE "#(296c00|205400|1f5700|bfcab4|707a67|404a39|faf9f5|efeeea|e5e4de|ba1a1a|935c00|aceecf|78d24b|296951|f0fae8|f7f6f0|f3f2ee|f0eee6)" src --include=*.tsx --include=*.ts --include=*.css | grep -v ".test."`
+Expected: guard PASS; grep returns **zero** lines (statusConfig.ts already uses new values; index.css swept in Task 2 Step 7). Any hit outside `brands.ts` / `brandTypography.ts` is a defect — fix it and re-commit.
 
 - [ ] **Step 2: Full gate on the branch tip**
 
