@@ -6,21 +6,32 @@
    components are not mass-rewritten to use these; they pick them up as they
    adopt the ui/ primitives. */
 @theme {
-  --color-surface: #FAF9F5;
-  --color-raised: #ffffff;
-  --color-muted: #efeeea;
-  --color-line: #bfcab4;
-  --color-line-subtle: #e5e4de;
+  /* ── Surfaces ── */
+  --color-canvas: #FBFBFA;
+  --color-surface: #FFFFFF;
+  --color-raised: #FFFFFF;          /* legacy alias → surface */
+  --color-sunken: #F4F4F3;
+  --color-muted: #F1F1F0;
+  --color-line: #E9E9E7;
+  --color-line-subtle: #EFEFED;
+  /* ── Ink ── */
   --color-ink: #1b1c1a;
-  --color-ink-muted: #707a67;
-  --color-ink-soft: #404a39;
-  --color-accent: #296c00;
-  --color-accent-hover: #1f5700;
-  --color-accent-soft: #aceecf;
-  --color-danger: #ba1a1a;
-  --color-danger-soft: #ffdad6;
-  --color-warn: #935c00;
-  --color-warn-soft: #ffddb0;
+  --color-ink-muted: #5F5F5B;
+  --color-ink-soft: #57574F;
+  /* ── Accent (indigo) ── */
+  --color-accent: #4F46E5;
+  --color-accent-hover: #4338CA;
+  --color-accent-soft: #EEF2FF;
+  --color-accent-on-soft: #4338CA;
+  /* ── Status ── */
+  --color-success: #15803D;
+  --color-success-soft: #E6F4EA;
+  --color-warn: #B45309;
+  --color-warn-soft: #FBF0E1;
+  --color-danger: #DC2626;
+  --color-danger-soft: #FCEBEB;
+  --color-neutral: #52525B;
+  --color-neutral-soft: #F1F1F0;
 }
 
 /* ─── Premium Unified Font System ─── */
@@ -88,7 +99,7 @@ html {
 
 body {
   font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: #F7F6F0;
+  background: var(--color-canvas);
   color: #1b1c1a;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -115,7 +126,7 @@ button, input, select, textarea, a {
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #296c00;
+  background: var(--color-accent);
 }
 
 /* ─── Material Symbols ─── */
@@ -129,7 +140,7 @@ button, input, select, textarea, a {
 }
 
 .spec-grid {
-  background-image: radial-gradient(rgba(191, 202, 180, 0.5) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(0, 0, 0, 0.06) 1px, transparent 1px);
   background-size: 20px 20px;
 }
 
@@ -138,7 +149,7 @@ button, input, select, textarea, a {
   background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(191, 202, 180, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 /* ─── Warm Shadows ─── */
@@ -195,20 +206,21 @@ button, input, select, textarea, a {
 }
 .post-card:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(41, 108, 0, 0.10);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 /* ─── Side Nav Active Glow ─── */
 .nav-item-active {
-  background: linear-gradient(135deg, rgba(41, 108, 0, 0.12), rgba(41, 108, 0, 0.06));
-  border-left: 3px solid #296c00;
+  background: var(--color-accent-soft);
+  border-left: 3px solid var(--color-accent);
+  color: var(--color-accent-on-soft);
 }
 
 /* ─── Input Focus Ring ─── */
 input:focus, textarea:focus, select:focus {
   outline: none;
-  border-color: #296c00 !important;
-  box-shadow: 0 0 0 3px rgba(41, 108, 0, 0.12);
+  border-color: var(--color-accent) !important;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.22);
 }
 
 /* ─── Mobile Input Zoom Fix ───
