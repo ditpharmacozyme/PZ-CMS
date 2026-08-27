@@ -42,6 +42,34 @@ interface CalendarViewProps {
 
 type CalendarDisplayMode = 'month' | 'week' | 'list';
 
+// The calendar unmounts on every tab switch, so its view mode and filters
+// used to reset to Month / all every time. Persist them locally (this also
+// wires up what useSmartMemory's orphaned calendarDisplayMode/status/platform
+// keys were meant to do, in one place instead of three half-declared ones).
+const CAL_PREFS_KEY = 'pz_smart_cal_prefs';
+interface CalendarPrefs {
+  displayMode: CalendarDisplayMode;
+  statusFilter: PostStatus | 'all';
+  platformFilter: Platform | 'all';
+  assigneeFilter: string;
+  onlyMine: boolean;
+}
+const DEFAULT_CAL_PREFS: CalendarPrefs = {
+  displayMode: 'month',
+  statusFilter: 'all',
+  platformFilter: 'all',
+  assigneeFilter: 'all',
+  onlyMine: false,
+};
+function readCalPrefs(): CalendarPrefs {
+  if (typeof window === 'undefined') return DEFAULT_CAL_PREFS;
+  try {
+    const raw = localStorage.getItem(CAL_PREFS_KEY);
+    if (raw) return { ...DEFAULT_CAL_PREFS, ...JSON.parse(raw) };
+  } catch (_) {}
+  return DEFAULT_CAL_PREFS;
+}
+
 interface PostFilters {
   brand: BrandId | 'all';
   status: PostStatus | 'all';
@@ -87,18 +115,27 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const todayIso = todayStr();
   const csvFileInputRef = useRef<HTMLInputElement>(null);
 
-  // ── View State ──────────────────────────────────────────────────────────────
-  const [displayMode, setDisplayMode] = useState<CalendarDisplayMode>('month');
+  // ── View + Filter State (persisted -- survives tab switches) ─────────────────
+  const [initialPrefs] = useState(readCalPrefs);
+  const [displayMode, setDisplayMode] = useState<CalendarDisplayMode>(initialPrefs.displayMode);
   const [currentYear, setCurrentYear] = useState<number>(today.getFullYear());
   const [currentMonth, setCurrentMonth] = useState<number>(today.getMonth());
   const [weekStart, setWeekStart] = useState<Date>(() => startOfWeek(new Date()));
   const [selectedMobileDate, setSelectedMobileDate] = useState<string>(todayIso);
 
-  // ── Filter State ────────────────────────────────────────────────────────────
-  const [statusFilter, setStatusFilter] = useState<PostStatus | 'all'>('all');
-  const [platformFilter, setPlatformFilter] = useState<Platform | 'all'>('all');
-  const [assigneeFilter, setAssigneeFilter] = useState<string>('all');
-  const [onlyMine, setOnlyMine] = useState<boolean>(false);
+  const [statusFilter, setStatusFilter] = useState<PostStatus | 'all'>(initialPrefs.statusFilter);
+  const [platformFilter, setPlatformFilter] = useState<Platform | 'all'>(initialPrefs.platformFilter);
+  const [assigneeFilter, setAssigneeFilter] = useState<string>(initialPrefs.assigneeFilter);
+  const [onlyMine, setOnlyMine] = useState<boolean>(initialPrefs.onlyMine);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        CAL_PREFS_KEY,
+        JSON.stringify({ displayMode, statusFilter, platformFilter, assigneeFilter, onlyMine })
+      );
+    } catch (_) {}
+  }, [displayMode, statusFilter, platformFilter, assigneeFilter, onlyMine]);
 
   // ── Multi-Select State ──────────────────────────────────────────────────────
   const [selectedPostIds, setSelectedPostIds] = useState<Set<string>>(new Set());
@@ -203,6 +240,19 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     return cells;
   }, [weekStart]);
 
+  // recurrencePlaceholders is O(cells x series x posts). It only cares about a
+  // post's date / brand / title / templateId / recurrenceRule -- never its
+  // stage or status -- so keying the memo on a projection of just those fields
+  // keeps a stage toggle (which rewrites `posts`) from re-running the whole
+  // sweep on every click.
+  const recurrenceInputKey = useMemo(
+    () =>
+      posts
+        .map((p) => `${p.id}|${p.scheduledDate}|${p.brandId}|${p.title}|${p.templateId || ''}|${p.recurrenceRule || ''}`)
+        .join('¦'),
+    [posts]
+  );
+
   const recurrencePlaceholders = useMemo(() => {
     const placeholders: Record<string, any[]> = {};
     const recurringSeries = posts.filter((p) => p.recurrenceRule && p.recurrenceRule !== 'none');
@@ -245,7 +295,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       });
     });
     return placeholders;
-  }, [posts, calendarCells]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- recurrenceInputKey is a stable projection of the only `posts` fields this uses
+  }, [recurrenceInputKey, calendarCells]);
 
   const postsByDate = useMemo(() => {
     const map: Record<string, any[]> = {};
@@ -415,6 +466,39 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     setSelectedMobileDate(todayIso);
   };
 
+  const handleJumpToMonth = (value: string) => {
+    // value is "YYYY-MM" from a native month input.
+    const [y, m] = value.split('-').map(Number);
+    if (!y || !m) return;
+    setCurrentYear(y);
+    setCurrentMonth(m - 1);
+    setWeekStart(startOfWeek(new Date(y, m - 1, 1)));
+  };
+
+  // Calendar-scoped keyboard shortcuts: t = today, m/w/l = view modes,
+  // arrows = prev/next period. Suppressed while typing or when a dialog/
+  // modal is focused (the app shell's own N / / / Cmd-K keep working).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      const tag = el?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el?.isContentEditable) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (document.querySelector('[role="dialog"]')) return;
+      switch (e.key) {
+        case 't': case 'T': handleGoToToday(); break;
+        case 'm': case 'M': setDisplayMode('month'); break;
+        case 'w': case 'W': setDisplayMode('week'); break;
+        case 'l': case 'L': setDisplayMode('list'); break;
+        case 'ArrowLeft': handlePrev(); break;
+        case 'ArrowRight': handleNext(); break;
+        default: return;
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
+
   const toggleSelectPost = (postId: string, e?: React.MouseEvent | React.TouchEvent | React.ChangeEvent) => {
     if (e && 'stopPropagation' in e) e.stopPropagation();
     setSelectedPostIds((prev) => {
@@ -569,6 +653,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             onPrev={handlePrev}
             onNext={handleNext}
             onToday={handleGoToToday}
+            onJumpToMonth={handleJumpToMonth}
             onOpenNewPostModal={onOpenNewPostModal}
             onCsvFileSelect={handleCsvImport}
             csvFileInputRef={csvFileInputRef}
@@ -704,7 +789,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               />
               <CalendarWeekView
                 weekStart={weekStart}
-                setWeekStart={setWeekStart}
                 postsByDate={postsByDate}
                 todayIso={todayIso}
                 touchHoverDate={touchHoverDate}

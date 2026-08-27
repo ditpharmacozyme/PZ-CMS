@@ -14,6 +14,8 @@ interface CalendarHeaderProps {
   onPrev: () => void;
   onNext: () => void;
   onToday: () => void;
+  /** Jump straight to a month/year ("YYYY-MM"); hidden in list mode. */
+  onJumpToMonth?: (value: string) => void;
   onOpenNewPostModal: (date?: string) => void;
   onCsvFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
   csvFileInputRef: React.RefObject<HTMLInputElement | null>;
@@ -39,6 +41,7 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   onPrev,
   onNext,
   onToday,
+  onJumpToMonth,
   onOpenNewPostModal,
   onCsvFileSelect,
   csvFileInputRef,
@@ -118,9 +121,10 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
           </button>
         </div>
 
-        {/* Current Date Display */}
+        {/* Current Date Display -- on month view the picker below carries the
+            label on small screens, so this text only shows from md up. */}
         <h2 className="font-title-lg text-base sm:text-lg font-bold text-[#1b1c1a] ml-1">
-          {displayMode === 'month' && `${monthName} ${currentYear}`}
+          {displayMode === 'month' && <span className="hidden md:inline">{`${monthName} ${currentYear}`}</span>}
           {displayMode === 'week' &&
             `${weekStart.toLocaleDateString('default', { month: 'short', day: 'numeric' })} – ${weekEnd.toLocaleDateString(
               'default',
@@ -128,6 +132,19 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
             )}`}
           {displayMode === 'list' && 'All Scheduled Posts'}
         </h2>
+
+        {/* Jump to any month/year -- reaching next March used to mean clicking ›
+            seven times. Native month picker keeps it one interaction. */}
+        {displayMode !== 'list' && onJumpToMonth && (
+          <input
+            type="month"
+            aria-label="Jump to month"
+            title="Jump to month"
+            value={`${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`}
+            onChange={(e) => e.target.value && onJumpToMonth(e.target.value)}
+            className="w-[10rem] bg-white border border-[#bfcab4] rounded-lg px-2 py-1.5 text-xs font-label-caps text-[#1b1c1a] focus:outline-none focus:ring-1 focus:ring-[#296c00]"
+          />
+        )}
       </div>
 
       {/* Right: Actions (Import, Week Duplicate, Mobile Backlog, + New Post) */}

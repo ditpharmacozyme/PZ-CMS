@@ -1,13 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Post, TeamMember } from '../../types';
 import { BRANDS } from '../../data/brands';
 import { toDateStr, todayStr } from '../../utils/date';
 import { getDayBrandSummary } from '../../utils/brandConflicts';
 import { PostCard } from './PostCard';
 
+const WEEK_CAP = 4;
+
 interface CalendarWeekViewProps {
   weekStart: Date;
-  setWeekStart: (updater: (prev: Date) => Date) => void;
   postsByDate: Record<string, any[]>;
   todayIso: string;
   touchHoverDate: string | null;
@@ -29,7 +30,6 @@ interface CalendarWeekViewProps {
 
 export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
   weekStart,
-  setWeekStart,
   postsByDate,
   todayIso,
   touchHoverDate,
@@ -48,56 +48,30 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
   currentUserName,
   activeTeammate
 }) => {
+  // Period navigation lives once, in CalendarHeader -- this view used to
+  // render its own second prev / This Week / next cluster on top of it.
+  const [expandedDate, setExpandedDate] = useState<string | null>(null);
+
   return (
     <div className="hidden md:block">
       {/* Week duplicate forward bar */}
-      <div className="p-3 bg-[#f7f6f2] border-b border-[#e5e4de] flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onDuplicateWeekForward}
-            className="flex items-center gap-1.5 bg-white border border-[#bfcab4] hover:bg-[#efeeea] text-[#1b1c1a] font-label-caps text-xs font-bold px-3 py-1.5 rounded-lg shadow-2xs transition-all cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-sm text-[#296c00]">content_copy</span>
-            <span>Duplicate Week → Next Week</span>
-          </button>
-          <label className="flex items-center gap-1.5 text-xs text-[#707a67] cursor-pointer">
-            <input
-              type="checkbox"
-              checked={clearCaptionsOnDuplicate}
-              onChange={(e) => onSetClearCaptionsOnDuplicate(e.target.checked)}
-              className="w-3.5 h-3.5 text-[#296c00] border-[#bfcab4] rounded focus:ring-[#296c00]"
-            />
-            <span className="font-label-caps text-[11px]">Clear captions when duplicating</span>
-          </label>
-        </div>
-
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => setWeekStart((prev) => new Date(prev.getTime() - 7 * 86400000))}
-            className="p-1.5 bg-white border border-[#bfcab4] rounded-lg text-[#707a67] hover:text-[#1b1c1a] hover:bg-[#efeeea] transition-all cursor-pointer"
-            title="Previous week"
-          >
-            <span className="material-symbols-outlined text-sm">chevron_left</span>
-          </button>
-          <button
-            onClick={() => {
-              const now = new Date();
-              const day = now.getDay();
-              const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-              setWeekStart(() => new Date(now.setDate(diff)));
-            }}
-            className="px-2.5 py-1 bg-white border border-[#bfcab4] rounded-lg text-xs font-label-caps font-bold text-[#1b1c1a] hover:bg-[#efeeea] transition-all cursor-pointer"
-          >
-            This Week
-          </button>
-          <button
-            onClick={() => setWeekStart((prev) => new Date(prev.getTime() + 7 * 86400000))}
-            className="p-1.5 bg-white border border-[#bfcab4] rounded-lg text-[#707a67] hover:text-[#1b1c1a] hover:bg-[#efeeea] transition-all cursor-pointer"
-            title="Next week"
-          >
-            <span className="material-symbols-outlined text-sm">chevron_right</span>
-          </button>
-        </div>
+      <div className="p-3 bg-[#f7f6f2] border-b border-[#e5e4de] flex flex-wrap items-center gap-3">
+        <button
+          onClick={onDuplicateWeekForward}
+          className="flex items-center gap-1.5 bg-white border border-[#bfcab4] hover:bg-[#efeeea] text-[#1b1c1a] font-label-caps text-xs font-bold px-3 py-1.5 rounded-lg shadow-2xs transition-all cursor-pointer"
+        >
+          <span className="material-symbols-outlined text-sm text-[#296c00]">content_copy</span>
+          <span>Duplicate Week → Next Week</span>
+        </button>
+        <label className="flex items-center gap-1.5 text-xs text-[#707a67] cursor-pointer">
+          <input
+            type="checkbox"
+            checked={clearCaptionsOnDuplicate}
+            onChange={(e) => onSetClearCaptionsOnDuplicate(e.target.checked)}
+            className="w-3.5 h-3.5 text-[#296c00] border-[#bfcab4] rounded focus:ring-[#296c00]"
+          />
+          <span className="font-label-caps text-[11px]">Clear captions when duplicating</span>
+        </label>
       </div>
 
       {/* Week Grid */}
@@ -109,6 +83,9 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
           const dayPosts = postsByDate[dateStr] || [];
           const brandSummary = getDayBrandSummary(dayPosts);
           const isToday = dateStr === todayIso;
+          const isExpanded = expandedDate === dateStr;
+          const visiblePosts = isExpanded ? dayPosts : dayPosts.slice(0, WEEK_CAP);
+          const hiddenCount = Math.max(0, dayPosts.length - WEEK_CAP);
 
           return (
             <div
@@ -181,7 +158,7 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
 
               {/* Post Stack */}
               <div className="space-y-1.5 flex-1">
-                {dayPosts.map((post: Post) => (
+                {visiblePosts.map((post: Post) => (
                   <PostCard
                     key={post.id}
                     post={post}
@@ -200,6 +177,14 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                     variant="week"
                   />
                 ))}
+                {hiddenCount > 0 && (
+                  <button
+                    className="w-full text-center py-0.5 bg-[#f3f2ee] hover:bg-[#e4e2db] text-[#404a39] font-label-caps text-[9px] font-bold rounded transition-colors"
+                    onClick={() => setExpandedDate(isExpanded ? null : dateStr)}
+                  >
+                    {isExpanded ? 'Show less' : `+${hiddenCount} more`}
+                  </button>
+                )}
               </div>
             </div>
           );

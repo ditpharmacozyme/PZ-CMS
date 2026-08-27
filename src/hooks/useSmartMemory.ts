@@ -8,9 +8,9 @@ const STORAGE_KEYS = {
   // instead of silently keeping 'calendar' forever.
   ACTIVE_TAB: 'pz_smart_active_tab_v2',
   BRAND_FILTER: 'pz_smart_brand_filter',
-  CALENDAR_DISPLAY_MODE: 'pz_smart_cal_mode',
-  CALENDAR_STATUS_FILTER: 'pz_smart_cal_status',
-  CALENDAR_PLATFORM_FILTER: 'pz_smart_cal_platform',
+  // Calendar view mode + filters now persist in CalendarView itself under
+  // 'pz_smart_cal_prefs' (one JSON blob). The three half-wired keys that used
+  // to live here were declared but never actually read by any component.
   POST_DRAFT: 'pz_smart_post_draft',
   RECENT_POST_IDS: 'pz_smart_recent_post_ids',
 };
@@ -67,19 +67,6 @@ export function useSmartMemory() {
     setPersistedBrand(brand);
     try {
       localStorage.setItem(STORAGE_KEYS.BRAND_FILTER, brand);
-    } catch (_) {}
-  }, []);
-
-  // ── Calendar Filter Preferences ──────────────────────────────────────────────
-  const [calendarDisplayMode, setCalendarDisplayMode] = useState<'month' | 'week' | 'list'>(() => {
-    if (typeof window === 'undefined') return 'month';
-    return (localStorage.getItem(STORAGE_KEYS.CALENDAR_DISPLAY_MODE) as 'month' | 'week' | 'list') || 'month';
-  });
-
-  const updateCalendarDisplayMode = useCallback((mode: 'month' | 'week' | 'list') => {
-    setCalendarDisplayMode(mode);
-    try {
-      localStorage.setItem(STORAGE_KEYS.CALENDAR_DISPLAY_MODE, mode);
     } catch (_) {}
   }, []);
 
@@ -145,8 +132,6 @@ export function useSmartMemory() {
     updateActiveTab,
     persistedBrand,
     updateBrandFilter,
-    calendarDisplayMode,
-    updateCalendarDisplayMode,
     savedDraft,
     saveDraft,
     clearDraft,
