@@ -2,6 +2,7 @@ import React, { useState, useRef, useMemo } from 'react';
 import { PostTemplate, BrandId, Platform } from '../types';
 import { BRANDS } from '../data/brands';
 import { uploadImage } from '../utils/uploadImage';
+import { useConfirm } from './ui/ConfirmDialog';
 
 interface TemplateLibraryProps {
   templates: PostTemplate[];
@@ -47,6 +48,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
   onDeleteTemplate,
   selectedBrandFilter
 }) => {
+  const confirm = useConfirm();
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [activeBrandFilter, setActiveBrandFilter] = useState<BrandId | 'all' | 'shared'>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -458,8 +460,8 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                         <span>Edit</span>
                       </button>
                       <button
-                        onClick={() => {
-                          if (confirm(`Are you sure you want to delete template "${template.title}"?`)) {
+                        onClick={async () => {
+                          if (await confirm({ title: `Delete template "${template.title}"?`, confirmLabel: 'Delete', tone: 'danger' })) {
                             onDeleteTemplate(template.id);
                           }
                         }}

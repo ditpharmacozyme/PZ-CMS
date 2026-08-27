@@ -55,9 +55,16 @@ export function setStageDone(post: Post, stage: Stage, done: boolean, actorName:
   return { ...updatedPost, status: deriveStatus(updatedPost) };
 }
 
+/** Whether one stage is currently marked done. */
+export function stageIsDone(post: Post, stage: Stage): boolean {
+  const current = post.stageCompletion || {};
+  return Boolean(stage === 'design' ? current.designDone : stage === 'publish' ? current.publishDone : current.engagementDone);
+}
+
+/** Human label for a stage, e.g. 'design' -> 'Design'. */
+export const stageLabel = (stage: Stage): string => STAGE_LABEL[stage];
+
 /** Flips one stage from whatever it currently is. */
 export function toggleStage(post: Post, stage: Stage, actorName: string): Post {
-  const current = post.stageCompletion || {};
-  const isDone = stage === 'design' ? current.designDone : stage === 'publish' ? current.publishDone : current.engagementDone;
-  return setStageDone(post, stage, !isDone, actorName);
+  return setStageDone(post, stage, !stageIsDone(post, stage), actorName);
 }

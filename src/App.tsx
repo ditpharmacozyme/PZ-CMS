@@ -569,6 +569,7 @@ export function App() {
               onBatchSavePosts={handleBatchSavePosts}
               teamMembers={teamMembers}
               activeTeammate={activeTeammate}
+              showToast={showToast}
             />
           )}
           {currentTab === 'templates' && (

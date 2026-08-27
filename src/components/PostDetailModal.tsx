@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase';
 import { getPostStatusConfig } from '../utils/statusConfig';
 import { setStageDone, Stage } from '../utils/stages';
 import { combineAssigneeEmails } from '../utils/postOwnership';
+import { useConfirm } from './ui/ConfirmDialog';
 
 interface PostDetailModalProps {
   post: Post;
@@ -29,6 +30,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
   teamMembers = [],
   activeTeammate = null
 }) => {
+  const confirm = useConfirm();
   const defaultAuthor = activeTeammate
     ? `${activeTeammate.name} (${activeTeammate.role})`
     : (teamMembers && teamMembers.length > 0 ? `${teamMembers[0].name} (${teamMembers[0].role})` : 'Team');
@@ -256,8 +258,8 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
               <span className="hidden sm:inline">Duplicate</span>
             </button>
             <button
-              onClick={() => {
-                if (confirm('Delete this post from calendar?')) {
+              onClick={async () => {
+                if (await confirm({ title: 'Delete this post from calendar?', confirmLabel: 'Delete', tone: 'danger' })) {
                   onDeletePost(editedPost.id);
                   onClose();
                 }

@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { ContentBankItem, BrandId } from '../types';
 import { BRANDS } from '../data/brands';
 import { todayStr } from '../utils/date';
+import { useConfirm } from './ui/ConfirmDialog';
 
 interface ContentBankProps {
   contentBank: ContentBankItem[];
@@ -20,6 +21,7 @@ export const ContentBank: React.FC<ContentBankProps> = ({
   onDeleteBankItem,
   onCreatePostFromCopy
 }) => {
+  const confirm = useConfirm();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBrand, setSelectedBrand] = useState<BrandId | 'shared' | 'all'>(
     selectedBrandFilter === 'all' ? 'all' : selectedBrandFilter
@@ -316,8 +318,8 @@ export const ContentBank: React.FC<ContentBankProps> = ({
                       <span className="material-symbols-outlined text-xs font-bold">edit</span>
                     </button>
                     <button
-                      onClick={() => {
-                        if (confirm('Delete this swipe item from the content bank?')) {
+                      onClick={async () => {
+                        if (await confirm({ title: 'Delete this item from the content bank?', confirmLabel: 'Delete', tone: 'danger' })) {
                           onDeleteBankItem(item.id);
                         }
                       }}

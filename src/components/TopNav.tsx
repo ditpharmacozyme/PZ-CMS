@@ -5,6 +5,7 @@ import { NavTab } from './SideNav';
 import { provisionTeamMemberAccount } from '../utils/storage';
 import { NotificationDrawer } from './NotificationDrawer';
 import { getRollingBackups, deleteRollingBackup, RollingBackupSummary, WorkspaceBackupPayload } from '../utils/autoBackup';
+import { useConfirm } from './ui/ConfirmDialog';
 
 interface TopNavProps {
   searchQuery: string;
@@ -76,6 +77,7 @@ export const TopNav: React.FC<TopNavProps> = ({
   onCreateSnapshotNow,
   onRestoreSnapshot
 }) => {
+  const confirm = useConfirm();
   const [showNotificationsPopover, setShowNotificationsPopover] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
@@ -717,7 +719,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                                 <span className="material-symbols-outlined text-base">edit</span>
                               </button>
                               <button
-                                onClick={() => { if (confirm(`Remove ${member.name}?`)) handleDeleteMember(member.id); }}
+                                onClick={async () => { if (await confirm({ title: `Remove ${member.name}?`, confirmLabel: 'Remove', tone: 'danger' })) handleDeleteMember(member.id); }}
                                 className="p-1.5 text-[#ba1a1a] hover:bg-[#ffdad6] rounded"
                                 title="Remove"
                               >
@@ -766,8 +768,8 @@ export const TopNav: React.FC<TopNavProps> = ({
                               This button is only for a browser that had posts saved locally <em>before</em> shared data was turned on — everyday edits already sync automatically.
                             </p>
                             <button
-                              onClick={() => {
-                                if (confirm("Push everything in this browser's local data up to the shared store? This won't delete anything already there.")) {
+                              onClick={async () => {
+                                if (await confirm({ title: 'Import old local data?', body: "Pushes everything in this browser's local data up to the shared store. This won't delete anything already there.", confirmLabel: 'Import' })) {
                                   onImportLocalData();
                                 }
                               }}
@@ -865,8 +867,8 @@ export const TopNav: React.FC<TopNavProps> = ({
                             <div className="flex items-center gap-1 flex-shrink-0">
                               {onRestoreSnapshot && (
                                 <button
-                                  onClick={() => {
-                                    if (confirm(`Restore workspace from snapshot taken on ${new Date(b.timestamp).toLocaleString()}? This will update your current active session.`)) {
+                                  onClick={async () => {
+                                    if (await confirm({ title: 'Restore workspace from this snapshot?', body: `Snapshot taken on ${new Date(b.timestamp).toLocaleString()}. This will update your current active session.`, confirmLabel: 'Restore' })) {
                                       onRestoreSnapshot(b.data);
                                       setShowSettingsModal(false);
                                     }
@@ -898,8 +900,8 @@ export const TopNav: React.FC<TopNavProps> = ({
                       <p className="text-[11px] text-[#707a67]">Clears all posts, templates and settings</p>
                     </div>
                     <button
-                      onClick={() => {
-                        if (confirm('This will delete all posts and settings. Are you sure?')) {
+                      onClick={async () => {
+                        if (await confirm({ title: 'Reset all data?', body: 'This will delete all posts, templates and settings.', confirmLabel: 'Reset everything', tone: 'danger' })) {
                           onResetData();
                           setShowSettingsModal(false);
                         }

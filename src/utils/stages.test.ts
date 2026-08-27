@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toggleStage, setStageDone } from './stages';
+import { toggleStage, setStageDone, stageIsDone, stageLabel } from './stages';
 import { Post } from '../types';
 
 function makePost(overrides: Partial<Post>): Post {
@@ -66,5 +66,29 @@ describe('toggleStage', () => {
     // Already true; setStageDone(..., true, ...) re-stamps rather than toggling off.
     expect(updated.stageCompletion?.publishDone).toBe(true);
     expect(updated.status).toBe('posted');
+  });
+});
+
+describe('stageIsDone', () => {
+  it('reads the per-stage completion flag, defaulting to false', () => {
+    const post = makePost({ stageCompletion: { publishDone: true } });
+    expect(stageIsDone(post, 'publish')).toBe(true);
+    expect(stageIsDone(post, 'design')).toBe(false);
+    expect(stageIsDone(makePost({}), 'engagement')).toBe(false);
+  });
+
+  it('agrees with what toggleStage just wrote (used by the calendar undo toast)', () => {
+    const toggled = toggleStage(makePost({}), 'design', 'Alice');
+    expect(stageIsDone(toggled, 'design')).toBe(true);
+    const back = toggleStage(toggled, 'design', 'Alice');
+    expect(stageIsDone(back, 'design')).toBe(false);
+  });
+});
+
+describe('stageLabel', () => {
+  it('maps each stage to its human label', () => {
+    expect(stageLabel('design')).toBe('Design');
+    expect(stageLabel('publish')).toBe('Publish');
+    expect(stageLabel('engagement')).toBe('Engagement');
   });
 });

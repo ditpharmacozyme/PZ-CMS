@@ -6,6 +6,7 @@ import { toggleStage, Stage } from '../../utils/stages';
 import { getPostTimeConflict } from '../../utils/brandConflicts';
 import { StatusChip } from '../ui/StatusChip';
 import { AssigneePopover } from '../AssigneePopover';
+import { useConfirm } from '../ui/ConfirmDialog';
 
 interface CalendarListViewProps {
   filteredCalendarPosts: Post[];
@@ -35,6 +36,7 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
   teamMembers = [],
   activeTeammate = null
 }) => {
+  const confirm = useConfirm();
   // Only one row's assignee popover can be open at a time, so a single Map
   // of trigger refs (keyed by post id) plus one shared popover instance
   // avoids calling hooks inside the per-row renderPostRow closure, which
@@ -221,11 +223,15 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
             </button>
             {onDeletePost && (
               <button
-                onClick={(e) => {
+                onClick={async (e) => {
                   e.stopPropagation();
-                  if (confirm(`Are you sure you want to delete post "${post.title}"?`)) {
-                    onDeletePost(post.id);
-                  }
+                  const ok = await confirm({
+                    title: `Delete "${post.title}"?`,
+                    body: 'This removes the post from the calendar.',
+                    confirmLabel: 'Delete',
+                    tone: 'danger',
+                  });
+                  if (ok) onDeletePost(post.id);
                 }}
                 className="text-[#ba1a1a] font-label-caps text-xs font-bold hover:bg-[#ba1a1a] hover:text-white px-2 py-1 bg-[#ffdad6] rounded-lg transition-colors cursor-pointer"
               >

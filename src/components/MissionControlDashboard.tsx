@@ -4,6 +4,7 @@ import { toDateStr, todayStr } from '../utils/date';
 import { getRecentActivity } from '../utils/activity';
 import { deriveStatus } from '../utils/postStatus';
 import { isMine } from '../utils/postOwnership';
+import { useConfirm } from './ui/ConfirmDialog';
 
 interface MissionControlDashboardProps {
   posts: Post[];
@@ -22,6 +23,7 @@ export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = (
   onDeletePost,
   activeTeammate = null
 }) => {
+  const confirm = useConfirm();
   const [selectedTeammateName, setSelectedTeammateName] = useState<string | null>(null);
 
   const selectedTeammate = useMemo(
@@ -248,8 +250,8 @@ export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = (
                     )}
                     {onDeletePost && (
                       <button
-                        onClick={() => {
-                          if (confirm(`Delete "${post.title}"?`)) {
+                        onClick={async () => {
+                          if (await confirm({ title: `Delete "${post.title}"?`, confirmLabel: 'Delete', tone: 'danger' })) {
                             onDeletePost(post.id);
                           }
                         }}

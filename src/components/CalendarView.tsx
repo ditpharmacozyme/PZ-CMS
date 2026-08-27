@@ -15,6 +15,7 @@ import { MobileDateStripView } from './calendar/MobileDateStripView';
 import { CalendarWeekView } from './calendar/CalendarWeekView';
 import { CalendarListView } from './calendar/CalendarListView';
 import { IdeaBacklog } from './calendar/IdeaBacklog';
+import { useConfirm } from './ui/ConfirmDialog';
 
 interface CalendarViewProps {
   posts: Post[];
@@ -30,6 +31,12 @@ interface CalendarViewProps {
   onBatchSavePosts?: (posts: Post[], toastMessage?: string) => void;
   teamMembers?: TeamMember[];
   activeTeammate?: TeamMember | null;
+  showToast?: (
+    message: string,
+    action?: { label: string; onClick: () => void },
+    durationMs?: number,
+    variant?: 'success' | 'error'
+  ) => void;
 }
 
 type CalendarDisplayMode = 'month' | 'week' | 'list';
@@ -71,8 +78,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   onBatchAddPosts,
   onBatchSavePosts,
   teamMembers = [],
-  activeTeammate = null
+  activeTeammate = null,
+  showToast
 }) => {
+  const confirm = useConfirm();
   const today = useMemo(() => new Date(), []);
   const todayIso = todayStr();
   const csvFileInputRef = useRef<HTMLInputElement>(null);
@@ -115,6 +124,21 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const defaultAssignee = teamMembers.length > 0 ? teamMembers[0].name : '';
   // Whoever is logged in, for *DoneBy attribution on quick stage toggles.
   const currentUserName = activeTeammate?.name || 'Someone';
+
+  // Quick stage toggles on cards/rows are one tap and the row can vanish from a
+  // filtered view straight after -- MyWork solves this with sessionPins, the
+  // calendar had nothing. Wrap onSavePost so a stage-only change (the shape a
+  // quick toggle produces) also raises an Undo toast that restores the snapshot.
+  const handleSavePostWithUndo = (updated: Post) => {
+    const original = posts.find((p) => p.id === updated.id);
+    onSavePost(updated);
+    if (!original || !showToast) return;
+    const stageChanged =
+      JSON.stringify(original.stageCompletion || {}) !== JSON.stringify(updated.stageCompletion || {});
+    if (!stageChanged) return;
+    const snapshot = original;
+    showToast('Stage updated', { label: 'Undo', onClick: () => onSavePost(snapshot) }, 5000);
+  };
   // Reactive to resize/rotation -- a one-time `window.innerWidth` read at mount
   // used to leave desktop drag-and-drop disabled forever if the window opened
   // narrow and was then widened (or vice versa) without a full reload.
@@ -452,23 +476,29 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     clearSelection();
   };
 
-  const handleBulkDelete = () => {
+  const handleBulkDelete = async () => {
     if (selectedPostIds.size === 0 || !onDeletePost) return;
     const count = selectedPostIds.size;
-    if (window.confirm(`Are you sure you want to delete ${count} selected post${count > 1 ? 's' : ''}?`)) {
+    const ok = await confirm({
+      title: `Delete ${count} selected post${count > 1 ? 's' : ''}?`,
+      confirmLabel: 'Delete',
+      tone: 'danger',
+    });
+    if (ok) {
       Array.from(selectedPostIds).forEach((id) => onDeletePost(id));
       clearSelection();
     }
   };
 
-  const handleDuplicateWeekForward = () => {
+  const handleDuplicateWeekForward = async () => {
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekEnd.getDate() + 6);
     const weekEndStr = toDateStr(weekEnd);
     const weekStartStr = toDateStr(weekStart);
     const postsThisWeek = posts.filter((p) => p.scheduledDate && p.scheduledDate >= weekStartStr && p.scheduledDate <= weekEndStr);
-    if (postsThisWeek.length === 0) { alert('No posts scheduled this week to duplicate.'); return; }
-    if (!confirm(`Duplicate ${postsThisWeek.length} post${postsThisWeek.length === 1 ? '' : 's'} to next week?`)) return;
+    if (postsThisWeek.length === 0) { showToast?.('No posts scheduled this week to duplicate.', undefined, 3000, 'error'); return; }
+    const ok = await confirm({ title: `Duplicate ${postsThisWeek.length} post${postsThisWeek.length === 1 ? '' : 's'} to next week?`, confirmLabel: 'Duplicate' });
+    if (!ok) return;
     postsThisWeek.forEach((post) => {
       const originalDate = fromDateStr(post.scheduledDate);
       const nextWeekDate = new Date(originalDate);
@@ -502,7 +532,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         onSelectPost={onSelectPost}
-        onSavePost={onSavePost}
+        onSavePost={handleSavePostWithUndo}
         onAddPost={onAddPost}
         onImageUpload={(e) => handleImageFileUpload(e)}
         setMobileBacklogOpen={setMobileBacklogOpen}
@@ -604,7 +634,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 onToggleSelect={toggleSelectPost}
                 onLongPressPost={(postId) => { setIsSelectMode(true); if (!selectedPostIds.has(postId)) toggleSelectPost(postId); }}
                 teamMembers={teamMembers}
-                onSavePost={onSavePost}
+                onSavePost={handleSavePostWithUndo}
                 currentUserName={currentUserName}
                 touchDraggedPostId={touchDraggedPostId}
                 touchHoverDate={touchHoverDate}
@@ -629,7 +659,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 onPlaceholderClick={handlePlaceholderClick}
                 onImageUpload={handleImageFileUpload}
                 teamMembers={teamMembers}
-                onSavePost={onSavePost}
+                onSavePost={handleSavePostWithUndo}
                 currentUserName={currentUserName}
                 activeTeammate={activeTeammate}
               />
@@ -653,7 +683,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 onToggleSelect={toggleSelectPost}
                 onLongPressPost={(postId) => { setIsSelectMode(true); if (!selectedPostIds.has(postId)) toggleSelectPost(postId); }}
                 teamMembers={teamMembers}
-                onSavePost={onSavePost}
+                onSavePost={handleSavePostWithUndo}
                 currentUserName={currentUserName}
                 touchDraggedPostId={touchDraggedPostId}
                 touchHoverDate={touchHoverDate}
@@ -679,7 +709,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 onOpenNewPostModal={onOpenNewPostModal}
                 onToggleSelect={toggleSelectPost}
                 teamMembers={teamMembers}
-                onSavePost={onSavePost}
+                onSavePost={handleSavePostWithUndo}
                 currentUserName={currentUserName}
                 activeTeammate={activeTeammate}
               />
@@ -694,7 +724,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               isSelectMode={isSelectMode}
               onSelectPost={(post) => { setSelectedPostForInspector(post); onSelectPost(post); }}
               onDeletePost={onDeletePost}
-              onSavePost={onSavePost}
+              onSavePost={handleSavePostWithUndo}
               onToggleSelect={toggleSelectPost}
               setSelectedPostIds={setSelectedPostIds}
               currentUserName={currentUserName}
@@ -774,7 +804,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 </button>
                 {onDeletePost && (
                   <button
-                    onClick={() => { if (confirm(`Delete "${inspectorPost.title}"?`)) onDeletePost(inspectorPost.id); }}
+                    onClick={async () => { if (await confirm({ title: `Delete "${inspectorPost.title}"?`, confirmLabel: 'Delete', tone: 'danger' })) onDeletePost(inspectorPost.id); }}
                     className="w-full bg-[#ffdad6] text-[#ba1a1a] font-label-caps text-xs py-2 rounded font-bold hover:bg-[#ba1a1a] hover:text-white transition-all flex items-center justify-center gap-1.5"
                   >
                     <span className="material-symbols-outlined text-sm">delete</span>

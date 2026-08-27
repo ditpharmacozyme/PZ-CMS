@@ -10,6 +10,7 @@ import {
   convertCsvRowsToPosts
 } from '../utils/researchParse';
 import { uploadResearchFile, MAX_RESEARCH_FILE_BYTES } from '../utils/uploadResearchFile';
+import { useConfirm } from './ui/ConfirmDialog';
 
 // Lazy-loaded: only downloaded when someone actually opens a Markdown doc,
 // keeping it off the main bundle (already past Vite's 500KB warning).
@@ -60,6 +61,7 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
   onDeleteResearchItem,
   onBatchAddPosts
 }) => {
+  const confirm = useConfirm();
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBrand, setSelectedBrand] = useState<BrandId | 'shared' | 'all'>(
@@ -404,8 +406,8 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
 
                   <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
-                      onClick={() => {
-                        if (confirm(`Delete "${item.title}" from Research & Plans? This does not delete the file from Drive.`)) {
+                      onClick={async () => {
+                        if (await confirm({ title: `Delete "${item.title}" from Research & Plans?`, body: 'This does not delete the file from Drive.', confirmLabel: 'Delete', tone: 'danger' })) {
                           onDeleteResearchItem(item.id);
                         }
                       }}
