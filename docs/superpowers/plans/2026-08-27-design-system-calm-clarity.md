@@ -666,7 +666,9 @@ git commit -m "$(printf 'feat(design): button weight tier + remove all-caps labe
 - Consumes: tokens (Task 1), `.font-*` (Task 2)
 - Produces: unchanged component APIs
 
-- [ ] **Step 0: `src/index.css` `.bottom-tab-label`** (mobile bottom tab bar) — currently `font-family: 'Space Mono'` + `text-transform: uppercase` + `letter-spacing: 0.03em`. Change to `font-family: 'Inter', sans-serif; font-weight: 600; letter-spacing: 0; text-transform: none;` (keep `font-size: 9px; line-height: 1;`). This is the one Task 2 deferred so mobile nav labels aren't all-caps mono.
+- [ ] **Step 0: `src/index.css` cleanup** (two carried items):
+  - `.bottom-tab-label` (mobile bottom tab bar) — currently `font-family: 'Space Mono'` + `text-transform: uppercase` + `letter-spacing: 0.03em`. Change to `font-family: 'Inter', sans-serif; font-weight: 600; letter-spacing: 0; text-transform: none;` (keep `font-size: 9px; line-height: 1;`). Task 2 deferred this so mobile nav labels aren't all-caps mono.
+  - Delete the now-dead `.font-fredoka` and `.font-rajdhani` utility class blocks (~`src/index.css:85-89`) — Task 3 dropped `Fredoka One` / `Rajdhani` from the font URL and nothing in `src/` applies these classes. Leave `.font-poppins` / `.font-montserrat` / `.font-amsterdam` (still-loaded brand faces).
 
 - [ ] **Step 1: `ui/Field.tsx`** — inputs/selects/textarea: background `bg-white`, border `border-[#e9e9e7]` (hover `border-[#d8d8d5]`), radius `rounded-lg` (8px), label `font-label-caps text-[12px] text-[#5f5f5b]` (not uppercase). The global `input:focus` ring (Task 1) already gives the indigo focus — don't re-add per-field focus colours.
 
