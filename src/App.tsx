@@ -62,13 +62,9 @@ import { useSmartMemory } from './hooks/useSmartMemory';
 import { logTimestamp } from './utils/date';
 import { logAuditEvent, buildAuditEvent } from './utils/audit';
 import { ConfirmProvider } from './components/ui/ConfirmDialog';
+import { ToastStack, ToastItem } from './components/ui/Toast';
 import { deriveStatus } from './utils/postStatus';
 import { setStageDone } from './utils/stages';
-
-interface ToastState {
-  message: string;
-  action?: { label: string; onClick: () => void };
-}
 
 // Multiple search inputs share this shortcut's target (TopNav's desktop bar,
 // TopNav's mobile toggle bar, CalendarFilters' own box) and only one is ever
@@ -90,13 +86,30 @@ function focusFirstVisibleSearchInput(): void {
 
 export function App() {
   // ── Toast ───────────────────────────────────────────────────────────────────
-  const [toast, setToast] = useState<ToastState | null>(null);
-  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Queue, not a single slot -- a single slot meant a new toast (e.g. every
+  // stage toggle firing its own "Saved" toast) could silently wipe out
+  // whatever was showing before the user got a chance to read or act on it,
+  // most importantly the delete-undo toast in usePosts.ts. Each toast keeps
+  // its own timeout so dismissing one never touches the others.
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const toastTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
-  const showToast = (message: string, action?: ToastState['action'], durationMs = 3000) => {
-    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-    setToast({ message, action });
-    toastTimeoutRef.current = setTimeout(() => setToast(null), durationMs);
+  const dismissToast = (id: string) => {
+    const timeout = toastTimeoutsRef.current.get(id);
+    if (timeout) clearTimeout(timeout);
+    toastTimeoutsRef.current.delete(id);
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  const showToast = (
+    message: string,
+    action?: ToastItem['action'],
+    durationMs = 3000,
+    variant: ToastItem['variant'] = 'success'
+  ) => {
+    const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    setToasts((prev) => [...prev, { id, message, action, variant }]);
+    toastTimeoutsRef.current.set(id, setTimeout(() => dismissToast(id), durationMs));
   };
 
   // ── Smart Memory & Continuation ──────────────────────────────────────────────
@@ -396,7 +409,7 @@ export function App() {
     }
     const results = await Promise.all([...changed.map((m) => upsertRemoteTeamMember(m)), ...removedIds.map((id) => removeTeamMemberAccount(id))]);
     const firstError = results.find((r) => r.error)?.error;
-    if (firstError) { setTeamMembers(previous); showToast(`Couldn't save team changes: ${firstError}`); }
+    if (firstError) { setTeamMembers(previous); showToast(`Couldn't save team changes: ${firstError}`, undefined, 3000, 'error'); }
   };
 
   const handleTeamMemberCreated = (member: TeamMember) => {
@@ -468,23 +481,7 @@ export function App() {
     <ConfirmProvider>
     <div className="min-h-screen bg-[#FAF9F5] text-[#1b1c1a] font-body-md flex flex-col md:flex-row">
       {/* Toast */}
-      {toast && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-[#1b1c1a] text-white font-label-caps text-[11px] px-5 py-3.5 rounded-xl warm-shadow-lg border-l-4 border-[#296c00] toast-in">
-          <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#78d24b] opacity-75" />
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#296c00]" />
-          </span>
-          <span>{toast.message}</span>
-          {toast.action && (
-            <button
-              onClick={() => { toast.action?.onClick(); if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current); setToast(null); }}
-              className="text-[#78d24b] font-bold hover:underline flex-shrink-0 cursor-pointer"
-            >
-              {toast.action.label}
-            </button>
-          )}
-        </div>
-      )}
+      <ToastStack toasts={toasts} onDismiss={dismissToast} />
 
       {/* Side Nav */}
       <SideNav

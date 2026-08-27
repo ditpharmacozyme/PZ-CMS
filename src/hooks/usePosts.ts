@@ -18,7 +18,7 @@ interface ToastAction {
 }
 
 export function usePosts(
-  showToast: (msg: string, action?: ToastAction, duration?: number) => void,
+  showToast: (msg: string, action?: ToastAction, duration?: number, variant?: 'success' | 'error') => void,
   activeTeammate: TeamMember | null
 ) {
   const [posts, setPosts] = useState<Post[]>(() => getStoredPosts());
@@ -196,7 +196,7 @@ export function usePosts(
     setPosts((prev) => [...newPosts, ...prev]);
     const { error } = await upsertRemotePosts(newPosts);
     if (error) {
-      showToast(`Added ${newPosts.length} posts locally (Supabase batch warning: ${error})`);
+      showToast(`Added ${newPosts.length} posts locally (Supabase batch warning: ${error})`, undefined, 3000, 'error');
     } else {
       showToast(`Imported ${newPosts.length} posts to Content Calendar!`);
     }

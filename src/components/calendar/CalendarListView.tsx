@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Post } from '../../types';
 import { BRANDS } from '../../data/brands';
-import { getPostStatusConfig } from '../../utils/statusConfig';
 import { todayStr } from '../../utils/date';
 import { toggleStage, Stage } from '../../utils/stages';
 import { getPostTimeConflict } from '../../utils/brandConflicts';
+import { StatusChip } from '../ui/StatusChip';
 
 interface CalendarListViewProps {
   filteredCalendarPosts: Post[];
@@ -64,7 +64,6 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
   const renderPostRow = (post: Post, isPast = false) => {
     const brand = BRANDS[post.brandId];
     const isSelected = selectedPostIds.has(post.id);
-    const statusCfg = getPostStatusConfig(post);
     const isToday = post.scheduledDate === today;
     const timeConflict = getPostTimeConflict(post, filteredCalendarPosts);
 
@@ -190,14 +189,7 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
         {/* Status Pill (display only -- derives from the stages above) */}
         <div className="flex items-center justify-between md:contents">
           <div className="md:w-32 relative">
-            <span
-              className="font-label-caps text-[10px] font-bold uppercase px-2.5 py-1 rounded-full flex items-center justify-center gap-1.5 w-fit"
-              style={{ backgroundColor: statusCfg.bgColor, color: statusCfg.color }}
-              title="Updates automatically as design/publish are checked"
-            >
-              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: statusCfg.color }} />
-              <span>{statusCfg.label}</span>
-            </span>
+            <StatusChip post={post} variant="pill-dot" title="Updates automatically as design/publish are checked" />
           </div>
 
           <div className="md:w-28 font-body-md text-xs text-[#404a39]">

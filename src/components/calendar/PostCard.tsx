@@ -3,6 +3,7 @@ import { Post } from '../../types';
 import { BRANDS } from '../../data/brands';
 import { getPostStatusConfig } from '../../utils/statusConfig';
 import { toggleStage, Stage } from '../../utils/stages';
+import { StatusChip } from '../ui/StatusChip';
 
 const PLATFORM_ICONS: Record<string, string> = {
   instagram: 'photo_camera',
@@ -161,13 +162,7 @@ export const PostCard: React.FC<PostCardProps> = ({
 
               {/* 1-Click Status Chip */}
               {/* Status is derived from the stages below, not clickable here. */}
-              <span
-                className="font-label-caps text-[8px] font-bold uppercase px-1.5 py-0.2 rounded"
-                style={{ backgroundColor: statusCfg.bgColor, color: statusCfg.color }}
-                title="Updates automatically as design/publish are checked below"
-              >
-                {statusCfg.label}
-              </span>
+              <StatusChip post={post} variant="pill" title="Updates automatically as design/publish are checked below" />
             </div>
 
             <h4 className="font-semibold text-xs text-[#1b1c1a] line-clamp-1">{post.title}</h4>
@@ -298,15 +293,7 @@ export const PostCard: React.FC<PostCardProps> = ({
       {/* Bottom row: Status (display only) + Quick Stage Toggles + Assignee */}
       <div className="flex items-center justify-between mt-1 pt-0.5 border-t border-[#f0eee6] text-[8px]">
         {/* Status is derived from the stage toggles on the right, not clickable here. */}
-        <div className="flex items-center gap-1 min-w-0 px-1 py-0.2" title="Updates automatically as stages are checked">
-          <span
-            className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-            style={{ backgroundColor: statusCfg.color }}
-          />
-          <span className="truncate font-medium text-[8px] text-[#707a67]">
-            {statusCfg.label}
-          </span>
-        </div>
+        <StatusChip post={post} variant="dot" title="Updates automatically as stages are checked" />
 
         {/* Assignee initials badge & Quick Stage Toggles */}
         <div className="flex items-center gap-0.5 flex-shrink-0">

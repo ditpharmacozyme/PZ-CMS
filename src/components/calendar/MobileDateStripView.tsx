@@ -1,10 +1,10 @@
 import React from 'react';
 import { Post, TeamMember } from '../../types';
 import { BRANDS } from '../../data/brands';
-import { getPostStatusConfig } from '../../utils/statusConfig';
 import { todayStr, fromDateStr } from '../../utils/date';
 import { toggleStage, Stage } from '../../utils/stages';
 import { getDayBrandSummary } from '../../utils/brandConflicts';
+import { StatusChip } from '../ui/StatusChip';
 
 interface CalendarCell {
   dateStr: string;
@@ -199,7 +199,6 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
                 const bgColor = assigneeMember ? assigneeMember.color : '#bfcab4';
                 const extraAssignees = post.assignees.length - 1;
                 const isMobileSelected = selectedPostIds.has(post.id);
-                const statusCfg = getPostStatusConfig(post);
 
                 return (
                   <div
@@ -265,17 +264,7 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
                       </p>
 
                       {/* Status Badge */}
-                      <span
-                        className="font-label-caps text-[9px] font-bold uppercase px-1.5 py-0.5 rounded inline-flex items-center gap-0.5"
-                        style={{ backgroundColor: statusCfg.bgColor, color: statusCfg.color }}
-                      >
-                        {statusCfg.icon && (
-                          <span className="material-symbols-outlined" style={{ fontSize: '10px' }}>
-                            {statusCfg.icon}
-                          </span>
-                        )}
-                        {statusCfg.label}
-                      </span>
+                      <StatusChip post={post} variant="pill-icon" />
 
                       {/* Task Role Badges */}
                       {post.taskRoles &&
