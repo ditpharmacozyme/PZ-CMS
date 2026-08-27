@@ -28,6 +28,18 @@ interface MobileDateStripViewProps {
   onSavePost?: (post: Post) => void;
   /** Name of the person currently using the app, for *DoneBy attribution on quick toggles. */
   currentUserName?: string;
+  /** Touch-drag-to-reschedule -- lets a day-list post be dragged onto one of
+   * the date strip buttons above it. Mirrors the desktop HTML5 drag path;
+   * without these the strip's date buttons have no drop target and touch
+   * users have no way to reschedule except opening the post and editing the
+   * date field. `touchDraggedPostId`/`touchHoverDate` come from CalendarView's
+   * own drag state (shared with IdeaBacklog's touch-drag) so a date-strip
+   * button can show a hover highlight while something is being dragged onto it. */
+  touchDraggedPostId?: string | null;
+  touchHoverDate?: string | null;
+  onTouchStart?: (postId: string) => void;
+  onTouchMove?: (e: React.TouchEvent) => void;
+  onTouchEnd?: (e: React.TouchEvent) => void;
 }
 
 export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
@@ -44,7 +56,12 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
   onLongPressPost,
   teamMembers,
   onSavePost,
-  currentUserName
+  currentUserName,
+  touchDraggedPostId,
+  touchHoverDate,
+  onTouchStart,
+  onTouchMove,
+  onTouchEnd
 }) => {
   const handleQuickStageToggle = (post: Post, stage: Stage, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -67,15 +84,19 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
             const dayNum = d ? d.getDate() : '';
             const isSelected = cell.dateStr === selectedMobileDate;
             const isToday = cell.dateStr === todayIso;
+            const isDropHover = !!touchDraggedPostId && touchHoverDate === cell.dateStr;
             const dayPosts = cell.dateStr ? postsByDate[cell.dateStr] || [] : [];
             const summary = getDayBrandSummary(dayPosts);
 
             return (
               <button
                 key={cell.dateStr}
+                data-date-cell={cell.dateStr || ''}
                 onClick={() => onSelectMobileDate(cell.dateStr!)}
                 className={`flex flex-col items-center justify-center min-w-[3.5rem] py-2 rounded-lg transition-colors relative flex-shrink-0 ${
-                  isSelected
+                  isDropHover
+                    ? 'bg-[#296c00] text-white ring-2 ring-[#296c00] ring-offset-1 scale-105'
+                    : isSelected
                     ? 'bg-[#296c00] text-white shadow-xs'
                     : isToday
                     ? 'bg-white border border-[#296c00] text-[#296c00]'
@@ -184,8 +205,14 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
                   <div
                     key={post.id}
                     onTouchStart={(e) => {
-                      // Long-press handled in PostCard — we keep this here for
-                      // compatibility with the existing timer approach in mobile cards.
+                      // Two gestures share this row: hold-still selects (long-press
+                      // timer below, unchanged), hold-and-drag reschedules onto a
+                      // date strip button above (relayed to CalendarView's shared
+                      // touch-drag state). They don't conflict -- dragging the
+                      // finger up onto a strip button only ever sets touchHoverDate
+                      // if it actually crosses one, so a plain tap or a still
+                      // long-press never touches the reschedule path.
+                      onTouchStart?.(post.id);
                       const timer = setTimeout(() => {
                         onLongPressPost(post.id);
                       }, 500);
@@ -194,10 +221,12 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
                     onTouchEnd={(e) => {
                       const timer = (e.currentTarget as any).dataset.longPressTimer;
                       if (timer) clearTimeout(parseInt(timer));
+                      onTouchEnd?.(e);
                     }}
                     onTouchMove={(e) => {
                       const timer = (e.currentTarget as any).dataset.longPressTimer;
                       if (timer) clearTimeout(parseInt(timer));
+                      onTouchMove?.(e);
                     }}
                     onClick={(e) => {
                       if (isSelectMode || e.ctrlKey || e.metaKey || e.shiftKey) {

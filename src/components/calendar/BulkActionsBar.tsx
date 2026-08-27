@@ -48,7 +48,7 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
 
       {/* Sticky Floating Bottom Actions Toolbar */}
       {selectedCount > 0 && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-[#1b1c1a] text-white px-4 py-3 rounded-xl shadow-2xl border border-[#404a39] flex items-center gap-3 max-w-[95vw] sm:max-w-xl animate-in slide-in-from-bottom duration-200">
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-[#1b1c1a] text-white px-4 py-3 rounded-xl shadow-2xl border border-[#404a39] flex items-center gap-3 max-w-[95vw] sm:max-w-xl animate-slideUp">
           <span className="font-bold text-xs font-label-caps text-[#bfcab4] whitespace-nowrap">
             {selectedCount} selected
           </span>

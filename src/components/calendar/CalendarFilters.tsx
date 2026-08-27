@@ -53,7 +53,7 @@ export const CalendarFilters: React.FC<CalendarFiltersProps> = ({
             search
           </span>
           <input
-            id="app-search-input"
+            id="calendar-search-input"
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}

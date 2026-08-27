@@ -70,6 +70,24 @@ interface ToastState {
   action?: { label: string; onClick: () => void };
 }
 
+// Multiple search inputs share this shortcut's target (TopNav's desktop bar,
+// TopNav's mobile toggle bar, CalendarFilters' own box) and only one is ever
+// actually visible/rendered at a time depending on tab and viewport. A single
+// hardcoded id used to grab whichever one happened to sit first in the DOM
+// (TopNav's desktop input) even when it was `hidden md:flex` off-screen, so
+// `/` silently focused a display:none element on mobile. Try each candidate
+// in DOM order and focus the first one that's actually visible.
+function focusFirstVisibleSearchInput(): void {
+  const candidateIds = ['calendar-search-input', 'mobile-search-input', 'app-search-input'];
+  for (const id of candidateIds) {
+    const el = document.getElementById(id) as HTMLInputElement | null;
+    if (el && el.offsetParent !== null) {
+      el.focus();
+      return;
+    }
+  }
+}
+
 export function App() {
   // ── Toast ───────────────────────────────────────────────────────────────────
   const [toast, setToast] = useState<ToastState | null>(null);
@@ -227,7 +245,7 @@ export function App() {
       setPresetTemplateId(undefined);
       setIsNewPostModalOpen(true);
     },
-    onFocusSearch: () => document.getElementById('app-search-input')?.focus(),
+    onFocusSearch: () => focusFirstVisibleSearchInput(),
     onEscape: () => {
       if (isPaletteOpen) setIsPaletteOpen(false);
       else if (activeModalPost) setActiveModalPost(null);
@@ -535,6 +553,7 @@ export function App() {
               onDeletePost={handleDeletePost}
               onOpenNewPostModal={(dateStr) => { setNewPostInitialDate(dateStr); setIsNewPostModalOpen(true); }}
               searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
               onSavePost={handleSavePost}
               onAddPost={handleAddPost}
               onBatchAddPosts={handleBatchAddPosts}

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Post, BrandId, PostStatus, Platform, TeamMember } from '../types';
 import { BRANDS, SPECS } from '../data/brands';
 import { toDateStr, todayStr, fromDateStr, mondayFirstDay, startOfWeek, logTimestamp } from '../utils/date';
@@ -23,6 +23,7 @@ interface CalendarViewProps {
   onDeletePost?: (postId: string) => void;
   onOpenNewPostModal: (date?: string) => void;
   searchQuery: string;
+  onSearchChange: (value: string) => void;
   onSavePost: (post: Post) => void;
   onAddPost: (post: Post) => void;
   onBatchAddPosts?: (posts: Post[]) => void;
@@ -63,6 +64,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   onDeletePost,
   onOpenNewPostModal,
   searchQuery,
+  onSearchChange,
   onSavePost,
   onAddPost,
   onBatchAddPosts,
@@ -111,7 +113,17 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const defaultAssignee = teamMembers.length > 0 ? teamMembers[0].name : '';
   // Whoever is logged in, for *DoneBy attribution on quick stage toggles.
   const currentUserName = activeTeammate?.name || 'Someone';
-  const isMobileDevice = typeof window !== 'undefined' && window.innerWidth < 768;
+  // Reactive to resize/rotation -- a one-time `window.innerWidth` read at mount
+  // used to leave desktop drag-and-drop disabled forever if the window opened
+  // narrow and was then widened (or vice versa) without a full reload.
+  const [isMobileDevice, setIsMobileDevice] = useState<boolean>(
+    () => typeof window !== 'undefined' && window.innerWidth < 768
+  );
+  useEffect(() => {
+    const handleResize = () => setIsMobileDevice(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const backlogPosts = useMemo(() => posts.filter((p) => !p.scheduledDate), [posts]);
   const calendarPosts = useMemo(() => posts.filter((p) => !!p.scheduledDate), [posts]);
@@ -148,6 +160,21 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     }
     return cells;
   }, [currentYear, currentMonth, daysInMonth, leadingBlanks]);
+
+  // Week view's desktop grid (CalendarWeekView) is `hidden md:block` with no
+  // mobile counterpart of its own -- choosing Week on a phone used to render
+  // nothing at all. Reuse the same MobileDateStripView Month view already
+  // relies on (it self-hides via `md:hidden`), just scoped to this week's 7
+  // days instead of the whole month grid.
+  const weekCells = useMemo(() => {
+    const cells: { dateStr: string; dayNum: number; isCurrentMonth: boolean }[] = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(weekStart);
+      d.setDate(d.getDate() + i);
+      cells.push({ dateStr: toDateStr(d), dayNum: d.getDate(), isCurrentMonth: true });
+    }
+    return cells;
+  }, [weekStart]);
 
   const recurrencePlaceholders = useMemo(() => {
     const placeholders: Record<string, any[]> = {};
@@ -487,7 +514,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           {/* Filter Strip */}
           <CalendarFilters
             searchQuery={searchQuery}
-            onSearchChange={() => {}} // searchQuery is owned by TopNav / App
+            onSearchChange={onSearchChange}
             statusFilter={statusFilter}
             setStatusFilter={setStatusFilter}
             platformFilter={platformFilter}
@@ -540,6 +567,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 teamMembers={teamMembers}
                 onSavePost={onSavePost}
                 currentUserName={currentUserName}
+                touchDraggedPostId={touchDraggedPostId}
+                touchHoverDate={touchHoverDate}
+                onTouchStart={(postId) => setTouchDraggedPostId(postId)}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
               />
               {/* Desktop Month Grid */}
               <CalendarMonthView
@@ -565,26 +597,50 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
           {/* ── WEEK VIEW ── */}
           {displayMode === 'week' && (
-            <CalendarWeekView
-              weekStart={weekStart}
-              setWeekStart={setWeekStart}
-              postsByDate={postsByDate}
-              todayIso={todayIso}
-              touchHoverDate={touchHoverDate}
-              selectedPostIds={selectedPostIds}
-              isSelectMode={isSelectMode}
-              isMobileDevice={isMobileDevice}
-              clearCaptionsOnDuplicate={clearCaptionsOnDuplicate}
-              onSetClearCaptionsOnDuplicate={setClearCaptionsOnDuplicate}
-              onDuplicateWeekForward={handleDuplicateWeekForward}
-              onDropOnCell={handleDropOnCell}
-              onSelectPost={(post) => { setSelectedPostForInspector(post); onSelectPost(post); }}
-              onOpenNewPostModal={onOpenNewPostModal}
-              onToggleSelect={toggleSelectPost}
-              teamMembers={teamMembers}
-              onSavePost={onSavePost}
-              currentUserName={currentUserName}
-            />
+            <>
+              {/* Mobile Strip View -- CalendarWeekView below is desktop-only */}
+              <MobileDateStripView
+                calendarCells={weekCells}
+                postsByDate={postsByDate}
+                todayIso={todayIso}
+                selectedMobileDate={selectedMobileDate}
+                onSelectMobileDate={setSelectedMobileDate}
+                onOpenNewPostModal={onOpenNewPostModal}
+                onSelectPost={(post) => { setSelectedPostForInspector(post); onSelectPost(post); }}
+                selectedPostIds={selectedPostIds}
+                isSelectMode={isSelectMode}
+                onToggleSelect={toggleSelectPost}
+                onLongPressPost={(postId) => { setIsSelectMode(true); if (!selectedPostIds.has(postId)) toggleSelectPost(postId); }}
+                teamMembers={teamMembers}
+                onSavePost={onSavePost}
+                currentUserName={currentUserName}
+                touchDraggedPostId={touchDraggedPostId}
+                touchHoverDate={touchHoverDate}
+                onTouchStart={(postId) => setTouchDraggedPostId(postId)}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+              />
+              <CalendarWeekView
+                weekStart={weekStart}
+                setWeekStart={setWeekStart}
+                postsByDate={postsByDate}
+                todayIso={todayIso}
+                touchHoverDate={touchHoverDate}
+                selectedPostIds={selectedPostIds}
+                isSelectMode={isSelectMode}
+                isMobileDevice={isMobileDevice}
+                clearCaptionsOnDuplicate={clearCaptionsOnDuplicate}
+                onSetClearCaptionsOnDuplicate={setClearCaptionsOnDuplicate}
+                onDuplicateWeekForward={handleDuplicateWeekForward}
+                onDropOnCell={handleDropOnCell}
+                onSelectPost={(post) => { setSelectedPostForInspector(post); onSelectPost(post); }}
+                onOpenNewPostModal={onOpenNewPostModal}
+                onToggleSelect={toggleSelectPost}
+                teamMembers={teamMembers}
+                onSavePost={onSavePost}
+                currentUserName={currentUserName}
+              />
+            </>
           )}
 
           {/* ── LIST VIEW ── */}
@@ -607,8 +663,12 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           )}
         </div>
 
-        {/* Right Side Inspector Panel */}
-        <aside className="w-full xl:w-80 border-t xl:border-t-0 xl:border-l border-[#bfcab4] bg-[#faf9f5] p-4 sm:p-6 space-y-5">
+        {/* Right Side Inspector Panel -- desktop-only. Selecting a post always
+            opens the full PostDetailModal too (see onSelectPost below), so
+            below `xl` this panel was pure duplicate real estate: a blank
+            "Nothing selected" strip sitting under every phone/tablet calendar
+            with no way to interact with it that the modal didn't already cover. */}
+        <aside className="hidden xl:block xl:w-80 xl:border-l border-[#bfcab4] bg-[#faf9f5] p-4 sm:p-6 space-y-5">
           <div className="pb-3 border-b border-[#bfcab4] flex items-center justify-between">
             <div>
               <span className="font-label-caps text-xs text-[#296951] uppercase font-bold">Selected post</span>

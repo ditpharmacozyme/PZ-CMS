@@ -307,6 +307,18 @@ input:focus, textarea:focus, select:focus {
   animation: bottomSheetUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* ─── Backdrop Fade (mobile sheet overlays: filter sheet, backlog sheet) ───
+   `.animate-fadeIn` was referenced on these overlays without ever being
+   defined -- a silent no-op that made the backdrops appear/disappear with a
+   hard cut instead of a fade. */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-fadeIn {
+  animation: fadeIn 0.18s ease forwards;
+}
+
 /* ─── Toast Fade ─── */
 @keyframes toastIn {
   from { transform: translateY(20px); opacity: 0; }

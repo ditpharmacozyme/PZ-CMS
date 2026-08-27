@@ -432,6 +432,7 @@ export const TopNav: React.FC<TopNavProps> = ({
           <div className="relative w-full">
             <span className="material-symbols-outlined absolute left-3 top-2.5 text-[#707a67] text-lg pointer-events-none">search</span>
             <input
+              id="mobile-search-input"
               type="text"
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
