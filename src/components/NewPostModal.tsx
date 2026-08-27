@@ -5,6 +5,7 @@ import { todayStr, logTimestamp } from '../utils/date';
 import { uploadImage } from '../utils/uploadImage';
 import { combineAssigneeEmails } from '../utils/postOwnership';
 import { useSmartMemory, PostDraft } from '../hooks/useSmartMemory';
+import { useImageUploadZone } from '../hooks/useImageUploadZone';
 import { supabase } from '../lib/supabase';
 import { Modal } from './ui/Modal';
 import { TextField, TextAreaField, SelectField } from './ui/Field';
@@ -155,10 +156,7 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
 
   // Image Upload -- reuses src/utils/uploadImage.ts unchanged (compression,
   // auth token, Drive upload, UploadNotConfiguredError all live there).
-  const handleImageFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
+  const uploadFile = async (file: File) => {
     setIsUploading(true);
     setUploadError(null);
     try {
@@ -170,6 +168,14 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
       setIsUploading(false);
     }
   };
+
+  const handleImageFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (file) uploadFile(file);
+  };
+
+  const { isDragging, dropHandlers } = useImageUploadZone(uploadFile, isUploading);
 
   // Send immediate test reminder email
   const handleSendTestEmail = async () => {
@@ -518,11 +524,19 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
               </div>
 
               <div className="flex items-center gap-4">
-                <div className="w-24 h-24 rounded-lg bg-[var(--color-muted)] border-2 border-dashed border-[var(--color-line)] overflow-hidden flex items-center justify-center relative flex-shrink-0">
+                <div
+                  {...dropHandlers}
+                  className={`w-24 h-24 rounded-lg bg-[var(--color-muted)] border-2 border-dashed overflow-hidden flex items-center justify-center relative flex-shrink-0 transition-colors ${
+                    isDragging ? 'border-[#296c00] bg-[#f0fae8]' : 'border-[var(--color-line)]'
+                  }`}
+                  title="Drop an image or paste a screenshot"
+                >
                   {visualUrl ? (
                     <img src={visualUrl} alt="Preview" className="w-full h-full object-cover" />
                   ) : (
-                    <span className="material-symbols-outlined text-2xl text-[var(--color-ink-muted)]">image</span>
+                    <span className="material-symbols-outlined text-2xl text-[var(--color-ink-muted)]">
+                      {isDragging ? 'download' : 'image'}
+                    </span>
                   )}
                 </div>
 

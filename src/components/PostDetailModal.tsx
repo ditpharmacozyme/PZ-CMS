@@ -8,6 +8,7 @@ import { getPostStatusConfig } from '../utils/statusConfig';
 import { setStageDone, Stage } from '../utils/stages';
 import { combineAssigneeEmails } from '../utils/postOwnership';
 import { useConfirm } from './ui/ConfirmDialog';
+import { useImageUploadZone } from '../hooks/useImageUploadZone';
 
 interface PostDetailModalProps {
   post: Post;
@@ -124,11 +125,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
   };
 
   // Upload to Drive and store only the returned URL — never base64.
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
-
+  const uploadFile = async (file: File) => {
     setUploadError(null);
     setIsUploading(true);
     try {
@@ -153,6 +150,14 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
       setIsUploading(false);
     }
   };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (file) uploadFile(file);
+  };
+
+  const { isDragging, dropHandlers } = useImageUploadZone(uploadFile, isUploading);
 
   // Handle a stage checkbox flip -- persists immediately (see comment at the
   // checkbox grid) via the same utils/stages.ts mutator the calendar quick
@@ -806,8 +811,14 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
                 Image
               </label>
 
-              {/* Preview Box */}
-              <div className="h-44 bg-white border border-[#bfcab4] rounded overflow-hidden flex items-center justify-center relative shadow-inner">
+              {/* Preview Box -- also a drop target; a screenshot can be pasted
+                  anywhere in the modal. */}
+              <div
+                {...dropHandlers}
+                className={`h-44 bg-white border rounded overflow-hidden flex items-center justify-center relative shadow-inner transition-colors ${
+                  isDragging ? 'border-[#296c00] border-2 bg-[#f0fae8]' : 'border-[#bfcab4]'
+                }`}
+              >
                 {editedPost.visualUrl ? (
                   <img
                     src={editedPost.visualUrl}
@@ -818,7 +829,9 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
                 ) : (
                   <div className="text-center p-4 text-[#707a67]">
                     <span className="material-symbols-outlined text-4xl">cloud_upload</span>
-                    <p className="font-label-caps text-xs mt-1">Upload a file or paste a link</p>
+                    <p className="font-label-caps text-xs mt-1">
+                      {isDragging ? 'Drop to upload' : 'Drop an image, paste a screenshot, or use the picker below'}
+                    </p>
                   </div>
                 )}
               </div>

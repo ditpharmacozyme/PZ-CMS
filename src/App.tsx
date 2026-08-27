@@ -596,7 +596,7 @@ export function App() {
             <TemplateLibrary templates={templates} onUseTemplate={handleUseTemplate} onSaveNewTemplate={handleSaveNewTemplate} onUpdateTemplate={handleUpdateTemplate} onDeleteTemplate={handleDeleteTemplate} selectedBrandFilter={selectedBrandFilter} />
           )}
           {currentTab === 'brand-kit' && (
-            <BrandControlCenter selectedBrandFilter={selectedBrandFilter} onSelectBrandFilter={setSelectedBrandFilter} />
+            <BrandControlCenter selectedBrandFilter={selectedBrandFilter} onSelectBrandFilter={setSelectedBrandFilter} onSaveToLibrary={handleAddBankItem} />
           )}
           {currentTab === 'assets' && (
             <AssetLibrary assets={assets} selectedBrandFilter={selectedBrandFilter} onAddAsset={handleAddAsset} onUpdateAsset={handleUpdateAsset} onDeleteAsset={handleDeleteAsset} />

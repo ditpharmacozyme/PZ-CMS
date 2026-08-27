@@ -1,10 +1,14 @@
 import React, { useState, useMemo } from 'react';
-import { BrandId } from '../types';
+import { BrandId, ContentBankItem } from '../types';
 import { BRANDS } from '../data/brands';
+import { todayStr } from '../utils/date';
 
 interface BrandControlCenterProps {
   selectedBrandFilter: BrandId | 'all';
   onSelectBrandFilter: (brand: BrandId | 'all') => void;
+  /** Persist a tuned prompt into the Content Bank (source 'AI Prompt') so it
+   *  survives the next tweak -- the section otherwise only offered Copy. */
+  onSaveToLibrary?: (item: ContentBankItem) => void;
 }
 
 type PromptGoal = 'carousel' | 'quiz' | 'flashcard' | 'clinical-breakdown' | 'weekly-digest' | 'patient-guide';
@@ -12,7 +16,8 @@ type PromptTone = 'clinical-rigor' | 'engaging-educational' | 'urgent-diagnostic
 
 export const BrandControlCenter: React.FC<BrandControlCenterProps> = ({
   selectedBrandFilter,
-  onSelectBrandFilter
+  onSelectBrandFilter,
+  onSaveToLibrary
 }) => {
   const [activeBrandId, setActiveBrandId] = useState<BrandId>(
     selectedBrandFilter === 'all' ? 'pharmacozyme' : selectedBrandFilter
@@ -32,6 +37,20 @@ export const BrandControlCenter: React.FC<BrandControlCenterProps> = ({
     navigator.clipboard.writeText(text);
     setCopiedText(label);
     setTimeout(() => setCopiedText(null), 2000);
+  };
+
+  const handleSavePrompt = (text: string, kind: string, tags: string[]) => {
+    if (!onSaveToLibrary) return;
+    onSaveToLibrary({
+      id: `bank-${Date.now()}`,
+      text,
+      tags: Array.from(new Set(['prompt', kind, ...tags])),
+      source: 'AI Prompt',
+      savedDate: todayStr(),
+      brandId: activeBrandId,
+    });
+    setCopiedText(`Saved "${kind}" to Content Bank`);
+    setTimeout(() => setCopiedText(null), 2500);
   };
 
   // ── Master System Persona Prompt ─────────────────────────────────────────────
@@ -201,13 +220,25 @@ OUTPUT FORMAT:
             </div>
           </div>
 
-          <button
-            onClick={() => handleCopy(masterSystemPrompt, 'System Persona Prompt')}
-            className="px-4 py-2 bg-[#1b1c1a] hover:bg-[#296c00] text-white font-label-caps text-xs font-bold rounded-lg transition-colors flex items-center gap-2 shadow-xs cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-sm">content_copy</span>
-            <span>Copy Master System Prompt</span>
-          </button>
+          <div className="flex items-center gap-2">
+            {onSaveToLibrary && (
+              <button
+                onClick={() => handleSavePrompt(masterSystemPrompt, 'System Persona Prompt', ['persona'])}
+                className="px-3 py-2 bg-white border border-[#bfcab4] hover:bg-[#f0fae8] text-[#296c00] font-label-caps text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                title="Save this prompt to the Content Bank"
+              >
+                <span className="material-symbols-outlined text-sm">bookmark_add</span>
+                <span className="hidden sm:inline">Save</span>
+              </button>
+            )}
+            <button
+              onClick={() => handleCopy(masterSystemPrompt, 'System Persona Prompt')}
+              className="px-4 py-2 bg-[#1b1c1a] hover:bg-[#296c00] text-white font-label-caps text-xs font-bold rounded-lg transition-colors flex items-center gap-2 shadow-xs cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-sm">content_copy</span>
+              <span>Copy Master System Prompt</span>
+            </button>
+          </div>
         </div>
 
         {/* Interactive Prompt Builder Form */}
@@ -298,6 +329,17 @@ OUTPUT FORMAT:
                 <span className="material-symbols-outlined text-sm">content_copy</span>
                 <span>Copy Post Prompt</span>
               </button>
+
+              {onSaveToLibrary && (
+                <button
+                  onClick={() => handleSavePrompt(generatedPostPrompt, 'Post Prompt', [selectedGoal, selectedTone])}
+                  className="bg-white/10 hover:bg-white/20 text-white font-label-caps text-xs font-bold py-2.5 px-3 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                  title="Save this prompt to the Content Bank"
+                >
+                  <span className="material-symbols-outlined text-sm">bookmark_add</span>
+                  <span>Save</span>
+                </button>
+              )}
 
               <button
                 onClick={() => handleCopy(imageGenerationPrompt, 'Midjourney Image Prompt')}

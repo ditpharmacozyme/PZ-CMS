@@ -30,6 +30,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
 }) => {
   const confirm = useConfirm();
   const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
   const [editingAsset, setEditingAsset] = useState<BrandAsset | null>(null);
 
@@ -50,6 +51,10 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
   const filteredAssets = assets.filter((asset) => {
     if (selectedBrandFilter !== 'all' && asset.brandId !== selectedBrandFilter) return false;
     if (activeCategory !== 'all' && asset.type !== activeCategory) return false;
+    const q = searchQuery.trim().toLowerCase();
+    if (q && ![asset.title, asset.fileType, asset.type.replace('_', ' ')].some((v) => (v || '').toLowerCase().includes(q))) {
+      return false;
+    }
     return true;
   });
 
@@ -147,6 +152,23 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
           <span className="material-symbols-outlined text-sm">upload_file</span>
           <span>+ Add New Brand Asset</span>
         </button>
+      </div>
+
+      {/* Search */}
+      <div className="flex items-center gap-2 bg-white border border-[#bfcab4] rounded px-3 h-11 max-w-md">
+        <span className="material-symbols-outlined text-[#707a67] text-lg">search</span>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search assets by name or file type…"
+          className="flex-1 bg-transparent text-sm text-[#1b1c1a] focus:outline-none placeholder:text-[#bfcab4]"
+        />
+        {searchQuery && (
+          <button onClick={() => setSearchQuery('')} className="text-[#707a67] hover:text-[#1b1c1a] p-1 -mr-1" aria-label="Clear search">
+            <span className="material-symbols-outlined text-base">close</span>
+          </button>
+        )}
       </div>
 
       {/* Categories Bar */}
