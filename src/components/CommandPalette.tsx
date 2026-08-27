@@ -11,6 +11,8 @@ interface CommandPaletteProps {
   onSelectBrandFilter: (brand: BrandId | 'all') => void;
   onSelectPost: (post: Post) => void;
   onOpenNewPostModal: () => void;
+  /** Capture a one-line idea straight from the palette (title only). */
+  onQuickAdd?: (title: string) => void;
 }
 
 type PaletteItem = {
@@ -39,7 +41,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onSelectTab,
   onSelectBrandFilter,
   onSelectPost,
-  onOpenNewPostModal
+  onOpenNewPostModal,
+  onQuickAdd
 }) => {
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
@@ -87,10 +90,23 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       }))
     ];
 
-    const q = query.trim().toLowerCase();
+    const raw = query.trim();
+    const q = raw.toLowerCase();
     if (!q) return list.slice(0, 8);
-    return list.filter((item) => item.label.toLowerCase().includes(q) || item.hint.toLowerCase().includes(q)).slice(0, 20);
-  }, [query, posts, onSelectTab, onSelectBrandFilter, onSelectPost, onOpenNewPostModal]);
+    const matches = list.filter((item) => item.label.toLowerCase().includes(q) || item.hint.toLowerCase().includes(q)).slice(0, 20);
+    // Offer fast capture of the typed text as a backlog idea when nothing
+    // matches it exactly -- so a search that finds nothing still does something.
+    if (onQuickAdd && !matches.some((m) => m.label.toLowerCase() === q)) {
+      matches.unshift({
+        id: 'action-quick-add',
+        label: `Create idea: “${raw}”`,
+        hint: 'Action',
+        icon: 'bolt',
+        run: () => onQuickAdd(raw),
+      });
+    }
+    return matches;
+  }, [query, posts, onSelectTab, onSelectBrandFilter, onSelectPost, onOpenNewPostModal, onQuickAdd]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {

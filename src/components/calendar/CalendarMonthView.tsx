@@ -20,6 +20,10 @@ interface CalendarMonthViewProps {
   isMobileDevice: boolean;
   onSelectPost: (post: Post) => void;
   onOpenNewPostModal: (date?: string) => void;
+  /** Inline "type a title on the day" capture. When set, a plain click on a
+   *  day opens an in-cell input instead of launching the full wizard (still
+   *  reachable via the hover + button). */
+  onInlineCreate?: (title: string, dateStr: string) => void;
   onDropOnCell: (e: React.DragEvent, dateStr: string) => void;
   onToggleSelect: (postId: string, e: React.MouseEvent | React.ChangeEvent) => void;
   onPlaceholderClick: (post: any) => void;
@@ -40,6 +44,7 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
   isMobileDevice,
   onSelectPost,
   onOpenNewPostModal,
+  onInlineCreate,
   onDropOnCell,
   onToggleSelect,
   onPlaceholderClick,
@@ -50,6 +55,24 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
   activeTeammate
 }) => {
   const [expandedDate, setExpandedDate] = useState<string | null>(null);
+  const [inlineDate, setInlineDate] = useState<string | null>(null);
+  const [inlineTitle, setInlineTitle] = useState('');
+
+  const openCell = (dateStr: string) => {
+    if (onInlineCreate) {
+      setInlineDate(dateStr);
+      setInlineTitle('');
+    } else {
+      onOpenNewPostModal(dateStr);
+    }
+  };
+
+  const commitInline = (dateStr: string) => {
+    const t = inlineTitle.trim();
+    if (t && onInlineCreate) onInlineCreate(t, dateStr);
+    setInlineDate(null);
+    setInlineTitle('');
+  };
 
   return (
     <div className="hidden md:block">
@@ -83,7 +106,7 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
               data-date-cell={cell.dateStr || ''}
               onClick={() => {
                 if (!cell.dateStr) return;
-                onOpenNewPostModal(cell.dateStr);
+                openCell(cell.dateStr);
               }}
               onDragOver={(e) => {
                 if (cell.dateStr) {
@@ -189,6 +212,23 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
 
               {/* Post Card Stack */}
               <div className="space-y-1 flex-1 min-w-0">
+                {inlineDate === cell.dateStr && (
+                  <input
+                    autoFocus
+                    type="text"
+                    value={inlineTitle}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => setInlineTitle(e.target.value)}
+                    onKeyDown={(e) => {
+                      e.stopPropagation();
+                      if (e.key === 'Enter') { e.preventDefault(); commitInline(cell.dateStr); }
+                      else if (e.key === 'Escape') { e.preventDefault(); setInlineDate(null); setInlineTitle(''); }
+                    }}
+                    onBlur={() => commitInline(cell.dateStr)}
+                    placeholder="Title, then Enter…"
+                    className="w-full text-[11px] px-1.5 py-1 border border-[#296c00] rounded bg-white text-[#1b1c1a] focus:outline-none focus:ring-1 focus:ring-[#296c00]"
+                  />
+                )}
                 {visiblePosts.map((post) => (
                   <PostCard
                     key={post.id}

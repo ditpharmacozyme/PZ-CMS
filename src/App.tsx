@@ -51,6 +51,8 @@ import { NewPostModal } from './components/NewPostModal';
 import { ContentBank } from './components/ContentBank';
 import { ResearchPlans } from './components/ResearchPlans';
 import { CommandPalette } from './components/CommandPalette';
+import { QuickAddBar } from './components/QuickAddBar';
+import { buildQuickPost } from './utils/quickPost';
 import { LoginPage } from './components/LoginPage';
 import { AuditLogView } from './components/AuditLogView';
 import { SmartMemoryRibbon } from './components/SmartMemoryRibbon';
@@ -74,7 +76,7 @@ import { setStageDone } from './utils/stages';
 // `/` silently focused a display:none element on mobile. Try each candidate
 // in DOM order and focus the first one that's actually visible.
 function focusFirstVisibleSearchInput(): void {
-  const candidateIds = ['calendar-search-input', 'mobile-search-input', 'app-search-input'];
+  const candidateIds = ['calendar-search-input', 'mywork-search-input', 'mobile-search-input', 'app-search-input'];
   for (const id of candidateIds) {
     const el = document.getElementById(id) as HTMLInputElement | null;
     if (el && el.offsetParent !== null) {
@@ -212,7 +214,21 @@ export function App() {
   const [presetTemplateId, setPresetTemplateId] = useState<string | undefined>(undefined);
   const [mobileNavOpen, setMobileNavOpen] = useState<boolean>(false);
   const [isPaletteOpen, setIsPaletteOpen] = useState<boolean>(false);
+  const [isQuickAddOpen, setIsQuickAddOpen] = useState<boolean>(false);
   const [importingData, setImportingData] = useState(false);
+
+  // Global fast-capture: title only, straight into the backlog, assigned to
+  // the logged-in teammate, inheriting the active brand filter. Reuses
+  // handleAddPost (same path as the backlog's own one-line quick-add).
+  const handleQuickAdd = (title: string, scheduledDate?: string) => {
+    handleAddPost(
+      buildQuickPost(title, {
+        brandFilter: selectedBrandFilter,
+        assignee: activeTeammate?.name || (teamMembers[0]?.name ?? ''),
+        scheduledDate,
+      })
+    );
+  };
 
   // ── Brand Typography Specimen Setup ──────────────────────────────────────────
   useEffect(() => {
@@ -259,9 +275,11 @@ export function App() {
       setPresetTemplateId(undefined);
       setIsNewPostModalOpen(true);
     },
+    onQuickAdd: () => setIsQuickAddOpen(true),
     onFocusSearch: () => focusFirstVisibleSearchInput(),
     onEscape: () => {
-      if (isPaletteOpen) setIsPaletteOpen(false);
+      if (isQuickAddOpen) setIsQuickAddOpen(false);
+      else if (isPaletteOpen) setIsPaletteOpen(false);
       else if (activeModalPost) setActiveModalPost(null);
       else if (isNewPostModalOpen) setIsNewPostModalOpen(false);
     }
@@ -552,6 +570,8 @@ export function App() {
               onSelectPost={handleSelectPost}
               onSavePost={handleSavePost}
               teamMembers={teamMembers}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
             />
           )}
           {currentTab === 'calendar' && (
@@ -619,7 +639,16 @@ export function App() {
       )}
 
       {/* Command Palette */}
-      <CommandPalette isOpen={isPaletteOpen} onClose={() => setIsPaletteOpen(false)} posts={posts} onSelectTab={setCurrentTab} onSelectBrandFilter={setSelectedBrandFilter} onSelectPost={handleSelectPost} onOpenNewPostModal={() => { setNewPostInitialDate(undefined); setPresetTemplateId(undefined); setIsNewPostModalOpen(true); }} />
+      <CommandPalette isOpen={isPaletteOpen} onClose={() => setIsPaletteOpen(false)} posts={posts} onSelectTab={setCurrentTab} onSelectBrandFilter={setSelectedBrandFilter} onSelectPost={handleSelectPost} onOpenNewPostModal={() => { setNewPostInitialDate(undefined); setPresetTemplateId(undefined); setIsNewPostModalOpen(true); }} onQuickAdd={handleQuickAdd} />
+
+      {/* Global quick-add (press A, or "Create idea" in the command palette) */}
+      <QuickAddBar
+        isOpen={isQuickAddOpen}
+        onClose={() => setIsQuickAddOpen(false)}
+        onAdd={(title) => handleQuickAdd(title)}
+        selectedBrandFilter={selectedBrandFilter}
+        activeTeammateName={activeTeammate?.name}
+      />
 
       {/* Mobile Bottom Tab Bar */}
       <nav className="bottom-tab-bar" aria-label="Mobile navigation">

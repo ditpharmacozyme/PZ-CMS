@@ -5,6 +5,8 @@ interface ShortcutHandlers {
   onOpenPalette: () => void;
   /** N — start a new post. */
   onNewPost: () => void;
+  /** A — open the global quick-add bar. */
+  onQuickAdd?: () => void;
   /** / — focus the search box. */
   onFocusSearch: () => void;
   /** Esc — close whatever's open (palette, modal). Consumers decide what "open" means. */
@@ -18,11 +20,11 @@ function isTypingTarget(el: EventTarget | null): boolean {
 }
 
 /**
- * Global keyboard shortcuts for the app shell. Single-key shortcuts (N, /) are
- * suppressed while the user is typing in a field, so they never hijack normal
- * text entry — only Cmd/Ctrl+K and Escape work everywhere.
+ * Global keyboard shortcuts for the app shell. Single-key shortcuts (N, A, /)
+ * are suppressed while the user is typing in a field, so they never hijack
+ * normal text entry — only Cmd/Ctrl+K and Escape work everywhere.
  */
-export function useKeyboardShortcuts({ onOpenPalette, onNewPost, onFocusSearch, onEscape }: ShortcutHandlers) {
+export function useKeyboardShortcuts({ onOpenPalette, onNewPost, onQuickAdd, onFocusSearch, onEscape }: ShortcutHandlers) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const typing = isTypingTarget(e.target);
@@ -43,6 +45,9 @@ export function useKeyboardShortcuts({ onOpenPalette, onNewPost, onFocusSearch, 
       if (e.key === 'n' || e.key === 'N') {
         e.preventDefault();
         onNewPost();
+      } else if ((e.key === 'a' || e.key === 'A') && onQuickAdd) {
+        e.preventDefault();
+        onQuickAdd();
       } else if (e.key === '/') {
         e.preventDefault();
         onFocusSearch();

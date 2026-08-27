@@ -13,6 +13,17 @@ interface MyWorkProps {
   onSelectPost: (post: Post) => void;
   onSavePost: (post: Post) => void;
   teamMembers?: TeamMember[];
+  /** Shared with the app shell so `/` focuses this box like it does the calendar's. */
+  searchQuery?: string;
+  onSearchChange?: (value: string) => void;
+}
+
+function matchesQuery(post: Post, q: string): boolean {
+  if (!q) return true;
+  const needle = q.trim().toLowerCase();
+  if (!needle) return true;
+  return [post.title, post.caption, ...post.assignees, ...post.tags]
+    .some((v) => (v || '').toLowerCase().includes(needle));
 }
 
 const STAGE_EMOJI: Record<Stage, string> = { design: '🎨', publish: '🚀', engagement: '💬' };
@@ -51,7 +62,7 @@ interface Row {
 /** The four sections with an actionable inline toggle -- "Unscheduled ideas" is deliberately not one of these (see below). */
 type ActionableSectionKey = 'late' | 'today' | 'week' | 'waiting';
 
-export const MyWork: React.FC<MyWorkProps> = ({ posts, activeTeammate, onSelectPost, onSavePost, teamMembers = [] }) => {
+export const MyWork: React.FC<MyWorkProps> = ({ posts, activeTeammate, onSelectPost, onSavePost, teamMembers = [], searchQuery = '', onSearchChange }) => {
   // Toggling a stage from this screen can make a row stop naturally
   // qualifying for the section it's in (e.g. its "waiting on me" stage
   // just got ticked) -- without this, the row would vanish instantly with
@@ -91,7 +102,7 @@ export const MyWork: React.FC<MyWorkProps> = ({ posts, activeTeammate, onSelectP
     // MissionControlDashboard, which is also cross-brand). Scoping it would
     // silently hide overdue/pending work under other brands behind a calm
     // "nothing to do" empty state.
-    const mine = posts.filter((p) => isMine(p, activeTeammate));
+    const mine = posts.filter((p) => isMine(p, activeTeammate) && matchesQuery(p, searchQuery));
     const mineById = new Map(mine.map((p) => [p.id, p]));
 
     mine.forEach((post) => {
@@ -150,7 +161,7 @@ export const MyWork: React.FC<MyWorkProps> = ({ posts, activeTeammate, onSelectP
     unscheduledIdeas.sort((a, b) => a.title.localeCompare(b.title));
 
     return { late: lateWithPins, today: todayWithPins, thisWeek: weekWithPins, waitingOnMe: waitingWithPins, unscheduledIdeas };
-  }, [posts, activeTeammate, sessionPins]);
+  }, [posts, activeTeammate, sessionPins, searchQuery]);
 
   if (!activeTeammate) {
     return (
@@ -289,6 +300,26 @@ export const MyWork: React.FC<MyWorkProps> = ({ posts, activeTeammate, onSelectP
         </span>
         <h2 className="font-display-xl text-2xl md:text-3xl text-[#1b1c1a] font-bold mt-1">My Work</h2>
         <p className="font-body-md text-sm text-[#707a67] mt-1">What needs your attention, in order.</p>
+        <div className="mt-3 flex items-center gap-2 bg-white border border-[#bfcab4] rounded px-3 h-11 max-w-sm">
+          <span className="material-symbols-outlined text-[#707a67] text-lg">search</span>
+          <input
+            id="mywork-search-input"
+            type="text"
+            value={searchQuery}
+            onChange={(e) => onSearchChange?.(e.target.value)}
+            placeholder="Filter my work by title, tag, assignee…"
+            className="flex-1 bg-transparent text-sm text-[#1b1c1a] focus:outline-none placeholder:text-[#bfcab4]"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => onSearchChange?.('')}
+              className="text-[#707a67] hover:text-[#1b1c1a] p-1 -mr-1"
+              aria-label="Clear search"
+            >
+              <span className="material-symbols-outlined text-base">close</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {actionableSections.map((section) => (

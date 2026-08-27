@@ -16,6 +16,7 @@ import { CalendarWeekView } from './calendar/CalendarWeekView';
 import { CalendarListView } from './calendar/CalendarListView';
 import { IdeaBacklog } from './calendar/IdeaBacklog';
 import { useConfirm } from './ui/ConfirmDialog';
+import { buildQuickPost } from '../utils/quickPost';
 
 interface CalendarViewProps {
   posts: Post[];
@@ -654,6 +655,15 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 isMobileDevice={isMobileDevice}
                 onSelectPost={(post) => { setSelectedPostForInspector(post); onSelectPost(post); }}
                 onOpenNewPostModal={onOpenNewPostModal}
+                onInlineCreate={(title, dateStr) =>
+                  onAddPost(
+                    buildQuickPost(title, {
+                      brandFilter: selectedBrandFilter,
+                      assignee: activeTeammate?.name || defaultAssignee,
+                      scheduledDate: dateStr,
+                    })
+                  )
+                }
                 onDropOnCell={handleDropOnCell}
                 onToggleSelect={toggleSelectPost}
                 onPlaceholderClick={handlePlaceholderClick}

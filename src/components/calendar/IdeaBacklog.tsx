@@ -3,6 +3,7 @@ import { Post, BrandId, TeamMember } from '../../types';
 import { BRANDS } from '../../data/brands';
 import { logTimestamp } from '../../utils/date';
 import { AssigneePopover } from '../AssigneePopover';
+import { buildQuickPost } from '../../utils/quickPost';
 
 interface IdeaBacklogProps {
   filteredBacklogPosts: Post[];
@@ -73,33 +74,12 @@ export const IdeaBacklog: React.FC<IdeaBacklogProps> = ({
     // Prefer the logged-in user over "first person in the roster" -- the
     // fastest creation path in the app used to always assign to whoever is
     // alphabetically/chronologically first in teamMembers, not to you.
-    const quickAddAssignee = activeTeammate?.name || defaultAssignee;
-
-    const newPost: Post = {
-      id: `post-${Date.now()}`,
-      brandId: selectedBrandFilter === 'all' ? 'pharmacozyme' : selectedBrandFilter,
-      title: newBacklogTitle.trim(),
-      caption: '',
-      platform: 'instagram',
-      specType: 'feed-post',
-      scheduledDate: '',
-      scheduledTime: '',
-      status: 'not-started',
-      assignees: quickAddAssignee ? [quickAddAssignee] : [],
-      visualUrl: '',
-      approved: false,
-      tags: [],
-      comments: [],
-      activityLog: [
-        {
-          id: `act-${Date.now()}`,
-          actor: quickAddAssignee || 'Someone',
-          action: 'Created idea',
-          timestamp: logTimestamp()
-        }
-      ]
-    };
-    onAddPost(newPost);
+    onAddPost(
+      buildQuickPost(newBacklogTitle, {
+        brandFilter: selectedBrandFilter,
+        assignee: activeTeammate?.name || defaultAssignee,
+      })
+    );
     setNewBacklogTitle('');
   };
 
