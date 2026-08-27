@@ -23,6 +23,8 @@ export const MAPPINGS = [
   ['#faf9f5', '#f4f4f3'],
   ['#efeeea', '#f1f1f0'],
   ['#e5e4de', '#efefed'],
+  ['#f3f2ee', '#f1f1f0'],
+  ['#e4e2db', '#e9e9e7'],
   ['#f7f6f2', '#f4f4f3'],
   ['#f0eee6', '#efefed'],
   ['#ba1a1a', '#dc2626'],

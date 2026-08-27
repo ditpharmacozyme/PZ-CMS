@@ -11,7 +11,7 @@ const SRC = fileURLToPath(new URL('../', import.meta.url)); // src/
 // *.test.* (this file) are exempt.
 const RETIRED = [
   '#bfcab4', '#707a67', '#404a39', '#faf9f5', '#efeeea', '#e5e4de',
-  '#f7f6f2', '#f0eee6', '#ba1a1a', '#ffdad6', '#935c00', '#ffddb0', '#f7f6f0',
+  '#f3f2ee', '#e4e2db', '#f7f6f2', '#f0eee6', '#ba1a1a', '#ffdad6', '#935c00', '#ffddb0', '#f7f6f0',
 ];
 const EXEMPT = ['utils/statusConfig.ts', 'data/brands.ts', 'utils/brandTypography.ts'];
 
