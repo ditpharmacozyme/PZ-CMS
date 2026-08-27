@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { AppNotification, Post } from '../types';
+import { AppNotification, Post, TeamMember } from '../types';
 import { getStoredNotifications, saveStoredNotifications } from '../utils/storage';
 import { generateNotifications, mergeNotifications } from '../utils/notifications';
 
-export function useNotifications(posts: Post[]) {
+export function useNotifications(posts: Post[], activeTeammate?: TeamMember | null) {
   const [notifications, setNotifications] = useState<AppNotification[]>(() =>
     getStoredNotifications()
   );
@@ -14,9 +14,9 @@ export function useNotifications(posts: Post[]) {
     // so freshly generated notifications were discarded every render and the
     // bell showed whatever was in localStorage (nothing, on a first run,
     // since INITIAL_NOTIFICATIONS is []). Fixed: generated goes first.
-    const generated = generateNotifications(posts);
+    const generated = generateNotifications(posts, activeTeammate);
     setNotifications((prev) => mergeNotifications(generated, prev));
-  }, [posts]);
+  }, [posts, activeTeammate]);
 
   useEffect(() => {
     saveStoredNotifications(notifications);

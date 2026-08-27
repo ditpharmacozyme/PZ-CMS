@@ -30,7 +30,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
 
     notifications.forEach(n => {
       if (n.type === 'overdue') groups['Overdue'].push(n);
-      else if (n.type === 'unassigned') groups['Action Needed'].push(n);
+      else if (n.type === 'unassigned' || n.type === 'stage_blocking') groups['Action Needed'].push(n);
       else if (n.type === 'due_soon') groups['Upcoming'].push(n);
       else groups['Updates'].push(n);
     });
@@ -100,6 +100,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
                               {n.type === 'overdue' && <span className="material-symbols-outlined text-[#ba1a1a] text-[14px]">error</span>}
                               {n.type === 'stage_complete' && <span className="material-symbols-outlined text-[#296c00] text-[14px]">check_circle</span>}
                               {n.type === 'due_soon' && <span className="material-symbols-outlined text-[#0061a4] text-[14px]">schedule</span>}
+                              {n.type === 'stage_blocking' && <span className="material-symbols-outlined text-[#935c00] text-[14px]">pending_actions</span>}
                               
                               <h4 className={`font-headline-md text-sm truncate ${n.read ? 'text-[#404a39]' : 'text-[#1b1c1a] font-bold'}`}>
                                 {n.title}

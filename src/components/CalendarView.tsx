@@ -6,7 +6,7 @@ import { uploadImage } from '../utils/uploadImage';
 import { parseCalendarCsv, convertCsvRowsToPosts } from '../utils/researchParse';
 import { getPostStatusConfig } from '../utils/statusConfig';
 import { deriveStatus } from '../utils/postStatus';
-import { isMine } from '../utils/postOwnership';
+import { isMine, combineAssigneeEmails } from '../utils/postOwnership';
 import { CalendarHeader } from './calendar/CalendarHeader';
 import { CalendarFilters } from './calendar/CalendarFilters';
 import { BulkActionsBar } from './calendar/BulkActionsBar';
@@ -330,8 +330,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           ...draggedPost,
           scheduledDate: touchHoverDate,
           scheduledTime: draggedPost.scheduledTime || '10:00',
-          emailReminderEnabled: true,
-          reminderEmail: draggedPost.reminderEmail || activeTeammate?.email || (teamMembers.length > 0 ? teamMembers[0].email : ''),
+          // Preserve the post's own reminder setting -- a reschedule that
+          // silently re-armed a reminder the user had turned off is the
+          // exact bug this round fixes. Still defaults on for a never-set post.
+          emailReminderEnabled: draggedPost.emailReminderEnabled !== false,
+          reminderEmail: draggedPost.reminderEmail || combineAssigneeEmails(draggedPost.assignees, teamMembers),
           activityLog: [
             { id: `act-${Date.now()}`, actor: actorName, action: `Scheduled/Moved to ${touchHoverDate}`, timestamp: logTimestamp() },
             ...draggedPost.activityLog
@@ -354,8 +357,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         ...draggedPost,
         scheduledDate: dateStr,
         scheduledTime: draggedPost.scheduledTime || '10:00',
-        emailReminderEnabled: true,
-        reminderEmail: draggedPost.reminderEmail || activeTeammate?.email || (teamMembers.length > 0 ? teamMembers[0].email : ''),
+        emailReminderEnabled: draggedPost.emailReminderEnabled !== false,
+        reminderEmail: draggedPost.reminderEmail || combineAssigneeEmails(draggedPost.assignees, teamMembers),
         activityLog: [
           { id: `act-${Date.now()}`, actor: actorName, action: wasUnscheduled ? `Scheduled for ${dateStr}` : `Moved to ${dateStr}`, timestamp: logTimestamp() },
           ...draggedPost.activityLog
@@ -379,7 +382,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       visualUrl: placeholder.visualUrl,
       approved: false,
       emailReminderEnabled: true,
-      reminderEmail: activeTeammate?.email || (teamMembers.length > 0 ? teamMembers[0].email : ''),
+      reminderEmail: combineAssigneeEmails(placeholder.assignees || [], teamMembers) || undefined,
       tags: ['RecurrentSlot'],
       comments: [],
       activityLog: [{ id: `act-${Date.now()}`, actor: activeTeammate?.name || placeholder.assignees?.[0] || defaultAssignee || 'Someone', action: 'Created from a repeating slot', timestamp: logTimestamp() }]
@@ -403,7 +406,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         // quick-created post used to always land on whoever is
         // alphabetically/chronologically first in teamMembers, not on you.
         const imageCreateAssignee = activeTeammate?.name || defaultAssignee;
-        const newPost: Post = { id: `post-${Date.now()}`, brandId: selectedBrandFilter === 'all' ? 'pharmacozyme' : selectedBrandFilter, title: file.name.replace(/\.[^/.]+$/, '') || 'Untitled post', caption: '', platform: 'instagram', specType: 'feed-post', scheduledDate: targetDate || '', scheduledTime: targetDate ? '10:00' : '', status: 'not-started', assignees: imageCreateAssignee ? [imageCreateAssignee] : [], visualUrl: url, approved: false, emailReminderEnabled: !!targetDate, reminderEmail: activeTeammate?.email || (teamMembers.length > 0 ? teamMembers[0].email : ''), tags: [], comments: [], activityLog: [{ id: `act-${Date.now()}`, actor: imageCreateAssignee || 'Someone', action: `Created from image "${file.name}"`, timestamp: logTimestamp() }] };
+        const newPost: Post = { id: `post-${Date.now()}`, brandId: selectedBrandFilter === 'all' ? 'pharmacozyme' : selectedBrandFilter, title: file.name.replace(/\.[^/.]+$/, '') || 'Untitled post', caption: '', platform: 'instagram', specType: 'feed-post', scheduledDate: targetDate || '', scheduledTime: targetDate ? '10:00' : '', status: 'not-started', assignees: imageCreateAssignee ? [imageCreateAssignee] : [], visualUrl: url, approved: false, emailReminderEnabled: !!targetDate, reminderEmail: combineAssigneeEmails(imageCreateAssignee ? [imageCreateAssignee] : [], teamMembers) || undefined, tags: [], comments: [], activityLog: [{ id: `act-${Date.now()}`, actor: imageCreateAssignee || 'Someone', action: `Created from image "${file.name}"`, timestamp: logTimestamp() }] };
         onAddPost(newPost);
         onSelectPost(newPost);
       }

@@ -63,12 +63,17 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
   // No hardcoded fallback recipient -- if reminderEmail is empty there is no
   // real address to send to, so we ask for one instead of silently mailing
   // a shared inbox that may not even exist anymore.
+  // The recipient a reminder actually goes to when the field is left alone:
+  // the assignees' emails, not "whoever is first in the team list". Kept in
+  // one place so the input, the test-send, and the on-save persist all agree.
+  const resolvedReminderEmail = (
+    editedPost.reminderEmail || combineAssigneeEmails(editedPost.assignees, teamMembers)
+  ).trim();
+
   const handleSendTestEmail = async () => {
     // Matches the same fallback the Reminder Email input displays, so this
     // never rejects an address the user can plainly see on screen.
-    const recipient = (
-      editedPost.reminderEmail || (teamMembers && teamMembers.length > 0 ? teamMembers[0].email : '') || ''
-    ).trim();
+    const recipient = resolvedReminderEmail;
     if (!recipient) {
       setEmailStatus('Add a reminder email first.');
       return;
@@ -215,7 +220,11 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
 
     const finalPost: Post = {
       ...(changed ? { ...editedPost, activityLog: logs } : editedPost),
-      emailReminderEnabled: !!editedPost.scheduledDate && (editedPost.emailReminderEnabled !== false)
+      emailReminderEnabled: !!editedPost.scheduledDate && (editedPost.emailReminderEnabled !== false),
+      // Persist the resolved recipient even if the user never touched the
+      // field -- the input showed them an address, so store that one instead
+      // of the empty string that get_due_reminders would keep re-serving.
+      reminderEmail: resolvedReminderEmail || undefined,
     };
     onSavePost(finalPost);
     onClose();
@@ -526,10 +535,26 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
 
           {/* EMAIL REMINDER DATE, TIME, EMAIL, PLATFORM, SPEC */}
           <div className="bg-white p-4 border border-[#bfcab4] rounded space-y-3">
-            <div className="flex items-center gap-2 pb-2 border-b border-[#bfcab4]">
-              <span className="material-symbols-outlined text-[#296c00]" style={{ fontSize: '16px' }}>mark_email_unread</span>
-              <label className="font-label-caps text-[10px] text-[#296c00] font-bold uppercase">
-                Instagram Posting Email Reminder
+            <div className="flex items-center justify-between gap-2 pb-2 border-b border-[#bfcab4]">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#296c00]" style={{ fontSize: '16px' }}>mark_email_unread</span>
+                <label className="font-label-caps text-[10px] text-[#296c00] font-bold uppercase">
+                  Instagram Posting Email Reminder
+                </label>
+              </div>
+              {/* The only place, other than NewPostModal, this can be turned
+                  off after creation -- drag-reschedules and the detail modal
+                  used to silently keep re-arming it with no visible switch. */}
+              <label className="flex items-center gap-1.5 cursor-pointer flex-shrink-0" title="Send a reminder email for this post">
+                <input
+                  type="checkbox"
+                  checked={editedPost.emailReminderEnabled !== false}
+                  onChange={(e) => setEditedPost({ ...editedPost, emailReminderEnabled: e.target.checked })}
+                  className="w-4 h-4 text-[#296c00] border-[#bfcab4] rounded focus:ring-[#296c00]"
+                />
+                <span className="font-label-caps text-[10px] text-[#707a67] font-bold">
+                  {editedPost.emailReminderEnabled !== false ? 'On' : 'Off'}
+                </span>
               </label>
             </div>
             <p className="font-body-md text-[10px] text-[#707a67]">
@@ -620,7 +645,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
               <div className="flex gap-1.5">
                 <input
                   type="email"
-                  value={editedPost.reminderEmail || (teamMembers && teamMembers.length > 0 ? teamMembers[0].email : '') || ''}
+                  value={resolvedReminderEmail}
                   onChange={(e) => setEditedPost({ ...editedPost, reminderEmail: e.target.value })}
                   placeholder="e.g. name@example.com"
                   className="flex-1 bg-[#faf9f5] border border-[#bfcab4] p-1.5 font-body-md text-xs text-[#1b1c1a] rounded"

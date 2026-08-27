@@ -187,7 +187,7 @@ export function App() {
     setNotifications,
     handleMarkNotificationRead,
     handleClearNotifications,
-  } = useNotifications(posts);
+  } = useNotifications(posts, activeTeammate);
 
   // ── Other State ──────────────────────────────────────────────────────────────
   const [templates, setTemplates] = useState<PostTemplate[]>(() => getStoredTemplates());

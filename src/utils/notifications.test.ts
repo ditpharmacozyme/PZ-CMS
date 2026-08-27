@@ -1,6 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { mergeNotifications } from './notifications';
-import { AppNotification } from '../types';
+import { mergeNotifications, generateNotifications } from './notifications';
+import { AppNotification, Post, TeamMember } from '../types';
+
+function makePost(overrides: Partial<Post>): Post {
+  return {
+    id: 'p1', brandId: 'pharmacozyme', title: 'Test', caption: '', platform: 'instagram',
+    specType: 'feed-post', scheduledDate: '2020-01-01', scheduledTime: '10:00', status: 'not-started',
+    assignees: [], visualUrl: '', approved: false, comments: [], activityLog: [], tags: [],
+    ...overrides,
+  } as Post;
+}
+const alice: TeamMember = { id: 't1', name: 'Alice', role: 'X', email: 'a@x.com' } as TeamMember;
 
 describe('mergeNotifications', () => {
   it('carries a freshly generated notification into the output', () => {
@@ -43,5 +53,35 @@ describe('mergeNotifications', () => {
     // post C got posted, so the fresh generation no longer includes it
     const result = mergeNotifications([], previous);
     expect(result).toHaveLength(0);
+  });
+});
+
+describe('generateNotifications — stage_blocking', () => {
+  it("fires when it's genuinely the teammate's turn (earlier stage done, theirs isn't)", () => {
+    const post = makePost({
+      taskRoles: { designer: 'Bob', publisher: 'Alice' },
+      stageCompletion: { designDone: true },
+    });
+    const out = generateNotifications([post], alice);
+    const blk = out.find((n) => n.type === 'stage_blocking');
+    expect(blk).toBeTruthy();
+    expect(blk!.id).toBe('blocking-p1-publish');
+  });
+
+  it("does not fire when an earlier stage the teammate doesn't own is still open", () => {
+    const post = makePost({ taskRoles: { designer: 'Bob', publisher: 'Alice' }, stageCompletion: {} });
+    const out = generateNotifications([post], alice);
+    expect(out.some((n) => n.type === 'stage_blocking')).toBe(false);
+  });
+
+  it('does not fire without an active teammate', () => {
+    const post = makePost({ taskRoles: { designer: 'Alice' }, stageCompletion: {} });
+    expect(generateNotifications([post]).some((n) => n.type === 'stage_blocking')).toBe(false);
+  });
+
+  it('does not fire once the post derives to posted (publish done)', () => {
+    const post = makePost({ taskRoles: { designer: 'Alice' }, stageCompletion: { publishDone: true } });
+    const out = generateNotifications([post], alice);
+    expect(out.some((n) => n.type === 'stage_blocking')).toBe(false);
   });
 });

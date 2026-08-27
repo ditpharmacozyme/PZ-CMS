@@ -426,10 +426,11 @@ function sendDueReminders() {
     return;
   }
 
-  // Pinned to the same zone as the trigger (see handleInstallReminderTrigger) —
-  // Session.getScriptTimeZone() would follow the project's timezone setting
-  // instead, which can drift from the intended local time.
-  var TIMEZONE = "Asia/Karachi";
+  // Pinned to a zone independent of the project's timezone setting (which
+  // Session.getScriptTimeZone() follows and which can drift). Override per
+  // deployment by setting a REMINDER_TIMEZONE script property
+  // (Project Settings -> Script Properties); defaults to Asia/Karachi.
+  var TIMEZONE = PropertiesService.getScriptProperties().getProperty("REMINDER_TIMEZONE") || "Asia/Karachi";
   var today = Utilities.formatDate(new Date(), TIMEZONE, "yyyy-MM-dd");
   var nowStr = Utilities.formatDate(new Date(), TIMEZONE, "yyyy-MM-dd HH:mm");
 
@@ -461,8 +462,15 @@ function sendDueReminders() {
   }
 
   posts.forEach(function (row) {
-    var recipient = row.reminder_email;
-    if (!recipient) return;
+    var recipient = row.reminder_email && row.reminder_email.trim();
+    if (!recipient) {
+      // No usable address -- mark it sent anyway so get_due_reminders stops
+      // handing this same row back on every run forever (the old code just
+      // returned, leaving reminder_sent_at null and the row permanently due).
+      Logger.log("sendDueReminders: post " + row.id + " has no reminder email -- marking sent to stop retry loop.");
+      markReminderSent(row.id);
+      return;
+    }
 
     // Compare "yyyy-MM-dd HH:mm" strings lexicographically — valid as long as
     // scheduled_time is zero-padded 24h (the app always saves it that way).

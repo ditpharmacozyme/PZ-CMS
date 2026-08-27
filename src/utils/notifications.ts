@@ -1,8 +1,26 @@
-import { Post, AppNotification } from '../types';
+import { Post, AppNotification, TeamMember } from '../types';
 import { fromDateStr, todayStr, isOverdue } from './date';
 import { deriveStatus } from './postStatus';
+import { Stage } from './stages';
 
 const DUE_SOON_WINDOW_DAYS = 3;
+
+/**
+ * The stage this teammate is named against in taskRoles that it's genuinely
+ * their turn on -- the earlier stage in the design -> publish -> engagement
+ * chain is done (or it's design, the first). Mirrors MyWork's myPendingStage.
+ */
+function pendingStageFor(post: Post, name: string): Stage | null {
+  const r = post.taskRoles;
+  if (!r) return null;
+  const sc = post.stageCompletion || {};
+  if (r.designer === name && !sc.designDone) return 'design';
+  if (r.publisher === name && sc.designDone && !sc.publishDone) return 'publish';
+  if (r.engagementLead === name && sc.publishDone && !sc.engagementDone) return 'engagement';
+  return null;
+}
+
+const STAGE_WORD: Record<Stage, string> = { design: 'Design', publish: 'Publishing', engagement: 'Engagement' };
 
 /**
  * Derive notifications straight from the current posts — due-soon reminders,
@@ -10,7 +28,10 @@ const DUE_SOON_WINDOW_DAYS = 3;
  * Pure function: same posts in, same notifications out (minus `read`, which the
  * caller merges back in so dismissals survive regeneration).
  */
-export function generateNotifications(posts: Post[]): Omit<AppNotification, 'read'>[] {
+export function generateNotifications(
+  posts: Post[],
+  activeTeammate?: TeamMember | null
+): Omit<AppNotification, 'read'>[] {
   const notifications: Omit<AppNotification, 'read'>[] = [];
   const today = fromDateStr(todayStr());
   const windowEnd = new Date(today);
@@ -91,6 +112,25 @@ export function generateNotifications(posts: Post[]): Omit<AppNotification, 'rea
     // ever made the condition false again. Removed rather than fixed in
     // place; the 'stage_complete' type stays in AppNotification/NotificationDrawer
     // so historical entries already in someone's stored list still render.
+
+    // "Your stage is blocking this" -- the notification the team actually
+    // needs. Only for the logged-in teammate, only when it's genuinely their
+    // turn (earlier stage done) and the post is close enough to matter.
+    if (activeTeammate && deriveStatus(post) !== 'posted') {
+      const stage = pendingStageFor(post, activeTeammate.name);
+      const date = fromDateStr(post.scheduledDate);
+      if (stage && (isOverdue(post) || (date >= today && date <= windowEnd))) {
+        notifications.push({
+          id: `blocking-${post.id}-${stage}`,
+          type: 'stage_blocking',
+          title: post.title,
+          message: `${STAGE_WORD[stage]} is on you and it's not done — due ${post.scheduledDate}.`,
+          date: post.scheduledDate,
+          postId: post.id,
+          brandId: post.brandId,
+        });
+      }
+    }
   }
 
   return notifications.sort((a, b) => a.date.localeCompare(b.date));

@@ -4,6 +4,7 @@ import { BRANDS } from '../../data/brands';
 import { logTimestamp } from '../../utils/date';
 import { AssigneePopover } from '../AssigneePopover';
 import { buildQuickPost } from '../../utils/quickPost';
+import { combineAssigneeEmails } from '../../utils/postOwnership';
 
 interface IdeaBacklogProps {
   filteredBacklogPosts: Post[];
@@ -213,8 +214,8 @@ export const IdeaBacklog: React.FC<IdeaBacklogProps> = ({
                               ...post,
                               scheduledDate: e.target.value,
                               scheduledTime: post.scheduledTime || '10:00',
-                              emailReminderEnabled: true,
-                              reminderEmail: post.reminderEmail || activeTeammate?.email || '',
+                              emailReminderEnabled: post.emailReminderEnabled !== false,
+                              reminderEmail: post.reminderEmail || combineAssigneeEmails(post.assignees, teamMembers) || undefined,
                               activityLog: [
                                 {
                                   id: `act-${Date.now()}`,

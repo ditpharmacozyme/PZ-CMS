@@ -195,7 +195,7 @@ export interface BrandAsset {
 
 export interface AppNotification {
   id: string;
-  type: 'due_soon' | 'unassigned' | 'collision_alert' | 'stage_complete' | 'overdue';
+  type: 'due_soon' | 'unassigned' | 'collision_alert' | 'stage_complete' | 'overdue' | 'stage_blocking';
   title: string;
   message: string;
   date: string;
