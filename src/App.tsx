@@ -266,6 +266,30 @@ export function App() {
     }
   });
 
+  // ── Automated Rolling Local Backups ──────────────────────────────────────────
+  // Must stay above the Auth Gate below (not after it, where it originally
+  // lived) -- every hook in a component has to run on every render regardless
+  // of what the render returns. The Auth Gate below has four early `return`s
+  // for logged-out/loading/no-profile states, so a hook declared after them
+  // only actually gets called on the one render path that falls through all
+  // four -- i.e. only once someone is logged in. That's a real, silent Rules
+  // of Hooks violation: React sees 52 hooks on the login-screen render and 53
+  // once authenticated, and hard-crashes the whole app the instant someone
+  // signs in ("Rendered more hooks than during the previous render").
+  useEffect(() => {
+    if (posts.length > 0) {
+      checkAndTriggerAutoBackup({
+        version: '1.0',
+        timestamp: new Date().toISOString(),
+        posts,
+        contentBank,
+        researchPlans: researchItems,
+        templates,
+        teamMembers
+      });
+    }
+  }, [posts, contentBank, researchItems, templates, teamMembers]);
+
   // ── Auth Gate ─────────────────────────────────────────────────────────────────
   if (supabase && !authChecked) {
     return (
@@ -428,21 +452,6 @@ export function App() {
       setImportingData(false);
     }
   };
-
-  // ── Automated Rolling Local Backups ──────────────────────────────────────────
-  useEffect(() => {
-    if (posts.length > 0) {
-      checkAndTriggerAutoBackup({
-        version: '1.0',
-        timestamp: new Date().toISOString(),
-        posts,
-        contentBank,
-        researchPlans: researchItems,
-        templates,
-        teamMembers
-      });
-    }
-  }, [posts, contentBank, researchItems, templates, teamMembers]);
 
   const handleCreateSnapshotNow = () => {
     saveRollingBackup({
