@@ -6,7 +6,8 @@ coverage/
 *.log
 .env*
 !.env.example
-.impeccable/
+.impeccable/*
+!.impeccable/config.json
 supabase/.temp/
 .claude/worktrees/
 
