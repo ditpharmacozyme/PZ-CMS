@@ -26,11 +26,15 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({
 }) => {
   const [title, setTitle] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (isOpen) {
       setTitle('');
+      restoreFocusRef.current = document.activeElement as HTMLElement | null;
       requestAnimationFrame(() => inputRef.current?.focus());
+    } else {
+      restoreFocusRef.current?.focus?.();
     }
   }, [isOpen]);
 
@@ -50,6 +54,9 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Quick add idea"
         className="bg-white border border-[#bfcab4] w-full max-w-lg rounded-lg shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
@@ -77,7 +84,7 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({
           <button
             onClick={submit}
             disabled={!title.trim()}
-            className="bg-[#296c00] text-white font-label-caps text-[11px] font-bold px-3 py-1.5 rounded hover:bg-[#1f5700] disabled:opacity-40 min-h-[36px]"
+            className="bg-[#296c00] text-white font-label-caps text-[11px] font-bold px-4 rounded hover:bg-[#1f5700] disabled:opacity-40 min-h-[44px]"
           >
             Add idea
           </button>

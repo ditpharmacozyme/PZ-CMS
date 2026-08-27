@@ -84,7 +84,7 @@ import { setStageDone } from './utils/stages';
 // `/` silently focused a display:none element on mobile. Try each candidate
 // in DOM order and focus the first one that's actually visible.
 function focusFirstVisibleSearchInput(): void {
-  const candidateIds = ['calendar-search-input', 'mywork-search-input', 'mobile-search-input', 'app-search-input'];
+  const candidateIds = ['calendar-search-input', 'mywork-search-input', 'asset-search-input', 'mobile-search-input', 'app-search-input'];
   for (const id of candidateIds) {
     const el = document.getElementById(id) as HTMLInputElement | null;
     if (el && el.offsetParent !== null) {

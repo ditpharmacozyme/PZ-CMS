@@ -37,7 +37,7 @@ export function usePosts(
     saveStoredPosts(posts);
   }, [posts]);
 
-  const handleSavePost = (updatedPost: Post) => {
+  const handleSavePost = (updatedPost: Post, opts?: { silent?: boolean }) => {
     const existing = posts.find((p) => p.id === updatedPost.id);
 
     // Rescheduling a post that already auto-sent its reminder must re-arm it --
@@ -53,7 +53,9 @@ export function usePosts(
 
     setPosts((prev) => prev.map((p) => (p.id === updatedPost.id ? updatedPost : p)));
     upsertRemotePost(updatedPost);
-    showToast(`Saved "${updatedPost.title}"`);
+    // Callers that show their own toast (e.g. the calendar's stage-toggle
+    // Undo toast) pass silent so the user doesn't get two stacked at once.
+    if (!opts?.silent) showToast(`Saved "${updatedPost.title}"`);
 
     if (activeTeammate) {
       // post_approved stays a valid AuditActionType so historical entries still

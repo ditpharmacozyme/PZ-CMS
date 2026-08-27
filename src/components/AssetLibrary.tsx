@@ -158,6 +158,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
       <div className="flex items-center gap-2 bg-white border border-[#bfcab4] rounded px-3 h-11 max-w-md">
         <span className="material-symbols-outlined text-[#707a67] text-lg">search</span>
         <input
+          id="asset-search-input"
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}

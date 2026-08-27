@@ -461,6 +461,18 @@ function sendDueReminders() {
     muteHttpExceptions: true
   });
 
+  // A failed RPC (bad secret, or an old deployed script calling a dropped
+  // signature after migration 0018) returns a valid JSON *error object* with
+  // HTTP 4xx -- without this check that parses fine, length is undefined, and
+  // the run is logged as "nothing due", masking the failure exactly like the
+  // bug 0018 set out to fix.
+  var status = res.getResponseCode();
+  if (status < 200 || status >= 300) {
+    Logger.log("sendDueReminders: get_due_reminders returned HTTP " + status + " -- " + res.getContentText() +
+      " (if this says the function needs a secret / does not exist, re-copy this script from the app's Integrations tab and set REMINDER_RPC_SECRET). Aborting.");
+    return;
+  }
+
   var posts;
   try {
     posts = JSON.parse(res.getContentText());
@@ -479,8 +491,12 @@ function sendDueReminders() {
       // No usable address -- mark it sent anyway so get_due_reminders stops
       // handing this same row back on every run forever (the old code just
       // returned, leaving reminder_sent_at null and the row permanently due).
-      Logger.log("sendDueReminders: post " + row.id + " has no reminder email -- marking sent to stop retry loop.");
-      markReminderSent(row.id);
+      try {
+        Logger.log("sendDueReminders: post " + row.id + " has no reminder email -- marking sent to stop retry loop.");
+        markReminderSent(row.id);
+      } catch (mErr) {
+        Logger.log("sendDueReminders: could not mark post " + row.id + " sent: " + mErr.toString());
+      }
       return;
     }
 
@@ -531,14 +547,23 @@ function reminderRpcSecret() {
   return PropertiesService.getScriptProperties().getProperty("REMINDER_RPC_SECRET") || "";
 }
 
-/** Stamp reminder_sent_at so this post is never emailed twice (via RPC -- see sendDueReminders). */
+/**
+ * Stamp reminder_sent_at so this post is never emailed twice (via RPC -- see
+ * sendDueReminders). Throws on a non-2xx response so the caller doesn't count
+ * a failed stamp as done -- an unstamped post whose email already went out is
+ * re-sent every 5 minutes.
+ */
 function markReminderSent(postId) {
-  UrlFetchApp.fetch(SUPABASE_URL + "/rest/v1/rpc/mark_reminder_sent", {
+  var res = UrlFetchApp.fetch(SUPABASE_URL + "/rest/v1/rpc/mark_reminder_sent", {
     method: "post",
     headers: supabaseHeaders(),
     payload: JSON.stringify({ p_post_id: postId, p_secret: reminderRpcSecret() }),
     muteHttpExceptions: true
   });
+  var status = res.getResponseCode();
+  if (status < 200 || status >= 300) {
+    throw new Error("mark_reminder_sent HTTP " + status + ": " + res.getContentText());
+  }
 }
 
 /** True if a daily sendDueReminders trigger is already installed. */

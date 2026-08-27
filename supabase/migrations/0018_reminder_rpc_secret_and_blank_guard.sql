@@ -40,9 +40,38 @@ insert into private.app_secrets (name, value)
 values ('reminder_rpc_secret', md5(gen_random_uuid()::text || gen_random_uuid()::text))
 on conflict (name) do nothing;
 
--- The old unauthenticated 1-arg / 1-arg signatures.
-drop function if exists public.get_due_reminders(date);
-drop function if exists public.mark_reminder_sent(text);
+-- Keep the old 1-arg signatures, but as shims that fail loudly. Dropping
+-- them outright made a still-deployed old Apps Script get PostgREST 404
+-- (PGRST202), which its "nothing due" logging swallows -- reminders would
+-- just stop with no attributable error. Raising here gives a clear message
+-- once the script's HTTP-status check (added alongside this migration) logs
+-- the body.
+create or replace function public.get_due_reminders(p_as_of_date date)
+returns table (
+  id text, title text, brand_id text, scheduled_date date, scheduled_time text,
+  platform text, caption text, assignees text[], visual_url text, reminder_email text
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  raise exception 'get_due_reminders now requires a secret argument (migration 0018). Re-copy this script from the app''s Integrations tab and set the REMINDER_RPC_SECRET script property.';
+end;
+$$;
+grant execute on function public.get_due_reminders(date) to anon;
+
+create or replace function public.mark_reminder_sent(p_post_id text)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  raise exception 'mark_reminder_sent now requires a secret argument (migration 0018). Re-copy this script from the app''s Integrations tab and set the REMINDER_RPC_SECRET script property.';
+end;
+$$;
+grant execute on function public.mark_reminder_sent(text) to anon;
 
 create or replace function public.get_due_reminders(p_as_of_date date, p_secret text)
 returns table (

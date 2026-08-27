@@ -42,6 +42,11 @@ export function useKeyboardShortcuts({ onOpenPalette, onNewPost, onQuickAdd, onF
 
       if (typing) return;
 
+      // Don't let a single-key shortcut open a second overlay (or, via the
+      // image-paste zones, attach a duplicate handler) while a modal is up.
+      // Cmd/Ctrl+K and Escape above are intentionally exempt.
+      if (document.querySelector('[role="dialog"]')) return;
+
       if (e.key === 'n' || e.key === 'N') {
         e.preventDefault();
         onNewPost();

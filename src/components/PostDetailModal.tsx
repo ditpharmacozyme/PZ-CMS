@@ -64,16 +64,18 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
   // No hardcoded fallback recipient -- if reminderEmail is empty there is no
   // real address to send to, so we ask for one instead of silently mailing
   // a shared inbox that may not even exist anymore.
-  // The recipient a reminder actually goes to when the field is left alone:
-  // the assignees' emails, not "whoever is first in the team list". Kept in
-  // one place so the input, the test-send, and the on-save persist all agree.
-  const resolvedReminderEmail = (
-    editedPost.reminderEmail || combineAssigneeEmails(editedPost.assignees, teamMembers)
-  ).trim();
+  // The recipient a reminder goes to when the field has never been touched:
+  // the assignees' emails, not "whoever is first in the team list".
+  const assigneeEmailFallback = combineAssigneeEmails(editedPost.assignees, teamMembers);
+  // What the input shows: the user's own value once they've set anything
+  // (including deliberately blanking it), the fallback only while it's
+  // literally undefined. Not `||`, so a cleared field stays cleared, and no
+  // `.trim()` here so a space can be typed before the next address.
+  const reminderEmailValue = editedPost.reminderEmail ?? assigneeEmailFallback;
+  // The address actually used on save / test-send (trimmed, fallback applied).
+  const resolvedReminderEmail = reminderEmailValue.trim();
 
   const handleSendTestEmail = async () => {
-    // Matches the same fallback the Reminder Email input displays, so this
-    // never rejects an address the user can plainly see on screen.
     const recipient = resolvedReminderEmail;
     if (!recipient) {
       setEmailStatus('Add a reminder email first.');
@@ -650,7 +652,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
               <div className="flex gap-1.5">
                 <input
                   type="email"
-                  value={resolvedReminderEmail}
+                  value={reminderEmailValue}
                   onChange={(e) => setEditedPost({ ...editedPost, reminderEmail: e.target.value })}
                   placeholder="e.g. name@example.com"
                   className="flex-1 bg-[#faf9f5] border border-[#bfcab4] p-1.5 font-body-md text-xs text-[#1b1c1a] rounded"

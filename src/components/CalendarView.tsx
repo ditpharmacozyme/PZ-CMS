@@ -26,7 +26,7 @@ interface CalendarViewProps {
   onOpenNewPostModal: (date?: string) => void;
   searchQuery: string;
   onSearchChange: (value: string) => void;
-  onSavePost: (post: Post) => void;
+  onSavePost: (post: Post, opts?: { silent?: boolean }) => void;
   onAddPost: (post: Post) => void;
   onBatchAddPosts?: (posts: Post[]) => void;
   onBatchSavePosts?: (posts: Post[], toastMessage?: string) => void;
@@ -173,11 +173,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   // quick toggle produces) also raises an Undo toast that restores the snapshot.
   const handleSavePostWithUndo = (updated: Post) => {
     const original = posts.find((p) => p.id === updated.id);
-    onSavePost(updated);
-    if (!original || !showToast) return;
     const stageChanged =
+      !!original &&
       JSON.stringify(original.stageCompletion || {}) !== JSON.stringify(updated.stageCompletion || {});
-    if (!stageChanged) return;
+    // For a stage toggle we show our own Undo toast, so suppress the generic
+    // "Saved" one -- otherwise every toggle stacks two toasts.
+    onSavePost(updated, stageChanged && showToast ? { silent: true } : undefined);
+    if (!stageChanged || !showToast || !original) return;
     const snapshot = original;
     showToast('Stage updated', { label: 'Undo', onClick: () => onSavePost(snapshot) }, 5000);
   };
@@ -252,7 +254,15 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const recurrenceInputKey = useMemo(
     () =>
       posts
-        .map((p) => `${p.id}|${p.scheduledDate}|${p.brandId}|${p.title}|${p.templateId || ''}|${p.recurrenceRule || ''}`)
+        .map((p) =>
+          [
+            p.id, p.scheduledDate, p.brandId, p.title, p.templateId || '', p.recurrenceRule || '',
+            // Every field the placeholder objects below copy from the series --
+            // otherwise editing e.g. a caption leaves stale ghost cards on the
+            // month, and handlePlaceholderClick would materialize the old copy.
+            p.caption, p.platform, p.specType, p.scheduledTime, p.visualUrl, (p.assignees || []).join(','),
+          ].join('|')
+        )
         .join('¦'),
     [posts]
   );
@@ -334,11 +344,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           ...draggedPost,
           scheduledDate: touchHoverDate,
           scheduledTime: draggedPost.scheduledTime || '10:00',
-          // Preserve the post's own reminder setting -- a reschedule that
-          // silently re-armed a reminder the user had turned off is the
-          // exact bug this round fixes. Still defaults on for a never-set post.
-          emailReminderEnabled: draggedPost.emailReminderEnabled !== false,
-          reminderEmail: draggedPost.reminderEmail || combineAssigneeEmails(draggedPost.assignees, teamMembers),
+          // Scheduling a previously-undated idea arms the reminder; moving an
+          // already-dated post preserves whatever the user set (so a
+          // reschedule never silently re-arms one they turned off). The
+          // storage layer can't tell undefined from false, so "was undated"
+          // is the reliable "brand new" signal.
+          emailReminderEnabled: !draggedPost.scheduledDate ? true : draggedPost.emailReminderEnabled !== false,
+          reminderEmail: draggedPost.reminderEmail || combineAssigneeEmails(draggedPost.assignees, teamMembers) || undefined,
           activityLog: [
             { id: `act-${Date.now()}`, actor: actorName, action: `Scheduled/Moved to ${touchHoverDate}`, timestamp: logTimestamp() },
             ...draggedPost.activityLog
@@ -361,8 +373,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         ...draggedPost,
         scheduledDate: dateStr,
         scheduledTime: draggedPost.scheduledTime || '10:00',
-        emailReminderEnabled: draggedPost.emailReminderEnabled !== false,
-        reminderEmail: draggedPost.reminderEmail || combineAssigneeEmails(draggedPost.assignees, teamMembers),
+        emailReminderEnabled: !draggedPost.scheduledDate ? true : draggedPost.emailReminderEnabled !== false,
+        reminderEmail: draggedPost.reminderEmail || combineAssigneeEmails(draggedPost.assignees, teamMembers) || undefined,
         activityLog: [
           { id: `act-${Date.now()}`, actor: actorName, action: wasUnscheduled ? `Scheduled for ${dateStr}` : `Moved to ${dateStr}`, timestamp: logTimestamp() },
           ...draggedPost.activityLog
@@ -445,9 +457,18 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     }
   };
 
+  const shiftWeek = (deltaDays: number) => {
+    const n = new Date(weekStart);
+    n.setDate(n.getDate() + deltaDays);
+    setWeekStart(n);
+    // Keep the month/year (and the month picker) in step with the visible week.
+    setCurrentYear(n.getFullYear());
+    setCurrentMonth(n.getMonth());
+  };
+
   const handlePrev = () => {
     if (displayMode === 'week') {
-      setWeekStart((w) => { const n = new Date(w); n.setDate(n.getDate() - 7); return n; });
+      shiftWeek(-7);
     } else if (currentMonth === 0) {
       setCurrentMonth(11); setCurrentYear((y) => y - 1);
     } else {
@@ -457,7 +478,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
   const handleNext = () => {
     if (displayMode === 'week') {
-      setWeekStart((w) => { const n = new Date(w); n.setDate(n.getDate() + 7); return n; });
+      shiftWeek(7);
     } else if (currentMonth === 11) {
       setCurrentMonth(0); setCurrentYear((y) => y + 1);
     } else {

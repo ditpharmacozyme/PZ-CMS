@@ -214,7 +214,8 @@ export const IdeaBacklog: React.FC<IdeaBacklogProps> = ({
                               ...post,
                               scheduledDate: e.target.value,
                               scheduledTime: post.scheduledTime || '10:00',
-                              emailReminderEnabled: post.emailReminderEnabled !== false,
+                              // Giving a backlog idea its first date arms the reminder.
+                              emailReminderEnabled: true,
                               reminderEmail: post.reminderEmail || combineAssigneeEmails(post.assignees, teamMembers) || undefined,
                               activityLog: [
                                 {
