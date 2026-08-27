@@ -9,3 +9,6 @@ coverage/
 .impeccable/
 supabase/.temp/
 .claude/worktrees/
+
+# Superpowers brainstorm mockups (local visual companion)
+.superpowers/
