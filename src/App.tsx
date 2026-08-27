@@ -148,6 +148,7 @@ export function App() {
     handleDeletePost: deletePostBase,
     handleDuplicatePost: duplicatePostBase,
     handleBatchAddPosts,
+    handleBatchSavePosts,
   } = usePosts(showToast, activeTeammate);
 
   const [activeModalPost, setActiveModalPost] = useState<Post | null>(null);
@@ -375,6 +376,7 @@ export function App() {
     setCurrentTab('calendar');
     setNewPostInitialDate(undefined);
     const defaultAssignee = teamMembers && teamMembers.length > 0 ? teamMembers[0].name : '';
+    // Prefer the logged-in user over "first person in the roster".
     const creatorName = activeTeammate ? activeTeammate.name : (defaultAssignee || 'Someone');
     const newPost: Post = {
       id: `post-${Date.now()}`,
@@ -386,7 +388,7 @@ export function App() {
       scheduledDate: '',
       scheduledTime: '',
       status: 'not-started',
-      assignees: defaultAssignee ? [defaultAssignee] : [],
+      assignees: creatorName !== 'Someone' ? [creatorName] : [],
       visualUrl: '',
       approved: false,
       tags: [],
@@ -549,6 +551,7 @@ export function App() {
               activeTeammate={activeTeammate}
               onSelectPost={handleSelectPost}
               onSavePost={handleSavePost}
+              teamMembers={teamMembers}
             />
           )}
           {currentTab === 'calendar' && (
@@ -563,6 +566,7 @@ export function App() {
               onSavePost={handleSavePost}
               onAddPost={handleAddPost}
               onBatchAddPosts={handleBatchAddPosts}
+              onBatchSavePosts={handleBatchSavePosts}
               teamMembers={teamMembers}
               activeTeammate={activeTeammate}
             />

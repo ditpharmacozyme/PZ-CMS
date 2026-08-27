@@ -27,6 +27,7 @@ interface CalendarViewProps {
   onSavePost: (post: Post) => void;
   onAddPost: (post: Post) => void;
   onBatchAddPosts?: (posts: Post[]) => void;
+  onBatchSavePosts?: (posts: Post[], toastMessage?: string) => void;
   teamMembers?: TeamMember[];
   activeTeammate?: TeamMember | null;
 }
@@ -68,6 +69,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   onSavePost,
   onAddPost,
   onBatchAddPosts,
+  onBatchSavePosts,
   teamMembers = [],
   activeTeammate = null
 }) => {
@@ -321,7 +323,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       if (targetPost) {
         onSavePost({ ...targetPost, visualUrl: url, activityLog: [{ id: `act-${Date.now()}`, actor: targetPost.assignees[0] || defaultAssignee || 'Someone', action: `Added image "${file.name}"`, timestamp: logTimestamp() }, ...targetPost.activityLog] });
       } else {
-        const newPost: Post = { id: `post-${Date.now()}`, brandId: selectedBrandFilter === 'all' ? 'pharmacozyme' : selectedBrandFilter, title: file.name.replace(/\.[^/.]+$/, '') || 'Untitled post', caption: '', platform: 'instagram', specType: 'feed-post', scheduledDate: targetDate || '', scheduledTime: targetDate ? '10:00' : '', status: 'not-started', assignees: defaultAssignee ? [defaultAssignee] : [], visualUrl: url, approved: false, emailReminderEnabled: !!targetDate, reminderEmail: activeTeammate?.email || (teamMembers.length > 0 ? teamMembers[0].email : ''), tags: [], comments: [], activityLog: [{ id: `act-${Date.now()}`, actor: defaultAssignee || 'Someone', action: `Created from image "${file.name}"`, timestamp: logTimestamp() }] };
+        // Prefer the logged-in user over "first person in the roster" -- a
+        // quick-created post used to always land on whoever is
+        // alphabetically/chronologically first in teamMembers, not on you.
+        const imageCreateAssignee = activeTeammate?.name || defaultAssignee;
+        const newPost: Post = { id: `post-${Date.now()}`, brandId: selectedBrandFilter === 'all' ? 'pharmacozyme' : selectedBrandFilter, title: file.name.replace(/\.[^/.]+$/, '') || 'Untitled post', caption: '', platform: 'instagram', specType: 'feed-post', scheduledDate: targetDate || '', scheduledTime: targetDate ? '10:00' : '', status: 'not-started', assignees: imageCreateAssignee ? [imageCreateAssignee] : [], visualUrl: url, approved: false, emailReminderEnabled: !!targetDate, reminderEmail: activeTeammate?.email || (teamMembers.length > 0 ? teamMembers[0].email : ''), tags: [], comments: [], activityLog: [{ id: `act-${Date.now()}`, actor: imageCreateAssignee || 'Someone', action: `Created from image "${file.name}"`, timestamp: logTimestamp() }] };
         onAddPost(newPost);
         onSelectPost(newPost);
       }
@@ -411,10 +417,37 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     setBulkAssignee('');
   };
 
+  // Additive (adds the chosen person without dropping existing co-assignees --
+  // the previous version replaced the whole `assignees` array with just this
+  // one name), spans both dated posts AND the backlog (previously only
+  // filteredCalendarPosts, so unscheduled ideas -- the ones most likely to
+  // need an owner -- couldn't be bulk-assigned at all), and batched through
+  // onBatchSavePosts for one Supabase round-trip and one undoable toast
+  // instead of N separate saves and N toasts.
   const applyBulkAssignee = (assignee: string) => {
-    filteredCalendarPosts.filter((p) => selectedPostIds.has(p.id)).forEach((post) => {
-      onSavePost({ ...post, assignees: assignee ? [assignee] : [], activityLog: [{ id: `act-${Date.now()}-${post.id}`, actor: assignee || 'Someone', action: `Reassigned to ${assignee || 'nobody'} (bulk update)`, timestamp: logTimestamp() }, ...post.activityLog] });
-    });
+    if (!assignee) return;
+    const selected = [...filteredCalendarPosts, ...filteredBacklogPosts].filter((p) => selectedPostIds.has(p.id));
+    if (selected.length === 0) { setBulkAssignee(''); return; }
+
+    const actorName = activeTeammate ? activeTeammate.name : (assignee || 'Someone');
+    const updated = selected
+      .filter((post) => !post.assignees.includes(assignee))
+      .map((post) => ({
+        ...post,
+        assignees: [...post.assignees, assignee],
+        activityLog: [
+          { id: `act-${Date.now()}-${post.id}`, actor: actorName, action: `Added ${assignee} as an assignee (bulk update)`, timestamp: logTimestamp() },
+          ...post.activityLog
+        ]
+      }));
+
+    if (updated.length > 0) {
+      if (onBatchSavePosts) {
+        onBatchSavePosts(updated, `Assigned ${assignee} to ${updated.length} post${updated.length > 1 ? 's' : ''}`);
+      } else {
+        updated.forEach((post) => onSavePost(post));
+      }
+    }
     setBulkAssignee('');
     clearSelection();
   };
@@ -477,6 +510,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         activeTeammate={activeTeammate}
         defaultAssignee={defaultAssignee}
         mobileBacklogOpen={mobileBacklogOpen}
+        teamMembers={teamMembers}
+        selectedPostIds={selectedPostIds}
+        isSelectMode={isSelectMode}
+        onToggleSelect={toggleSelectPost}
       />
 
       {/* ── Main Schedule Canvas ── */}
@@ -509,6 +546,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             setMobileBacklogOpen={setMobileBacklogOpen}
             backlogCount={filteredBacklogPosts.length}
             onDuplicateWeekForward={handleDuplicateWeekForward}
+            isSelectMode={isSelectMode}
+            setIsSelectMode={setIsSelectMode}
           />
 
           {/* Filter Strip */}
@@ -572,6 +611,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 onTouchStart={(postId) => setTouchDraggedPostId(postId)}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
+                activeTeammate={activeTeammate}
               />
               {/* Desktop Month Grid */}
               <CalendarMonthView
@@ -591,6 +631,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 teamMembers={teamMembers}
                 onSavePost={onSavePost}
                 currentUserName={currentUserName}
+                activeTeammate={activeTeammate}
               />
             </div>
           )}
@@ -619,6 +660,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 onTouchStart={(postId) => setTouchDraggedPostId(postId)}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
+                activeTeammate={activeTeammate}
               />
               <CalendarWeekView
                 weekStart={weekStart}
@@ -639,6 +681,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 teamMembers={teamMembers}
                 onSavePost={onSavePost}
                 currentUserName={currentUserName}
+                activeTeammate={activeTeammate}
               />
             </>
           )}
@@ -649,16 +692,14 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               filteredCalendarPosts={filteredCalendarPosts}
               selectedPostIds={selectedPostIds}
               isSelectMode={isSelectMode}
-              bulkAssignee={bulkAssignee}
-              onApplyBulkAssignee={applyBulkAssignee}
-              uniqueAssignees={uniqueAssignees}
-              onClearSelection={clearSelection}
               onSelectPost={(post) => { setSelectedPostForInspector(post); onSelectPost(post); }}
               onDeletePost={onDeletePost}
               onSavePost={onSavePost}
               onToggleSelect={toggleSelectPost}
               setSelectedPostIds={setSelectedPostIds}
               currentUserName={currentUserName}
+              teamMembers={teamMembers}
+              activeTeammate={activeTeammate}
             />
           )}
         </div>

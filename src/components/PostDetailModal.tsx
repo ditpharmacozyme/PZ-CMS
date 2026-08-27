@@ -6,6 +6,7 @@ import { uploadImage } from '../utils/uploadImage';
 import { supabase } from '../lib/supabase';
 import { getPostStatusConfig } from '../utils/statusConfig';
 import { setStageDone, Stage } from '../utils/stages';
+import { combineAssigneeEmails } from '../utils/postOwnership';
 
 interface PostDetailModalProps {
   post: Post;
@@ -177,19 +178,16 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
 
   // Handle Save
   const handleSave = () => {
+    // Assignee/role changes are no longer tracked here -- both now persist
+    // immediately on their own onChange (matching the stage checkboxes
+    // below), each writing its own activity log entry at the moment it
+    // happens. Diffing against `post` here for them would double-log: `post`
+    // is a snapshot taken when this modal opened and never re-syncs while
+    // it's open, so it stays "stale" (pre-change) for the rest of this
+    // session even after an instant-save updates editedPost.
     const actorName = activeTeammate ? activeTeammate.name : 'Someone';
     const logs = [...editedPost.activityLog];
     let changed = false;
-
-    if (post.assignees.join(',') !== editedPost.assignees.join(',')) {
-      logs.unshift({
-        id: `act-${Date.now()}-assignee`,
-        actor: actorName,
-        action: `Reassigned to ${editedPost.assignees.length > 0 ? editedPost.assignees.join(', ') : 'Unassigned'}`,
-        timestamp: logTimestamp()
-      });
-      changed = true;
-    }
 
     if (post.scheduledDate !== editedPost.scheduledDate || post.scheduledTime !== editedPost.scheduledTime) {
       const originalSched = post.scheduledDate ? `${post.scheduledDate} ${post.scheduledTime}` : 'Idea Backlog';
@@ -353,18 +351,32 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
                         type="checkbox"
                         checked={checked}
                         onChange={() => {
+                          // Persists immediately, matching the stage checkboxes below
+                          // instead of the rest of this form's "Save Changes" gate --
+                          // assignment is exactly the kind of one-field change that
+                          // shouldn't need a separate save step (see AssigneePopover,
+                          // which does the same from calendar cards).
                           const nextAssignees = checked
                             ? editedPost.assignees.filter((n) => n !== m.name)
                             : [...editedPost.assignees, m.name];
-                          const emails = nextAssignees
-                            .map((name) => teamMembers.find((tm) => tm.name === name)?.email)
-                            .filter((e): e is string => Boolean(e && e.trim()));
-                          const combined = Array.from(new Set(emails)).join(', ');
-                          setEditedPost((prev) => ({
-                            ...prev,
+                          const combined = combineAssigneeEmails(nextAssignees, teamMembers);
+                          const actorName = activeTeammate ? activeTeammate.name : (editedPost.assignees[0] || 'Someone');
+                          const nextPost: Post = {
+                            ...editedPost,
                             assignees: nextAssignees,
-                            reminderEmail: combined || prev.reminderEmail
-                          }));
+                            reminderEmail: combined || editedPost.reminderEmail,
+                            activityLog: [
+                              {
+                                id: `act-${Date.now()}-assignee`,
+                                actor: actorName,
+                                action: `Reassigned to ${nextAssignees.length > 0 ? nextAssignees.join(', ') : 'Unassigned'}`,
+                                timestamp: logTimestamp()
+                              },
+                              ...editedPost.activityLog
+                            ]
+                          };
+                          setEditedPost(nextPost);
+                          onSavePost(nextPost);
                         }}
                         className="w-3.5 h-3.5 text-[#296c00] border-[#bfcab4] rounded focus:ring-[#296c00]"
                       />
@@ -401,10 +413,9 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
                   value={editedPost.taskRoles?.designer || ''}
                   onChange={(e) => {
                     const val = e.target.value;
-                    setEditedPost((prev) => ({
-                      ...prev,
-                      taskRoles: { ...prev.taskRoles, designer: val || undefined }
-                    }));
+                    const nextPost: Post = { ...editedPost, taskRoles: { ...editedPost.taskRoles, designer: val || undefined } };
+                    setEditedPost(nextPost);
+                    onSavePost(nextPost);
                   }}
                   className="w-full bg-[#faf9f5] border border-[#bfcab4] p-1.5 font-label-caps text-xs text-[#1b1c1a] focus:outline-none rounded"
                 >
@@ -423,10 +434,9 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
                   value={editedPost.taskRoles?.publisher || ''}
                   onChange={(e) => {
                     const val = e.target.value;
-                    setEditedPost((prev) => ({
-                      ...prev,
-                      taskRoles: { ...prev.taskRoles, publisher: val || undefined }
-                    }));
+                    const nextPost: Post = { ...editedPost, taskRoles: { ...editedPost.taskRoles, publisher: val || undefined } };
+                    setEditedPost(nextPost);
+                    onSavePost(nextPost);
                   }}
                   className="w-full bg-[#faf9f5] border border-[#bfcab4] p-1.5 font-label-caps text-xs text-[#1b1c1a] focus:outline-none rounded"
                 >
@@ -445,10 +455,9 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
                   value={editedPost.taskRoles?.engagementLead || ''}
                   onChange={(e) => {
                     const val = e.target.value;
-                    setEditedPost((prev) => ({
-                      ...prev,
-                      taskRoles: { ...prev.taskRoles, engagementLead: val || undefined }
-                    }));
+                    const nextPost: Post = { ...editedPost, taskRoles: { ...editedPost.taskRoles, engagementLead: val || undefined } };
+                    setEditedPost(nextPost);
+                    onSavePost(nextPost);
                   }}
                   className="w-full bg-[#faf9f5] border border-[#bfcab4] p-1.5 font-label-caps text-xs text-[#1b1c1a] focus:outline-none rounded"
                 >

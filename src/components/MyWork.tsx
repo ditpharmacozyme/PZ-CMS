@@ -1,16 +1,18 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Post, TeamMember } from '../types';
 import { BRANDS } from '../data/brands';
 import { todayStr, toDateStr, startOfWeek, isOverdue } from '../utils/date';
 import { deriveStatus } from '../utils/postStatus';
 import { isMine } from '../utils/postOwnership';
 import { toggleStage, Stage } from '../utils/stages';
+import { AssigneePopover } from './AssigneePopover';
 
 interface MyWorkProps {
   posts: Post[];
   activeTeammate: TeamMember | null;
   onSelectPost: (post: Post) => void;
   onSavePost: (post: Post) => void;
+  teamMembers?: TeamMember[];
 }
 
 const STAGE_EMOJI: Record<Stage, string> = { design: '🎨', publish: '🚀', engagement: '💬' };
@@ -49,7 +51,7 @@ interface Row {
 /** The four sections with an actionable inline toggle -- "Unscheduled ideas" is deliberately not one of these (see below). */
 type ActionableSectionKey = 'late' | 'today' | 'week' | 'waiting';
 
-export const MyWork: React.FC<MyWorkProps> = ({ posts, activeTeammate, onSelectPost, onSavePost }) => {
+export const MyWork: React.FC<MyWorkProps> = ({ posts, activeTeammate, onSelectPost, onSavePost, teamMembers = [] }) => {
   // Toggling a stage from this screen can make a row stop naturally
   // qualifying for the section it's in (e.g. its "waiting on me" stage
   // just got ticked) -- without this, the row would vanish instantly with
@@ -57,6 +59,12 @@ export const MyWork: React.FC<MyWorkProps> = ({ posts, activeTeammate, onSelectP
   // the row (and the done-state button styling) visible and reversible in
   // place for the rest of this viewing session.
   const [sessionPins, setSessionPins] = useState<Record<string, { sectionKey: ActionableSectionKey; stage: Stage }>>({});
+
+  // Rows are built by renderRow/renderIdeaRow closures inside .map(), not
+  // separate components, so hooks can't live per-row -- same shared-ref-Map
+  // + single-popover-instance pattern used in CalendarListView.
+  const assigneeTriggerRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  const [openAssigneePostId, setOpenAssigneePostId] = useState<string | null>(null);
 
   const handleToggle = (post: Post, stage: Stage, sectionKey: ActionableSectionKey) => {
     setSessionPins((prev) => ({ ...prev, [post.id]: { sectionKey, stage } }));
@@ -184,20 +192,35 @@ export const MyWork: React.FC<MyWorkProps> = ({ posts, activeTeammate, onSelectP
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleToggle(post, stage, sectionKey);
-          }}
-          className={`flex-shrink-0 px-2.5 py-1.5 rounded-lg font-label-caps text-[10px] font-bold uppercase transition-all cursor-pointer flex items-center gap-1.5 ${
-            isDone ? 'bg-[#296c00] text-white' : 'bg-[#ffddb0] text-[#935c00] hover:bg-[#ffcb80]'
-          }`}
-          title={`Click to mark ${stage} ${isDone ? 'not done' : 'done'}`}
-        >
-          <span>{STAGE_EMOJI[stage]}</span>
-          <span>{isDone ? STAGE_DONE_LABEL[stage] : STAGE_ACTION_LABEL[stage]}</span>
-        </button>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            type="button"
+            ref={(el) => {
+              if (el) assigneeTriggerRefs.current.set(post.id, el);
+              else assigneeTriggerRefs.current.delete(post.id);
+            }}
+            onClick={(e) => { e.stopPropagation(); setOpenAssigneePostId((cur) => (cur === post.id ? null : post.id)); }}
+            className="px-2 py-1.5 rounded-lg font-body-md text-[10px] text-[#707a67] hover:text-[#296c00] hover:bg-[#f0fae8] transition-all cursor-pointer truncate max-w-[7rem]"
+            title="Tap to assign"
+          >
+            {post.assignees.length > 0 ? post.assignees.join(', ') : 'Unassigned'}
+          </button>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleToggle(post, stage, sectionKey);
+            }}
+            className={`flex-shrink-0 px-2.5 py-1.5 rounded-lg font-label-caps text-[10px] font-bold uppercase transition-all cursor-pointer flex items-center gap-1.5 ${
+              isDone ? 'bg-[#296c00] text-white' : 'bg-[#ffddb0] text-[#935c00] hover:bg-[#ffcb80]'
+            }`}
+            title={`Click to mark ${stage} ${isDone ? 'not done' : 'done'}`}
+          >
+            <span>{STAGE_EMOJI[stage]}</span>
+            <span>{isDone ? STAGE_DONE_LABEL[stage] : STAGE_ACTION_LABEL[stage]}</span>
+          </button>
+        </div>
       </div>
     );
   };
@@ -228,10 +251,25 @@ export const MyWork: React.FC<MyWorkProps> = ({ posts, activeTeammate, onSelectP
           </div>
         </div>
 
-        <span className="flex-shrink-0 px-2.5 py-1.5 rounded-lg font-label-caps text-[10px] font-bold uppercase flex items-center gap-1.5 bg-[#efeeea] text-[#707a67]">
-          <span className="material-symbols-outlined text-sm">event</span>
-          <span>Needs a date</span>
-        </span>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            type="button"
+            ref={(el) => {
+              if (el) assigneeTriggerRefs.current.set(post.id, el);
+              else assigneeTriggerRefs.current.delete(post.id);
+            }}
+            onClick={(e) => { e.stopPropagation(); setOpenAssigneePostId((cur) => (cur === post.id ? null : post.id)); }}
+            className="px-2 py-1.5 rounded-lg font-body-md text-[10px] text-[#707a67] hover:text-[#296c00] hover:bg-[#f0fae8] transition-all cursor-pointer truncate max-w-[7rem]"
+            title="Tap to assign"
+          >
+            {post.assignees.length > 0 ? post.assignees.join(', ') : 'Unassigned'}
+          </button>
+
+          <span className="flex-shrink-0 px-2.5 py-1.5 rounded-lg font-label-caps text-[10px] font-bold uppercase flex items-center gap-1.5 bg-[#efeeea] text-[#707a67]">
+            <span className="material-symbols-outlined text-sm">event</span>
+            <span>Needs a date</span>
+          </span>
+        </div>
       </div>
     );
   };
@@ -290,6 +328,22 @@ export const MyWork: React.FC<MyWorkProps> = ({ posts, activeTeammate, onSelectP
           <div className="divide-y divide-[#f0eee6]">{unscheduledIdeas.map(renderIdeaRow)}</div>
         )}
       </div>
+
+      {(() => {
+        const openPost = openAssigneePostId ? posts.find((p) => p.id === openAssigneePostId) : null;
+        if (!openPost) return null;
+        return (
+          <AssigneePopover
+            post={openPost}
+            teamMembers={teamMembers}
+            activeTeammate={activeTeammate}
+            isOpen
+            onClose={() => setOpenAssigneePostId(null)}
+            anchorRef={{ current: assigneeTriggerRefs.current.get(openPost.id) || null }}
+            onSavePost={onSavePost}
+          />
+        );
+      })()}
     </div>
   );
 };

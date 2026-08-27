@@ -27,6 +27,7 @@ interface CalendarMonthViewProps {
   teamMembers: TeamMember[];
   onSavePost?: (post: Post) => void;
   currentUserName?: string;
+  activeTeammate?: TeamMember | null;
 }
 
 export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
@@ -45,7 +46,8 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
   onImageUpload,
   teamMembers,
   onSavePost,
-  currentUserName
+  currentUserName,
+  activeTeammate
 }) => {
   const [expandedDate, setExpandedDate] = useState<string | null>(null);
 
@@ -202,6 +204,8 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                     onPlaceholderClick={onPlaceholderClick}
                     onQuickUpdatePost={onSavePost}
                     currentUserName={currentUserName}
+                    teamMembers={teamMembers}
+                    activeTeammate={activeTeammate}
                     variant="month"
                   />
                 ))}

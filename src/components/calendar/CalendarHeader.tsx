@@ -22,6 +22,10 @@ interface CalendarHeaderProps {
   setMobileBacklogOpen: (open: boolean) => void;
   backlogCount: number;
   onDuplicateWeekForward: () => void;
+  /** Desktop had no visible way into bulk-select mode at all -- Ctrl/Cmd-click
+   * on a card was the only path in. This button is that entry point. */
+  isSelectMode?: boolean;
+  setIsSelectMode?: (val: boolean) => void;
 }
 
 export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
@@ -42,7 +46,9 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   mobileBacklogOpen,
   setMobileBacklogOpen,
   backlogCount,
-  onDuplicateWeekForward
+  onDuplicateWeekForward,
+  isSelectMode = false,
+  setIsSelectMode
 }) => {
   const weekEnd = new Date(weekStart);
   weekEnd.setDate(weekEnd.getDate() + 6);
@@ -134,6 +140,21 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
           >
             <span className="material-symbols-outlined text-sm">content_copy</span>
             <span className="hidden sm:inline">Duplicate Week</span>
+          </button>
+        )}
+
+        {setIsSelectMode && (
+          <button
+            onClick={() => setIsSelectMode(!isSelectMode)}
+            className={`px-3 py-1.5 text-xs font-bold font-label-caps rounded-lg border flex items-center gap-1.5 transition-all ${
+              isSelectMode
+                ? 'bg-[#296c00] border-[#296c00] text-white'
+                : 'bg-white border-[#bfcab4] hover:bg-[#efeeea] text-[#404a39]'
+            }`}
+            title="Select multiple posts for bulk actions"
+          >
+            <span className="material-symbols-outlined text-sm">checklist</span>
+            <span className="hidden sm:inline">{isSelectMode ? 'Selecting…' : 'Select'}</span>
           </button>
         )}
 

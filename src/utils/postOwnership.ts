@@ -18,3 +18,15 @@ export function isMine(post: Post, teammate: TeamMember | null | undefined): boo
   if (!roles) return false;
   return roles.designer === name || roles.publisher === name || roles.engagementLead === name;
 }
+
+/**
+ * Comma-joined, de-duplicated email addresses for a list of assignee names --
+ * the reminder-email auto-fill formula. Was copy-pasted identically in
+ * NewPostModal and PostDetailModal; both now call this instead.
+ */
+export function combineAssigneeEmails(names: string[], teamMembers: TeamMember[]): string {
+  const emails = names
+    .map((name) => teamMembers.find((tm) => tm.name === name)?.email)
+    .filter((e): e is string => Boolean(e && e.trim()));
+  return Array.from(new Set(emails)).join(', ');
+}

@@ -1,19 +1,16 @@
-import React, { useState } from 'react';
-import { Post } from '../../types';
+import React, { useRef, useState } from 'react';
+import { Post, TeamMember } from '../../types';
 import { BRANDS } from '../../data/brands';
 import { todayStr } from '../../utils/date';
 import { toggleStage, Stage } from '../../utils/stages';
 import { getPostTimeConflict } from '../../utils/brandConflicts';
 import { StatusChip } from '../ui/StatusChip';
+import { AssigneePopover } from '../AssigneePopover';
 
 interface CalendarListViewProps {
   filteredCalendarPosts: Post[];
   selectedPostIds: Set<string>;
   isSelectMode: boolean;
-  bulkAssignee: string;
-  onApplyBulkAssignee: (assignee: string) => void;
-  uniqueAssignees: string[];
-  onClearSelection: () => void;
   onSelectPost: (post: Post) => void;
   onDeletePost?: (postId: string) => void;
   onSavePost?: (post: Post) => void;
@@ -21,23 +18,30 @@ interface CalendarListViewProps {
   setSelectedPostIds: (fn: (prev: Set<string>) => Set<string>) => void;
   /** Name of the person currently using the app, for *DoneBy attribution on quick toggles. */
   currentUserName?: string;
+  teamMembers?: TeamMember[];
+  activeTeammate?: TeamMember | null;
 }
 
 export const CalendarListView: React.FC<CalendarListViewProps> = ({
   filteredCalendarPosts,
   selectedPostIds,
   isSelectMode,
-  bulkAssignee,
-  onApplyBulkAssignee,
-  uniqueAssignees,
-  onClearSelection,
   onSelectPost,
   onDeletePost,
   onSavePost,
   onToggleSelect,
   setSelectedPostIds,
-  currentUserName
+  currentUserName,
+  teamMembers = [],
+  activeTeammate = null
 }) => {
+  // Only one row's assignee popover can be open at a time, so a single Map
+  // of trigger refs (keyed by post id) plus one shared popover instance
+  // avoids calling hooks inside the per-row renderPostRow closure, which
+  // isn't itself a component and can't hold its own state/refs.
+  const assigneeTriggerRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  const [openAssigneePostId, setOpenAssigneePostId] = useState<string | null>(null);
+  const openAssigneePost = openAssigneePostId ? filteredCalendarPosts.find((p) => p.id === openAssigneePostId) : null;
   const [showPastPosts, setShowPastPosts] = useState(false);
 
   const today = todayStr();
@@ -192,9 +196,18 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
             <StatusChip post={post} variant="pill-dot" title="Updates automatically as design/publish are checked" />
           </div>
 
-          <div className="md:w-28 font-body-md text-xs text-[#404a39]">
+          <button
+            type="button"
+            ref={(el) => {
+              if (el) assigneeTriggerRefs.current.set(post.id, el);
+              else assigneeTriggerRefs.current.delete(post.id);
+            }}
+            onClick={(e) => { e.stopPropagation(); setOpenAssigneePostId((cur) => (cur === post.id ? null : post.id)); }}
+            className="md:w-28 font-body-md text-xs text-[#404a39] text-left hover:text-[#296c00] hover:underline cursor-pointer truncate"
+            title="Tap to assign"
+          >
             {post.assignees.length > 0 ? post.assignees.join(', ') : 'Unassigned'}
-          </div>
+          </button>
 
           <div className="md:w-32 text-right flex items-center justify-end gap-1.5">
             <button
@@ -227,29 +240,6 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
 
   return (
     <div className="bg-white border border-[#e5e4de] shadow-xs rounded-xl overflow-hidden">
-      {/* In-list bulk action bar */}
-      {selectedPostIds.size > 0 && (
-        <div className="p-3 bg-[#f0fae8] border-b border-[#296c00]/30 flex flex-wrap items-center gap-2 sm:gap-3">
-          <span className="font-label-caps text-xs font-bold text-[#296c00]">{selectedPostIds.size} selected</span>
-          <select
-            value={bulkAssignee}
-            onChange={(e) => e.target.value && onApplyBulkAssignee(e.target.value)}
-            className="bg-white border border-[#bfcab4] px-2 py-1.5 font-label-caps text-xs rounded-lg min-h-[36px]"
-          >
-            <option value="">Reassign to…</option>
-            {uniqueAssignees.map((a) => (
-              <option key={a} value={a}>{a}</option>
-            ))}
-          </select>
-          <button
-            onClick={onClearSelection}
-            className="ml-auto text-[#707a67] font-label-caps text-xs hover:text-[#1b1c1a] px-2 py-1.5 cursor-pointer"
-          >
-            Clear selection
-          </button>
-        </div>
-      )}
-
       {/* Column Headers (desktop) */}
       <div className="p-3 sm:p-4 bg-[#f7f6f2] border-b border-[#e5e4de] hidden md:flex items-center justify-between font-label-caps text-xs font-bold text-[#1b1c1a]">
         <span className="w-7 flex-shrink-0">
@@ -308,6 +298,18 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
             </div>
           )}
         </div>
+      )}
+
+      {openAssigneePost && (
+        <AssigneePopover
+          post={openAssigneePost}
+          teamMembers={teamMembers}
+          activeTeammate={activeTeammate}
+          isOpen
+          onClose={() => setOpenAssigneePostId(null)}
+          anchorRef={{ current: assigneeTriggerRefs.current.get(openAssigneePost.id) || null }}
+          onSavePost={(updated) => onSavePost?.(updated)}
+        />
       )}
     </div>
   );

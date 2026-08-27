@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { Post, TeamMember } from '../../types';
 import { BRANDS } from '../../data/brands';
 import { todayStr, fromDateStr } from '../../utils/date';
 import { toggleStage, Stage } from '../../utils/stages';
 import { getDayBrandSummary } from '../../utils/brandConflicts';
 import { StatusChip } from '../ui/StatusChip';
+import { AssigneePopover } from '../AssigneePopover';
 
 interface CalendarCell {
   dateStr: string;
@@ -40,6 +41,7 @@ interface MobileDateStripViewProps {
   onTouchStart?: (postId: string) => void;
   onTouchMove?: (e: React.TouchEvent) => void;
   onTouchEnd?: (e: React.TouchEvent) => void;
+  activeTeammate?: TeamMember | null;
 }
 
 export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
@@ -61,13 +63,20 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
   touchHoverDate,
   onTouchStart,
   onTouchMove,
-  onTouchEnd
+  onTouchEnd,
+  activeTeammate = null
 }) => {
   const handleQuickStageToggle = (post: Post, stage: Stage, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!onSavePost) return;
     onSavePost(toggleStage(post, stage, currentUserName || 'Someone'));
   };
+
+  // Same single-shared-popover pattern as CalendarListView -- the day list
+  // below is a plain .map(), not per-item components, so hooks can't live
+  // inside each row's render.
+  const assigneeTriggerRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  const [openAssigneePostId, setOpenAssigneePostId] = useState<string | null>(null);
 
   const selectedDayPosts = postsByDate[selectedMobileDate] || [];
   const selectedDaySummary = getDayBrandSummary(selectedDayPosts);
@@ -307,10 +316,16 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
                         )}
                     </div>
 
-                    <div
-                      className="relative w-8 h-8 rounded-full flex items-center justify-center text-white font-label-caps text-[10px] font-bold flex-shrink-0 shadow-xs"
+                    <button
+                      type="button"
+                      ref={(el) => {
+                        if (el) assigneeTriggerRefs.current.set(post.id, el);
+                        else assigneeTriggerRefs.current.delete(post.id);
+                      }}
+                      onClick={(e) => { e.stopPropagation(); setOpenAssigneePostId((cur) => (cur === post.id ? null : post.id)); }}
+                      className="relative w-8 h-8 rounded-full flex items-center justify-center text-white font-label-caps text-[10px] font-bold flex-shrink-0 shadow-xs cursor-pointer hover:ring-2 hover:ring-[#296c00] hover:ring-offset-1 transition-all"
                       style={{ backgroundColor: bgColor }}
-                      title={post.assignees.join(', ')}
+                      title={`Assigned to: ${post.assignees.join(', ') || 'nobody'} (tap to change)`}
                     >
                       {initials}
                       {extraAssignees > 0 && (
@@ -318,7 +333,7 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
                           +{extraAssignees}
                         </span>
                       )}
-                    </div>
+                    </button>
                   </div>
                 );
               })}
@@ -326,6 +341,22 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
           );
         })()}
       </div>
+
+      {(() => {
+        const openPost = openAssigneePostId ? selectedDayPosts.find((p: Post) => p.id === openAssigneePostId) : null;
+        if (!openPost) return null;
+        return (
+          <AssigneePopover
+            post={openPost}
+            teamMembers={teamMembers}
+            activeTeammate={activeTeammate}
+            isOpen
+            onClose={() => setOpenAssigneePostId(null)}
+            anchorRef={{ current: assigneeTriggerRefs.current.get(openPost.id) || null }}
+            onSavePost={(updated) => onSavePost?.(updated)}
+          />
+        );
+      })()}
     </div>
   );
 };

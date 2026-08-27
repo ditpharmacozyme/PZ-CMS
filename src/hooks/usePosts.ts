@@ -91,6 +91,54 @@ export function usePosts(
     }
   };
 
+  /**
+   * Updates several posts in one pass -- one setPosts, one Supabase upsert
+   * round-trip, one toast with Undo, instead of N of each. Built for bulk
+   * calendar actions (e.g. reassigning a multi-select of posts); follows
+   * handleBatchAddPosts' existing precedent of skipping per-post audit log
+   * entries for batch operations (CSV import does the same).
+   */
+  const handleBatchSavePosts = async (updatedPosts: Post[], toastMessage?: string) => {
+    if (updatedPosts.length === 0) return;
+
+    const previousById = new Map(
+      posts.filter((p) => updatedPosts.some((u) => u.id === p.id)).map((p) => [p.id, p])
+    );
+
+    // Same re-arm rule as handleSavePost, applied per post -- a bulk action
+    // that happens to touch date/time on an already-reminded post shouldn't
+    // leave it permanently excluded from get_due_reminders.
+    const rearmed = updatedPosts.map((updated) => {
+      const existing = previousById.get(updated.id);
+      if (
+        existing?.reminderSentAt &&
+        (existing.scheduledDate !== updated.scheduledDate || existing.scheduledTime !== updated.scheduledTime)
+      ) {
+        return { ...updated, reminderSentAt: undefined };
+      }
+      return updated;
+    });
+    const rearmedById = new Map(rearmed.map((p) => [p.id, p]));
+
+    setPosts((prev) => prev.map((p) => rearmedById.get(p.id) || p));
+    const { error } = await upsertRemotePosts(rearmed);
+
+    const undoAction = {
+      label: 'Undo',
+      onClick: () => {
+        setPosts((prev) => prev.map((p) => previousById.get(p.id) || p));
+        upsertRemotePosts(Array.from(previousById.values()));
+      }
+    };
+
+    const summary = toastMessage || `Updated ${updatedPosts.length} post${updatedPosts.length > 1 ? 's' : ''}`;
+    if (error) {
+      showToast(`${summary} (Supabase batch warning: ${error})`, undoAction, 5000, 'error');
+    } else {
+      showToast(summary, undoAction, 5000);
+    }
+  };
+
   const handleDeletePost = (postId: string, onDeletedModalCallback?: () => void) => {
     const removed = posts.find((p) => p.id === postId);
     setPosts((prev) => prev.filter((p) => p.id !== postId));
@@ -209,6 +257,7 @@ export function usePosts(
     handleSavePost,
     handleDeletePost,
     handleDuplicatePost,
-    handleBatchAddPosts
+    handleBatchAddPosts,
+    handleBatchSavePosts
   };
 }

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Post, BrandId, TeamMember } from '../../types';
 import { BRANDS } from '../../data/brands';
 import { logTimestamp } from '../../utils/date';
+import { AssigneePopover } from '../AssigneePopover';
 
 interface IdeaBacklogProps {
   filteredBacklogPosts: Post[];
@@ -19,6 +20,13 @@ interface IdeaBacklogProps {
   activeTeammate: TeamMember | null;
   defaultAssignee: string;
   mobileBacklogOpen: boolean;
+  teamMembers?: TeamMember[];
+  /** Multi-select, shared with the calendar's own bulk-select state -- so a
+   * bulk action (e.g. reassign) can span both scheduled posts and backlog
+   * ideas in one selection instead of only ever reaching dated posts. */
+  selectedPostIds?: Set<string>;
+  isSelectMode?: boolean;
+  onToggleSelect?: (postId: string, e?: React.MouseEvent | React.ChangeEvent) => void;
 }
 
 export const IdeaBacklog: React.FC<IdeaBacklogProps> = ({
@@ -36,14 +44,36 @@ export const IdeaBacklog: React.FC<IdeaBacklogProps> = ({
   selectedBrandFilter,
   activeTeammate,
   defaultAssignee,
-  mobileBacklogOpen
+  mobileBacklogOpen,
+  teamMembers = [],
+  selectedPostIds = new Set(),
+  isSelectMode = false,
+  onToggleSelect
 }) => {
   const [newBacklogTitle, setNewBacklogTitle] = useState('');
   const [isDesktopCollapsed, setIsDesktopCollapsed] = useState(false);
 
+  // `backlogContent` below is embedded twice in the tree (desktop sidebar +
+  // mobile sheet), but the two are always mutually exclusive at any given
+  // viewport -- the desktop copy is CSS-hidden (`hidden lg:flex`, not
+  // unmounted) below `lg`, and the mobile sheet only mounts at all while
+  // `mobileBacklogOpen` is true. A display:none element can never receive a
+  // real click, and the mobile sheet's JSX comes after the desktop sidebar's
+  // in the returned tree, so whenever both are mounted its ref callbacks
+  // commit last and correctly win this shared Map -- a single instance is
+  // safe without threading a per-render instance key through.
+  const assigneeTriggerRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  const [openAssigneePostId, setOpenAssigneePostId] = useState<string | null>(null);
+  const openAssigneePost = openAssigneePostId ? filteredBacklogPosts.find((p) => p.id === openAssigneePostId) : null;
+
   const handleAddBacklog = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newBacklogTitle.trim()) return;
+
+    // Prefer the logged-in user over "first person in the roster" -- the
+    // fastest creation path in the app used to always assign to whoever is
+    // alphabetically/chronologically first in teamMembers, not to you.
+    const quickAddAssignee = activeTeammate?.name || defaultAssignee;
 
     const newPost: Post = {
       id: `post-${Date.now()}`,
@@ -55,7 +85,7 @@ export const IdeaBacklog: React.FC<IdeaBacklogProps> = ({
       scheduledDate: '',
       scheduledTime: '',
       status: 'not-started',
-      assignees: defaultAssignee ? [defaultAssignee] : [],
+      assignees: quickAddAssignee ? [quickAddAssignee] : [],
       visualUrl: '',
       approved: false,
       tags: [],
@@ -63,7 +93,7 @@ export const IdeaBacklog: React.FC<IdeaBacklogProps> = ({
       activityLog: [
         {
           id: `act-${Date.now()}`,
-          actor: activeTeammate?.name || defaultAssignee || 'Someone',
+          actor: quickAddAssignee || 'Someone',
           action: 'Created idea',
           timestamp: logTimestamp()
         }
@@ -143,6 +173,7 @@ export const IdeaBacklog: React.FC<IdeaBacklogProps> = ({
           filteredBacklogPosts.map((post) => {
             const brand = BRANDS[post.brandId];
             const isTouchDraggingThis = touchDraggedPostId === post.id;
+            const isSelected = selectedPostIds.has(post.id);
             return (
               <div
                 key={post.id}
@@ -154,14 +185,27 @@ export const IdeaBacklog: React.FC<IdeaBacklogProps> = ({
                 onTouchStart={() => onTouchStart(post.id)}
                 onTouchMove={onTouchMove}
                 onTouchEnd={onTouchEnd}
-                onClick={() => {
+                onClick={(e) => {
+                  if ((isSelectMode || e.ctrlKey || e.metaKey) && onToggleSelect) {
+                    onToggleSelect(post.id, e);
+                    return;
+                  }
                   onSelectPost(post);
                   setMobileBacklogOpen(false);
                 }}
-                className={`group bg-white border border-[#e5e4de] rounded-lg p-2.5 cursor-grab active:cursor-grabbing hover:border-[#296c00] hover:shadow-xs transition-all ${
-                  isTouchDraggingThis ? 'opacity-50 ring-2 ring-[#296c00]' : ''
+                className={`group bg-white border border-[#e5e4de] rounded-lg p-2.5 cursor-grab active:cursor-grabbing hover:border-[#296c00] hover:shadow-xs transition-all relative ${
+                  isTouchDraggingThis ? 'opacity-50 ring-2 ring-[#296c00]' : isSelected ? 'bg-[#f0fae8] ring-2 ring-[#296c00] border-[#296c00]' : ''
                 }`}
               >
+                {(isSelectMode || selectedPostIds.size > 0) && onToggleSelect && (
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={(e) => onToggleSelect(post.id, e)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute top-2 right-2 w-4 h-4 text-[#296c00] border-[#bfcab4] rounded z-10"
+                  />
+                )}
                 <div className="flex items-start justify-between gap-1 mb-1">
                   <span
                     className="text-[9px] font-label-caps font-bold px-1.5 py-0.5 rounded uppercase tracking-wider"
@@ -225,6 +269,18 @@ export const IdeaBacklog: React.FC<IdeaBacklogProps> = ({
                 {post.caption && (
                   <p className="text-[10px] text-[#707a67] mt-1 leading-snug line-clamp-2">{post.caption}</p>
                 )}
+
+                <button
+                  type="button"
+                  ref={(el) => {
+                    if (el) assigneeTriggerRefs.current.set(post.id, el);
+                    else assigneeTriggerRefs.current.delete(post.id);
+                  }}
+                  onClick={(e) => { e.stopPropagation(); setOpenAssigneePostId((cur) => (cur === post.id ? null : post.id)); }}
+                  className="mt-1.5 text-[9px] font-label-caps text-[#707a67] hover:text-[#296c00] hover:underline cursor-pointer truncate block"
+                >
+                  {post.assignees.length > 0 ? post.assignees.join(', ') : 'Unassigned — tap to assign'}
+                </button>
               </div>
             );
           })
@@ -304,6 +360,18 @@ export const IdeaBacklog: React.FC<IdeaBacklogProps> = ({
             <div className="flex flex-col overflow-hidden flex-1">{backlogContent}</div>
           </div>
         </div>
+      )}
+
+      {openAssigneePost && (
+        <AssigneePopover
+          post={openAssigneePost}
+          teamMembers={teamMembers}
+          activeTeammate={activeTeammate}
+          isOpen
+          onClose={() => setOpenAssigneePostId(null)}
+          anchorRef={{ current: assigneeTriggerRefs.current.get(openAssigneePost.id) || null }}
+          onSavePost={onSavePost}
+        />
       )}
     </>
   );

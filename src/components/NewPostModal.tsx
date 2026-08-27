@@ -3,6 +3,7 @@ import { Post, BrandId, Platform, SpecType, PostTemplate, ContentBankItem, TeamM
 import { BRANDS, SPECS } from '../data/brands';
 import { todayStr, logTimestamp } from '../utils/date';
 import { uploadImage } from '../utils/uploadImage';
+import { combineAssigneeEmails } from '../utils/postOwnership';
 import { useSmartMemory, PostDraft } from '../hooks/useSmartMemory';
 import { supabase } from '../lib/supabase';
 import { Modal } from './ui/Modal';
@@ -104,10 +105,7 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
   // Auto-sync reminder email when assignees change
   useEffect(() => {
     if (!teamMembers || teamMembers.length === 0) return;
-    const emails = assignees
-      .map((name) => teamMembers.find((m) => m.name === name)?.email)
-      .filter((e): e is string => Boolean(e && e.trim()));
-    const combined = Array.from(new Set(emails)).join(', ');
+    const combined = combineAssigneeEmails(assignees, teamMembers);
     if (combined && !reminderEmail) {
       setReminderEmail(combined);
     }

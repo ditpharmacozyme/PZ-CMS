@@ -1,9 +1,10 @@
-import React, { useRef } from 'react';
-import { Post } from '../../types';
+import React, { useRef, useState } from 'react';
+import { Post, TeamMember } from '../../types';
 import { BRANDS } from '../../data/brands';
 import { getPostStatusConfig } from '../../utils/statusConfig';
 import { toggleStage, Stage } from '../../utils/stages';
 import { StatusChip } from '../ui/StatusChip';
+import { AssigneePopover } from '../AssigneePopover';
 
 const PLATFORM_ICONS: Record<string, string> = {
   instagram: 'photo_camera',
@@ -29,6 +30,10 @@ interface PostCardProps {
   onTouchMove?: (e: React.TouchEvent) => void;
   onTouchEnd?: (e: React.TouchEvent) => void;
   onLongPress?: (postId: string) => void;
+  /** For the assignee badge's inline AssigneePopover -- tapping it sets
+   * assignees[] and taskRoles without opening the full post detail modal. */
+  teamMembers?: TeamMember[];
+  activeTeammate?: TeamMember | null;
 }
 
 export const PostCard: React.FC<PostCardProps> = ({
@@ -45,11 +50,15 @@ export const PostCard: React.FC<PostCardProps> = ({
   onTouchStart,
   onTouchMove,
   onTouchEnd,
-  onLongPress
+  onLongPress,
+  teamMembers = [],
+  activeTeammate = null
 }) => {
   const brand = BRANDS[post.brandId];
   const statusCfg = getPostStatusConfig(post);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const assigneeTriggerRef = useRef<HTMLButtonElement>(null);
+  const [isAssigneePopoverOpen, setIsAssigneePopoverOpen] = useState(false);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (onTouchStart) onTouchStart(e);
@@ -217,19 +226,32 @@ export const PostCard: React.FC<PostCardProps> = ({
           </div>
         </div>
 
-        <div
-          className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0 shadow-xs"
+        <button
+          ref={assigneeTriggerRef}
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setIsAssigneePopoverOpen((v) => !v); }}
+          className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0 shadow-xs cursor-pointer hover:ring-2 hover:ring-[#296c00] hover:ring-offset-1 transition-all"
           style={{ backgroundColor: brand?.primaryColor || '#296c00' }}
-          title={post.assignees.join(', ')}
+          title={`Assigned to: ${post.assignees.join(', ') || 'nobody'} (tap to change)`}
         >
           {initials}
-        </div>
+        </button>
+        <AssigneePopover
+          post={post}
+          teamMembers={teamMembers}
+          activeTeammate={activeTeammate}
+          isOpen={isAssigneePopoverOpen}
+          onClose={() => setIsAssigneePopoverOpen(false)}
+          anchorRef={assigneeTriggerRef}
+          onSavePost={onQuickUpdatePost || (() => {})}
+        />
       </div>
     );
   }
 
   // ── Month / Week Default Compact Chip View ──
   return (
+    <>
     <div
       draggable={!isMobileDevice}
       onDragStart={(e) => {
@@ -327,16 +349,29 @@ export const PostCard: React.FC<PostCardProps> = ({
               💬
             </button>
           )}
-          <span
-            className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-white font-bold text-[7px]"
+          <button
+            ref={assigneeTriggerRef}
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setIsAssigneePopoverOpen((v) => !v); }}
+            className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-white font-bold text-[7px] cursor-pointer hover:ring-1 hover:ring-[#296c00] hover:ring-offset-1 transition-all"
             style={{ backgroundColor: brand?.primaryColor || '#296c00' }}
-            title={`Assigned to: ${post.assignees.join(', ')}`}
+            title={`Assigned to: ${post.assignees.join(', ') || 'nobody'} (tap to change)`}
           >
             {initials}
-          </span>
+          </button>
           {extraAssignees > 0 && <span className="text-[7px] font-bold text-[#707a67]">+{extraAssignees}</span>}
         </div>
       </div>
     </div>
+    <AssigneePopover
+      post={post}
+      teamMembers={teamMembers}
+      activeTeammate={activeTeammate}
+      isOpen={isAssigneePopoverOpen}
+      onClose={() => setIsAssigneePopoverOpen(false)}
+      anchorRef={assigneeTriggerRef}
+      onSavePost={onQuickUpdatePost || (() => {})}
+    />
+    </>
   );
 };
