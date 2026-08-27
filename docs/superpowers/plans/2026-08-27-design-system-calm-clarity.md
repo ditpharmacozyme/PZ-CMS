@@ -660,10 +660,13 @@ git commit -m "$(printf 'feat(design): button weight tier + remove all-caps labe
 
 **Files:**
 - Modify: `src/components/ui/Field.tsx`, `src/components/ui/Modal.tsx`, `src/components/TopNav.tsx`, `src/components/SideNav.tsx` (and any modal header the sweep left mismatched)
+- Modify: `src/index.css` — the `.bottom-tab-label` rule (carried from Task 2 review)
 
 **Interfaces:**
 - Consumes: tokens (Task 1), `.font-*` (Task 2)
 - Produces: unchanged component APIs
+
+- [ ] **Step 0: `src/index.css` `.bottom-tab-label`** (mobile bottom tab bar) — currently `font-family: 'Space Mono'` + `text-transform: uppercase` + `letter-spacing: 0.03em`. Change to `font-family: 'Inter', sans-serif; font-weight: 600; letter-spacing: 0; text-transform: none;` (keep `font-size: 9px; line-height: 1;`). This is the one Task 2 deferred so mobile nav labels aren't all-caps mono.
 
 - [ ] **Step 1: `ui/Field.tsx`** — inputs/selects/textarea: background `bg-white`, border `border-[#e9e9e7]` (hover `border-[#d8d8d5]`), radius `rounded-lg` (8px), label `font-label-caps text-[12px] text-[#5f5f5b]` (not uppercase). The global `input:focus` ring (Task 1) already gives the indigo focus — don't re-add per-field focus colours.
 
