@@ -24,6 +24,7 @@ type PaletteItem = {
 };
 
 const TAB_ITEMS: { tab: NavTab; label: string; icon: string }[] = [
+  { tab: 'my-work', label: 'Go to My Work', icon: 'checklist' },
   { tab: 'calendar', label: 'Go to Calendar', icon: 'calendar_month' },
   { tab: 'templates', label: 'Go to Templates', icon: 'quiz' },
   { tab: 'content-bank', label: 'Go to Content Bank', icon: 'article' },
@@ -31,6 +32,7 @@ const TAB_ITEMS: { tab: NavTab; label: string; icon: string }[] = [
   { tab: 'brand-kit', label: 'Go to Brand Kit', icon: 'palette' },
   { tab: 'assets', label: 'Go to Assets', icon: 'layers' },
   { tab: 'dashboard', label: 'Go to Dashboard', icon: 'monitoring' },
+  { tab: 'audit', label: 'Go to Activity Log', icon: 'shield_person' },
   { tab: 'integrations', label: 'Go to Integrations', icon: 'terminal' }
 ];
 

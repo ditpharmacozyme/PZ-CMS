@@ -37,25 +37,33 @@ import { BRANDS } from './data/brands';
 import { applyBrandTypography } from './utils/brandTypography';
 import { exportPostsToCSV, exportFullWorkspaceJSON } from './utils/export';
 import { checkAndTriggerAutoBackup, saveRollingBackup, WorkspaceBackupPayload } from './utils/autoBackup';
+import { lazy, Suspense } from 'react';
 import { SideNav, NavTab } from './components/SideNav';
 import { TopNav } from './components/TopNav';
 import { CalendarView } from './components/CalendarView';
-import { TemplateLibrary } from './components/TemplateLibrary';
-import { BrandControlCenter } from './components/BrandControlCenter';
-import { AssetLibrary } from './components/AssetLibrary';
-import { MissionControlDashboard } from './components/MissionControlDashboard';
 import { MyWork } from './components/MyWork';
-import { GoogleAppsScriptHub } from './components/GoogleAppsScriptHub';
 import { PostDetailModal } from './components/PostDetailModal';
 import { NewPostModal } from './components/NewPostModal';
-import { ContentBank } from './components/ContentBank';
-import { ResearchPlans } from './components/ResearchPlans';
 import { CommandPalette } from './components/CommandPalette';
 import { QuickAddBar } from './components/QuickAddBar';
 import { buildQuickPost } from './utils/quickPost';
 import { LoginPage } from './components/LoginPage';
-import { AuditLogView } from './components/AuditLogView';
 import { SmartMemoryRibbon } from './components/SmartMemoryRibbon';
+
+// Secondary tabs -- code-split so the initial bundle isn't carrying all ten
+// views (and their transitive deps: markdown, charts, the prompt generator).
+const lazyNamed = <K extends string, M extends Record<K, React.ComponentType<any>>>(
+  loader: () => Promise<M>,
+  name: K
+) => lazy(() => loader().then((m) => ({ default: m[name] })));
+const TemplateLibrary = lazyNamed(() => import('./components/TemplateLibrary'), 'TemplateLibrary');
+const BrandControlCenter = lazyNamed(() => import('./components/BrandControlCenter'), 'BrandControlCenter');
+const AssetLibrary = lazyNamed(() => import('./components/AssetLibrary'), 'AssetLibrary');
+const MissionControlDashboard = lazyNamed(() => import('./components/MissionControlDashboard'), 'MissionControlDashboard');
+const GoogleAppsScriptHub = lazyNamed(() => import('./components/GoogleAppsScriptHub'), 'GoogleAppsScriptHub');
+const ContentBank = lazyNamed(() => import('./components/ContentBank'), 'ContentBank');
+const ResearchPlans = lazyNamed(() => import('./components/ResearchPlans'), 'ResearchPlans');
+const AuditLogView = lazyNamed(() => import('./components/AuditLogView'), 'AuditLogView');
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useTeamAndAuth } from './hooks/useTeamAndAuth';
 import { usePosts } from './hooks/usePosts';
@@ -563,6 +571,13 @@ export function App() {
         />
 
         <main className="flex-1 overflow-x-hidden mobile-content-pad">
+          <Suspense
+            fallback={
+              <div className="flex items-center justify-center py-24 text-[#707a67]">
+                <span className="material-symbols-outlined animate-spin text-2xl">progress_activity</span>
+              </div>
+            }
+          >
           {currentTab === 'my-work' && (
             <MyWork
               posts={posts}
@@ -614,6 +629,7 @@ export function App() {
             <ResearchPlans researchItems={researchItems} selectedBrandFilter={selectedBrandFilter} teamMembers={teamMembers} activeTeammate={activeTeammate} onAddResearchItem={handleAddResearchItem} onDeleteResearchItem={handleDeleteResearchItem} onBatchAddPosts={handleBatchAddPosts} />
           )}
           {currentTab === 'audit' && <AuditLogView teamMembers={teamMembers} />}
+          </Suspense>
         </main>
       </div>
 

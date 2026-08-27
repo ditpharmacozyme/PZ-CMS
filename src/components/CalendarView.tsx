@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useDeferredValue } from 'react';
 import { Post, BrandId, PostStatus, Platform, TeamMember } from '../types';
 import { BRANDS, SPECS } from '../data/brands';
 import { toDateStr, todayStr, fromDateStr, mondayFirstDay, startOfWeek, logTimestamp } from '../utils/date';
@@ -111,6 +111,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   showToast
 }) => {
   const confirm = useConfirm();
+  // The search box stays on the live prop; filtering (and the grid re-render
+  // it triggers) reads the deferred value so a fast typist isn't re-filtering
+  // every post on every keystroke.
+  const deferredSearch = useDeferredValue(searchQuery);
   const today = useMemo(() => new Date(), []);
   const todayIso = todayStr();
   const csvFileInputRef = useRef<HTMLInputElement>(null);
@@ -193,8 +197,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const calendarPosts = useMemo(() => posts.filter((p) => !!p.scheduledDate), [posts]);
 
   const filters: PostFilters = useMemo(
-    () => ({ brand: selectedBrandFilter, status: statusFilter, platform: platformFilter, assignee: assigneeFilter, search: searchQuery, onlyMine, activeTeammate }),
-    [selectedBrandFilter, statusFilter, platformFilter, assigneeFilter, searchQuery, onlyMine, activeTeammate]
+    () => ({ brand: selectedBrandFilter, status: statusFilter, platform: platformFilter, assignee: assigneeFilter, search: deferredSearch, onlyMine, activeTeammate }),
+    [selectedBrandFilter, statusFilter, platformFilter, assigneeFilter, deferredSearch, onlyMine, activeTeammate]
   );
 
   const filteredBacklogPosts = useMemo(() => backlogPosts.filter((p) => matchesFilters(p, filters)), [backlogPosts, filters]);

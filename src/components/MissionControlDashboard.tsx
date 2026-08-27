@@ -272,7 +272,7 @@ export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = (
       <div className="bg-white border border-[#bfcab4] rounded shadow-xs">
         <div className="p-5 border-b border-[#bfcab4]">
           <h3 className="font-label-caps text-xs font-bold text-[#296c00] uppercase">Recent Activity</h3>
-          <p className="font-body-md text-xs text-[#707a67] mt-0.5">Status changes, reschedules, and approvals across the team</p>
+          <p className="font-body-md text-xs text-[#707a67] mt-0.5">Status changes, reschedules, and stage completions across the team</p>
         </div>
 
         {recentActivity.length === 0 ? (

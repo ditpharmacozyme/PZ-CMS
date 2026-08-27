@@ -26,9 +26,18 @@ const LEGACY_TAB_REMAP: Record<string, NavTab> = {
   appscript: 'integrations',
 };
 
+const VALID_TABS: NavTab[] = [
+  'my-work', 'calendar', 'templates', 'brand-kit', 'assets',
+  'dashboard', 'integrations', 'content-bank', 'research', 'audit',
+];
+
 export function remapLegacyTab(rawTab: string | null): NavTab | null {
   if (!rawTab) return null;
-  return (LEGACY_TAB_REMAP[rawTab] as NavTab | undefined) ?? (rawTab as NavTab);
+  const remapped = LEGACY_TAB_REMAP[rawTab] ?? rawTab;
+  // A stale / renamed / hand-edited localStorage value used to be cast
+  // straight to NavTab and could land the app on a tab that no longer
+  // exists (blank screen). Fall back to the default instead.
+  return VALID_TABS.includes(remapped as NavTab) ? (remapped as NavTab) : null;
 }
 
 export interface PostDraft {

@@ -14,7 +14,7 @@ const TEAM_KEY_LEGACY = 'pharmacozyme_brandops_team_v3'; // Old key — only use
 // Default PIN is a generic placeholder, not a real credential — change it per-person in Settings after first login.
 const DEFAULT_TEAM_MEMBERS: TeamMember[] = [
   { id: 'tm-1', name: 'Hamza Ansari', role: 'Brand & Content Lead', userRole: 'Admin', email: 'hamzaansari4you@gmail.com', avatarInitials: 'HA', color: '#296c00', passcode: '1234' },
-  { id: 'tm-2', name: 'Pharmacozyme Ops', role: 'Global Approver', userRole: 'Manager', email: 'ops@pharmacozyme.com', avatarInitials: 'PO', color: '#0A66C2', passcode: '1234' },
+  { id: 'tm-2', name: 'Pharmacozyme Ops', role: 'Ops Lead', userRole: 'Manager', email: 'ops@pharmacozyme.com', avatarInitials: 'PO', color: '#0A66C2', passcode: '1234' },
 ];
 
 // ═══════════════════════════════════════════════════════════════════════
