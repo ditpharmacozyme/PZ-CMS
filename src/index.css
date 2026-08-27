@@ -70,7 +70,7 @@
     font-weight: var(--specimen-font-headline-weight, 600);
   }
   .font-specimen-body {
-    font-family: var(--specimen-font-body, 'Plus Jakarta Sans'), sans-serif;
+    font-family: var(--specimen-font-body, 'Inter'), sans-serif;
   }
 
   .font-poppins {
