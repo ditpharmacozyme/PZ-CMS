@@ -82,12 +82,6 @@
   .font-amsterdam {
     font-family: 'New Amsterdam', sans-serif;
   }
-  .font-fredoka {
-    font-family: 'Fredoka One', cursive;
-  }
-  .font-rajdhani {
-    font-family: 'Rajdhani', sans-serif;
-  }
 }
 
 /* ─── Global Base ─── */
@@ -506,11 +500,11 @@ input:focus, textarea:focus, select:focus {
   color: var(--color-accent);
 }
 .bottom-tab-label {
-  font-family: 'Space Mono', monospace;
+  font-family: 'Inter', sans-serif;
   font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
   line-height: 1;
 }
 

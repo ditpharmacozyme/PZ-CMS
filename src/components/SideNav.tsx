@@ -99,12 +99,12 @@ export const SideNav: React.FC<SideNavProps> = ({
         key={item.tab}
         onClick={() => selectNavItem(item.tab)}
         title={collapsed ? item.label : undefined}
-        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-left transition-all text-xs font-label-caps min-h-[44px] active:scale-[0.98] ${
+        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-left transition-all text-[13px] font-label-caps min-h-[44px] active:scale-[0.98] ${
           collapsed ? 'justify-center px-0' : ''
         } ${
           isActive
-            ? 'bg-[#eef2ff] text-[#4338ca] font-bold shadow-xs'
-            : 'text-[#57574f] hover:bg-[#e9e8e4]'
+            ? 'nav-item-active font-bold'
+            : 'text-[#5f5f5b] hover:bg-[#e9e8e4]'
         }`}
       >
         <span
@@ -113,7 +113,7 @@ export const SideNav: React.FC<SideNavProps> = ({
         >
           {item.icon}
         </span>
-        {!collapsed && <span className="text-sm md:text-xs flex-1 truncate">{item.label}</span>}
+        {!collapsed && <span className="text-[13px] flex-1 truncate">{item.label}</span>}
       </button>
     );
   };
@@ -192,12 +192,12 @@ export const SideNav: React.FC<SideNavProps> = ({
                 <button
                   onClick={toggleMore}
                   title={collapsed ? 'More' : undefined}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-left transition-all text-xs font-label-caps min-h-[44px] active:scale-[0.98] ${
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-left transition-all text-[13px] font-label-caps min-h-[44px] active:scale-[0.98] ${
                     collapsed ? 'justify-center px-0' : ''
                   } ${
                     activeInMore
-                      ? 'bg-[#eef2ff] text-[#4338ca] font-bold shadow-xs'
-                      : 'text-[#57574f] hover:bg-[#e9e8e4]'
+                      ? 'nav-item-active font-bold'
+                      : 'text-[#5f5f5b] hover:bg-[#e9e8e4]'
                   }`}
                 >
                   <span
@@ -228,19 +228,19 @@ export const SideNav: React.FC<SideNavProps> = ({
                     <button
                       key={item.tab}
                       onClick={() => selectNavItem(item.tab)}
-                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded text-left font-label-caps text-xs transition-all min-h-[40px] active:scale-[0.98] ${
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded text-left font-label-caps text-[13px] transition-all min-h-[40px] active:scale-[0.98] ${
                         isActive
-                          ? 'nav-item-active text-[#4f46e5] font-bold'
-                          : 'text-[#57574f] hover:bg-[#e9e8e4]'
+                          ? 'nav-item-active text-[#4338ca] font-bold'
+                          : 'text-[#5f5f5b] hover:bg-[#e9e8e4]'
                       }`}
                     >
                       <span
                         className={`material-symbols-outlined text-base ${isActive ? 'filled' : ''}`}
-                        style={{ color: isActive ? '#4f46e5' : undefined }}
+                        style={{ color: isActive ? '#4338ca' : undefined }}
                       >
                         {item.icon}
                       </span>
-                      <span className="text-sm md:text-xs flex-1 truncate">{item.label}</span>
+                      <span className="text-[13px] flex-1 truncate">{item.label}</span>
                     </button>
                   );
                 })}

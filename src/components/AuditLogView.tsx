@@ -256,7 +256,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ teamMembers }) => {
                           </span>
 
                           {event.entityType && (
-                            <span className="font-label-caps text-[9px] text-[#5f5f5b] bg-[#f1f1f0] px-1.5 py-0.5 rounded font-mono uppercase">
+                            <span className="font-label-caps text-[9px] text-[#5f5f5b] bg-[#f1f1f0] px-1.5 py-0.5 rounded font-mono">
                               {event.entityType}
                             </span>
                           )}

@@ -220,10 +220,10 @@ export const TopNav: React.FC<TopNavProps> = ({
                           onSelectBrandFilter(opt.id);
                           setShowBrandPicker(false);
                         }}
-                        className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded text-left font-label-caps text-xs transition-colors ${
+                        className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded text-left font-label-caps text-[13px] transition-colors ${
                           isSelected
                             ? 'bg-[#eef2ff] text-[#4338ca] font-bold'
-                            : 'text-[#57574f] hover:bg-[#f1f1f0]'
+                            : 'text-[#5f5f5b] hover:bg-[#f1f1f0]'
                         }`}
                       >
                         {opt.logoUrl ? (
@@ -453,13 +453,13 @@ export const TopNav: React.FC<TopNavProps> = ({
 
       {/* Settings Modal */}
       {showSettingsModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white border border-[#e9e9e7] max-w-lg w-full rounded-lg shadow-2xl relative max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-[#e9e9e7] max-w-lg w-full rounded-xl warm-shadow-lg relative max-h-[90vh] flex flex-col">
             {/* Modal header */}
             <div className="p-5 border-b border-[#e9e9e7] flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[#4f46e5]">settings</span>
-                <h2 className="font-headline-md text-lg font-bold text-[#1b1c1a]">Settings</h2>
+                <h2 className="font-headline-md text-[15px] font-bold text-[#1b1c1a]">Settings</h2>
               </div>
               <button
                 onClick={() => { setShowSettingsModal(false); setEditingMember(null); setIsAddingMember(false); }}

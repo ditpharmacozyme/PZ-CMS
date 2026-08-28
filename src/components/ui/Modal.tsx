@@ -152,7 +152,7 @@ export const Modal: React.FC<ModalProps> = ({
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center overflow-y-auto">
       <div
         onClick={() => { if (closeOnBackdrop) requestClose(); }}
         className="absolute inset-0"
@@ -164,7 +164,7 @@ export const Modal: React.FC<ModalProps> = ({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descId}
-        className={`relative bg-[var(--color-surface)] w-full ${SIZE_CLASS[size]} rounded-t-2xl sm:rounded-2xl shadow-2xl sheet-modal max-h-[92vh] sm:max-h-[88vh] flex flex-col sm:my-8`}
+        className={`relative bg-white border border-[#e9e9e7] w-full ${SIZE_CLASS[size]} rounded-t-2xl sm:rounded-xl warm-shadow-lg sheet-modal max-h-[92vh] sm:max-h-[88vh] flex flex-col sm:my-8`}
       >
         <div className="sm:hidden pt-2.5 flex-shrink-0"><div className="sheet-handle" /></div>
 
@@ -175,7 +175,7 @@ export const Modal: React.FC<ModalProps> = ({
               {eyebrow && (
                 <p className="font-label-caps text-[10px] font-bold text-[var(--color-accent)] tracking-widest mb-0.5">{eyebrow}</p>
               )}
-              <h2 id={titleId} className="font-headline-md text-base sm:text-lg font-bold text-[var(--color-ink)]">{title}</h2>
+              <h2 id={titleId} className="font-headline-md text-[15px] font-bold text-[var(--color-ink)]">{title}</h2>
               {description && <p id={descId} className="font-body-md text-xs text-[var(--color-ink-muted)] mt-0.5">{description}</p>}
             </div>
           </div>
@@ -202,14 +202,14 @@ export const Modal: React.FC<ModalProps> = ({
         )}
 
         {busy && (
-          <div className="absolute inset-0 bg-[var(--color-surface)]/95 flex flex-col items-center justify-center gap-3 rounded-t-2xl sm:rounded-2xl z-10">
+          <div className="absolute inset-0 bg-[var(--color-surface)]/95 flex flex-col items-center justify-center gap-3 rounded-t-2xl sm:rounded-xl z-10">
             <div className="w-8 h-8 border-2 border-[var(--color-accent)]/30 border-t-[var(--color-accent)] rounded-full animate-spin" />
             <p className="font-label-caps text-xs font-bold text-[var(--color-ink-muted)]">{busy.label}</p>
           </div>
         )}
 
         {confirmingClose && dirtyPrompt && (
-          <div className="absolute inset-0 bg-black/40 flex items-center justify-center p-4 rounded-t-2xl sm:rounded-2xl z-20">
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center p-4 rounded-t-2xl sm:rounded-xl z-20">
             <div className="bg-[var(--color-raised)] border border-[var(--color-line)] rounded-xl shadow-xl p-5 max-w-sm w-full space-y-3">
               <h3 className="font-headline-md text-sm font-bold text-[var(--color-ink)]">{dirtyPrompt.title}</h3>
               <p className="font-body-md text-xs text-[var(--color-ink-muted)]">{dirtyPrompt.body}</p>

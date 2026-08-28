@@ -3,7 +3,7 @@ import React, { useId } from 'react';
 /**
  * The single biggest legibility fix in this layer: every label in the app
  * today is `font-label-caps text-[10px] uppercase font-bold` -- 10px
- * monospace all-caps. Field standardizes on 13px sentence case. The old caps
+ * monospace all-caps. Field standardizes on 12px sentence case. The old caps
  * style still exists (as `.font-label-caps`) for section eyebrows; it just
  * stops being used for "what do I type here".
  */
@@ -21,7 +21,7 @@ export const Field: React.FC<FieldShellProps> = ({ label, required, hint, error,
   const hintId = useId();
   return (
     <div>
-      <label htmlFor={htmlFor} className="font-body-md text-[13px] font-medium text-[var(--color-ink-soft)] block mb-1.5">
+      <label htmlFor={htmlFor} className="font-label-caps text-[12px] text-[#5f5f5b] block mb-1.5">
         {label}
         {required && <span className="text-[var(--color-danger)] ml-1 font-normal text-xs">Required</span>}
       </label>
@@ -35,10 +35,10 @@ export const Field: React.FC<FieldShellProps> = ({ label, required, hint, error,
 };
 
 const inputBaseClass = (hasError?: boolean) =>
-  `w-full bg-[var(--color-raised)] border rounded-lg px-3 py-2.5 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-ink-muted)] focus:outline-none focus:ring-1 transition-colors ${
+  `w-full bg-white border rounded-lg px-3 py-2.5 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-ink-muted)] transition-colors ${
     hasError
-      ? 'border-[var(--color-danger)] focus:ring-[var(--color-danger)]'
-      : 'border-[var(--color-line)] focus:ring-[var(--color-accent)] focus:border-[var(--color-accent)]'
+      ? 'border-[var(--color-danger)]'
+      : 'border-[#e9e9e7] hover:border-[#d8d8d5]'
   }`;
 
 interface TextFieldProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {

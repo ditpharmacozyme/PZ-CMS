@@ -112,7 +112,7 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
                     : 'bg-white border border-[#e9e9e7] text-[#1b1c1a]'
                 }`}
               >
-                <span className="font-label-caps text-[9px] uppercase font-bold opacity-80">{dayShort}</span>
+                <span className="font-label-caps text-[9px] font-bold opacity-80">{dayShort}</span>
                 <span className="font-headline-md text-base font-bold mt-0.5">{dayNum}</span>
 
                 {/* Brand Color Dots below date */}
