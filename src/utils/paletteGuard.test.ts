@@ -13,6 +13,7 @@ const RETIRED = [
   '#bfcab4', '#707a67', '#404a39', '#faf9f5', '#efeeea', '#e5e4de',
   '#f3f2ee', '#e4e2db', '#f7f6f2', '#f0eee6', '#ba1a1a', '#ffdad6', '#935c00', '#ffddb0', '#f7f6f0',
   '#296c00', '#205400', '#1f5700', '#296951', '#aceecf', '#f0fae8', '#78d24b',
+  '#e4f5d8', '#90da75',
 ];
 const EXEMPT = ['utils/statusConfig.ts', 'data/brands.ts', 'utils/brandTypography.ts'];
 

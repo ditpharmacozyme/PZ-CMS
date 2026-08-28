@@ -58,7 +58,7 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
           {/* Select All */}
           <button
             onClick={onSelectAll}
-            className="text-xs font-bold text-white hover:text-[#90da75] font-label-caps transition-all whitespace-nowrap"
+            className="text-xs font-bold text-white hover:text-[#a5b4fc] font-label-caps transition-all whitespace-nowrap"
           >
             Select All
           </button>
@@ -67,7 +67,7 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
           <select
             value={bulkAssignee}
             onChange={(e) => onApplyBulkAssignee(e.target.value)}
-            className="bg-[#2a2b27] text-white text-xs font-label-caps py-1 px-2 rounded border border-[#57574f] focus:outline-none focus:ring-1 focus:ring-[#90da75] flex-shrink-0"
+            className="bg-[#2a2b27] text-white text-xs font-label-caps py-1 px-2 rounded border border-[#57574f] focus:outline-none focus:ring-1 focus:ring-[#4f46e5] flex-shrink-0"
           >
             <option value="">Assign To...</option>
             {teamMembers.map((m) => (

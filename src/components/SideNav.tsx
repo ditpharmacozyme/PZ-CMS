@@ -103,13 +103,13 @@ export const SideNav: React.FC<SideNavProps> = ({
           collapsed ? 'justify-center px-0' : ''
         } ${
           isActive
-            ? 'bg-[#eef2ff] text-[#07513b] font-bold shadow-xs'
+            ? 'bg-[#eef2ff] text-[#4338ca] font-bold shadow-xs'
             : 'text-[#57574f] hover:bg-[#e9e8e4]'
         }`}
       >
         <span
           className={`material-symbols-outlined text-lg flex-shrink-0 ${isActive ? 'filled' : ''}`}
-          style={{ color: isActive ? '#07513b' : undefined }}
+          style={{ color: isActive ? '#4338ca' : undefined }}
         >
           {item.icon}
         </span>
@@ -196,13 +196,13 @@ export const SideNav: React.FC<SideNavProps> = ({
                     collapsed ? 'justify-center px-0' : ''
                   } ${
                     activeInMore
-                      ? 'bg-[#eef2ff] text-[#07513b] font-bold shadow-xs'
+                      ? 'bg-[#eef2ff] text-[#4338ca] font-bold shadow-xs'
                       : 'text-[#57574f] hover:bg-[#e9e8e4]'
                   }`}
                 >
                   <span
                     className={`material-symbols-outlined text-lg flex-shrink-0 ${activeInMore ? 'filled' : ''}`}
-                    style={{ color: activeInMore ? '#07513b' : undefined }}
+                    style={{ color: activeInMore ? '#4338ca' : undefined }}
                   >
                     more_horiz
                   </span>

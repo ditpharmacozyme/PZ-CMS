@@ -343,7 +343,7 @@ export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = (
                   key={member.id}
                   onClick={() => setSelectedTeammateName(isSelected ? null : member.name)}
                   className={`p-4 flex items-center gap-4 cursor-pointer transition-all ${
-                    isSelected ? 'bg-[#eef2ff] hover:bg-[#e4f5d8] border-l-4 border-[#4f46e5]' : 'hover:bg-[#f4f4f3]'
+                    isSelected ? 'bg-[#eef2ff] hover:bg-[#e0e7ff] border-l-4 border-[#4f46e5]' : 'hover:bg-[#f4f4f3]'
                   }`}
                 >
                   {/* Rank */}

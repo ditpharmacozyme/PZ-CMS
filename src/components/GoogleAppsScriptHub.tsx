@@ -702,7 +702,7 @@ export const GoogleAppsScriptHub: React.FC<GoogleAppsScriptHubProps> = ({
                 Running server-side proxy API routes on Port 3000
               </p>
             </div>
-            <span className="px-3 py-1 bg-[#eef2ff] text-[#07513b] font-label-caps text-xs font-bold rounded">
+            <span className="px-3 py-1 bg-[#eef2ff] text-[#4338ca] font-label-caps text-xs font-bold rounded">
               ● Active on Port 3000
             </span>
           </div>

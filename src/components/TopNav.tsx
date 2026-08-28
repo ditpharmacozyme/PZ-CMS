@@ -222,7 +222,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                         }}
                         className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded text-left font-label-caps text-xs transition-colors ${
                           isSelected
-                            ? 'bg-[#eef2ff] text-[#07513b] font-bold'
+                            ? 'bg-[#eef2ff] text-[#4338ca] font-bold'
                             : 'text-[#57574f] hover:bg-[#f1f1f0]'
                         }`}
                       >
