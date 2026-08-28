@@ -92,8 +92,8 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ teamMembers }) => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#e9e9e7]">
         <div>
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#296c00]">shield_person</span>
-            <span className="font-label-caps text-xs text-[#296c00] uppercase font-bold tracking-widest">
+            <span className="material-symbols-outlined text-[#4f46e5]">shield_person</span>
+            <span className="font-label-caps text-xs text-[#4f46e5] uppercase font-bold tracking-widest">
               Team Transparency
             </span>
           </div>
@@ -116,7 +116,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ teamMembers }) => {
 
           <button
             onClick={handleExportCSV}
-            className="bg-[#296c00] text-white hover:bg-[#1f5700] font-label-caps text-xs px-4 py-2 rounded shadow-sm transition-all flex items-center gap-1.5 font-bold"
+            className="bg-[#4f46e5] text-white hover:bg-[#4338ca] font-label-caps text-xs px-4 py-2 rounded shadow-sm transition-all flex items-center gap-1.5 font-bold"
           >
             <span className="material-symbols-outlined text-sm">download</span>
             <span>Export CSV</span>
@@ -135,7 +135,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ teamMembers }) => {
               placeholder="Search activity log..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="w-full bg-[#f4f4f3] border border-[#e9e9e7] pl-8 pr-3 py-1.5 text-xs text-[#1b1c1a] rounded focus:outline-none focus:border-[#296c00]"
+              className="w-full bg-[#f4f4f3] border border-[#e9e9e7] pl-8 pr-3 py-1.5 text-xs text-[#1b1c1a] rounded focus:outline-none focus:border-[#4f46e5]"
             />
           </div>
 
@@ -143,7 +143,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ teamMembers }) => {
           <select
             value={selectedActor}
             onChange={e => setSelectedActor(e.target.value)}
-            className="bg-[#f4f4f3] border border-[#e9e9e7] px-3 py-1.5 text-xs text-[#1b1c1a] rounded focus:outline-none focus:border-[#296c00]"
+            className="bg-[#f4f4f3] border border-[#e9e9e7] px-3 py-1.5 text-xs text-[#1b1c1a] rounded focus:outline-none focus:border-[#4f46e5]"
           >
             <option value="all">All Teammates</option>
             {teamMembers.map(m => (
@@ -155,7 +155,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ teamMembers }) => {
           <select
             value={selectedAction}
             onChange={e => setSelectedAction(e.target.value)}
-            className="bg-[#f4f4f3] border border-[#e9e9e7] px-3 py-1.5 text-xs text-[#1b1c1a] rounded focus:outline-none focus:border-[#296c00]"
+            className="bg-[#f4f4f3] border border-[#e9e9e7] px-3 py-1.5 text-xs text-[#1b1c1a] rounded focus:outline-none focus:border-[#4f46e5]"
           >
             <option value="all">All Action Types</option>
             <option value="post_created">Post Created</option>
@@ -173,7 +173,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ teamMembers }) => {
           <select
             value={selectedEntity}
             onChange={e => setSelectedEntity(e.target.value)}
-            className="bg-[#f4f4f3] border border-[#e9e9e7] px-3 py-1.5 text-xs text-[#1b1c1a] rounded focus:outline-none focus:border-[#296c00]"
+            className="bg-[#f4f4f3] border border-[#e9e9e7] px-3 py-1.5 text-xs text-[#1b1c1a] rounded focus:outline-none focus:border-[#4f46e5]"
           >
             <option value="all">All Entity Types</option>
             <option value="post">Posts</option>
@@ -207,7 +207,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ teamMembers }) => {
       <div className="bg-white border border-[#e9e9e7] rounded shadow-xs overflow-hidden">
         {isLoading ? (
           <div className="p-12 text-center text-[#5f5f5b] space-y-2">
-            <span className="material-symbols-outlined text-3xl animate-spin text-[#296c00]">sync</span>
+            <span className="material-symbols-outlined text-3xl animate-spin text-[#4f46e5]">sync</span>
             <p className="text-xs">Fetching audit trail...</p>
           </div>
         ) : filteredEvents.length === 0 ? (
@@ -221,7 +221,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ teamMembers }) => {
             {filteredEvents.map(event => {
               const actorMember = teamMembers.find(m => m.name === event.actorName);
               const initials = actorMember ? actorMember.avatarInitials : event.actorName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-              const bgColor = actorMember ? actorMember.color : '#296c00';
+              const bgColor = actorMember ? actorMember.color : '#4f46e5';
               const actionMeta = ACTION_COLORS[event.actionType] || { bg: '#f1f3f4', text: '#5f6368', border: '#dadce0', icon: 'info' };
               const isExpanded = expandedEventId === event.id;
               const hasDiff = !!(event.beforeValue || event.afterValue);
@@ -278,7 +278,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ teamMembers }) => {
                       {hasDiff && (
                         <button
                           onClick={() => setExpandedEventId(isExpanded ? null : event.id)}
-                          className="font-label-caps text-[10px] text-[#296c00] hover:underline font-bold flex items-center gap-0.5"
+                          className="font-label-caps text-[10px] text-[#4f46e5] hover:underline font-bold flex items-center gap-0.5"
                         >
                           <span>{isExpanded ? 'Hide Diffs' : 'View Changes'}</span>
                           <span className="material-symbols-outlined text-xs">
@@ -302,7 +302,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ teamMembers }) => {
                       )}
                       {event.afterValue && (
                         <div>
-                          <span className="text-[#78d24b] font-bold block mb-1">After:</span>
+                          <span className="text-[#15803d] font-bold block mb-1">After:</span>
                           <pre className="bg-[#111310] p-2 rounded overflow-x-auto text-[10px] text-[#e0e0e0]">
                             {JSON.stringify(event.afterValue, null, 2)}
                           </pre>

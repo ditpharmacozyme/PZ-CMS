@@ -159,10 +159,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                 onClick={() => { item.run(); onClose(); }}
                 onMouseEnter={() => setActiveIndex(idx)}
                 className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
-                  idx === activeIndex ? 'bg-[#f0fae8]' : 'hover:bg-[#f4f4f3]'
+                  idx === activeIndex ? 'bg-[#eef2ff]' : 'hover:bg-[#f4f4f3]'
                 }`}
               >
-                <span className="material-symbols-outlined text-[#296c00] text-lg flex-shrink-0">{item.icon}</span>
+                <span className="material-symbols-outlined text-[#4f46e5] text-lg flex-shrink-0">{item.icon}</span>
                 <span className="flex-1 min-w-0">
                   <span className="block text-sm text-[#1b1c1a] truncate">{item.label}</span>
                 </span>

@@ -118,7 +118,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ forcedMode, onPasswordSet 
                 autoFocus
                 required
                 disabled={isSubmitting}
-                className="w-full bg-[#f4f4f3] border border-[#e9e9e7] focus:border-[#296c00] text-[#1b1c1a] p-2.5 rounded outline-none transition-colors placeholder:text-[#e9e9e7] placeholder:text-sm disabled:opacity-50"
+                className="w-full bg-[#f4f4f3] border border-[#e9e9e7] focus:border-[#4f46e5] text-[#1b1c1a] p-2.5 rounded outline-none transition-colors placeholder:text-[#e9e9e7] placeholder:text-sm disabled:opacity-50"
               />
             </div>
             <div className="space-y-1.5">
@@ -133,7 +133,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ forcedMode, onPasswordSet 
                 autoComplete="new-password"
                 required
                 disabled={isSubmitting}
-                className="w-full bg-[#f4f4f3] border border-[#e9e9e7] focus:border-[#296c00] text-[#1b1c1a] p-2.5 rounded outline-none transition-colors placeholder:text-[#e9e9e7] placeholder:text-sm disabled:opacity-50"
+                className="w-full bg-[#f4f4f3] border border-[#e9e9e7] focus:border-[#4f46e5] text-[#1b1c1a] p-2.5 rounded outline-none transition-colors placeholder:text-[#e9e9e7] placeholder:text-sm disabled:opacity-50"
               />
             </div>
 
@@ -146,7 +146,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ forcedMode, onPasswordSet 
             <button
               type="submit"
               disabled={isSubmitting || !newPassword || !confirmPassword}
-              className="w-full bg-[#296c00] hover:bg-[#1f5700] text-white font-bold py-2.5 rounded transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-full bg-[#4f46e5] hover:bg-[#4338ca] text-white font-bold py-2.5 rounded transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">
@@ -171,7 +171,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ forcedMode, onPasswordSet 
                 autoFocus
                 required
                 disabled={isSubmitting}
-                className="w-full bg-[#f4f4f3] border border-[#e9e9e7] focus:border-[#296c00] text-[#1b1c1a] p-2.5 rounded outline-none transition-colors placeholder:text-[#e9e9e7] placeholder:text-sm disabled:opacity-50"
+                className="w-full bg-[#f4f4f3] border border-[#e9e9e7] focus:border-[#4f46e5] text-[#1b1c1a] p-2.5 rounded outline-none transition-colors placeholder:text-[#e9e9e7] placeholder:text-sm disabled:opacity-50"
               />
             </div>
 
@@ -189,7 +189,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ forcedMode, onPasswordSet 
                   autoComplete="current-password"
                   required
                   disabled={isSubmitting}
-                  className="w-full bg-[#f4f4f3] border border-[#e9e9e7] focus:border-[#296c00] text-[#1b1c1a] p-2.5 pr-10 rounded outline-none transition-colors placeholder:text-[#e9e9e7] placeholder:text-sm disabled:opacity-50"
+                  className="w-full bg-[#f4f4f3] border border-[#e9e9e7] focus:border-[#4f46e5] text-[#1b1c1a] p-2.5 pr-10 rounded outline-none transition-colors placeholder:text-[#e9e9e7] placeholder:text-sm disabled:opacity-50"
                 />
                 <button
                   type="button"
@@ -213,7 +213,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ forcedMode, onPasswordSet 
             <button
               type="submit"
               disabled={isSubmitting || !email || !password}
-              className="w-full bg-[#296c00] hover:bg-[#1f5700] text-white font-bold py-2.5 rounded transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-full bg-[#4f46e5] hover:bg-[#4338ca] text-white font-bold py-2.5 rounded transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">
@@ -226,7 +226,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ forcedMode, onPasswordSet 
             <button
               type="button"
               onClick={() => { setMode('reset'); setError(null); setResetSent(false); }}
-              className="w-full text-center text-[#5f5f5b] hover:text-[#296c00] text-xs font-body-md transition-colors"
+              className="w-full text-center text-[#5f5f5b] hover:text-[#4f46e5] text-xs font-body-md transition-colors"
             >
               Forgot your password?
             </button>
@@ -234,7 +234,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ forcedMode, onPasswordSet 
         ) : (
           <form onSubmit={handleResetRequest} className="bg-white border border-[#e9e9e7] rounded-lg shadow-2xs p-6 space-y-4">
             {resetSent ? (
-              <div className="p-3 rounded bg-[#f0fae8] border border-[#296c00]/20 text-[#296c00] text-xs text-center font-body-md">
+              <div className="p-3 rounded bg-[#eef2ff] border border-[#4f46e5]/20 text-[#4f46e5] text-xs text-center font-body-md">
                 If that email has an account, a reset link is on its way — check your inbox.
               </div>
             ) : (
@@ -252,7 +252,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ forcedMode, onPasswordSet 
                     autoFocus
                     required
                     disabled={isSubmitting}
-                    className="w-full bg-[#f4f4f3] border border-[#e9e9e7] focus:border-[#296c00] text-[#1b1c1a] p-2.5 rounded outline-none transition-colors placeholder:text-[#e9e9e7] placeholder:text-sm disabled:opacity-50"
+                    className="w-full bg-[#f4f4f3] border border-[#e9e9e7] focus:border-[#4f46e5] text-[#1b1c1a] p-2.5 rounded outline-none transition-colors placeholder:text-[#e9e9e7] placeholder:text-sm disabled:opacity-50"
                   />
                 </div>
 
@@ -265,7 +265,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ forcedMode, onPasswordSet 
                 <button
                   type="submit"
                   disabled={isSubmitting || !email}
-                  className="w-full bg-[#296c00] hover:bg-[#1f5700] text-white font-bold py-2.5 rounded transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="w-full bg-[#4f46e5] hover:bg-[#4338ca] text-white font-bold py-2.5 rounded transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? 'Sending…' : 'Send Reset Link'}
                 </button>
@@ -275,7 +275,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ forcedMode, onPasswordSet 
             <button
               type="button"
               onClick={() => { setMode('signin'); setError(null); setResetSent(false); }}
-              className="w-full text-center text-[#5f5f5b] hover:text-[#296c00] text-xs font-body-md transition-colors"
+              className="w-full text-center text-[#5f5f5b] hover:text-[#4f46e5] text-xs font-body-md transition-colors"
             >
               Back to sign in
             </button>

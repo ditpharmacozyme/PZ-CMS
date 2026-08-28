@@ -30,22 +30,22 @@ export interface ToastItem {
 }
 
 const VARIANT_ACCENT: Record<NonNullable<ToastItem['variant']>, string> = {
-  success: 'border-[#296c00]',
+  success: 'border-[#4f46e5]',
   error: 'border-[#dc2626]',
 };
 
 const VARIANT_DOT: Record<NonNullable<ToastItem['variant']>, string> = {
-  success: 'bg-[#296c00]',
+  success: 'bg-[#4f46e5]',
   error: 'bg-[#dc2626]',
 };
 
 const VARIANT_PING: Record<NonNullable<ToastItem['variant']>, string> = {
-  success: 'bg-[#78d24b]',
+  success: 'bg-[#15803d]',
   error: 'bg-[#ffb4ab]',
 };
 
 const VARIANT_ACTION_TEXT: Record<NonNullable<ToastItem['variant']>, string> = {
-  success: 'text-[#78d24b]',
+  success: 'text-[#15803d]',
   error: 'text-[#ffb4ab]',
 };
 

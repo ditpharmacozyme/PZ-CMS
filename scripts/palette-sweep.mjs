@@ -32,6 +32,13 @@ export const MAPPINGS = [
   ['#935c00', '#b45309'],
   ['#ffddb0', '#fbf0e1'],
   ['#f7f6f0', '#fbfbfa'],
+  ['#296c00', '#4f46e5'],
+  ['#205400', '#4338ca'],
+  ['#1f5700', '#4338ca'],
+  ['#296951', '#4338ca'],
+  ['#aceecf', '#eef2ff'],
+  ['#f0fae8', '#eef2ff'],
+  ['#78d24b', '#15803d'],
 ];
 
 function walk(dir) {

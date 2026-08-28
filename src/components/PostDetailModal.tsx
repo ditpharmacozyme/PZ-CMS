@@ -243,8 +243,8 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
       <div className="bg-[#f4f4f3] border border-[#e9e9e7] w-full md:max-w-4xl md:rounded-lg shadow-2xl overflow-hidden max-h-[95dvh] md:max-h-[92vh] flex flex-col rounded-t-2xl md:rounded-lg sheet-modal relative">
         {isUploading && (
           <div className="absolute inset-0 bg-[#f4f4f3]/75 backdrop-blur-xs z-50 flex flex-col items-center justify-center pointer-events-auto">
-            <div className="w-8 h-8 rounded-full border-2 border-[#296c00] border-t-transparent animate-spin mb-2" />
-            <p className="font-label-caps text-[10px] text-[#296c00] font-bold uppercase tracking-wider">Uploading Image...</p>
+            <div className="w-8 h-8 rounded-full border-2 border-[#4f46e5] border-t-transparent animate-spin mb-2" />
+            <p className="font-label-caps text-[10px] text-[#4f46e5] font-bold uppercase tracking-wider">Uploading Image...</p>
           </div>
         )}
         {/* Drag handle (mobile only) */}
@@ -257,9 +257,9 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <span
               className="w-3 h-3 rounded-full flex-shrink-0"
-              style={{ backgroundColor: brand?.primaryColor || '#296c00' }}
+              style={{ backgroundColor: brand?.primaryColor || '#4f46e5' }}
             />
-            <span className="font-label-caps text-[11px] sm:text-xs font-bold text-[#296c00] uppercase truncate">
+            <span className="font-label-caps text-[11px] sm:text-xs font-bold text-[#4f46e5] uppercase truncate">
               {brand?.name} post
             </span>
           </div>
@@ -267,7 +267,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
           <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
             <button
               onClick={handleDuplicateClick}
-              className="px-2.5 sm:px-3 py-1.5 min-h-[38px] bg-[#f1f1f0] border border-[#e9e9e7] font-label-caps text-[11px] sm:text-xs text-[#1b1c1a] hover:bg-[#296c00] hover:text-white transition-all rounded font-bold flex items-center gap-1.5 cursor-pointer"
+              className="px-2.5 sm:px-3 py-1.5 min-h-[38px] bg-[#f1f1f0] border border-[#e9e9e7] font-label-caps text-[11px] sm:text-xs text-[#1b1c1a] hover:bg-[#4f46e5] hover:text-white transition-all rounded font-bold flex items-center gap-1.5 cursor-pointer"
               title="Duplicate Post"
             >
               <span className="material-symbols-outlined text-base">content_copy</span>
@@ -309,7 +309,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
                 type="text"
                 value={editedPost.title}
                 onChange={(e) => setEditedPost({ ...editedPost, title: e.target.value })}
-                className="w-full bg-white border border-[#e9e9e7] p-2.5 min-h-[44px] font-headline-md text-sm sm:text-base font-bold text-[#1b1c1a] focus:border-[#296c00] focus:outline-none rounded-xs"
+                className="w-full bg-white border border-[#e9e9e7] p-2.5 min-h-[44px] font-headline-md text-sm sm:text-base font-bold text-[#1b1c1a] focus:border-[#4f46e5] focus:outline-none rounded-xs"
               />
             </div>
 
@@ -320,7 +320,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
               <select
                 value={editedPost.brandId}
                 onChange={(e) => setEditedPost({ ...editedPost, brandId: e.target.value as BrandId })}
-                className="w-full bg-white border border-[#e9e9e7] p-2.5 min-h-[44px] font-label-caps text-xs font-bold text-[#1b1c1a] focus:border-[#296c00] focus:outline-none rounded-xs"
+                className="w-full bg-white border border-[#e9e9e7] p-2.5 min-h-[44px] font-label-caps text-xs font-bold text-[#1b1c1a] focus:border-[#4f46e5] focus:outline-none rounded-xs"
               >
                 {Object.values(BRANDS).map((b) => (
                   <option key={b.id} value={b.id}>
@@ -334,7 +334,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
           {/* STATUS -- derived from the stage checkboxes below, not set here */}
           <div className="bg-white p-3 sm:p-4 border border-[#e9e9e7] rounded shadow-xs space-y-2">
             <div className="flex items-center justify-between">
-              <label className="font-label-caps text-xs text-[#296c00] uppercase font-bold">
+              <label className="font-label-caps text-xs text-[#4f46e5] uppercase font-bold">
                 Status
               </label>
               <span
@@ -396,7 +396,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
                           setEditedPost(nextPost);
                           onSavePost(nextPost);
                         }}
-                        className="w-3.5 h-3.5 text-[#296c00] border-[#e9e9e7] rounded focus:ring-[#296c00]"
+                        className="w-3.5 h-3.5 text-[#4f46e5] border-[#e9e9e7] rounded focus:ring-[#4f46e5]"
                       />
                       <span className="font-body-md text-[11px] text-[#1b1c1a] truncate">{m.name} ({m.role})</span>
                     </label>
@@ -414,8 +414,8 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
           <div className="bg-white p-4 border border-[#e9e9e7] rounded space-y-3">
             <div className="flex items-center justify-between pb-2 border-b border-[#e9e9e7]">
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#296951]" style={{ fontSize: '18px' }}>alt_route</span>
-                <label className="font-label-caps text-[10px] text-[#296951] font-bold uppercase tracking-wider">
+                <span className="material-symbols-outlined text-[#4338ca]" style={{ fontSize: '18px' }}>alt_route</span>
+                <label className="font-label-caps text-[10px] text-[#4338ca] font-bold uppercase tracking-wider">
                   Who does what
                 </label>
               </div>
@@ -498,7 +498,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
                   type="checkbox"
                   checked={!!editedPost.stageCompletion?.designDone}
                   onChange={() => handleStageToggle('design')}
-                  className="w-4 h-4 text-[#296c00] border-[#e9e9e7] rounded"
+                  className="w-4 h-4 text-[#4f46e5] border-[#e9e9e7] rounded"
                 />
                 <div className="flex flex-col">
                   <span className="font-label-caps text-xs font-bold text-[#1b1c1a]">🎨 Design Done</span>
@@ -513,7 +513,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
                   type="checkbox"
                   checked={!!editedPost.stageCompletion?.publishDone}
                   onChange={() => handleStageToggle('publish')}
-                  className="w-4 h-4 text-[#296c00] border-[#e9e9e7] rounded"
+                  className="w-4 h-4 text-[#4f46e5] border-[#e9e9e7] rounded"
                 />
                 <div className="flex flex-col">
                   <span className="font-label-caps text-xs font-bold text-[#1b1c1a]">🚀 Published</span>
@@ -528,7 +528,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
                   type="checkbox"
                   checked={!!editedPost.stageCompletion?.engagementDone}
                   onChange={() => handleStageToggle('engagement')}
-                  className="w-4 h-4 text-[#296c00] border-[#e9e9e7] rounded"
+                  className="w-4 h-4 text-[#4f46e5] border-[#e9e9e7] rounded"
                 />
                 <div className="flex flex-col">
                   <span className="font-label-caps text-xs font-bold text-[#1b1c1a]">💬 Engagement Monitored</span>
@@ -544,8 +544,8 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
           <div className="bg-white p-4 border border-[#e9e9e7] rounded space-y-3">
             <div className="flex items-center justify-between gap-2 pb-2 border-b border-[#e9e9e7]">
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#296c00]" style={{ fontSize: '16px' }}>mark_email_unread</span>
-                <label className="font-label-caps text-[10px] text-[#296c00] font-bold uppercase">
+                <span className="material-symbols-outlined text-[#4f46e5]" style={{ fontSize: '16px' }}>mark_email_unread</span>
+                <label className="font-label-caps text-[10px] text-[#4f46e5] font-bold uppercase">
                   Instagram Posting Email Reminder
                 </label>
               </div>
@@ -557,7 +557,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
                   type="checkbox"
                   checked={editedPost.emailReminderEnabled !== false}
                   onChange={(e) => setEditedPost({ ...editedPost, emailReminderEnabled: e.target.checked })}
-                  className="w-4 h-4 text-[#296c00] border-[#e9e9e7] rounded focus:ring-[#296c00]"
+                  className="w-4 h-4 text-[#4f46e5] border-[#e9e9e7] rounded focus:ring-[#4f46e5]"
                 />
                 <span className="font-label-caps text-[10px] text-[#5f5f5b] font-bold">
                   {editedPost.emailReminderEnabled !== false ? 'On' : 'Off'}
@@ -661,7 +661,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
                   type="button"
                   onClick={handleSendTestEmail}
                   disabled={sendingEmail}
-                  className="px-2.5 py-1 bg-[#296c00] text-white font-label-caps text-[10px] font-bold rounded hover:bg-[#1f5700] disabled:opacity-50 transition-all flex items-center gap-1 whitespace-nowrap"
+                  className="px-2.5 py-1 bg-[#4f46e5] text-white font-label-caps text-[10px] font-bold rounded hover:bg-[#4338ca] disabled:opacity-50 transition-all flex items-center gap-1 whitespace-nowrap"
                   title="Send immediate reminder email test"
                 >
                   <span className="material-symbols-outlined text-xs">send</span>
@@ -669,7 +669,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
                 </button>
               </div>
               {emailStatus && (
-                <p className={`text-[10px] font-label-caps mt-1 font-bold ${emailStatus.includes('✓') ? 'text-[#296c00]' : 'text-[#dc2626]'}`}>
+                <p className={`text-[10px] font-label-caps mt-1 font-bold ${emailStatus.includes('✓') ? 'text-[#15803d]' : 'text-[#dc2626]'}`}>
                   {emailStatus}
                 </p>
               )}
@@ -680,7 +680,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
           {/* Auto Spec Helper Banner */}
           <div className="p-3 bg-[#f1f1f0] border border-[#e9e9e7] rounded flex items-center justify-between text-xs font-label-caps">
             <div>
-              <span className="font-bold text-[#296c00]">{spec?.name}:</span>{' '}
+              <span className="font-bold text-[#4f46e5]">{spec?.name}:</span>{' '}
               <span className="text-[#1b1c1a] font-code-sm">{spec?.dimensions}</span> ({spec?.aspectRatio})
             </div>
             <span className="text-[#5f5f5b] text-[10px]">{spec?.description}</span>
@@ -707,14 +707,14 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
                   onChange={(e) => setEditedPost({ ...editedPost, caption: e.target.value })}
                   rows={6}
                   placeholder="Write caption here..."
-                  className="w-full bg-white border border-[#e9e9e7] p-3 font-body-md text-xs text-[#1b1c1a] focus:border-[#296c00] focus:outline-none"
+                  className="w-full bg-white border border-[#e9e9e7] p-3 font-body-md text-xs text-[#1b1c1a] focus:border-[#4f46e5] focus:outline-none"
                 />
                 {/* Reuse saved copy button -- same action + same label as NewPostModal's
                     Step 2, so it doesn't read as a second, differently-named feature. */}
                 <button
                   type="button"
                   onClick={() => setShowBankDrawer(!showBankDrawer)}
-                  className="absolute bottom-2 right-2 flex items-center gap-1 bg-[#f1f1f0] border border-[#e9e9e7] text-[#296c00] text-[10px] font-label-caps font-bold px-2 py-1 rounded hover:bg-[#aceecf] transition-colors"
+                  className="absolute bottom-2 right-2 flex items-center gap-1 bg-[#f1f1f0] border border-[#e9e9e7] text-[#4f46e5] text-[10px] font-label-caps font-bold px-2 py-1 rounded hover:bg-[#eef2ff] transition-colors"
                   title="Reuse saved copy"
                 >
                   <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>article</span>
@@ -754,7 +754,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
                             setEditedPost(prev => ({ ...prev, caption: prev.caption + (prev.caption ? '\n\n' : '') + item.text }));
                             setShowBankDrawer(false);
                           }}
-                          className="w-full text-left px-3 py-2 text-[10px] text-[#1b1c1a] hover:bg-[#f0fae8] border-b border-[#e9e9e7]/50 leading-relaxed"
+                          className="w-full text-left px-3 py-2 text-[10px] text-[#1b1c1a] hover:bg-[#eef2ff] border-b border-[#e9e9e7]/50 leading-relaxed"
                         >
                           <p className="line-clamp-3">{item.text}</p>
                           {item.tags && item.tags.length > 0 && (
@@ -775,7 +775,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
 
               {/* Inline Brand Guardrails Shelf */}
               <div className="p-3 bg-[#f4f4f3] border border-[#e9e9e7] rounded space-y-2 text-xs">
-                <span className="font-label-caps text-[10px] text-[#296c00] font-bold block uppercase">
+                <span className="font-label-caps text-[10px] text-[#4f46e5] font-bold block uppercase">
                   Inline Brand Voice Rules ({brand?.name})
                 </span>
                 <ul className="space-y-1 text-[11px] font-body-md text-[#57574f] list-disc list-inside">
@@ -799,7 +799,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
                     )
                   )}
                   {copyFeedback && (
-                    <span className="font-label-caps text-[10px] text-[#296c00] font-bold">
+                    <span className="font-label-caps text-[10px] text-[#4f46e5] font-bold">
                       {copyFeedback}
                     </span>
                   )}
@@ -818,7 +818,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
               <div
                 {...dropHandlers}
                 className={`h-44 bg-white border rounded overflow-hidden flex items-center justify-center relative shadow-inner transition-colors ${
-                  isDragging ? 'border-[#296c00] border-2 bg-[#f0fae8]' : 'border-[#e9e9e7]'
+                  isDragging ? 'border-[#4f46e5] border-2 bg-[#eef2ff]' : 'border-[#e9e9e7]'
                 }`}
               >
                 {editedPost.visualUrl ? (
@@ -849,10 +849,10 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
                     accept="image/*"
                     onChange={handleFileUpload}
                     disabled={isUploading}
-                    className="w-full text-xs font-label-caps text-[#57574f] file:mr-2 file:py-1 file:px-3 file:border-0 file:text-xs file:font-label-caps file:bg-[#296c00] file:text-white hover:file:bg-[#1f5700] disabled:opacity-60"
+                    className="w-full text-xs font-label-caps text-[#57574f] file:mr-2 file:py-1 file:px-3 file:border-0 file:text-xs file:font-label-caps file:bg-[#4f46e5] file:text-white hover:file:bg-[#4338ca] disabled:opacity-60"
                   />
                   {isUploading && (
-                    <p className="mt-1 text-[10px] font-label-caps text-[#296c00]">Uploading…</p>
+                    <p className="mt-1 text-[10px] font-label-caps text-[#4f46e5]">Uploading…</p>
                   )}
                   {uploadError && (
                     <p className="mt-1 text-[11px] font-body-md text-[#dc2626] bg-[#fcebeb] border border-[#ffb4ab] rounded p-2">
@@ -879,7 +879,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
 
           {/* COMMENTS & COLLABORATION THREAD */}
           <div className="bg-white p-4 border border-[#e9e9e7] rounded space-y-3">
-            <h3 className="font-label-caps text-xs font-bold text-[#296c00] uppercase">
+            <h3 className="font-label-caps text-xs font-bold text-[#4f46e5] uppercase">
               Collaboration & Feedback Thread ({editedPost.comments.length})
             </h3>
 
@@ -892,7 +892,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
                 editedPost.comments.map((c) => (
                   <div key={c.id} className="p-2.5 bg-[#f4f4f3] border border-[#e9e9e7] rounded text-xs">
                     <div className="flex justify-between items-center mb-1">
-                      <span className="font-label-caps font-bold text-[#296c00]">{c.author}</span>
+                      <span className="font-label-caps font-bold text-[#4f46e5]">{c.author}</span>
                       <span className="font-code-sm text-[10px] text-[#5f5f5b]">{c.timestamp}</span>
                     </div>
                     <p className="font-body-md text-[#1b1c1a]">{c.text}</p>
@@ -913,7 +913,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
               />
               <button
                 onClick={handleAddComment}
-                className="bg-[#296c00] text-white px-4 py-1.5 font-label-caps text-xs rounded hover:bg-[#1f5700]"
+                className="bg-[#4f46e5] text-white px-4 py-1.5 font-label-caps text-xs rounded hover:bg-[#4338ca]"
               >
                 Comment
               </button>
@@ -929,7 +929,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
               {editedPost.activityLog.map((log) => (
                 <div key={log.id} className="flex justify-between">
                   <span>
-                    • <strong className="text-[#296c00]">{log.actor}:</strong> {log.action}
+                    • <strong className="text-[#4f46e5]">{log.actor}:</strong> {log.action}
                   </span>
                   <span className="text-[#5f5f5b]">{log.timestamp}</span>
                 </div>
@@ -949,7 +949,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
 
           <button
             onClick={handleSave}
-            className="flex-1 md:flex-none px-5 sm:px-6 py-2.5 min-h-[48px] bg-[#296c00] text-white font-label-caps text-xs font-bold rounded shadow-xs hover:bg-[#1f5700] active:scale-95 transition-all"
+            className="flex-1 md:flex-none px-5 sm:px-6 py-2.5 min-h-[48px] bg-[#4f46e5] text-white font-label-caps text-xs font-bold rounded shadow-xs hover:bg-[#4338ca] active:scale-95 transition-all"
           >
             Save Changes
           </button>

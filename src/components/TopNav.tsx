@@ -36,7 +36,7 @@ interface TopNavProps {
 }
 
 const AVATAR_COLORS = [
-  '#296c00', '#0A66C2', '#d97706', '#7c3aed',
+  '#4f46e5', '#0A66C2', '#d97706', '#7c3aed',
   '#db2777', '#059669', '#dc2626', '#0891b2'
 ];
 
@@ -183,9 +183,9 @@ export const TopNav: React.FC<TopNavProps> = ({
               aria-haspopup="listbox"
               aria-expanded={showBrandPicker}
             >
-              <span className="material-symbols-outlined text-[#296c00] text-2xl hidden sm:inline-block">science</span>
+              <span className="material-symbols-outlined text-[#4f46e5] text-2xl hidden sm:inline-block">science</span>
               <div className="text-left">
-                <p className="font-headline-md text-base sm:text-lg font-bold text-[#296c00] tracking-tight leading-none flex items-center gap-1">
+                <p className="font-headline-md text-base sm:text-lg font-bold text-[#4f46e5] tracking-tight leading-none flex items-center gap-1">
                   {selectedBrandFilter === 'all'
                     ? 'All 5 Brands'
                     : (BRANDS[selectedBrandFilter]?.name || 'Pharmacozyme')}
@@ -193,7 +193,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                 </p>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <span className="font-label-caps text-[9px] text-[#5f5f5b] uppercase tracking-wider">Brand-Ops Studio</span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#78d24b] animate-pulse flex-shrink-0" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#15803d] animate-pulse flex-shrink-0" />
                 </div>
               </div>
             </button>
@@ -222,7 +222,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                         }}
                         className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded text-left font-label-caps text-xs transition-colors ${
                           isSelected
-                            ? 'bg-[#aceecf] text-[#07513b] font-bold'
+                            ? 'bg-[#eef2ff] text-[#07513b] font-bold'
                             : 'text-[#57574f] hover:bg-[#f1f1f0]'
                         }`}
                       >
@@ -255,7 +255,7 @@ export const TopNav: React.FC<TopNavProps> = ({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search posts, captions, tags..."
-            className="w-full bg-[#f5f4f0] border-b-2 border-[#e9e9e7] pl-9 pr-8 py-2 font-label-caps text-xs text-[#1b1c1a] focus:bg-white focus:border-[#296c00] focus:outline-none transition-all rounded-xs"
+            className="w-full bg-[#f5f4f0] border-b-2 border-[#e9e9e7] pl-9 pr-8 py-2 font-label-caps text-xs text-[#1b1c1a] focus:bg-white focus:border-[#4f46e5] focus:outline-none transition-all rounded-xs"
           />
           {searchQuery ? (
             <button onClick={() => onSearchChange('')} className="absolute right-2.5 text-[#5f5f5b] hover:text-[#1b1c1a]">
@@ -283,7 +283,7 @@ export const TopNav: React.FC<TopNavProps> = ({
           {/* New Post button (desktop) */}
           <button
             onClick={onOpenNewPostModal}
-            className="hidden sm:flex items-center gap-1 bg-[#f1f1f0] border border-[#e9e9e7] px-3 py-2 rounded font-label-caps text-xs text-[#296c00] hover:bg-[#296c00] hover:text-white transition-all font-bold min-h-[38px]"
+            className="hidden sm:flex items-center gap-1 bg-[#f1f1f0] border border-[#e9e9e7] px-3 py-2 rounded font-label-caps text-xs text-[#4f46e5] hover:bg-[#4f46e5] hover:text-white transition-all font-bold min-h-[38px]"
           >
             <span className="material-symbols-outlined text-sm">add_circle</span>
             <span>+ Post</span>
@@ -335,7 +335,7 @@ export const TopNav: React.FC<TopNavProps> = ({
           {/* Mark as Posted — hidden on mobile */}
           <button
             onClick={onPublishNow}
-            className="hidden sm:block bg-[#296c00] text-white font-label-caps text-xs font-bold px-3 sm:px-4 py-2 rounded shadow-xs hover:bg-[#1f5700] active:scale-95 transition-all min-h-[38px] whitespace-nowrap cursor-pointer"
+            className="hidden sm:block bg-[#4f46e5] text-white font-label-caps text-xs font-bold px-3 sm:px-4 py-2 rounded shadow-xs hover:bg-[#4338ca] active:scale-95 transition-all min-h-[38px] whitespace-nowrap cursor-pointer"
           >
             Mark Posted
           </button>
@@ -349,10 +349,10 @@ export const TopNav: React.FC<TopNavProps> = ({
             >
               <div
                 className="w-8 h-8 rounded-full border border-[#e9e9e7] flex items-center justify-center flex-shrink-0 text-white font-label-caps text-[11px] font-bold shadow-2xs relative"
-                style={{ backgroundColor: activeTeammate?.color || '#296c00' }}
+                style={{ backgroundColor: activeTeammate?.color || '#4f46e5' }}
               >
                 {activeTeammate ? (activeTeammate.avatarInitials || getInitials(activeTeammate.name)) : 'G'}
-                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-[#78d24b] border border-white rounded-full" />
+                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-[#15803d] border border-white rounded-full" />
               </div>
               <div className="hidden lg:flex flex-col text-left pr-1.5 max-w-[120px]">
                 <span className="font-headline-md text-[11px] font-bold text-[#1b1c1a] leading-none truncate">
@@ -369,7 +369,7 @@ export const TopNav: React.FC<TopNavProps> = ({
               <div className="fixed sm:absolute right-2 sm:right-0 top-16 sm:top-auto sm:mt-2 w-[calc(100vw-1rem)] sm:w-64 bg-white border border-[#e9e9e7] shadow-2xl rounded-lg z-50 p-4 flex flex-col space-y-3">
                 <div className="flex items-center justify-between pb-2 border-b border-[#e9e9e7]">
                   <div className="flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-[#296c00] text-lg">account_circle</span>
+                    <span className="material-symbols-outlined text-[#4f46e5] text-lg">account_circle</span>
                     <h3 className="font-label-caps text-[10px] font-bold text-[#1b1c1a] uppercase tracking-wider">Authenticated Profile</h3>
                   </div>
                   <button onClick={() => setShowActiveTeammatePopover(false)} className="text-[#5f5f5b] hover:text-[#1b1c1a] p-0.5 cursor-pointer">
@@ -388,7 +388,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-bold text-[#1b1c1a] truncate">{activeTeammate.name}</p>
                       <p className="text-[10px] text-[#5f5f5b] truncate">{activeTeammate.email}</p>
-                      <span className="inline-block mt-1 font-label-caps text-[8px] font-bold uppercase bg-[#296c00]/15 text-[#296c00] px-1.5 py-0.5 rounded">
+                      <span className="inline-block mt-1 font-label-caps text-[8px] font-bold uppercase bg-[#4f46e5]/15 text-[#4f46e5] px-1.5 py-0.5 rounded">
                         {activeTeammate.userRole || 'Admin'}
                       </span>
                     </div>
@@ -440,7 +440,7 @@ export const TopNav: React.FC<TopNavProps> = ({
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Search posts, captions, tags..."
               autoFocus
-              className="w-full bg-[#f5f4f0] border border-[#e9e9e7] pl-9 pr-8 py-2 font-label-caps text-xs text-[#1b1c1a] focus:bg-white focus:border-[#296c00] focus:outline-none rounded"
+              className="w-full bg-[#f5f4f0] border border-[#e9e9e7] pl-9 pr-8 py-2 font-label-caps text-xs text-[#1b1c1a] focus:bg-white focus:border-[#4f46e5] focus:outline-none rounded"
             />
             {searchQuery && (
               <button onClick={() => onSearchChange('')} className="absolute right-2.5 top-2 text-[#5f5f5b]">
@@ -458,7 +458,7 @@ export const TopNav: React.FC<TopNavProps> = ({
             {/* Modal header */}
             <div className="p-5 border-b border-[#e9e9e7] flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#296c00]">settings</span>
+                <span className="material-symbols-outlined text-[#4f46e5]">settings</span>
                 <h2 className="font-headline-md text-lg font-bold text-[#1b1c1a]">Settings</h2>
               </div>
               <button
@@ -475,7 +475,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                 onClick={() => setSettingsTab('team')}
                 className={`flex-1 py-2.5 font-label-caps text-xs font-bold border-b-2 transition-colors flex items-center justify-center gap-1.5 ${
                   settingsTab === 'team'
-                    ? 'border-[#296c00] text-[#296c00] bg-[#f9f9f6]'
+                    ? 'border-[#4f46e5] text-[#4f46e5] bg-[#f9f9f6]'
                     : 'border-transparent text-[#5f5f5b] hover:text-[#1b1c1a]'
                 }`}
               >
@@ -486,7 +486,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                 onClick={() => setSettingsTab('system')}
                 className={`flex-1 py-2.5 font-label-caps text-xs font-bold border-b-2 transition-colors flex items-center justify-center gap-1.5 ${
                   settingsTab === 'system'
-                    ? 'border-[#296c00] text-[#296c00] bg-[#f9f9f6]'
+                    ? 'border-[#4f46e5] text-[#4f46e5] bg-[#f9f9f6]'
                     : 'border-transparent text-[#5f5f5b] hover:text-[#1b1c1a]'
                 }`}
               >
@@ -508,7 +508,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                     {activeTeammate?.userRole === 'Admin' && (
                       <button
                         onClick={() => { setIsAddingMember(true); setEditingMember(null); }}
-                        className="flex items-center gap-1 bg-[#296c00] text-white px-3 py-2 rounded font-label-caps text-xs font-bold hover:bg-[#1f5700] transition-colors"
+                        className="flex items-center gap-1 bg-[#4f46e5] text-white px-3 py-2 rounded font-label-caps text-xs font-bold hover:bg-[#4338ca] transition-colors"
                       >
                         <span className="material-symbols-outlined text-sm">person_add</span>
                         Add Person
@@ -520,19 +520,19 @@ export const TopNav: React.FC<TopNavProps> = ({
                       creates their real login (invite email), which only an Admin
                       can trigger (enforced server-side too). */}
                   {isAddingMember && (
-                    <div className="p-4 bg-[#f0fdf4] border border-[#296c00]/30 rounded space-y-3">
+                    <div className="p-4 bg-[#f0fdf4] border border-[#4f46e5]/30 rounded space-y-3">
                       {inviteSentTo ? (
                         <>
-                          <div className="p-3 rounded bg-white border border-[#296c00]/20 text-[#296c00] text-xs font-body-md">
+                          <div className="p-3 rounded bg-white border border-[#4f46e5]/20 text-[#4f46e5] text-xs font-body-md">
                             Invite sent to <strong>{inviteSentTo}</strong> — they'll get an email to set their password and log in.
                           </div>
-                          <button onClick={handleCloseAddMember} className="w-full bg-[#296c00] text-white py-2 font-label-caps text-xs rounded font-bold hover:bg-[#1f5700]">
+                          <button onClick={handleCloseAddMember} className="w-full bg-[#4f46e5] text-white py-2 font-label-caps text-xs rounded font-bold hover:bg-[#4338ca]">
                             Done
                           </button>
                         </>
                       ) : (
                         <>
-                          <p className="font-label-caps text-[10px] text-[#296c00] font-bold uppercase">New Team Member</p>
+                          <p className="font-label-caps text-[10px] text-[#4f46e5] font-bold uppercase">New Team Member</p>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div className="space-y-1">
                               <label className="font-label-caps text-[9px] text-[#5f5f5b] uppercase block">Full Name *</label>
@@ -542,7 +542,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                                 onChange={e => setNewMember(p => ({ ...p, name: e.target.value }))}
                                 placeholder="e.g. Jane Smith"
                                 disabled={isCreatingAccount}
-                                className="w-full bg-white border border-[#e9e9e7] p-2 text-xs rounded focus:outline-none focus:border-[#296c00] disabled:opacity-50"
+                                className="w-full bg-white border border-[#e9e9e7] p-2 text-xs rounded focus:outline-none focus:border-[#4f46e5] disabled:opacity-50"
                               />
                             </div>
                             <div className="space-y-1">
@@ -553,7 +553,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                                 onChange={e => setNewMember(p => ({ ...p, role: e.target.value }))}
                                 placeholder="e.g. Designer"
                                 disabled={isCreatingAccount}
-                                className="w-full bg-white border border-[#e9e9e7] p-2 text-xs rounded focus:outline-none focus:border-[#296c00] disabled:opacity-50"
+                                className="w-full bg-white border border-[#e9e9e7] p-2 text-xs rounded focus:outline-none focus:border-[#4f46e5] disabled:opacity-50"
                               />
                             </div>
                             <div className="col-span-2 space-y-1">
@@ -564,7 +564,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                                 onChange={e => setNewMember(p => ({ ...p, email: e.target.value }))}
                                 placeholder="jane@pharmacozyme.com"
                                 disabled={isCreatingAccount}
-                                className="w-full bg-white border border-[#e9e9e7] p-2 text-xs rounded focus:outline-none focus:border-[#296c00] disabled:opacity-50"
+                                className="w-full bg-white border border-[#e9e9e7] p-2 text-xs rounded focus:outline-none focus:border-[#4f46e5] disabled:opacity-50"
                               />
                             </div>
                             <div className="col-span-2 space-y-1">
@@ -593,7 +593,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                             <button
                               onClick={handleSaveNewMember}
                               disabled={isCreatingAccount || !newMember.name?.trim() || !newMember.role?.trim() || !newMember.email?.trim()}
-                              className="flex-1 bg-[#296c00] text-white py-2 font-label-caps text-xs rounded font-bold hover:bg-[#1f5700] disabled:opacity-40 disabled:cursor-not-allowed"
+                              className="flex-1 bg-[#4f46e5] text-white py-2 font-label-caps text-xs rounded font-bold hover:bg-[#4338ca] disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                               {isCreatingAccount ? (
                                 <span className="flex items-center justify-center gap-2">
@@ -628,7 +628,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                                   type="text"
                                   value={editingMember.name}
                                   onChange={e => setEditingMember(p => p ? { ...p, name: e.target.value } : p)}
-                                  className="w-full bg-white border border-[#e9e9e7] p-2 text-xs rounded focus:outline-none focus:border-[#296c00]"
+                                  className="w-full bg-white border border-[#e9e9e7] p-2 text-xs rounded focus:outline-none focus:border-[#4f46e5]"
                                 />
                               </div>
                               <div className="space-y-1">
@@ -640,7 +640,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                                   disabled={activeTeammate?.userRole !== 'Admin'}
                                   value={editingMember.role}
                                   onChange={e => setEditingMember(p => p ? { ...p, role: e.target.value } : p)}
-                                  className="w-full bg-white border border-[#e9e9e7] p-2 text-xs rounded focus:outline-none focus:border-[#296c00] disabled:bg-[#f1f1f0] disabled:text-[#5f5f5b]"
+                                  className="w-full bg-white border border-[#e9e9e7] p-2 text-xs rounded focus:outline-none focus:border-[#4f46e5] disabled:bg-[#f1f1f0] disabled:text-[#5f5f5b]"
                                 />
                               </div>
                               <div className="col-span-2 space-y-1">
@@ -651,7 +651,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                                   disabled={activeTeammate?.userRole !== 'Admin'}
                                   value={editingMember.userRole}
                                   onChange={e => setEditingMember(p => p ? { ...p, userRole: e.target.value as TeamMember['userRole'] } : p)}
-                                  className="w-full bg-white border border-[#e9e9e7] p-2 text-xs rounded focus:outline-none focus:border-[#296c00] disabled:bg-[#f1f1f0] disabled:text-[#5f5f5b]"
+                                  className="w-full bg-white border border-[#e9e9e7] p-2 text-xs rounded focus:outline-none focus:border-[#4f46e5] disabled:bg-[#f1f1f0] disabled:text-[#5f5f5b]"
                                 >
                                   <option value="Admin">Admin</option>
                                   <option value="Manager">Manager</option>
@@ -665,7 +665,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                                   type="email"
                                   value={editingMember.email}
                                   onChange={e => setEditingMember(p => p ? { ...p, email: e.target.value } : p)}
-                                  className="w-full bg-white border border-[#e9e9e7] p-2 text-xs rounded focus:outline-none focus:border-[#296c00]"
+                                  className="w-full bg-white border border-[#e9e9e7] p-2 text-xs rounded focus:outline-none focus:border-[#4f46e5]"
                                 />
                               </div>
                               <div className="col-span-2 space-y-1">
@@ -675,7 +675,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                                   value={editingMember.passcode || ''}
                                   onChange={e => setEditingMember(p => p ? { ...p, passcode: e.target.value } : p)}
                                   placeholder="Leave blank to keep current"
-                                  className="w-full bg-white border border-[#e9e9e7] p-2 text-xs rounded focus:outline-none focus:border-[#296c00]"
+                                  className="w-full bg-white border border-[#e9e9e7] p-2 text-xs rounded focus:outline-none focus:border-[#4f46e5]"
                                 />
                               </div>
                               <div className="col-span-2 space-y-1">
@@ -693,7 +693,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                               </div>
                             </div>
                             <div className="flex gap-2">
-                              <button onClick={handleSaveEdit} className="flex-1 bg-[#296c00] text-white py-1.5 font-label-caps text-xs rounded font-bold hover:bg-[#1f5700]">Save</button>
+                              <button onClick={handleSaveEdit} className="flex-1 bg-[#4f46e5] text-white py-1.5 font-label-caps text-xs rounded font-bold hover:bg-[#4338ca]">Save</button>
                               <button onClick={() => setEditingMember(null)} className="px-4 py-1.5 border border-[#e9e9e7] font-label-caps text-xs rounded hover:bg-[#f1f1f0]">Cancel</button>
                             </div>
                           </div>
@@ -713,7 +713,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                             <div className="flex gap-1 flex-shrink-0">
                               <button
                                 onClick={() => setEditingMember({ ...member, passcode: '' })}
-                                className="p-1.5 text-[#296c00] hover:bg-[#f1f1f0] rounded"
+                                className="p-1.5 text-[#4f46e5] hover:bg-[#f1f1f0] rounded"
                                 title="Edit"
                               >
                                 <span className="material-symbols-outlined text-base">edit</span>
@@ -741,12 +741,12 @@ export const TopNav: React.FC<TopNavProps> = ({
               {settingsTab === 'system' && (
                 <div className="space-y-4 text-xs font-body-md text-[#57574f]">
                   <div className="p-3 bg-[#f4f4f3] border border-[#e9e9e7] rounded space-y-2">
-                    <p className="font-label-caps text-[10px] text-[#296c00] font-bold uppercase">Google Drive / Apps Script</p>
+                    <p className="font-label-caps text-[10px] text-[#4f46e5] font-bold uppercase">Google Drive / Apps Script</p>
                     <p>Images upload straight to Google Drive via Apps Script — nothing is stored on this device.</p>
                     {onSelectTab && (
                       <button
                         onClick={() => { onSelectTab('integrations'); setShowSettingsModal(false); }}
-                        className="w-full mt-1 bg-[#296c00] text-white py-2 px-3 font-label-caps text-xs rounded hover:bg-[#1f5700] font-bold flex items-center justify-center gap-1.5"
+                        className="w-full mt-1 bg-[#4f46e5] text-white py-2 px-3 font-label-caps text-xs rounded hover:bg-[#4338ca] font-bold flex items-center justify-center gap-1.5"
                       >
                         <span className="material-symbols-outlined text-sm">terminal</span>
                         <span>Open Automation Settings</span>
@@ -755,11 +755,11 @@ export const TopNav: React.FC<TopNavProps> = ({
                   </div>
 
                   <div className="p-3 bg-[#f4f4f3] border border-[#e9e9e7] rounded space-y-2">
-                    <p className="font-label-caps text-[10px] text-[#296c00] font-bold uppercase">Shared Data</p>
+                    <p className="font-label-caps text-[10px] text-[#4f46e5] font-bold uppercase">Shared Data</p>
                     {isRemoteConfigured ? (
                       <>
                         <p className="flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#296c00] flex-shrink-0" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#4f46e5] flex-shrink-0" />
                           Connected — every change syncs live for everyone with this app. Nothing to click.
                         </p>
                         {onImportLocalData && (
@@ -774,7 +774,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                                 }
                               }}
                               disabled={isImportingData}
-                              className="w-full mt-1 bg-white border border-[#296c00] text-[#296c00] py-2 px-3 font-label-caps text-xs rounded hover:bg-[#296c00] hover:text-white disabled:opacity-50 font-bold flex items-center justify-center gap-1.5"
+                              className="w-full mt-1 bg-white border border-[#4f46e5] text-[#4f46e5] py-2 px-3 font-label-caps text-xs rounded hover:bg-[#4f46e5] hover:text-white disabled:opacity-50 font-bold flex items-center justify-center gap-1.5"
                             >
                               <span className="material-symbols-outlined text-sm">cloud_upload</span>
                               <span>{isImportingData ? 'Importing…' : 'Import old local data (one-time)'}</span>
@@ -792,7 +792,7 @@ export const TopNav: React.FC<TopNavProps> = ({
 
                   {/* Data Export & Backup */}
                   <div className="p-3 bg-[#f4f4f3] border border-[#e9e9e7] rounded space-y-2">
-                    <p className="font-label-caps text-[10px] text-[#296c00] font-bold uppercase flex items-center gap-1">
+                    <p className="font-label-caps text-[10px] text-[#4f46e5] font-bold uppercase flex items-center gap-1">
                       <span className="material-symbols-outlined text-sm">download</span>
                       <span>1-Click Offline Backup & Export</span>
                     </p>
@@ -805,7 +805,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                           onClick={onExportCSV}
                           className="bg-white border border-[#e9e9e7] text-[#1b1c1a] hover:bg-[#f1f1f0] font-label-caps text-xs font-bold py-1.5 px-3 rounded flex items-center justify-center gap-1 transition-colors"
                         >
-                          <span className="material-symbols-outlined text-sm text-[#296c00]">csv</span>
+                          <span className="material-symbols-outlined text-sm text-[#4f46e5]">csv</span>
                           <span>Export CSV</span>
                         </button>
                       )}
@@ -814,7 +814,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                           onClick={onExportJSON}
                           className="bg-white border border-[#e9e9e7] text-[#1b1c1a] hover:bg-[#f1f1f0] font-label-caps text-xs font-bold py-1.5 px-3 rounded flex items-center justify-center gap-1 transition-colors"
                         >
-                          <span className="material-symbols-outlined text-sm text-[#296c00]">javascript</span>
+                          <span className="material-symbols-outlined text-sm text-[#4f46e5]">javascript</span>
                           <span>Export JSON</span>
                         </button>
                       )}
@@ -824,7 +824,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                   {/* Automated Rolling Local Backups */}
                   <div className="p-3 bg-[#f4f4f3] border border-[#e9e9e7] rounded space-y-2.5">
                     <div className="flex items-center justify-between">
-                      <p className="font-label-caps text-[10px] text-[#296c00] font-bold uppercase flex items-center gap-1">
+                      <p className="font-label-caps text-[10px] text-[#4f46e5] font-bold uppercase flex items-center gap-1">
                         <span className="material-symbols-outlined text-sm">history</span>
                         <span>Automated Rolling Snapshots</span>
                       </p>
@@ -834,7 +834,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                             onCreateSnapshotNow();
                             setRollingBackups(getRollingBackups());
                           }}
-                          className="px-2 py-1 bg-white border border-[#e9e9e7] hover:bg-[#296c00] hover:text-white text-[#1b1c1a] font-label-caps text-[10px] font-bold rounded transition-colors flex items-center gap-1 cursor-pointer"
+                          className="px-2 py-1 bg-white border border-[#e9e9e7] hover:bg-[#4f46e5] hover:text-white text-[#1b1c1a] font-label-caps text-[10px] font-bold rounded transition-colors flex items-center gap-1 cursor-pointer"
                         >
                           <span className="material-symbols-outlined text-xs">add</span>
                           <span>Snapshot Now</span>
@@ -873,7 +873,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                                       setShowSettingsModal(false);
                                     }
                                   }}
-                                  className="px-2 py-1 bg-[#f0fae8] text-[#296c00] hover:bg-[#aceecf] font-label-caps text-[9px] font-bold rounded cursor-pointer transition-colors"
+                                  className="px-2 py-1 bg-[#eef2ff] text-[#4f46e5] hover:bg-[#eef2ff] font-label-caps text-[9px] font-bold rounded cursor-pointer transition-colors"
                                 >
                                   Restore
                                 </button>
@@ -918,7 +918,7 @@ export const TopNav: React.FC<TopNavProps> = ({
             <div className="p-4 border-t border-[#e9e9e7] flex justify-end">
               <button
                 onClick={() => { setShowSettingsModal(false); setEditingMember(null); setIsAddingMember(false); }}
-                className="bg-[#296c00] text-white px-5 py-2.5 font-label-caps text-xs font-bold rounded min-h-[40px] hover:bg-[#1f5700]"
+                className="bg-[#4f46e5] text-white px-5 py-2.5 font-label-caps text-xs font-bold rounded min-h-[40px] hover:bg-[#4338ca]"
               >
                 Done
               </button>

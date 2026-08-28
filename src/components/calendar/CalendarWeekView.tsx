@@ -60,7 +60,7 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
           onClick={onDuplicateWeekForward}
           className="flex items-center gap-1.5 bg-white border border-[#e9e9e7] hover:bg-[#f1f1f0] text-[#1b1c1a] font-label-caps text-xs font-bold px-3 py-1.5 rounded-lg shadow-2xs transition-all cursor-pointer"
         >
-          <span className="material-symbols-outlined text-sm text-[#296c00]">content_copy</span>
+          <span className="material-symbols-outlined text-sm text-[#4f46e5]">content_copy</span>
           <span>Duplicate Week → Next Week</span>
         </button>
         <label className="flex items-center gap-1.5 text-xs text-[#5f5f5b] cursor-pointer">
@@ -68,7 +68,7 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
             type="checkbox"
             checked={clearCaptionsOnDuplicate}
             onChange={(e) => onSetClearCaptionsOnDuplicate(e.target.checked)}
-            className="w-3.5 h-3.5 text-[#296c00] border-[#e9e9e7] rounded focus:ring-[#296c00]"
+            className="w-3.5 h-3.5 text-[#4f46e5] border-[#e9e9e7] rounded focus:ring-[#4f46e5]"
           />
           <span className="font-label-caps text-[11px]">Clear captions when duplicating</span>
         </label>
@@ -93,23 +93,23 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
               data-date-cell={dateStr}
               onDragOver={(e) => {
                 e.preventDefault();
-                e.currentTarget.classList.add('ring-2', 'ring-[#296c00]', 'bg-[#f0fae8]');
+                e.currentTarget.classList.add('ring-2', 'ring-[#4f46e5]', 'bg-[#eef2ff]');
               }}
               onDragLeave={(e) => {
-                e.currentTarget.classList.remove('ring-2', 'ring-[#296c00]', 'bg-[#f0fae8]');
+                e.currentTarget.classList.remove('ring-2', 'ring-[#4f46e5]', 'bg-[#eef2ff]');
               }}
               onDrop={(e) => {
-                e.currentTarget.classList.remove('ring-2', 'ring-[#296c00]', 'bg-[#f0fae8]');
+                e.currentTarget.classList.remove('ring-2', 'ring-[#4f46e5]', 'bg-[#eef2ff]');
                 onDropOnCell(e, dateStr);
               }}
               className={`p-2.5 border rounded-xl min-h-[220px] flex flex-col transition-all ${
-                isToday ? 'bg-white border-[#296c00] ring-1 ring-[#296c00]/30' : 'bg-[#f4f4f3] border-[#efefed]'
-              } ${touchHoverDate === dateStr ? 'ring-2 ring-[#296c00] bg-[#f0fae8]' : ''}`}
+                isToday ? 'bg-white border-[#4f46e5] ring-1 ring-[#4f46e5]/30' : 'bg-[#f4f4f3] border-[#efefed]'
+              } ${touchHoverDate === dateStr ? 'ring-2 ring-[#4f46e5] bg-[#eef2ff]' : ''}`}
             >
               {/* Day Header */}
               <div className="pb-1.5 mb-2 border-b border-[#efefed] flex justify-between items-center flex-shrink-0 gap-1">
                 <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
-                  <span className={`font-label-caps text-xs font-bold ${isToday ? 'text-[#296c00]' : 'text-[#1b1c1a]'}`}>
+                  <span className={`font-label-caps text-xs font-bold ${isToday ? 'text-[#4f46e5]' : 'text-[#1b1c1a]'}`}>
                     {dayDate.toLocaleDateString('default', { weekday: 'short' })} {dayDate.getDate()}
                   </span>
 
@@ -120,7 +120,7 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                         <span
                           key={bId}
                           className="w-2 h-2 rounded-full ring-1 ring-white"
-                          style={{ backgroundColor: BRANDS[bId]?.primaryColor || '#296c00' }}
+                          style={{ backgroundColor: BRANDS[bId]?.primaryColor || '#4f46e5' }}
                         />
                       ))}
                     </div>
@@ -149,7 +149,7 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
 
                 <button
                   onClick={() => onOpenNewPostModal(dateStr)}
-                  className="text-[#296c00] hover:bg-[#f1f1f0] p-1 rounded-lg flex items-center justify-center cursor-pointer flex-shrink-0"
+                  className="text-[#4f46e5] hover:bg-[#f1f1f0] p-1 rounded-lg flex items-center justify-center cursor-pointer flex-shrink-0"
                   title="Add post"
                 >
                   <span className="material-symbols-outlined text-sm">add</span>

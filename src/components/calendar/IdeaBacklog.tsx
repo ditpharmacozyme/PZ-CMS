@@ -90,13 +90,13 @@ export const IdeaBacklog: React.FC<IdeaBacklogProps> = ({
       <div className="px-4 pt-4 pb-3 border-b border-[#efefed] flex-shrink-0 bg-white">
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-base text-[#78d24b]">lightbulb</span>
+            <span className="material-symbols-outlined text-base text-[#15803d]">lightbulb</span>
             <span className="font-label-caps text-xs tracking-wider text-[#1b1c1a] uppercase font-bold">
               Idea Backlog
             </span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="bg-[#296c00] text-white font-label-caps text-[10px] px-2 py-0.5 rounded-full font-bold">
+            <span className="bg-[#4f46e5] text-white font-label-caps text-[10px] px-2 py-0.5 rounded-full font-bold">
               {filteredBacklogPosts.length}
             </span>
             <button
@@ -122,17 +122,17 @@ export const IdeaBacklog: React.FC<IdeaBacklogProps> = ({
             value={newBacklogTitle}
             onChange={(e) => setNewBacklogTitle(e.target.value)}
             placeholder="+ New idea..."
-            className="flex-1 bg-white border border-[#e9e9e7] rounded-lg px-2.5 py-1.5 text-xs text-[#1b1c1a] placeholder:text-[#e9e9e7] focus:outline-none focus:border-[#296c00]"
+            className="flex-1 bg-white border border-[#e9e9e7] rounded-lg px-2.5 py-1.5 text-xs text-[#1b1c1a] placeholder:text-[#e9e9e7] focus:outline-none focus:border-[#4f46e5]"
           />
           <button
             type="submit"
-            className="bg-[#296c00] hover:bg-[#205400] text-white rounded-lg px-2.5 py-1.5 min-w-[36px] text-xs font-bold transition-colors cursor-pointer"
+            className="bg-[#4f46e5] hover:bg-[#4338ca] text-white rounded-lg px-2.5 py-1.5 min-w-[36px] text-xs font-bold transition-colors cursor-pointer"
             title="Add to backlog"
           >
             <span className="material-symbols-outlined text-sm">add</span>
           </button>
           <label
-            className="bg-[#f1f1f0] text-[#296c00] border border-[#e9e9e7] rounded-lg px-2.5 py-1.5 min-w-[36px] text-xs font-bold hover:bg-[#296c00] hover:text-white transition-colors cursor-pointer flex items-center justify-center"
+            className="bg-[#f1f1f0] text-[#4f46e5] border border-[#e9e9e7] rounded-lg px-2.5 py-1.5 min-w-[36px] text-xs font-bold hover:bg-[#4f46e5] hover:text-white transition-colors cursor-pointer flex items-center justify-center"
             title="Upload an image to create a backlog idea"
           >
             <span className="material-symbols-outlined text-sm">add_photo_alternate</span>
@@ -174,8 +174,8 @@ export const IdeaBacklog: React.FC<IdeaBacklogProps> = ({
                   onSelectPost(post);
                   setMobileBacklogOpen(false);
                 }}
-                className={`group bg-white border border-[#efefed] rounded-lg p-2.5 cursor-grab active:cursor-grabbing hover:border-[#296c00] hover:shadow-xs transition-all relative ${
-                  isTouchDraggingThis ? 'opacity-50 ring-2 ring-[#296c00]' : isSelected ? 'bg-[#f0fae8] ring-2 ring-[#296c00] border-[#296c00]' : ''
+                className={`group bg-white border border-[#efefed] rounded-lg p-2.5 cursor-grab active:cursor-grabbing hover:border-[#4f46e5] hover:shadow-xs transition-all relative ${
+                  isTouchDraggingThis ? 'opacity-50 ring-2 ring-[#4f46e5]' : isSelected ? 'bg-[#eef2ff] ring-2 ring-[#4f46e5] border-[#4f46e5]' : ''
                 }`}
               >
                 {(isSelectMode || selectedPostIds.size > 0) && onToggleSelect && (
@@ -184,15 +184,15 @@ export const IdeaBacklog: React.FC<IdeaBacklogProps> = ({
                     checked={isSelected}
                     onChange={(e) => onToggleSelect(post.id, e)}
                     onClick={(e) => e.stopPropagation()}
-                    className="absolute top-2 right-2 w-4 h-4 text-[#296c00] border-[#e9e9e7] rounded z-10"
+                    className="absolute top-2 right-2 w-4 h-4 text-[#4f46e5] border-[#e9e9e7] rounded z-10"
                   />
                 )}
                 <div className="flex items-start justify-between gap-1 mb-1">
                   <span
                     className="text-[9px] font-label-caps font-bold px-1.5 py-0.5 rounded uppercase tracking-wider"
                     style={{
-                      background: (brand?.primaryColor || '#296c00') + '20',
-                      color: brand?.primaryColor || '#296c00'
+                      background: (brand?.primaryColor || '#4f46e5') + '20',
+                      color: brand?.primaryColor || '#4f46e5'
                     }}
                   >
                     {brand?.shortCode || post.brandId}
@@ -200,7 +200,7 @@ export const IdeaBacklog: React.FC<IdeaBacklogProps> = ({
                   <div className="flex items-center gap-1">
                     {/* Mobile: quick date-picker to schedule */}
                     <label
-                      className="lg:hidden p-1 text-[#296c00] hover:bg-[#f0fae8] rounded flex items-center justify-center cursor-pointer shrink-0"
+                      className="lg:hidden p-1 text-[#4f46e5] hover:bg-[#eef2ff] rounded flex items-center justify-center cursor-pointer shrink-0"
                       title="Schedule on a date"
                       onClick={(e) => e.stopPropagation()}
                     >
@@ -233,7 +233,7 @@ export const IdeaBacklog: React.FC<IdeaBacklogProps> = ({
                       />
                     </label>
                     <span
-                      className="material-symbols-outlined text-[#e9e9e7] group-hover:text-[#296c00] transition-colors opacity-0 group-hover:opacity-100 hidden lg:inline"
+                      className="material-symbols-outlined text-[#e9e9e7] group-hover:text-[#4f46e5] transition-colors opacity-0 group-hover:opacity-100 hidden lg:inline"
                       style={{ fontSize: '14px' }}
                     >
                       drag_indicator
@@ -259,7 +259,7 @@ export const IdeaBacklog: React.FC<IdeaBacklogProps> = ({
                     else assigneeTriggerRefs.current.delete(post.id);
                   }}
                   onClick={(e) => { e.stopPropagation(); setOpenAssigneePostId((cur) => (cur === post.id ? null : post.id)); }}
-                  className="mt-1.5 text-[9px] font-label-caps text-[#5f5f5b] hover:text-[#296c00] hover:underline cursor-pointer truncate block"
+                  className="mt-1.5 text-[9px] font-label-caps text-[#5f5f5b] hover:text-[#4f46e5] hover:underline cursor-pointer truncate block"
                 >
                   {post.assignees.length > 0 ? post.assignees.join(', ') : 'Unassigned — tap to assign'}
                 </button>
@@ -278,7 +278,7 @@ export const IdeaBacklog: React.FC<IdeaBacklogProps> = ({
         <div className="hidden lg:flex flex-col items-center py-4 w-12 border-r border-[#efefed] bg-[#f4f4f3] shrink-0 space-y-4">
           <button
             onClick={() => setIsDesktopCollapsed(false)}
-            className="w-8 h-8 rounded-lg bg-white border border-[#e9e9e7] hover:border-[#296c00] hover:text-[#296c00] text-[#5f5f5b] flex items-center justify-center transition-all shadow-2xs cursor-pointer"
+            className="w-8 h-8 rounded-lg bg-white border border-[#e9e9e7] hover:border-[#4f46e5] hover:text-[#4f46e5] text-[#5f5f5b] flex items-center justify-center transition-all shadow-2xs cursor-pointer"
             title="Expand Idea Backlog"
           >
             <span className="material-symbols-outlined text-sm">chevron_right</span>
@@ -288,10 +288,10 @@ export const IdeaBacklog: React.FC<IdeaBacklogProps> = ({
             className="flex flex-col items-center gap-1 cursor-pointer group py-2"
             title="Click to open backlog"
           >
-            <span className="material-symbols-outlined text-lg text-[#78d24b] group-hover:scale-110 transition-transform">
+            <span className="material-symbols-outlined text-lg text-[#15803d] group-hover:scale-110 transition-transform">
               lightbulb
             </span>
-            <span className="bg-[#296c00] text-white font-label-caps text-[9px] px-1.5 py-0.2 rounded-full font-bold">
+            <span className="bg-[#4f46e5] text-white font-label-caps text-[9px] px-1.5 py-0.2 rounded-full font-bold">
               {filteredBacklogPosts.length}
             </span>
             <span
@@ -311,13 +311,13 @@ export const IdeaBacklog: React.FC<IdeaBacklogProps> = ({
       {/* ── Mobile Circular Floating Bulb Icon ── */}
       <button
         onClick={() => setMobileBacklogOpen(true)}
-        className="lg:hidden fixed bottom-20 left-4 z-40 w-12 h-12 rounded-full bg-[#1b1c1a] text-[#78d24b] shadow-2xl flex items-center justify-center border-2 border-white/20 active:scale-95 transition-all cursor-pointer"
+        className="lg:hidden fixed bottom-20 left-4 z-40 w-12 h-12 rounded-full bg-[#1b1c1a] text-[#15803d] shadow-2xl flex items-center justify-center border-2 border-white/20 active:scale-95 transition-all cursor-pointer"
         title="Open Idea Backlog"
         aria-label="Idea Backlog"
       >
         <span className="material-symbols-outlined text-2xl animate-pulse">lightbulb</span>
         {filteredBacklogPosts.length > 0 && (
-          <span className="absolute -top-1 -right-1 bg-[#296c00] text-white font-label-caps text-[9px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#1b1c1a]">
+          <span className="absolute -top-1 -right-1 bg-[#4f46e5] text-white font-label-caps text-[9px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#1b1c1a]">
             {filteredBacklogPosts.length}
           </span>
         )}
@@ -329,7 +329,7 @@ export const IdeaBacklog: React.FC<IdeaBacklogProps> = ({
           <div className="bg-[#f4f4f3] border-t border-[#e9e9e7] rounded-t-2xl max-h-[85vh] flex flex-col shadow-2xl animate-slideUp">
             <div className="flex items-center justify-between px-4 pt-3 pb-1 border-b border-[#efefed]">
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#78d24b]">lightbulb</span>
+                <span className="material-symbols-outlined text-[#15803d]">lightbulb</span>
                 <span className="font-label-caps text-xs font-bold text-[#1b1c1a] uppercase">Idea Backlog</span>
               </div>
               <button

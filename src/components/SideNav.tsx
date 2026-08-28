@@ -103,7 +103,7 @@ export const SideNav: React.FC<SideNavProps> = ({
           collapsed ? 'justify-center px-0' : ''
         } ${
           isActive
-            ? 'bg-[#aceecf] text-[#07513b] font-bold shadow-xs'
+            ? 'bg-[#eef2ff] text-[#07513b] font-bold shadow-xs'
             : 'text-[#57574f] hover:bg-[#e9e8e4]'
         }`}
       >
@@ -151,8 +151,8 @@ export const SideNav: React.FC<SideNavProps> = ({
                     Pharmacozyme
                   </h1>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className="font-label-caps text-[9px] text-[#296c00] tracking-widest uppercase font-bold">Brand-Ops Studio</span>
-                    <span className="w-1 h-1 rounded-full bg-[#78d24b] animate-pulse inline-block" />
+                    <span className="font-label-caps text-[9px] text-[#4f46e5] tracking-widest uppercase font-bold">Brand-Ops Studio</span>
+                    <span className="w-1 h-1 rounded-full bg-[#15803d] animate-pulse inline-block" />
                   </div>
                 </div>
               )}
@@ -196,7 +196,7 @@ export const SideNav: React.FC<SideNavProps> = ({
                     collapsed ? 'justify-center px-0' : ''
                   } ${
                     activeInMore
-                      ? 'bg-[#aceecf] text-[#07513b] font-bold shadow-xs'
+                      ? 'bg-[#eef2ff] text-[#07513b] font-bold shadow-xs'
                       : 'text-[#57574f] hover:bg-[#e9e8e4]'
                   }`}
                 >
@@ -230,13 +230,13 @@ export const SideNav: React.FC<SideNavProps> = ({
                       onClick={() => selectNavItem(item.tab)}
                       className={`w-full flex items-center gap-2.5 px-3 py-2 rounded text-left font-label-caps text-xs transition-all min-h-[40px] active:scale-[0.98] ${
                         isActive
-                          ? 'nav-item-active text-[#296c00] font-bold'
+                          ? 'nav-item-active text-[#4f46e5] font-bold'
                           : 'text-[#57574f] hover:bg-[#e9e8e4]'
                       }`}
                     >
                       <span
                         className={`material-symbols-outlined text-base ${isActive ? 'filled' : ''}`}
-                        style={{ color: isActive ? '#296c00' : undefined }}
+                        style={{ color: isActive ? '#4f46e5' : undefined }}
                       >
                         {item.icon}
                       </span>
@@ -257,7 +257,7 @@ export const SideNav: React.FC<SideNavProps> = ({
               if (onCloseMobile) onCloseMobile();
             }}
             title={collapsed ? 'New Post' : undefined}
-            className={`w-full bg-[#296c00] text-white font-label-caps text-xs py-3.5 rounded shadow-md hover:bg-[#1f5700] active:scale-95 transition-all flex items-center justify-center gap-2 min-h-[48px] font-bold ${
+            className={`w-full bg-[#4f46e5] text-white font-label-caps text-xs py-3.5 rounded shadow-md hover:bg-[#4338ca] active:scale-95 transition-all flex items-center justify-center gap-2 min-h-[48px] font-bold ${
               collapsed ? 'px-0' : 'px-4'
             }`}
           >

@@ -244,8 +244,8 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#efefed]">
         <div>
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#296c00] text-xl">quiz</span>
-            <span className="font-label-caps text-xs text-[#296c00] uppercase font-bold tracking-widest">
+            <span className="material-symbols-outlined text-[#4f46e5] text-xl">quiz</span>
+            <span className="font-label-caps text-xs text-[#4f46e5] uppercase font-bold tracking-widest">
               Standardized Blueprint Hub
             </span>
           </div>
@@ -262,7 +262,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
             resetForm();
             setShowCreateTemplateModal(true);
           }}
-          className="bg-[#296c00] hover:bg-[#205400] text-white font-label-caps text-xs px-4 py-2.5 rounded-xl shadow-xs transition-all flex items-center gap-2 font-bold cursor-pointer"
+          className="bg-[#4f46e5] hover:bg-[#4338ca] text-white font-label-caps text-xs px-4 py-2.5 rounded-xl shadow-xs transition-all flex items-center gap-2 font-bold cursor-pointer"
         >
           <span className="material-symbols-outlined text-base">add_box</span>
           <span>+ Create New Template</span>
@@ -281,7 +281,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search templates by title, description, hashtag..."
-            className="w-full pl-9 pr-4 py-2 text-xs bg-white border border-[#e9e9e7] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#296c00] text-[#1b1c1a] placeholder-[#5f5f5b]"
+            className="w-full pl-9 pr-4 py-2 text-xs bg-white border border-[#e9e9e7] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#4f46e5] text-[#1b1c1a] placeholder-[#5f5f5b]"
           />
         </div>
 
@@ -291,7 +291,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
             onClick={() => setActiveBrandFilter('all')}
             className={`px-3 py-1.5 rounded-lg text-xs font-label-caps font-bold transition-all cursor-pointer whitespace-nowrap ${
               activeBrandFilter === 'all'
-                ? 'bg-[#296c00] text-white shadow-xs'
+                ? 'bg-[#4f46e5] text-white shadow-xs'
                 : 'bg-white border border-[#e9e9e7] text-[#57574f] hover:bg-[#f1f1f0]'
             }`}
           >
@@ -301,7 +301,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
             onClick={() => setActiveBrandFilter('shared')}
             className={`px-3 py-1.5 rounded-lg text-xs font-label-caps font-bold transition-all cursor-pointer whitespace-nowrap ${
               activeBrandFilter === 'shared'
-                ? 'bg-[#296c00] text-white shadow-xs'
+                ? 'bg-[#4f46e5] text-white shadow-xs'
                 : 'bg-white border border-[#e9e9e7] text-[#57574f] hover:bg-[#f1f1f0]'
             }`}
           >
@@ -313,7 +313,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
               onClick={() => setActiveBrandFilter(id as BrandId)}
               className={`px-3 py-1.5 rounded-lg text-xs font-label-caps font-bold transition-all cursor-pointer whitespace-nowrap ${
                 activeBrandFilter === id
-                  ? 'bg-[#296c00] text-white shadow-xs'
+                  ? 'bg-[#4f46e5] text-white shadow-xs'
                   : 'bg-white border border-[#e9e9e7] text-[#57574f] hover:bg-[#f1f1f0]'
               }`}
             >
@@ -388,14 +388,14 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
 
                   <span
                     className="absolute top-3 right-3 text-white font-label-caps text-[9px] px-2.5 py-0.5 rounded-full font-bold uppercase shadow-xs"
-                    style={{ backgroundColor: brand?.primaryColor || '#296c00' }}
+                    style={{ backgroundColor: brand?.primaryColor || '#4f46e5' }}
                   >
                     {brand ? brand.name : 'Shared Ecosystem'}
                   </span>
 
                   {template.usesCount > 0 && (
                     <div className="absolute bottom-2 right-2 bg-black/70 text-white font-code-sm text-[9px] px-2 py-0.5 rounded-full backdrop-blur-xs flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[10px] text-[#78d24b]">trending_up</span>
+                      <span className="material-symbols-outlined text-[10px] text-[#15803d]">trending_up</span>
                       <span>{template.usesCount} uses</span>
                     </div>
                   )}
@@ -404,7 +404,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                 {/* Body Details */}
                 <div className="p-5 space-y-3 flex-1 flex flex-col justify-between">
                   <div>
-                    <h3 className="font-headline-md text-base font-bold text-[#1b1c1a] group-hover:text-[#296c00] transition-colors leading-snug">
+                    <h3 className="font-headline-md text-base font-bold text-[#1b1c1a] group-hover:text-[#4f46e5] transition-colors leading-snug">
                       {template.title}
                     </h3>
                     <p className="font-body-md text-xs text-[#5f5f5b] line-clamp-2 mt-1 leading-relaxed">
@@ -437,7 +437,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                   <div className="pt-3 border-t border-[#efefed] space-y-2">
                     <button
                       onClick={() => onUseTemplate(template)}
-                      className="w-full bg-[#296c00] hover:bg-[#205400] text-white font-label-caps text-xs font-bold py-2.5 rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="w-full bg-[#4f46e5] hover:bg-[#4338ca] text-white font-label-caps text-xs font-bold py-2.5 rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <span className="material-symbols-outlined text-sm">post_add</span>
                       <span>Use Blueprint for New Post</span>
@@ -485,7 +485,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
           <div className="bg-white border border-[#e9e9e7] max-w-xl w-full p-6 rounded-2xl shadow-2xl relative space-y-4 my-8 animate-slideUp">
             <div className="flex items-center justify-between pb-3 border-b border-[#efefed]">
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#296c00]">
+                <span className="material-symbols-outlined text-[#4f46e5]">
                   {editingTemplate ? 'edit_note' : 'add_box'}
                 </span>
                 <h2 className="font-headline-md text-base font-bold text-[#1b1c1a]">
@@ -516,7 +516,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                   placeholder="e.g. Clinical Study Carousel Blueprint"
                   aria-invalid={Boolean(titleError)}
                   className={`w-full bg-[#f4f4f3] border rounded-lg p-2 text-xs font-bold text-[#1b1c1a] focus:outline-none ${
-                    titleError ? 'border-[#dc2626] focus:border-[#dc2626]' : 'border-[#e9e9e7] focus:border-[#296c00]'
+                    titleError ? 'border-[#dc2626] focus:border-[#dc2626]' : 'border-[#e9e9e7] focus:border-[#4f46e5]'
                   }`}
                 />
                 {titleError && (
@@ -562,7 +562,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
               <button
                 type="button"
                 onClick={() => setShowMoreOptions((v) => !v)}
-                className="flex items-center gap-1.5 text-[#296c00] font-label-caps text-[10px] font-bold uppercase cursor-pointer"
+                className="flex items-center gap-1.5 text-[#4f46e5] font-label-caps text-[10px] font-bold uppercase cursor-pointer"
               >
                 <span className="material-symbols-outlined text-sm">
                   {showMoreOptions ? 'expand_less' : 'expand_more'}
@@ -581,7 +581,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                       value={newDesc}
                       onChange={(e) => setNewDesc(e.target.value)}
                       placeholder="e.g. 5-slide carousel breaking down mechanism of action with diagnostic callout."
-                      className="w-full bg-[#f4f4f3] border border-[#e9e9e7] rounded-lg p-2 text-xs text-[#1b1c1a] focus:outline-none focus:border-[#296c00]"
+                      className="w-full bg-[#f4f4f3] border border-[#e9e9e7] rounded-lg p-2 text-xs text-[#1b1c1a] focus:outline-none focus:border-[#4f46e5]"
                     />
                   </div>
 
@@ -611,7 +611,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                       value={newCaption}
                       onChange={(e) => setNewCaption(e.target.value)}
                       placeholder="[HOOK]: Did you know that...? &#10;&#10;[CLINICAL INSIGHT]: &#10;1. Point A &#10;2. Point B &#10;&#10;[CTA]: Save this guide for your clinical rounds."
-                      className="w-full bg-[#f4f4f3] border border-[#e9e9e7] rounded-lg p-2.5 text-xs font-body-md text-[#1b1c1a] focus:outline-none focus:border-[#296c00]"
+                      className="w-full bg-[#f4f4f3] border border-[#e9e9e7] rounded-lg p-2.5 text-xs font-body-md text-[#1b1c1a] focus:outline-none focus:border-[#4f46e5]"
                     />
                   </div>
 
@@ -624,7 +624,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                       value={newTags}
                       onChange={(e) => setNewTags(e.target.value)}
                       placeholder="Pharmacology, StudyGuide, MedicalEducation, BioTech"
-                      className="w-full bg-[#f4f4f3] border border-[#e9e9e7] rounded-lg p-2 text-xs text-[#1b1c1a] focus:outline-none focus:border-[#296c00]"
+                      className="w-full bg-[#f4f4f3] border border-[#e9e9e7] rounded-lg p-2 text-xs text-[#1b1c1a] focus:outline-none focus:border-[#4f46e5]"
                     />
                   </div>
 
@@ -640,7 +640,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                         placeholder="https://... or upload below"
                         className="flex-1 bg-[#f4f4f3] border border-[#e9e9e7] rounded-lg p-2 text-xs text-[#1b1c1a] focus:outline-none"
                       />
-                      <label className="bg-[#f1f1f0] border border-[#e9e9e7] text-[#296c00] px-3 py-2 rounded-lg font-label-caps text-xs font-bold hover:bg-[#296c00] hover:text-white transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap">
+                      <label className="bg-[#f1f1f0] border border-[#e9e9e7] text-[#4f46e5] px-3 py-2 rounded-lg font-label-caps text-xs font-bold hover:bg-[#4f46e5] hover:text-white transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap">
                         <span className="material-symbols-outlined text-sm">upload</span>
                         <span>{isUploading ? 'Uploading...' : 'Upload'}</span>
                         <input type="file" accept="image/*" onChange={handleImageFileUpload} className="hidden" />
@@ -664,7 +664,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
               </button>
               <button
                 onClick={editingTemplate ? handleSaveEditedTemplate : handleCreateTemplate}
-                className="px-5 py-2 bg-[#296c00] hover:bg-[#205400] text-white font-label-caps text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+                className="px-5 py-2 bg-[#4f46e5] hover:bg-[#4338ca] text-white font-label-caps text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
               >
                 {editingTemplate ? 'Save Changes' : 'Create Template'}
               </button>

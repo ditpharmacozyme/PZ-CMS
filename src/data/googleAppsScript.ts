@@ -50,10 +50,10 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 // Tab Names & Theme Colors
 const TAB_CONFIGS = [
-  { name: "Master Schedule", color: "#296C00", fontColor: "#FFFFFF" },
-  { name: "Pharmacozyme", color: "#296C00", fontColor: "#FFFFFF", brandId: "pharmacozyme" },
+  { name: "Master Schedule", color: "#4f46e5", fontColor: "#FFFFFF" },
+  { name: "Pharmacozyme", color: "#4f46e5", fontColor: "#FFFFFF", brandId: "pharmacozyme" },
   { name: "PZ Academy", color: "#5A38F0", fontColor: "#FFFFFF", brandId: "pz-academy" },
-  { name: "MED-Q", color: "#296951", fontColor: "#FFFFFF", brandId: "med-q" },
+  { name: "MED-Q", color: "#4338ca", fontColor: "#FFFFFF", brandId: "med-q" },
   { name: "PillZ", color: "#07513B", fontColor: "#FFFFFF", brandId: "pillz" },
   { name: "PrescriptionZ", color: "#30312E", fontColor: "#FFFFFF", brandId: "prescriptionz" },
   { name: "Team Roster", color: "#5f5f5b", fontColor: "#FFFFFF", isTeam: true }
@@ -377,7 +377,7 @@ function handleSendEmailReminder(data) {
   
   var htmlBody = "" +
     "<div style='font-family: \\"Segoe UI\\", Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e9e9e7; border-radius: 8px; overflow: hidden; background: #f4f4f3;'>" +
-      "<div style='background: #296c00; padding: 20px; text-align: center; color: white;'>" +
+      "<div style='background: #4f46e5; padding: 20px; text-align: center; color: white;'>" +
         "<h1 style='margin: 0; font-size: 20px; font-weight: bold;'>Pharmacozyme Brand-Ops Studio</h1>" +
         "<p style='margin: 5px 0 0 0; font-size: 12px; opacity: 0.9;'>Instagram Posting Cue Reminder</p>" +
       "</div>" +
@@ -385,10 +385,10 @@ function handleSendEmailReminder(data) {
         "<p style='font-size: 14px; margin-top: 0;'>Hello <strong>" + assignee + "</strong>,</p>" +
         "<p style='font-size: 13px; color: #57574f;'>This is your cue reminder to post manually on <strong>" + platform + "</strong> for <strong>" + brand + "</strong>.</p>" +
         "<div style='background: white; border: 1px solid #e9e9e7; padding: 16px; border-radius: 6px; margin: 16px 0;'>" +
-          "<h2 style='margin: 0 0 8px 0; font-size: 16px; color: #296c00;'>" + title + "</h2>" +
+          "<h2 style='margin: 0 0 8px 0; font-size: 16px; color: #4f46e5;'>" + title + "</h2>" +
           "<p style='font-size: 12px; color: #5f5f5b; margin: 0 0 12px 0;'>📅 <strong>Date:</strong> " + dateStr + " at " + timeStr + "</p>" +
           "<div style='background: #f4f4f3; border: 1px solid #e9e9e7; border-radius: 4px; padding: 12px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; margin-bottom: 12px;'>" + caption + "</div>" +
-          (visualUrl ? "<p style='margin: 0; font-size: 12px;'><a href='" + visualUrl + "' target='_blank' style='color: #296c00; font-weight: bold;'>🖼️ Open Visual Asset / Image</a></p>" : "") +
+          (visualUrl ? "<p style='margin: 0; font-size: 12px;'><a href='" + visualUrl + "' target='_blank' style='color: #4f46e5; font-weight: bold;'>🖼️ Open Visual Asset / Image</a></p>" : "") +
         "</div>" +
         "<p style='font-size: 12px; color: #5f5f5b; margin-bottom: 0;'>We post directly on Instagram, so copy the caption above and upload your image to publish!</p>" +
       "</div>" +

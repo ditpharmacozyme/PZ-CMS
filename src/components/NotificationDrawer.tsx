@@ -61,7 +61,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
             {unreadCount > 0 && (
               <button 
                 onClick={onMarkAllAsRead}
-                className="text-[#296c00] hover:underline font-label-caps text-xs font-bold"
+                className="text-[#4f46e5] hover:underline font-label-caps text-xs font-bold"
               >
                 Mark all read
               </button>
@@ -91,14 +91,14 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
                       <div 
                         key={n.id} 
                         className={`p-3 rounded border transition-colors ${
-                          n.read ? 'bg-white border-[#e9e9e7] opacity-70' : 'bg-[#f0fae8] border-[#296c00] shadow-2xs'
+                          n.read ? 'bg-white border-[#e9e9e7] opacity-70' : 'bg-[#eef2ff] border-[#4f46e5] shadow-2xs'
                         }`}
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
                               {n.type === 'overdue' && <span className="material-symbols-outlined text-[#dc2626] text-[14px]">error</span>}
-                              {n.type === 'stage_complete' && <span className="material-symbols-outlined text-[#296c00] text-[14px]">check_circle</span>}
+                              {n.type === 'stage_complete' && <span className="material-symbols-outlined text-[#15803d] text-[14px]">check_circle</span>}
                               {n.type === 'due_soon' && <span className="material-symbols-outlined text-[#0061a4] text-[14px]">schedule</span>}
                               {n.type === 'stage_blocking' && <span className="material-symbols-outlined text-[#b45309] text-[14px]">pending_actions</span>}
                               
@@ -117,7 +117,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
                                       onViewPost(n.postId!);
                                       onClose();
                                     }}
-                                    className="font-label-caps text-[10px] uppercase font-bold text-[#296c00] hover:underline"
+                                    className="font-label-caps text-[10px] uppercase font-bold text-[#4f46e5] hover:underline"
                                   >
                                     View Post
                                   </button>

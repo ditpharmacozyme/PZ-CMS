@@ -58,7 +58,7 @@ export const CalendarFilters: React.FC<CalendarFiltersProps> = ({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search title, tag, caption..."
-            className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-[#e9e9e7] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#296c00] text-[#1b1c1a] placeholder-[#5f5f5b]"
+            className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-[#e9e9e7] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#4f46e5] text-[#1b1c1a] placeholder-[#5f5f5b]"
           />
         </div>
 
@@ -69,7 +69,7 @@ export const CalendarFilters: React.FC<CalendarFiltersProps> = ({
             onClick={onToggleMyPosts}
             className={`px-3 py-1.5 rounded-lg text-xs font-label-caps font-bold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
               isMyPostsActive
-                ? 'bg-[#296c00] text-white shadow-xs'
+                ? 'bg-[#4f46e5] text-white shadow-xs'
                 : 'bg-white border border-[#e9e9e7] text-[#57574f] hover:bg-[#f1f1f0]'
             }`}
             title="Filter to posts assigned to you"
@@ -86,10 +86,10 @@ export const CalendarFilters: React.FC<CalendarFiltersProps> = ({
             onClick={() => setShowMobileFilterSheet(true)}
             className="flex-1 py-2 px-3 bg-white border border-[#e9e9e7] rounded-lg text-xs font-label-caps font-bold text-[#1b1c1a] flex items-center justify-center gap-2 cursor-pointer"
           >
-            <span className="material-symbols-outlined text-base text-[#296c00]">tune</span>
+            <span className="material-symbols-outlined text-base text-[#4f46e5]">tune</span>
             <span>Filters</span>
             {activeFilterCount > 0 && (
-              <span className="bg-[#296c00] text-white text-[10px] w-4 h-4 rounded-full inline-flex items-center justify-center font-bold">
+              <span className="bg-[#4f46e5] text-white text-[10px] w-4 h-4 rounded-full inline-flex items-center justify-center font-bold">
                 {activeFilterCount}
               </span>
             )}
@@ -111,7 +111,7 @@ export const CalendarFilters: React.FC<CalendarFiltersProps> = ({
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as PostStatus | 'all')}
-            className="py-1.5 px-2.5 text-xs font-label-caps bg-white border border-[#e9e9e7] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#296c00] text-[#1b1c1a]"
+            className="py-1.5 px-2.5 text-xs font-label-caps bg-white border border-[#e9e9e7] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#4f46e5] text-[#1b1c1a]"
           >
             <option value="all">All Statuses</option>
             <option value="not-started">Not Started</option>
@@ -124,7 +124,7 @@ export const CalendarFilters: React.FC<CalendarFiltersProps> = ({
           <select
             value={platformFilter}
             onChange={(e) => setPlatformFilter(e.target.value as Platform | 'all')}
-            className="py-1.5 px-2.5 text-xs font-label-caps bg-white border border-[#e9e9e7] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#296c00] text-[#1b1c1a]"
+            className="py-1.5 px-2.5 text-xs font-label-caps bg-white border border-[#e9e9e7] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#4f46e5] text-[#1b1c1a]"
           >
             <option value="all">All Platforms</option>
             <option value="instagram">Instagram</option>
@@ -138,7 +138,7 @@ export const CalendarFilters: React.FC<CalendarFiltersProps> = ({
           <select
             value={assigneeFilter}
             onChange={(e) => setAssigneeFilter(e.target.value)}
-            className="py-1.5 px-2.5 text-xs font-label-caps bg-white border border-[#e9e9e7] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#296c00] text-[#1b1c1a]"
+            className="py-1.5 px-2.5 text-xs font-label-caps bg-white border border-[#e9e9e7] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#4f46e5] text-[#1b1c1a]"
           >
             <option value="all">All Assignees</option>
             {uniqueAssignees.map((assignee) => (
@@ -167,7 +167,7 @@ export const CalendarFilters: React.FC<CalendarFiltersProps> = ({
           <div className="bg-[#f4f4f3] border-t border-[#e9e9e7] rounded-t-2xl max-h-[85vh] flex flex-col shadow-2xl p-5 space-y-4 animate-slideUp">
             <div className="flex items-center justify-between pb-3 border-b border-[#efefed]">
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#296c00]">tune</span>
+                <span className="material-symbols-outlined text-[#4f46e5]">tune</span>
                 <h3 className="font-display-xl text-base font-bold text-[#1b1c1a]">Filter Calendar</h3>
               </div>
               <button
@@ -192,7 +192,7 @@ export const CalendarFilters: React.FC<CalendarFiltersProps> = ({
                       onClick={() => setStatusFilter(st)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-label-caps font-bold transition-all cursor-pointer ${
                         statusFilter === st
-                          ? 'bg-[#296c00] text-white shadow-xs'
+                          ? 'bg-[#4f46e5] text-white shadow-xs'
                           : 'bg-white border border-[#e9e9e7] text-[#57574f]'
                       }`}
                     >
@@ -215,7 +215,7 @@ export const CalendarFilters: React.FC<CalendarFiltersProps> = ({
                       onClick={() => setPlatformFilter(pl)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-label-caps font-bold transition-all cursor-pointer ${
                         platformFilter === pl
-                          ? 'bg-[#296c00] text-white shadow-xs'
+                          ? 'bg-[#4f46e5] text-white shadow-xs'
                           : 'bg-white border border-[#e9e9e7] text-[#57574f]'
                       }`}
                     >
@@ -236,7 +236,7 @@ export const CalendarFilters: React.FC<CalendarFiltersProps> = ({
                     onClick={() => setAssigneeFilter('all')}
                     className={`px-3 py-1.5 rounded-lg text-xs font-label-caps font-bold transition-all cursor-pointer ${
                       assigneeFilter === 'all'
-                        ? 'bg-[#296c00] text-white shadow-xs'
+                        ? 'bg-[#4f46e5] text-white shadow-xs'
                         : 'bg-white border border-[#e9e9e7] text-[#57574f]'
                     }`}
                   >
@@ -249,7 +249,7 @@ export const CalendarFilters: React.FC<CalendarFiltersProps> = ({
                       onClick={() => setAssigneeFilter(a)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-label-caps font-bold transition-all cursor-pointer ${
                         assigneeFilter === a
-                          ? 'bg-[#296c00] text-white shadow-xs'
+                          ? 'bg-[#4f46e5] text-white shadow-xs'
                           : 'bg-white border border-[#e9e9e7] text-[#57574f]'
                       }`}
                     >
@@ -274,7 +274,7 @@ export const CalendarFilters: React.FC<CalendarFiltersProps> = ({
               <button
                 type="button"
                 onClick={() => setShowMobileFilterSheet(false)}
-                className="flex-1 py-2.5 bg-[#296c00] text-white font-label-caps text-xs font-bold rounded-xl shadow-md"
+                className="flex-1 py-2.5 bg-[#4f46e5] text-white font-label-caps text-xs font-bold rounded-xl shadow-md"
               >
                 Apply Filters
               </button>

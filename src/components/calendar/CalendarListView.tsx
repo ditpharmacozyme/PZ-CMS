@@ -85,9 +85,9 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
         }}
         className={`p-3 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-2.5 sm:gap-3 transition-all cursor-pointer relative ${
           isSelected
-            ? 'bg-[#f0fae8] ring-1 ring-[#296c00]'
+            ? 'bg-[#eef2ff] ring-1 ring-[#4f46e5]'
             : isToday
-            ? 'bg-white border-l-4 border-l-[#296c00] hover:bg-[#f4f4f3]'
+            ? 'bg-white border-l-4 border-l-[#4f46e5] hover:bg-[#f4f4f3]'
             : isPast
             ? 'bg-[#f4f4f3]/80 opacity-75 hover:opacity-100 hover:bg-white'
             : 'bg-white hover:bg-[#f4f4f3]'
@@ -100,7 +100,7 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
             checked={isSelected}
             onClick={(e) => onToggleSelect(post.id, e)}
             onChange={() => {}}
-            className="w-4 h-4 text-[#296c00] border-[#e9e9e7] rounded focus:ring-[#296c00] cursor-pointer"
+            className="w-4 h-4 text-[#4f46e5] border-[#e9e9e7] rounded focus:ring-[#4f46e5] cursor-pointer"
           />
         </span>
 
@@ -108,7 +108,7 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
         <div className="flex items-center justify-between md:block md:w-36 font-code-sm text-xs text-[#1b1c1a]">
           <div className="flex items-center gap-1.5 flex-wrap">
             {isToday && (
-              <span className="bg-[#296c00] text-white font-label-caps text-[9px] font-bold px-1.5 py-0.2 rounded uppercase">
+              <span className="bg-[#4f46e5] text-white font-label-caps text-[9px] font-bold px-1.5 py-0.2 rounded uppercase">
                 Today
               </span>
             )}
@@ -126,7 +126,7 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
           </div>
           <span
             className="md:hidden px-2 py-0.5 font-label-caps text-[9px] uppercase font-bold rounded text-white"
-            style={{ backgroundColor: brand?.primaryColor || '#296c00' }}
+            style={{ backgroundColor: brand?.primaryColor || '#4f46e5' }}
           >
             {brand?.shortCode || post.brandId}
           </span>
@@ -136,7 +136,7 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
         <div className="hidden md:block w-28">
           <span
             className="px-2 py-0.5 font-label-caps text-[9px] uppercase font-bold rounded text-white inline-block"
-            style={{ backgroundColor: brand?.primaryColor || '#296c00' }}
+            style={{ backgroundColor: brand?.primaryColor || '#4f46e5' }}
           >
             {brand?.name || post.brandId}
           </span>
@@ -157,7 +157,7 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
                   type="button"
                   onClick={(e) => handleQuickStageToggle(post, 'design', e)}
                   className={`px-1.5 py-0.2 rounded cursor-pointer transition-all ${
-                    post.stageCompletion?.designDone ? 'bg-[#296c00] text-white font-bold' : 'bg-[#f1f1f0] text-[#57574f]'
+                    post.stageCompletion?.designDone ? 'bg-[#4f46e5] text-white font-bold' : 'bg-[#f1f1f0] text-[#57574f]'
                   }`}
                   title="Click to toggle Design done"
                 >
@@ -169,7 +169,7 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
                   type="button"
                   onClick={(e) => handleQuickStageToggle(post, 'publish', e)}
                   className={`px-1.5 py-0.2 rounded cursor-pointer transition-all ${
-                    post.stageCompletion?.publishDone ? 'bg-[#296c00] text-white font-bold' : 'bg-[#f1f1f0] text-[#57574f]'
+                    post.stageCompletion?.publishDone ? 'bg-[#4f46e5] text-white font-bold' : 'bg-[#f1f1f0] text-[#57574f]'
                   }`}
                   title="Click to toggle Publish done"
                 >
@@ -181,7 +181,7 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
                   type="button"
                   onClick={(e) => handleQuickStageToggle(post, 'engagement', e)}
                   className={`px-1.5 py-0.2 rounded cursor-pointer transition-all ${
-                    post.stageCompletion?.engagementDone ? 'bg-[#296c00] text-white font-bold' : 'bg-[#f1f1f0] text-[#57574f]'
+                    post.stageCompletion?.engagementDone ? 'bg-[#4f46e5] text-white font-bold' : 'bg-[#f1f1f0] text-[#57574f]'
                   }`}
                   title="Click to toggle Engagement done"
                 >
@@ -205,7 +205,7 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
               else assigneeTriggerRefs.current.delete(post.id);
             }}
             onClick={(e) => { e.stopPropagation(); setOpenAssigneePostId((cur) => (cur === post.id ? null : post.id)); }}
-            className="md:w-28 font-body-md text-xs text-[#57574f] text-left hover:text-[#296c00] hover:underline cursor-pointer truncate"
+            className="md:w-28 font-body-md text-xs text-[#57574f] text-left hover:text-[#4f46e5] hover:underline cursor-pointer truncate"
             title="Tap to assign"
           >
             {post.assignees.length > 0 ? post.assignees.join(', ') : 'Unassigned'}
@@ -217,7 +217,7 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
                 e.stopPropagation();
                 onSelectPost(post);
               }}
-              className="text-[#296c00] font-label-caps text-xs font-bold hover:bg-[#296c00] hover:text-white px-2.5 py-1 bg-[#f1f1f0] rounded-lg transition-colors cursor-pointer"
+              className="text-[#4f46e5] font-label-caps text-xs font-bold hover:bg-[#4f46e5] hover:text-white px-2.5 py-1 bg-[#f1f1f0] rounded-lg transition-colors cursor-pointer"
             >
               Edit
             </button>

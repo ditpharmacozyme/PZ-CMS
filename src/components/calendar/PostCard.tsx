@@ -106,11 +106,11 @@ export const PostCard: React.FC<PostCardProps> = ({
           if (onPlaceholderClick) onPlaceholderClick(post);
         }}
         style={{ borderLeftColor: brand?.primaryColor || '#e9e9e7' }}
-        className="p-1.5 bg-[#f4f4f3] border border-dashed border-[#e9e9e7] border-l-3 hover:border-[#296c00] hover:bg-[#f0fae8] transition-all rounded-md text-left opacity-70 hover:opacity-100 cursor-pointer group"
+        className="p-1.5 bg-[#f4f4f3] border border-dashed border-[#e9e9e7] border-l-3 hover:border-[#4f46e5] hover:bg-[#eef2ff] transition-all rounded-md text-left opacity-70 hover:opacity-100 cursor-pointer group"
         title="Repeating slot — click to create"
       >
         <div className="flex items-center gap-1.5">
-          <span className="material-symbols-outlined text-xs text-[#5f5f5b] group-hover:text-[#296c00]">
+          <span className="material-symbols-outlined text-xs text-[#5f5f5b] group-hover:text-[#4f46e5]">
             replay
           </span>
           <p className="text-[10px] font-medium text-[#5f5f5b] group-hover:text-[#1b1c1a] truncate leading-tight">
@@ -142,7 +142,7 @@ export const PostCard: React.FC<PostCardProps> = ({
         }}
         style={{ borderLeftColor: brand?.primaryColor || statusCfg.color }}
         className={`p-3 bg-white border border-[#efefed] border-l-4 rounded-lg shadow-2xs flex items-center justify-between gap-3 active:scale-[0.99] transition-all cursor-pointer relative ${
-          isSelected ? 'bg-[#f0fae8] ring-2 ring-[#296c00] border-[#296c00]' : 'hover:border-[#e9e9e7]'
+          isSelected ? 'bg-[#eef2ff] ring-2 ring-[#4f46e5] border-[#4f46e5]' : 'hover:border-[#e9e9e7]'
         }`}
       >
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -152,7 +152,7 @@ export const PostCard: React.FC<PostCardProps> = ({
               checked={isSelected}
               onChange={(e) => onToggleSelect && onToggleSelect(post.id, e)}
               onClick={(e) => e.stopPropagation()}
-              className="w-4 h-4 text-[#296c00] border-[#e9e9e7] rounded focus:ring-[#296c00]"
+              className="w-4 h-4 text-[#4f46e5] border-[#e9e9e7] rounded focus:ring-[#4f46e5]"
             />
           )}
 
@@ -160,7 +160,7 @@ export const PostCard: React.FC<PostCardProps> = ({
             <div className="flex items-center gap-1.5 mb-1 flex-wrap">
               <span
                 className="px-1.5 py-0.5 rounded text-[9px] font-bold text-white font-label-caps"
-                style={{ backgroundColor: brand?.primaryColor || '#296c00' }}
+                style={{ backgroundColor: brand?.primaryColor || '#4f46e5' }}
               >
                 {brand?.shortCode || post.brandId}
               </span>
@@ -185,7 +185,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                     onClick={(e) => handleQuickStageToggle('design', e)}
                     className={`px-1.5 py-0.5 rounded transition-all cursor-pointer ${
                       post.stageCompletion?.designDone
-                        ? 'bg-[#296c00] text-white font-bold'
+                        ? 'bg-[#15803d] text-white font-bold'
                         : 'bg-[#f1f1f0] text-[#57574f] hover:bg-[#e9e9e7]'
                     }`}
                     title={`Design: ${post.taskRoles.designer} (Click to toggle complete)`}
@@ -199,7 +199,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                     onClick={(e) => handleQuickStageToggle('publish', e)}
                     className={`px-1.5 py-0.5 rounded transition-all cursor-pointer ${
                       post.stageCompletion?.publishDone
-                        ? 'bg-[#296c00] text-white font-bold'
+                        ? 'bg-[#15803d] text-white font-bold'
                         : 'bg-[#f1f1f0] text-[#57574f] hover:bg-[#e9e9e7]'
                     }`}
                     title={`Publisher: ${post.taskRoles.publisher} (Click to toggle complete)`}
@@ -213,7 +213,7 @@ export const PostCard: React.FC<PostCardProps> = ({
                     onClick={(e) => handleQuickStageToggle('engagement', e)}
                     className={`px-1.5 py-0.5 rounded transition-all cursor-pointer ${
                       post.stageCompletion?.engagementDone
-                        ? 'bg-[#296c00] text-white font-bold'
+                        ? 'bg-[#15803d] text-white font-bold'
                         : 'bg-[#f1f1f0] text-[#57574f] hover:bg-[#e9e9e7]'
                     }`}
                     title={`Lead: ${post.taskRoles.engagementLead} (Click to toggle complete)`}
@@ -230,8 +230,8 @@ export const PostCard: React.FC<PostCardProps> = ({
           ref={assigneeTriggerRef}
           type="button"
           onClick={(e) => { e.stopPropagation(); setIsAssigneePopoverOpen((v) => !v); }}
-          className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0 shadow-xs cursor-pointer hover:ring-2 hover:ring-[#296c00] hover:ring-offset-1 transition-all"
-          style={{ backgroundColor: brand?.primaryColor || '#296c00' }}
+          className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0 shadow-xs cursor-pointer hover:ring-2 hover:ring-[#4f46e5] hover:ring-offset-1 transition-all"
+          style={{ backgroundColor: brand?.primaryColor || '#4f46e5' }}
           title={`Assigned to: ${post.assignees.join(', ') || 'nobody'} (tap to change)`}
         >
           {initials}
@@ -270,10 +270,10 @@ export const PostCard: React.FC<PostCardProps> = ({
           onSelectPost(post, e);
         }
       }}
-      style={{ borderLeftColor: brand?.primaryColor || '#296c00' }}
+      style={{ borderLeftColor: brand?.primaryColor || '#4f46e5' }}
       className={`p-1.5 border border-l-3 rounded-md shadow-2xs hover:shadow-xs transition-all text-left cursor-pointer group select-none relative ${
         isSelected
-          ? 'bg-[#f0fae8] ring-2 ring-[#296c00] border-[#296c00]'
+          ? 'bg-[#eef2ff] ring-2 ring-[#4f46e5] border-[#4f46e5]'
           : 'bg-white border-[#efefed] hover:border-[#e9e9e7] hover:bg-[#f4f4f3]'
       }`}
     >
@@ -286,12 +286,12 @@ export const PostCard: React.FC<PostCardProps> = ({
               checked={isSelected}
               onChange={(e) => onToggleSelect && onToggleSelect(post.id, e as any)}
               onClick={(e) => e.stopPropagation()}
-              className="w-3 h-3 text-[#296c00] border-[#e9e9e7] rounded focus:ring-[#296c00] cursor-pointer"
+              className="w-3 h-3 text-[#4f46e5] border-[#e9e9e7] rounded focus:ring-[#4f46e5] cursor-pointer"
             />
           )}
           <span
             className="px-1 py-0.2 rounded text-[8px] font-bold text-white font-label-caps truncate leading-none"
-            style={{ backgroundColor: brand?.primaryColor || '#296c00' }}
+            style={{ backgroundColor: brand?.primaryColor || '#4f46e5' }}
           >
             {brand?.shortCode || post.brandId}
           </span>
@@ -353,8 +353,8 @@ export const PostCard: React.FC<PostCardProps> = ({
             ref={assigneeTriggerRef}
             type="button"
             onClick={(e) => { e.stopPropagation(); setIsAssigneePopoverOpen((v) => !v); }}
-            className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-white font-bold text-[7px] cursor-pointer hover:ring-1 hover:ring-[#296c00] hover:ring-offset-1 transition-all"
-            style={{ backgroundColor: brand?.primaryColor || '#296c00' }}
+            className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-white font-bold text-[7px] cursor-pointer hover:ring-1 hover:ring-[#4f46e5] hover:ring-offset-1 transition-all"
+            style={{ backgroundColor: brand?.primaryColor || '#4f46e5' }}
             title={`Assigned to: ${post.assignees.join(', ') || 'nobody'} (tap to change)`}
           >
             {initials}

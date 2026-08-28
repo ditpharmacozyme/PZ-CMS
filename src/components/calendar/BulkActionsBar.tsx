@@ -29,7 +29,7 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
     <>
       {/* Top Banner when in Select Mode */}
       {isSelectMode && (
-        <div className="bg-[#f0fae8] border border-[#296c00] p-2.5 rounded-lg flex items-center justify-between gap-3 text-xs font-bold text-[#296c00]">
+        <div className="bg-[#eef2ff] border border-[#4f46e5] p-2.5 rounded-lg flex items-center justify-between gap-3 text-xs font-bold text-[#4f46e5]">
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-base">checklist</span>
             <span>Select Mode Active — Tap or click cards to select</span>
@@ -39,7 +39,7 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
               setIsSelectMode(false);
               onClearSelection();
             }}
-            className="px-2.5 py-1 bg-white border border-[#296c00] text-[#296c00] hover:bg-[#296c00] hover:text-white font-label-caps text-[10px] rounded-md transition-all"
+            className="px-2.5 py-1 bg-white border border-[#4f46e5] text-[#4f46e5] hover:bg-[#4f46e5] hover:text-white font-label-caps text-[10px] rounded-md transition-all"
           >
             Exit Select Mode
           </button>

@@ -141,7 +141,7 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
             title="Jump to month"
             value={`${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`}
             onChange={(e) => e.target.value && onJumpToMonth(e.target.value)}
-            className="w-[10rem] bg-white border border-[#e9e9e7] rounded-lg px-2 py-1.5 text-xs font-label-caps text-[#1b1c1a] focus:outline-none focus:ring-1 focus:ring-[#296c00]"
+            className="w-[10rem] bg-white border border-[#e9e9e7] rounded-lg px-2 py-1.5 text-xs font-label-caps text-[#1b1c1a] focus:outline-none focus:ring-1 focus:ring-[#4f46e5]"
           />
         )}
       </div>
@@ -164,7 +164,7 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
             onClick={() => setIsSelectMode(!isSelectMode)}
             className={`px-3 py-1.5 text-xs font-bold font-label-caps rounded-lg border flex items-center gap-1.5 transition-all ${
               isSelectMode
-                ? 'bg-[#296c00] border-[#296c00] text-white'
+                ? 'bg-[#4f46e5] border-[#4f46e5] text-white'
                 : 'bg-white border-[#e9e9e7] hover:bg-[#f1f1f0] text-[#57574f]'
             }`}
             title="Select multiple posts for bulk actions"
@@ -196,7 +196,7 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
         {/* Primary + New Post Button */}
         <button
           onClick={() => onOpenNewPostModal()}
-          className="px-3.5 py-1.5 text-xs font-bold font-label-caps rounded-lg bg-[#296c00] hover:bg-[#205400] text-white flex items-center gap-1.5 shadow-xs transition-all active:scale-95"
+          className="px-3.5 py-1.5 text-xs font-bold font-label-caps rounded-lg bg-[#4f46e5] hover:bg-[#4338ca] text-white flex items-center gap-1.5 shadow-xs transition-all active:scale-95"
         >
           <span className="material-symbols-outlined text-sm">add</span>
           <span>New Post</span>

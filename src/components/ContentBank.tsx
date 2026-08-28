@@ -139,7 +139,7 @@ export const ContentBank: React.FC<ContentBankProps> = ({
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#e9e9e7]">
         <div>
-          <span className="font-label-caps text-xs text-[#296951] uppercase font-bold tracking-widest">
+          <span className="font-label-caps text-xs text-[#4338ca] uppercase font-bold tracking-widest">
             Content Bank & Swipe File
           </span>
           <h2 className="font-display-xl text-2xl md:text-3xl text-[#1b1c1a] font-bold mt-1">
@@ -152,7 +152,7 @@ export const ContentBank: React.FC<ContentBankProps> = ({
 
         <button
           onClick={handleOpenAddModal}
-          className="bg-[#296c00] text-white font-label-caps text-xs px-4 py-2.5 rounded shadow-sm hover:bg-[#1f5700] transition-all flex items-center gap-2 font-bold whitespace-nowrap"
+          className="bg-[#4f46e5] text-white font-label-caps text-xs px-4 py-2.5 rounded shadow-sm hover:bg-[#4338ca] transition-all flex items-center gap-2 font-bold whitespace-nowrap"
         >
           <span className="material-symbols-outlined text-sm font-bold">add</span>
           <span>Add Reusable Copy</span>
@@ -171,7 +171,7 @@ export const ContentBank: React.FC<ContentBankProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search copy content, tags, or sources..."
-            className="w-full bg-[#f4f4f3] border border-[#e9e9e7] pl-9 pr-8 py-2 font-body-md text-xs text-[#1b1c1a] focus:bg-white focus:border-[#296c00] focus:outline-none rounded"
+            className="w-full bg-[#f4f4f3] border border-[#e9e9e7] pl-9 pr-8 py-2 font-body-md text-xs text-[#1b1c1a] focus:bg-white focus:border-[#4f46e5] focus:outline-none rounded"
           />
           {searchQuery && (
             <button
@@ -274,8 +274,8 @@ export const ContentBank: React.FC<ContentBankProps> = ({
                       onClick={() => handleCopyText(item)}
                       className={`flex-1 font-label-caps text-[10px] font-bold py-2 rounded border transition-colors flex items-center justify-center gap-1 min-h-[36px] ${
                         copiedItemId === item.id
-                          ? 'bg-[#296c00] text-white border-[#296c00]'
-                          : 'bg-[#f4f4f3] border-[#e9e9e7] text-[#296c00] hover:bg-[#f1f1f0]'
+                          ? 'bg-[#4f46e5] text-white border-[#4f46e5]'
+                          : 'bg-[#f4f4f3] border-[#e9e9e7] text-[#4f46e5] hover:bg-[#f1f1f0]'
                       }`}
                     >
                       <span className="material-symbols-outlined text-xs">
@@ -287,7 +287,7 @@ export const ContentBank: React.FC<ContentBankProps> = ({
                     {onCreatePostFromCopy && !isShared && (
                       <button
                         onClick={() => onCreatePostFromCopy(item.text, item.brandId as BrandId)}
-                        className="flex-1 bg-[#296c00] text-white font-label-caps text-[10px] font-bold py-2 rounded hover:bg-[#1f5700] transition-colors flex items-center justify-center gap-1 min-h-[36px]"
+                        className="flex-1 bg-[#4f46e5] text-white font-label-caps text-[10px] font-bold py-2 rounded hover:bg-[#4338ca] transition-colors flex items-center justify-center gap-1 min-h-[36px]"
                       >
                         <span className="material-symbols-outlined text-xs">add_box</span>
                         <span>Use Copy</span>
@@ -300,7 +300,7 @@ export const ContentBank: React.FC<ContentBankProps> = ({
                           const userBrand = selectedBrandFilter === 'all' ? 'pharmacozyme' : selectedBrandFilter;
                           onCreatePostFromCopy(item.text, userBrand);
                         }}
-                        className="flex-1 bg-[#296c00] text-white font-label-caps text-[10px] font-bold py-2 rounded hover:bg-[#1f5700] transition-colors flex items-center justify-center gap-1 min-h-[36px]"
+                        className="flex-1 bg-[#4f46e5] text-white font-label-caps text-[10px] font-bold py-2 rounded hover:bg-[#4338ca] transition-colors flex items-center justify-center gap-1 min-h-[36px]"
                       >
                         <span className="material-symbols-outlined text-xs">add_box</span>
                         <span>Use Copy</span>
@@ -426,7 +426,7 @@ export const ContentBank: React.FC<ContentBankProps> = ({
               </button>
               <button
                 onClick={handleSaveItem}
-                className="px-4 py-2 bg-[#296c00] text-white font-label-caps text-xs font-bold rounded hover:bg-[#1f5700]"
+                className="px-4 py-2 bg-[#4f46e5] text-white font-label-caps text-xs font-bold rounded hover:bg-[#4338ca]"
               >
                 {editingItem ? 'Update Swipe Item' : 'Save Swipe Item'}
               </button>

@@ -137,7 +137,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#e9e9e7]">
         <div>
-          <span className="font-label-caps text-xs text-[#296951] uppercase font-bold tracking-widest">
+          <span className="font-label-caps text-xs text-[#4338ca] uppercase font-bold tracking-widest">
             Logos, fonts & spec sheets
           </span>
           <h2 className="font-display-xl text-2xl md:text-3xl text-[#1b1c1a] font-bold mt-1">
@@ -147,7 +147,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
 
         <button
           onClick={handleOpenAddModal}
-          className="bg-[#296c00] text-white font-label-caps text-xs px-4 py-2.5 rounded shadow-sm hover:bg-[#1f5700] transition-all flex items-center gap-2 font-bold"
+          className="bg-[#4f46e5] text-white font-label-caps text-xs px-4 py-2.5 rounded shadow-sm hover:bg-[#4338ca] transition-all flex items-center gap-2 font-bold"
         >
           <span className="material-symbols-outlined text-sm">upload_file</span>
           <span>+ Add New Brand Asset</span>
@@ -180,7 +180,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
             onClick={() => setActiveCategory(catType)}
             className={`px-4 py-1.5 font-label-caps text-xs rounded transition-all capitalize ${
               activeCategory === catType
-                ? 'bg-[#296c00] text-white font-bold shadow-xs'
+                ? 'bg-[#4f46e5] text-white font-bold shadow-xs'
                 : 'bg-white border border-[#e9e9e7] text-[#57574f] hover:bg-[#f1f1f0]'
             }`}
           >
@@ -201,7 +201,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
               <div className="flex justify-between items-start">
                 <span
                   className="font-label-caps text-[9px] px-2 py-0.5 text-white font-bold rounded uppercase"
-                  style={{ backgroundColor: brand?.primaryColor || '#296c00' }}
+                  style={{ backgroundColor: brand?.primaryColor || '#4f46e5' }}
                 >
                   {brand?.shortCode || asset.brandId}
                 </span>
@@ -222,7 +222,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
                       alert(`Accessing asset: ${asset.title}`);
                     }
                   }}
-                  className="w-full bg-[#f1f1f0] border border-[#e9e9e7] text-[#296c00] font-label-caps text-xs font-bold py-2 rounded hover:bg-[#296c00] hover:text-white transition-colors flex items-center justify-center gap-2"
+                  className="w-full bg-[#f1f1f0] border border-[#e9e9e7] text-[#4f46e5] font-label-caps text-xs font-bold py-2 rounded hover:bg-[#4f46e5] hover:text-white transition-colors flex items-center justify-center gap-2"
                 >
                   <span className="material-symbols-outlined text-sm">download</span>
                   <span>Open / Download</span>

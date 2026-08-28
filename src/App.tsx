@@ -321,7 +321,7 @@ export function App() {
   if (supabase && !authChecked) {
     return (
       <div className="min-h-screen bg-[#f4f4f3] flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-[#296c00]/30 border-t-[#296c00] rounded-full animate-spin" />
+        <div className="w-6 h-6 border-2 border-[#4f46e5]/30 border-t-[#4f46e5] rounded-full animate-spin" />
       </div>
     );
   }
@@ -336,7 +336,7 @@ export function App() {
           <p className="font-body-md text-sm text-[#5f5f5b]">
             You're signed in as <strong>{authEmail}</strong>, but no one on the team list has that email. Ask Hamza to add you in Settings → Team, or check you used the right account.
           </p>
-          <button onClick={handleLogout} className="w-full bg-[#296c00] hover:bg-[#1f5700] text-white font-bold py-2.5 rounded transition-colors text-sm cursor-pointer">
+          <button onClick={handleLogout} className="w-full bg-[#4f46e5] hover:bg-[#4338ca] text-white font-bold py-2.5 rounded transition-colors text-sm cursor-pointer">
             Sign Out
           </button>
         </div>
@@ -677,7 +677,7 @@ export function App() {
           <span className="bottom-tab-label">Calendar</span>
         </button>
         <button className="bottom-tab-item" onClick={() => { setNewPostInitialDate(undefined); setIsNewPostModalOpen(true); }} aria-label="New Post">
-          <span className="w-10 h-10 rounded-full bg-[#296c00] text-white flex items-center justify-center shadow-lg -mt-5">
+          <span className="w-10 h-10 rounded-full bg-[#4f46e5] text-white flex items-center justify-center shadow-lg -mt-5">
             <span className="material-symbols-outlined text-xl">add</span>
           </span>
           <span className="bottom-tab-label mt-1">New</span>

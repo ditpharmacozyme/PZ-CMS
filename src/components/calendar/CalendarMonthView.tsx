@@ -111,20 +111,20 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
               onDragOver={(e) => {
                 if (cell.dateStr) {
                   e.preventDefault();
-                  e.currentTarget.classList.add('ring-2', 'ring-[#296c00]', 'bg-[#f0fae8]');
+                  e.currentTarget.classList.add('ring-2', 'ring-[#4f46e5]', 'bg-[#eef2ff]');
                 }
               }}
               onDragLeave={(e) => {
-                e.currentTarget.classList.remove('ring-2', 'ring-[#296c00]', 'bg-[#f0fae8]');
+                e.currentTarget.classList.remove('ring-2', 'ring-[#4f46e5]', 'bg-[#eef2ff]');
               }}
               onDrop={(e) => {
-                e.currentTarget.classList.remove('ring-2', 'ring-[#296c00]', 'bg-[#f0fae8]');
+                e.currentTarget.classList.remove('ring-2', 'ring-[#4f46e5]', 'bg-[#eef2ff]');
                 if (cell.dateStr) onDropOnCell(e, cell.dateStr);
               }}
               className={`min-h-[125px] lg:min-h-[145px] p-2 bg-white flex flex-col justify-between transition-colors relative group cursor-pointer ${
                 !cell.isCurrentMonth ? 'bg-[#f4f4f3]/70 opacity-40' : 'hover:bg-[#f4f4f3]'
-              } ${isToday ? 'bg-[#f7faf4] ring-1.5 ring-[#296c00] ring-inset' : ''} ${
-                touchHoverDate && touchHoverDate === cell.dateStr ? 'ring-2 ring-[#296c00] bg-[#f0fae8]' : ''
+              } ${isToday ? 'bg-[#f7faf4] ring-1.5 ring-[#4f46e5] ring-inset' : ''} ${
+                touchHoverDate && touchHoverDate === cell.dateStr ? 'ring-2 ring-[#4f46e5] bg-[#eef2ff]' : ''
               }`}
             >
               {/* Date Header: Date Number + Brand Pips + Collisions + Time Clashes */}
@@ -133,7 +133,7 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                   <span
                     className={`font-label-caps text-xs font-bold transition-all ${
                       isToday
-                        ? 'bg-[#296c00] text-white w-5 h-5 rounded-full inline-flex items-center justify-center shadow-xs'
+                        ? 'bg-[#4f46e5] text-white w-5 h-5 rounded-full inline-flex items-center justify-center shadow-xs'
                         : cell.isCurrentMonth
                         ? 'text-[#1b1c1a]'
                         : 'text-[#9ca3af]'
@@ -149,7 +149,7 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                         <span
                           key={bId}
                           className="w-2 h-2 rounded-full ring-1 ring-white"
-                          style={{ backgroundColor: BRANDS[bId]?.primaryColor || '#296c00' }}
+                          style={{ backgroundColor: BRANDS[bId]?.primaryColor || '#4f46e5' }}
                         />
                       ))}
                     </div>
@@ -181,7 +181,7 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                   <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity">
                     <label
                       onClick={(e) => e.stopPropagation()}
-                      className="p-1 hover:bg-[#f1f1f0] text-[#5f5f5b] hover:text-[#296c00] rounded cursor-pointer transition-colors"
+                      className="p-1 hover:bg-[#f1f1f0] text-[#5f5f5b] hover:text-[#4f46e5] rounded cursor-pointer transition-colors"
                       title="Upload image directly to this date"
                     >
                       <span className="material-symbols-outlined text-[13px]">
@@ -199,7 +199,7 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                         e.stopPropagation();
                         onOpenNewPostModal(cell.dateStr);
                       }}
-                      className="p-1 hover:bg-[#f1f1f0] text-[#5f5f5b] hover:text-[#296c00] rounded transition-colors"
+                      className="p-1 hover:bg-[#f1f1f0] text-[#5f5f5b] hover:text-[#4f46e5] rounded transition-colors"
                       title="Add new post"
                     >
                       <span className="material-symbols-outlined text-[13px]">
@@ -226,7 +226,7 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                     }}
                     onBlur={() => commitInline(cell.dateStr)}
                     placeholder="Title, then Enter…"
-                    className="w-full text-[11px] px-1.5 py-1 border border-[#296c00] rounded bg-white text-[#1b1c1a] focus:outline-none focus:ring-1 focus:ring-[#296c00]"
+                    className="w-full text-[11px] px-1.5 py-1 border border-[#4f46e5] rounded bg-white text-[#1b1c1a] focus:outline-none focus:ring-1 focus:ring-[#4f46e5]"
                   />
                 )}
                 {visiblePosts.map((post) => (

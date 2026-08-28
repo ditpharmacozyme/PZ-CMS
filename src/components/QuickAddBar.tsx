@@ -61,7 +61,7 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-2 px-4 py-3 border-b border-[#e9e9e7]">
-          <span className="material-symbols-outlined text-[#78d24b]">bolt</span>
+          <span className="material-symbols-outlined text-[#15803d]">bolt</span>
           <input
             ref={inputRef}
             type="text"
@@ -84,7 +84,7 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({
           <button
             onClick={submit}
             disabled={!title.trim()}
-            className="bg-[#296c00] text-white font-label-caps text-[11px] font-bold px-4 rounded hover:bg-[#1f5700] disabled:opacity-40 min-h-[44px]"
+            className="bg-[#4f46e5] text-white font-label-caps text-[11px] font-bold px-4 rounded hover:bg-[#4338ca] disabled:opacity-40 min-h-[44px]"
           >
             Add idea
           </button>

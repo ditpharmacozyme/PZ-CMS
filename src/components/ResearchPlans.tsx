@@ -237,7 +237,7 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#e9e9e7]">
         <div>
-          <span className="font-label-caps text-xs text-[#296951] uppercase font-bold tracking-widest">
+          <span className="font-label-caps text-xs text-[#4338ca] uppercase font-bold tracking-widest">
             Research & Plans
           </span>
           <h2 className="font-display-xl text-2xl md:text-3xl text-[#1b1c1a] font-bold mt-1">
@@ -250,7 +250,7 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
 
         <button
           onClick={handleOpenUploadModal}
-          className="bg-[#296c00] text-white font-label-caps text-xs px-4 py-2.5 rounded shadow-sm hover:bg-[#1f5700] transition-all flex items-center gap-2 font-bold whitespace-nowrap"
+          className="bg-[#4f46e5] text-white font-label-caps text-xs px-4 py-2.5 rounded shadow-sm hover:bg-[#4338ca] transition-all flex items-center gap-2 font-bold whitespace-nowrap"
         >
           <span className="material-symbols-outlined text-sm font-bold">upload</span>
           <span>Upload File</span>
@@ -268,7 +268,7 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search title, tags, or owner..."
-            className="w-full bg-[#f4f4f3] border border-[#e9e9e7] pl-9 pr-8 py-2 font-body-md text-xs text-[#1b1c1a] focus:bg-white focus:border-[#296c00] focus:outline-none rounded"
+            className="w-full bg-[#f4f4f3] border border-[#e9e9e7] pl-9 pr-8 py-2 font-body-md text-xs text-[#1b1c1a] focus:bg-white focus:border-[#4f46e5] focus:outline-none rounded"
           />
           {searchQuery && (
             <button
@@ -361,7 +361,7 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
 
                 <div className="flex-1 space-y-2">
                   <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-base text-[#296c00]">
+                    <span className="material-symbols-outlined text-base text-[#4f46e5]">
                       {FILE_TYPE_ICONS[item.fileType]}
                     </span>
                     <h3 className="font-headline-md text-sm font-bold text-[#1b1c1a] leading-snug">
@@ -388,7 +388,7 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
                   <div className="flex gap-2 pt-2 border-t border-[#e9e9e7]/50">
                     <button
                       onClick={() => setViewingItem(item)}
-                      className="flex-1 font-label-caps text-[10px] font-bold py-2 rounded border bg-[#f4f4f3] border-[#e9e9e7] text-[#296c00] hover:bg-[#f1f1f0] transition-colors flex items-center justify-center gap-1 min-h-[36px]"
+                      className="flex-1 font-label-caps text-[10px] font-bold py-2 rounded border bg-[#f4f4f3] border-[#e9e9e7] text-[#4f46e5] hover:bg-[#f1f1f0] transition-colors flex items-center justify-center gap-1 min-h-[36px]"
                     >
                       <span className="material-symbols-outlined text-xs">visibility</span>
                       <span>View</span>
@@ -397,7 +397,7 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
                       href={item.driveViewUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="flex-1 bg-[#296c00] text-white font-label-caps text-[10px] font-bold py-2 rounded hover:bg-[#1f5700] transition-colors flex items-center justify-center gap-1 min-h-[36px]"
+                      className="flex-1 bg-[#4f46e5] text-white font-label-caps text-[10px] font-bold py-2 rounded hover:bg-[#4338ca] transition-colors flex items-center justify-center gap-1 min-h-[36px]"
                     >
                       <span className="material-symbols-outlined text-xs">open_in_new</span>
                       <span>Open in Drive</span>
@@ -449,13 +449,13 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
                     const file = e.target.files?.[0];
                     if (file) handleFileSelect(file);
                   }}
-                  className="block w-full text-xs text-[#57574f] file:mr-3 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-label-caps file:font-bold file:bg-[#f1f1f0] file:text-[#296c00] hover:file:bg-[#296c00] hover:file:text-white file:transition-all cursor-pointer"
+                  className="block w-full text-xs text-[#57574f] file:mr-3 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-label-caps file:font-bold file:bg-[#f1f1f0] file:text-[#4f46e5] hover:file:bg-[#4f46e5] hover:file:text-white file:transition-all cursor-pointer"
                 />
                 {uploadError && (
                   <p className="text-[11px] text-[#dc2626] mt-2 font-body-md leading-relaxed">{uploadError}</p>
                 )}
                 {fileType === 'csv' && parsedRows && (
-                  <p className="text-[11px] text-[#296c00] mt-2 font-bold">
+                  <p className="text-[11px] text-[#4f46e5] mt-2 font-bold">
                     ✓ {parsedRows.length} calendar rows parsed and headers validated.
                   </p>
                 )}
@@ -571,7 +571,7 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
                             type="checkbox"
                             checked={autoPopulateCalendar}
                             onChange={(e) => setAutoPopulateCalendar(e.target.checked)}
-                            className="appearance-none w-4 h-4 border-2 border-[#e9e9e7] rounded-sm checked:bg-[#296c00] checked:border-[#296c00] transition-colors cursor-pointer group-hover:border-[#296c00]"
+                            className="appearance-none w-4 h-4 border-2 border-[#e9e9e7] rounded-sm checked:bg-[#4f46e5] checked:border-[#4f46e5] transition-colors cursor-pointer group-hover:border-[#4f46e5]"
                           />
                           {autoPopulateCalendar && (
                             <span className="material-symbols-outlined text-[12px] text-white absolute pointer-events-none font-bold">
@@ -600,7 +600,7 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
               <button
                 onClick={handleSubmitUpload}
                 disabled={!canSubmit}
-                className="px-4 py-2 bg-[#296c00] text-white font-label-caps text-xs font-bold rounded hover:bg-[#1f5700] disabled:opacity-50"
+                className="px-4 py-2 bg-[#4f46e5] text-white font-label-caps text-xs font-bold rounded hover:bg-[#4338ca] disabled:opacity-50"
               >
                 {isUploading ? 'Uploading…' : 'Upload'}
               </button>
@@ -621,7 +621,7 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
             </button>
 
             <div>
-              <span className="font-label-caps text-[10px] text-[#296951] uppercase font-bold tracking-widest">
+              <span className="font-label-caps text-[10px] text-[#4338ca] uppercase font-bold tracking-widest">
                 {TYPE_LABELS[viewingItem.type]}
               </span>
               <h2 className="font-headline-md text-lg font-bold text-[#1b1c1a] mt-1">{viewingItem.title}</h2>
@@ -639,7 +639,7 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
                       const posts = convertCsvRowsToPosts(rows, viewingItem.brand, viewingItem.owner);
                       onBatchAddPosts(posts);
                     }}
-                    className="w-full py-2 bg-[#f1f1f0] border border-[#e9e9e7] text-[#296c00] font-label-caps text-xs font-bold rounded hover:bg-[#e9e9e7] flex items-center justify-center gap-2 transition-colors shadow-sm"
+                    className="w-full py-2 bg-[#f1f1f0] border border-[#e9e9e7] text-[#4f46e5] font-label-caps text-xs font-bold rounded hover:bg-[#e9e9e7] flex items-center justify-center gap-2 transition-colors shadow-sm"
                   >
                     <span className="material-symbols-outlined text-sm">bolt</span>
                     Import / Auto-fill Content Calendar ({((viewingItem.parsedMetadata as any).rows as CalendarCsvRow[]).length} posts)
@@ -680,7 +680,7 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
 
             {(viewingItem.fileType === 'pdf' || viewingItem.fileType === 'docx' || viewingItem.fileType === 'xlsx') && (
               <div className="bg-[#f4f4f3] border border-[#e9e9e7] rounded p-6 text-center space-y-2">
-                <span className="material-symbols-outlined text-3xl text-[#296c00]">
+                <span className="material-symbols-outlined text-3xl text-[#4f46e5]">
                   {FILE_TYPE_ICONS[viewingItem.fileType]}
                 </span>
                 <p className="text-xs text-[#5f5f5b]">
@@ -706,7 +706,7 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
               href={viewingItem.driveViewUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 text-[#296c00] font-bold text-xs hover:underline"
+              className="inline-flex items-center gap-1.5 text-[#4f46e5] font-bold text-xs hover:underline"
             >
               <span className="material-symbols-outlined text-sm">open_in_new</span>
               Open in Drive

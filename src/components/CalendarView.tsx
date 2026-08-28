@@ -663,8 +663,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       <div className="flex-1 flex flex-col xl:flex-row bg-[#f4f4f3] min-h-screen overflow-hidden relative">
         {isUploading && (
           <div className="absolute inset-0 bg-[#f4f4f3]/75 backdrop-blur-xs z-50 flex flex-col items-center justify-center pointer-events-auto">
-            <div className="w-8 h-8 rounded-full border-2 border-[#296c00] border-t-transparent animate-spin mb-2" />
-            <p className="font-label-caps text-[10px] text-[#296c00] font-bold uppercase tracking-wider">Uploading Image...</p>
+            <div className="w-8 h-8 rounded-full border-2 border-[#4f46e5] border-t-transparent animate-spin mb-2" />
+            <p className="font-label-caps text-[10px] text-[#4f46e5] font-bold uppercase tracking-wider">Uploading Image...</p>
           </div>
         )}
 
@@ -864,7 +864,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         <aside className="hidden xl:block xl:w-80 xl:border-l border-[#e9e9e7] bg-[#f4f4f3] p-4 sm:p-6 space-y-5">
           <div className="pb-3 border-b border-[#e9e9e7] flex items-center justify-between">
             <div>
-              <span className="font-label-caps text-xs text-[#296951] uppercase font-bold">Selected post</span>
+              <span className="font-label-caps text-xs text-[#4338ca] uppercase font-bold">Selected post</span>
               <h3 className="font-headline-md text-lg sm:text-xl font-bold text-[#1b1c1a] mt-0.5">
                 {inspectorPost ? inspectorPost.title : 'Nothing selected'}
               </h3>
@@ -889,7 +889,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                     {SPECS[inspectorPost.specType]?.dimensions || inspectorPost.specType}
                   </span>
                 </div>
-                <label className={`mt-2 w-full bg-white border border-[#296c00] text-[#296c00] hover:bg-[#296c00] hover:text-white font-label-caps text-xs py-1.5 px-3 rounded font-bold transition-colors flex items-center justify-center gap-1.5 ${isUploading ? 'opacity-60 pointer-events-none' : 'cursor-pointer'}`}>
+                <label className={`mt-2 w-full bg-white border border-[#4f46e5] text-[#4f46e5] hover:bg-[#4f46e5] hover:text-white font-label-caps text-xs py-1.5 px-3 rounded font-bold transition-colors flex items-center justify-center gap-1.5 ${isUploading ? 'opacity-60 pointer-events-none' : 'cursor-pointer'}`}>
                   <span className="material-symbols-outlined text-sm">upload</span>
                   <span>{isUploading ? 'Uploading…' : inspectorPost.visualUrl ? 'Replace image' : 'Upload image'}</span>
                   <input type="file" accept="image/*" onChange={(e) => handleImageFileUpload(e, inspectorPost)} className="hidden" />
@@ -903,10 +903,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               <div className="space-y-2.5">
                 <label className="font-label-caps text-[10px] text-[#5f5f5b] block uppercase font-bold">Details</label>
                 {[
-                  ['Brand', <span key="brand" className="font-label-caps font-bold text-[#296c00]">{BRANDS[inspectorPost.brandId]?.name}</span>],
+                  ['Brand', <span key="brand" className="font-label-caps font-bold text-[#4f46e5]">{BRANDS[inspectorPost.brandId]?.name}</span>],
                   ['Owner', <span key="owner" className="font-label-caps font-bold">{inspectorPost.assignees.length > 0 ? inspectorPost.assignees.join(', ') : 'Unassigned'}</span>],
                   ['Status', (() => { const st = getPostStatusConfig(inspectorPost); return <span key="status" className="font-label-caps text-[10px] font-bold uppercase px-2 py-0.5 rounded flex items-center gap-1" style={{ backgroundColor: st.bgColor, color: st.color }}>{st.icon && <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>{st.icon}</span>}{st.label}</span>; })()],
-                  ['Reminder', <span key="reminder" className="font-code-sm font-bold text-[#296951]">{inspectorPost.scheduledDate ? `${inspectorPost.scheduledDate} ${inspectorPost.scheduledTime || '10:00'}` : 'No date set'}</span>],
+                  ['Reminder', <span key="reminder" className="font-code-sm font-bold text-[#4338ca]">{inspectorPost.scheduledDate ? `${inspectorPost.scheduledDate} ${inspectorPost.scheduledTime || '10:00'}` : 'No date set'}</span>],
                 ].map(([label, value]) => (
                   <div key={label as string} className="flex justify-between py-1 border-b border-[#e9e9e7]/50">
                     <span className="text-[#5f5f5b]">{label}</span>
@@ -919,7 +919,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               <div className="space-y-2 pt-1">
                 <button
                   onClick={() => onSelectPost(inspectorPost)}
-                  className="w-full bg-[#296c00] text-white font-label-caps text-xs py-3 rounded shadow-sm hover:bg-[#1f5700] active:scale-95 transition-all min-h-[44px] font-bold flex items-center justify-center gap-1.5"
+                  className="w-full bg-[#4f46e5] text-white font-label-caps text-xs py-3 rounded shadow-sm hover:bg-[#4338ca] active:scale-95 transition-all min-h-[44px] font-bold flex items-center justify-center gap-1.5"
                 >
                   <span className="material-symbols-outlined text-sm">edit</span>
                   <span>Edit post</span>

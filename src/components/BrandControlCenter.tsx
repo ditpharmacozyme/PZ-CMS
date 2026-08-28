@@ -141,7 +141,7 @@ OUTPUT FORMAT:
       {/* Header & Brand Selector */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#efefed] bg-white p-5 rounded-xl shadow-xs">
         <div>
-          <span className="font-label-caps text-xs text-[#296951] font-bold uppercase tracking-widest">
+          <span className="font-label-caps text-xs text-[#4338ca] font-bold uppercase tracking-widest">
             Brand Intelligence & AI Center
           </span>
           <h2 className="font-display-xl text-2xl md:text-3xl text-[#1b1c1a] font-bold mt-1">
@@ -151,7 +151,7 @@ OUTPUT FORMAT:
 
         <div className="flex items-center gap-3">
           {copiedText && (
-            <span className="font-label-caps text-xs font-bold text-[#296c00] bg-[#f0fae8] px-3 py-1.5 rounded-lg border border-[#78d24b]/40 animate-pulse">
+            <span className="font-label-caps text-xs font-bold text-[#4f46e5] bg-[#eef2ff] px-3 py-1.5 rounded-lg border border-[#15803d]/40 animate-pulse">
               ✓ Copied {copiedText}!
             </span>
           )}
@@ -159,7 +159,7 @@ OUTPUT FORMAT:
             onClick={() => setSpecGridActive(!specGridActive)}
             className={`px-3 py-1.5 font-label-caps text-xs rounded-lg border transition-all flex items-center gap-1.5 ${
               specGridActive
-                ? 'bg-[#296c00] text-white border-[#296c00] font-bold shadow-xs'
+                ? 'bg-[#4f46e5] text-white border-[#4f46e5] font-bold shadow-xs'
                 : 'bg-white text-[#5f5f5b] border-[#e9e9e7] hover:bg-[#f1f1f0]'
             }`}
           >
@@ -207,7 +207,7 @@ OUTPUT FORMAT:
       <div className="bg-white border border-[#efefed] rounded-xl shadow-xs p-6 space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-[#efefed]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#f0fae8] text-[#296c00] flex items-center justify-center flex-shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-[#eef2ff] text-[#4f46e5] flex items-center justify-center flex-shrink-0">
               <span className="material-symbols-outlined text-xl">smart_toy</span>
             </div>
             <div>
@@ -224,7 +224,7 @@ OUTPUT FORMAT:
             {onSaveToLibrary && (
               <button
                 onClick={() => handleSavePrompt(masterSystemPrompt, 'System Persona Prompt', ['persona'])}
-                className="px-3 py-2 bg-white border border-[#e9e9e7] hover:bg-[#f0fae8] text-[#296c00] font-label-caps text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                className="px-3 py-2 bg-white border border-[#e9e9e7] hover:bg-[#eef2ff] text-[#4f46e5] font-label-caps text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
                 title="Save this prompt to the Content Bank"
               >
                 <span className="material-symbols-outlined text-sm">bookmark_add</span>
@@ -233,7 +233,7 @@ OUTPUT FORMAT:
             )}
             <button
               onClick={() => handleCopy(masterSystemPrompt, 'System Persona Prompt')}
-              className="px-4 py-2 bg-[#1b1c1a] hover:bg-[#296c00] text-white font-label-caps text-xs font-bold rounded-lg transition-colors flex items-center gap-2 shadow-xs cursor-pointer"
+              className="px-4 py-2 bg-[#1b1c1a] hover:bg-[#4f46e5] text-white font-label-caps text-xs font-bold rounded-lg transition-colors flex items-center gap-2 shadow-xs cursor-pointer"
             >
               <span className="material-symbols-outlined text-sm">content_copy</span>
               <span>Copy Master System Prompt</span>
@@ -251,7 +251,7 @@ OUTPUT FORMAT:
               <select
                 value={selectedGoal}
                 onChange={(e) => setSelectedGoal(e.target.value as PromptGoal)}
-                className="w-full bg-[#f4f4f3] border border-[#e9e9e7] rounded-lg p-2.5 text-xs text-[#1b1c1a] focus:ring-1 focus:ring-[#296c00] focus:outline-none"
+                className="w-full bg-[#f4f4f3] border border-[#e9e9e7] rounded-lg p-2.5 text-xs text-[#1b1c1a] focus:ring-1 focus:ring-[#4f46e5] focus:outline-none"
               >
                 <option value="carousel">Instagram Educational Carousel (5-7 Slides)</option>
                 <option value="quiz">High-Yield Clinical Quiz & Answer</option>
@@ -269,7 +269,7 @@ OUTPUT FORMAT:
               <select
                 value={selectedTone}
                 onChange={(e) => setSelectedTone(e.target.value as PromptTone)}
-                className="w-full bg-[#f4f4f3] border border-[#e9e9e7] rounded-lg p-2.5 text-xs text-[#1b1c1a] focus:ring-1 focus:ring-[#296c00] focus:outline-none"
+                className="w-full bg-[#f4f4f3] border border-[#e9e9e7] rounded-lg p-2.5 text-xs text-[#1b1c1a] focus:ring-1 focus:ring-[#4f46e5] focus:outline-none"
               >
                 <option value="engaging-educational">Engaging & Educational (Med students / Clinicians)</option>
                 <option value="clinical-rigor">High Academic Rigor (Physicians / Specialists)</option>
@@ -288,7 +288,7 @@ OUTPUT FORMAT:
                 value={customTopic}
                 onChange={(e) => setCustomTopic(e.target.value)}
                 placeholder="e.g. Lipase enzyme activation in acute pancreatitis"
-                className="w-full bg-[#f4f4f3] border border-[#e9e9e7] rounded-lg p-2.5 text-xs text-[#1b1c1a] focus:ring-1 focus:ring-[#296c00] focus:outline-none"
+                className="w-full bg-[#f4f4f3] border border-[#e9e9e7] rounded-lg p-2.5 text-xs text-[#1b1c1a] focus:ring-1 focus:ring-[#4f46e5] focus:outline-none"
               />
             </div>
 
@@ -301,7 +301,7 @@ OUTPUT FORMAT:
                 onChange={(e) => setAdditionalNotes(e.target.value)}
                 placeholder="e.g. Include reference to recent 2025 guidelines; make slide 3 a diagram suggestion"
                 rows={2}
-                className="w-full bg-[#f4f4f3] border border-[#e9e9e7] rounded-lg p-2.5 text-xs text-[#1b1c1a] focus:ring-1 focus:ring-[#296c00] focus:outline-none resize-none"
+                className="w-full bg-[#f4f4f3] border border-[#e9e9e7] rounded-lg p-2.5 text-xs text-[#1b1c1a] focus:ring-1 focus:ring-[#4f46e5] focus:outline-none resize-none"
               />
             </div>
           </div>
@@ -310,8 +310,8 @@ OUTPUT FORMAT:
           <div className="lg:col-span-7 flex flex-col justify-between bg-[#1b1c1a] text-white p-5 rounded-xl space-y-4">
             <div>
               <div className="flex items-center justify-between mb-2 pb-2 border-b border-white/10">
-                <span className="font-label-caps text-[10px] text-[#78d24b] uppercase font-bold tracking-wider flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-[#78d24b] animate-pulse" />
+                <span className="font-label-caps text-[10px] text-[#15803d] uppercase font-bold tracking-wider flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-[#15803d] animate-pulse" />
                   Ready to paste into ChatGPT / Claude
                 </span>
                 <span className="text-[10px] text-white/50">{brand.name} Prompt</span>
@@ -324,7 +324,7 @@ OUTPUT FORMAT:
             <div className="flex items-center justify-between gap-3 pt-2">
               <button
                 onClick={() => handleCopy(generatedPostPrompt, 'Post Prompt')}
-                className="flex-1 bg-[#296c00] hover:bg-[#78d24b] hover:text-[#1b1c1a] text-white font-label-caps text-xs font-bold py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+                className="flex-1 bg-[#4f46e5] hover:bg-[#15803d] hover:text-[#1b1c1a] text-white font-label-caps text-xs font-bold py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-xs cursor-pointer"
               >
                 <span className="material-symbols-outlined text-sm">content_copy</span>
                 <span>Copy Post Prompt</span>
@@ -375,7 +375,7 @@ OUTPUT FORMAT:
               <div
                 key={i}
                 onClick={() => handleCopy(col.hex, `Hex ${col.hex}`)}
-                className="p-3 bg-[#f4f4f3] border border-[#efefed] rounded-lg cursor-pointer hover:border-[#296c00] transition-all group"
+                className="p-3 bg-[#f4f4f3] border border-[#efefed] rounded-lg cursor-pointer hover:border-[#4f46e5] transition-all group"
               >
                 <div
                   className="h-12 w-full rounded-md border border-[#e9e9e7]/60 mb-2 shadow-inner group-hover:scale-102 transition-transform"
@@ -386,7 +386,7 @@ OUTPUT FORMAT:
                 </span>
                 <div className="flex justify-between items-center mt-0.5">
                   <span className="font-code-sm text-xs font-bold text-[#1b1c1a]">{col.hex}</span>
-                  <span className="material-symbols-outlined text-xs text-[#5f5f5b] group-hover:text-[#296c00]">
+                  <span className="material-symbols-outlined text-xs text-[#5f5f5b] group-hover:text-[#4f46e5]">
                     content_copy
                   </span>
                 </div>
@@ -412,7 +412,7 @@ OUTPUT FORMAT:
               </div>
               <button
                 onClick={() => handleCopy(brand.tagline, 'Tagline')}
-                className="p-1.5 text-[#296c00] hover:bg-[#f0fae8] rounded-md transition-colors"
+                className="p-1.5 text-[#4f46e5] hover:bg-[#eef2ff] rounded-md transition-colors"
                 title="Copy tagline"
               >
                 <span className="material-symbols-outlined text-sm">content_copy</span>
@@ -422,11 +422,11 @@ OUTPUT FORMAT:
             <div className="p-3 bg-[#f4f4f3] border border-[#efefed] rounded-lg flex items-center justify-between gap-2">
               <div className="min-w-0 flex-1">
                 <span className="font-label-caps text-[9px] text-[#5f5f5b] uppercase font-bold block">Recommended Hashtags</span>
-                <p className="font-code-sm text-xs text-[#296951] truncate">{brandHashtags}</p>
+                <p className="font-code-sm text-xs text-[#4338ca] truncate">{brandHashtags}</p>
               </div>
               <button
                 onClick={() => handleCopy(brandHashtags, 'Hashtags')}
-                className="p-1.5 text-[#296c00] hover:bg-[#f0fae8] rounded-md transition-colors"
+                className="p-1.5 text-[#4f46e5] hover:bg-[#eef2ff] rounded-md transition-colors"
                 title="Copy hashtags"
               >
                 <span className="material-symbols-outlined text-sm">content_copy</span>
@@ -440,7 +440,7 @@ OUTPUT FORMAT:
               </div>
               <button
                 onClick={() => handleCopy(brand.description, 'Brand Bio')}
-                className="p-1.5 text-[#296c00] hover:bg-[#f0fae8] rounded-md transition-colors"
+                className="p-1.5 text-[#4f46e5] hover:bg-[#eef2ff] rounded-md transition-colors"
                 title="Copy bio description"
               >
                 <span className="material-symbols-outlined text-sm">content_copy</span>
@@ -472,7 +472,7 @@ OUTPUT FORMAT:
               <span className="font-label-caps text-[9px] text-[#5f5f5b] uppercase block mb-1">
                 Headline Specimen ({brand.fonts.headline})
               </span>
-              <p className="font-specimen-headline text-lg font-bold text-[#296951]">
+              <p className="font-specimen-headline text-lg font-bold text-[#4338ca]">
                 Precision Medical Synthesis Protocol
               </p>
             </div>
@@ -496,7 +496,7 @@ OUTPUT FORMAT:
             </h4>
             <button
               onClick={() => handleCopy(brand.voiceRules.join('\n'), 'Voice Rules')}
-              className="text-xs text-[#296c00] font-label-caps font-bold hover:underline"
+              className="text-xs text-[#4f46e5] font-label-caps font-bold hover:underline"
             >
               Copy Rules
             </button>
@@ -505,7 +505,7 @@ OUTPUT FORMAT:
           <div className="space-y-2.5">
             {brand.voiceRules.map((rule, idx) => (
               <div key={idx} className="p-3 bg-[#f4f4f3] border border-[#efefed] rounded-lg">
-                <span className="font-label-caps text-[9px] text-[#296c00] font-bold block mb-0.5">
+                <span className="font-label-caps text-[9px] text-[#4f46e5] font-bold block mb-0.5">
                   GUARDRAIL 0{idx + 1}
                 </span>
                 <p className="text-xs text-[#1b1c1a] leading-relaxed">{rule}</p>
