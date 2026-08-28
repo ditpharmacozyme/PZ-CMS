@@ -87,10 +87,10 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
           isSelected
             ? 'bg-[#f0fae8] ring-1 ring-[#296c00]'
             : isToday
-            ? 'bg-white border-l-4 border-l-[#296c00] hover:bg-[#faf9f5]'
+            ? 'bg-white border-l-4 border-l-[#296c00] hover:bg-[#f4f4f3]'
             : isPast
-            ? 'bg-[#faf9f5]/80 opacity-75 hover:opacity-100 hover:bg-white'
-            : 'bg-white hover:bg-[#faf9f5]'
+            ? 'bg-[#f4f4f3]/80 opacity-75 hover:opacity-100 hover:bg-white'
+            : 'bg-white hover:bg-[#f4f4f3]'
         }`}
       >
         {/* Checkbox (desktop) */}
@@ -100,7 +100,7 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
             checked={isSelected}
             onClick={(e) => onToggleSelect(post.id, e)}
             onChange={() => {}}
-            className="w-4 h-4 text-[#296c00] border-[#bfcab4] rounded focus:ring-[#296c00] cursor-pointer"
+            className="w-4 h-4 text-[#296c00] border-[#e9e9e7] rounded focus:ring-[#296c00] cursor-pointer"
           />
         </span>
 
@@ -117,7 +117,7 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
             </span>
             {timeConflict.hasClash && (
               <span
-                className="font-label-caps text-[8px] bg-[#ffdad6] text-[#ba1a1a] px-1 py-0.2 rounded font-bold"
+                className="font-label-caps text-[8px] bg-[#fcebeb] text-[#dc2626] px-1 py-0.2 rounded font-bold"
                 title={`Time collision with "${timeConflict.conflictingPost?.title}"`}
               >
                 ⚠️ Clash
@@ -147,7 +147,7 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
           <div className="flex items-center gap-2">
             <h4 className="font-headline-md text-xs sm:text-sm font-bold text-[#1b1c1a] truncate">{post.title}</h4>
           </div>
-          <p className="font-body-md text-xs text-[#707a67] line-clamp-1 mt-0.5">{post.caption || 'No caption'}</p>
+          <p className="font-body-md text-xs text-[#5f5f5b] line-clamp-1 mt-0.5">{post.caption || 'No caption'}</p>
 
           {/* Quick Stage Badges */}
           {post.taskRoles && (post.taskRoles.designer || post.taskRoles.publisher || post.taskRoles.engagementLead) && (
@@ -157,7 +157,7 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
                   type="button"
                   onClick={(e) => handleQuickStageToggle(post, 'design', e)}
                   className={`px-1.5 py-0.2 rounded cursor-pointer transition-all ${
-                    post.stageCompletion?.designDone ? 'bg-[#296c00] text-white font-bold' : 'bg-[#efeeea] text-[#404a39]'
+                    post.stageCompletion?.designDone ? 'bg-[#296c00] text-white font-bold' : 'bg-[#f1f1f0] text-[#57574f]'
                   }`}
                   title="Click to toggle Design done"
                 >
@@ -169,7 +169,7 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
                   type="button"
                   onClick={(e) => handleQuickStageToggle(post, 'publish', e)}
                   className={`px-1.5 py-0.2 rounded cursor-pointer transition-all ${
-                    post.stageCompletion?.publishDone ? 'bg-[#296c00] text-white font-bold' : 'bg-[#efeeea] text-[#404a39]'
+                    post.stageCompletion?.publishDone ? 'bg-[#296c00] text-white font-bold' : 'bg-[#f1f1f0] text-[#57574f]'
                   }`}
                   title="Click to toggle Publish done"
                 >
@@ -181,7 +181,7 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
                   type="button"
                   onClick={(e) => handleQuickStageToggle(post, 'engagement', e)}
                   className={`px-1.5 py-0.2 rounded cursor-pointer transition-all ${
-                    post.stageCompletion?.engagementDone ? 'bg-[#296c00] text-white font-bold' : 'bg-[#efeeea] text-[#404a39]'
+                    post.stageCompletion?.engagementDone ? 'bg-[#296c00] text-white font-bold' : 'bg-[#f1f1f0] text-[#57574f]'
                   }`}
                   title="Click to toggle Engagement done"
                 >
@@ -205,7 +205,7 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
               else assigneeTriggerRefs.current.delete(post.id);
             }}
             onClick={(e) => { e.stopPropagation(); setOpenAssigneePostId((cur) => (cur === post.id ? null : post.id)); }}
-            className="md:w-28 font-body-md text-xs text-[#404a39] text-left hover:text-[#296c00] hover:underline cursor-pointer truncate"
+            className="md:w-28 font-body-md text-xs text-[#57574f] text-left hover:text-[#296c00] hover:underline cursor-pointer truncate"
             title="Tap to assign"
           >
             {post.assignees.length > 0 ? post.assignees.join(', ') : 'Unassigned'}
@@ -217,7 +217,7 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
                 e.stopPropagation();
                 onSelectPost(post);
               }}
-              className="text-[#296c00] font-label-caps text-xs font-bold hover:bg-[#296c00] hover:text-white px-2.5 py-1 bg-[#efeeea] rounded-lg transition-colors cursor-pointer"
+              className="text-[#296c00] font-label-caps text-xs font-bold hover:bg-[#296c00] hover:text-white px-2.5 py-1 bg-[#f1f1f0] rounded-lg transition-colors cursor-pointer"
             >
               Edit
             </button>
@@ -233,7 +233,7 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
                   });
                   if (ok) onDeletePost(post.id);
                 }}
-                className="text-[#ba1a1a] font-label-caps text-xs font-bold hover:bg-[#ba1a1a] hover:text-white px-2 py-1 bg-[#ffdad6] rounded-lg transition-colors cursor-pointer"
+                className="text-[#dc2626] font-label-caps text-xs font-bold hover:bg-[#dc2626] hover:text-white px-2 py-1 bg-[#fcebeb] rounded-lg transition-colors cursor-pointer"
               >
                 Delete
               </button>
@@ -245,9 +245,9 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
   };
 
   return (
-    <div className="bg-white border border-[#e5e4de] shadow-xs rounded-xl overflow-hidden">
+    <div className="bg-white border border-[#efefed] shadow-xs rounded-xl overflow-hidden">
       {/* Column Headers (desktop) */}
-      <div className="p-3 sm:p-4 bg-[#f7f6f2] border-b border-[#e5e4de] hidden md:flex items-center justify-between font-label-caps text-xs font-bold text-[#1b1c1a]">
+      <div className="p-3 sm:p-4 bg-[#f4f4f3] border-b border-[#efefed] hidden md:flex items-center justify-between font-label-caps text-xs font-bold text-[#1b1c1a]">
         <span className="w-7 flex-shrink-0">
           <input
             type="checkbox"
@@ -269,9 +269,9 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
       </div>
 
       {/* ── Today & Upcoming Posts Section (Always Shown First) ── */}
-      <div className="divide-y divide-[#f0eee6]">
+      <div className="divide-y divide-[#efefed]">
         {todayAndUpcomingPosts.length === 0 && pastPosts.length === 0 ? (
-          <div className="p-8 text-center text-xs font-body-md text-[#707a67]">
+          <div className="p-8 text-center text-xs font-body-md text-[#5f5f5b]">
             No scheduled posts match current filters or search parameters.
           </div>
         ) : (
@@ -281,11 +281,11 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
 
       {/* ── Collapsible Past Posts Section (Hidden by Default) ── */}
       {pastPosts.length > 0 && (
-        <div className="border-t-2 border-[#e5e4de] bg-[#faf9f5]">
+        <div className="border-t-2 border-[#efefed] bg-[#f4f4f3]">
           <button
             type="button"
             onClick={() => setShowPastPosts(!showPastPosts)}
-            className="w-full p-3.5 flex items-center justify-between hover:bg-[#efeeea] text-[#707a67] hover:text-[#1b1c1a] transition-colors cursor-pointer"
+            className="w-full p-3.5 flex items-center justify-between hover:bg-[#f1f1f0] text-[#5f5f5b] hover:text-[#1b1c1a] transition-colors cursor-pointer"
           >
             <div className="flex items-center gap-2 font-label-caps text-xs font-bold uppercase tracking-wider">
               <span className="material-symbols-outlined text-sm transition-transform" style={{ transform: showPastPosts ? 'rotate(90deg)' : 'none' }}>
@@ -293,13 +293,13 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
               </span>
               <span>Past Scheduled Posts ({pastPosts.length})</span>
             </div>
-            <span className="text-[11px] font-medium text-[#707a67]">
+            <span className="text-[11px] font-medium text-[#5f5f5b]">
               {showPastPosts ? 'Click to collapse' : 'Click to show previous posts'}
             </span>
           </button>
 
           {showPastPosts && (
-            <div className="divide-y divide-[#f0eee6] border-t border-[#e5e4de]">
+            <div className="divide-y divide-[#efefed] border-t border-[#efefed]">
               {pastPosts.map((post) => renderPostRow(post, true))}
             </div>
           )}

@@ -139,7 +139,7 @@ OUTPUT FORMAT:
   return (
     <div className={`p-4 md:p-8 space-y-8 max-w-7xl mx-auto ${specGridActive ? 'spec-grid' : ''}`}>
       {/* Header & Brand Selector */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#e5e4de] bg-white p-5 rounded-xl shadow-xs">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#efefed] bg-white p-5 rounded-xl shadow-xs">
         <div>
           <span className="font-label-caps text-xs text-[#296951] font-bold uppercase tracking-widest">
             Brand Intelligence & AI Center
@@ -160,7 +160,7 @@ OUTPUT FORMAT:
             className={`px-3 py-1.5 font-label-caps text-xs rounded-lg border transition-all flex items-center gap-1.5 ${
               specGridActive
                 ? 'bg-[#296c00] text-white border-[#296c00] font-bold shadow-xs'
-                : 'bg-white text-[#707a67] border-[#bfcab4] hover:bg-[#efeeea]'
+                : 'bg-white text-[#5f5f5b] border-[#e9e9e7] hover:bg-[#f1f1f0]'
             }`}
           >
             <span className="material-symbols-outlined text-sm">grid_3x3</span>
@@ -181,15 +181,15 @@ OUTPUT FORMAT:
                 onSelectBrandFilter(b.id);
               }}
               style={{
-                borderColor: isActive ? b.primaryColor : '#e5e4de',
-                color: isActive ? b.primaryColor : '#404a39'
+                borderColor: isActive ? b.primaryColor : '#efefed',
+                color: isActive ? b.primaryColor : '#57574f'
               }}
               className={`px-4 py-2.5 font-label-caps text-xs rounded-xl border font-bold transition-all flex items-center gap-2.5 whitespace-nowrap cursor-pointer ${
-                isActive ? 'bg-white shadow-xs scale-102 ring-1 ring-inset' : 'bg-[#faf9f5] hover:bg-white'
+                isActive ? 'bg-white shadow-xs scale-102 ring-1 ring-inset' : 'bg-[#f4f4f3] hover:bg-white'
               }`}
             >
               {b.logoUrl ? (
-                <div className="w-5 h-5 rounded bg-white p-0.5 border border-[#bfcab4]/60 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                <div className="w-5 h-5 rounded bg-white p-0.5 border border-[#e9e9e7]/60 flex items-center justify-center flex-shrink-0 overflow-hidden">
                   <img src={b.logoUrl} alt={b.name} className="w-full h-full object-contain" />
                 </div>
               ) : (
@@ -204,8 +204,8 @@ OUTPUT FORMAT:
       </div>
 
       {/* ── Section 1: AI Prompting Hub (Hero Feature) ── */}
-      <div className="bg-white border border-[#e5e4de] rounded-xl shadow-xs p-6 space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-[#e5e4de]">
+      <div className="bg-white border border-[#efefed] rounded-xl shadow-xs p-6 space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-[#efefed]">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#f0fae8] text-[#296c00] flex items-center justify-center flex-shrink-0">
               <span className="material-symbols-outlined text-xl">smart_toy</span>
@@ -214,7 +214,7 @@ OUTPUT FORMAT:
               <h3 className="font-display-xl text-xl font-bold text-[#1b1c1a]">
                 AI Prompts & Persona Generator
               </h3>
-              <p className="text-xs text-[#707a67]">
+              <p className="text-xs text-[#5f5f5b]">
                 Generate structured, brand-accurate prompts for ChatGPT, Claude, Gemini, or Midjourney.
               </p>
             </div>
@@ -224,7 +224,7 @@ OUTPUT FORMAT:
             {onSaveToLibrary && (
               <button
                 onClick={() => handleSavePrompt(masterSystemPrompt, 'System Persona Prompt', ['persona'])}
-                className="px-3 py-2 bg-white border border-[#bfcab4] hover:bg-[#f0fae8] text-[#296c00] font-label-caps text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                className="px-3 py-2 bg-white border border-[#e9e9e7] hover:bg-[#f0fae8] text-[#296c00] font-label-caps text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
                 title="Save this prompt to the Content Bank"
               >
                 <span className="material-symbols-outlined text-sm">bookmark_add</span>
@@ -245,13 +245,13 @@ OUTPUT FORMAT:
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div className="lg:col-span-5 space-y-4">
             <div>
-              <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold block mb-1.5">
+              <label className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold block mb-1.5">
                 1. Content Goal
               </label>
               <select
                 value={selectedGoal}
                 onChange={(e) => setSelectedGoal(e.target.value as PromptGoal)}
-                className="w-full bg-[#faf9f5] border border-[#bfcab4] rounded-lg p-2.5 text-xs text-[#1b1c1a] focus:ring-1 focus:ring-[#296c00] focus:outline-none"
+                className="w-full bg-[#f4f4f3] border border-[#e9e9e7] rounded-lg p-2.5 text-xs text-[#1b1c1a] focus:ring-1 focus:ring-[#296c00] focus:outline-none"
               >
                 <option value="carousel">Instagram Educational Carousel (5-7 Slides)</option>
                 <option value="quiz">High-Yield Clinical Quiz & Answer</option>
@@ -263,13 +263,13 @@ OUTPUT FORMAT:
             </div>
 
             <div>
-              <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold block mb-1.5">
+              <label className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold block mb-1.5">
                 2. Tone & Depth
               </label>
               <select
                 value={selectedTone}
                 onChange={(e) => setSelectedTone(e.target.value as PromptTone)}
-                className="w-full bg-[#faf9f5] border border-[#bfcab4] rounded-lg p-2.5 text-xs text-[#1b1c1a] focus:ring-1 focus:ring-[#296c00] focus:outline-none"
+                className="w-full bg-[#f4f4f3] border border-[#e9e9e7] rounded-lg p-2.5 text-xs text-[#1b1c1a] focus:ring-1 focus:ring-[#296c00] focus:outline-none"
               >
                 <option value="engaging-educational">Engaging & Educational (Med students / Clinicians)</option>
                 <option value="clinical-rigor">High Academic Rigor (Physicians / Specialists)</option>
@@ -280,7 +280,7 @@ OUTPUT FORMAT:
             </div>
 
             <div>
-              <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold block mb-1.5">
+              <label className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold block mb-1.5">
                 3. Topic / Keyword Focus
               </label>
               <input
@@ -288,12 +288,12 @@ OUTPUT FORMAT:
                 value={customTopic}
                 onChange={(e) => setCustomTopic(e.target.value)}
                 placeholder="e.g. Lipase enzyme activation in acute pancreatitis"
-                className="w-full bg-[#faf9f5] border border-[#bfcab4] rounded-lg p-2.5 text-xs text-[#1b1c1a] focus:ring-1 focus:ring-[#296c00] focus:outline-none"
+                className="w-full bg-[#f4f4f3] border border-[#e9e9e7] rounded-lg p-2.5 text-xs text-[#1b1c1a] focus:ring-1 focus:ring-[#296c00] focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold block mb-1.5">
+              <label className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold block mb-1.5">
                 4. Additional Custom Instructions (Optional)
               </label>
               <textarea
@@ -301,7 +301,7 @@ OUTPUT FORMAT:
                 onChange={(e) => setAdditionalNotes(e.target.value)}
                 placeholder="e.g. Include reference to recent 2025 guidelines; make slide 3 a diagram suggestion"
                 rows={2}
-                className="w-full bg-[#faf9f5] border border-[#bfcab4] rounded-lg p-2.5 text-xs text-[#1b1c1a] focus:ring-1 focus:ring-[#296c00] focus:outline-none resize-none"
+                className="w-full bg-[#f4f4f3] border border-[#e9e9e7] rounded-lg p-2.5 text-xs text-[#1b1c1a] focus:ring-1 focus:ring-[#296c00] focus:outline-none resize-none"
               />
             </div>
           </div>
@@ -357,12 +357,12 @@ OUTPUT FORMAT:
       {/* ── Section 2: Visual Specs, Colors & Typography ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Colors */}
-        <div className="lg:col-span-6 bg-white border border-[#e5e4de] p-6 rounded-xl shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-[#e5e4de]">
+        <div className="lg:col-span-6 bg-white border border-[#efefed] p-6 rounded-xl shadow-xs space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-[#efefed]">
             <h4 className="font-display-xl text-lg font-bold text-[#1b1c1a]">
               Brand Color Palette
             </h4>
-            <span className="text-xs text-[#707a67]">Click swatch to copy hex</span>
+            <span className="text-xs text-[#5f5f5b]">Click swatch to copy hex</span>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -375,18 +375,18 @@ OUTPUT FORMAT:
               <div
                 key={i}
                 onClick={() => handleCopy(col.hex, `Hex ${col.hex}`)}
-                className="p-3 bg-[#faf9f5] border border-[#e5e4de] rounded-lg cursor-pointer hover:border-[#296c00] transition-all group"
+                className="p-3 bg-[#f4f4f3] border border-[#efefed] rounded-lg cursor-pointer hover:border-[#296c00] transition-all group"
               >
                 <div
-                  className="h-12 w-full rounded-md border border-[#bfcab4]/60 mb-2 shadow-inner group-hover:scale-102 transition-transform"
+                  className="h-12 w-full rounded-md border border-[#e9e9e7]/60 mb-2 shadow-inner group-hover:scale-102 transition-transform"
                   style={{ backgroundColor: col.hex }}
                 />
-                <span className="font-label-caps text-[9px] text-[#707a67] block uppercase">
+                <span className="font-label-caps text-[9px] text-[#5f5f5b] block uppercase">
                   {col.label}
                 </span>
                 <div className="flex justify-between items-center mt-0.5">
                   <span className="font-code-sm text-xs font-bold text-[#1b1c1a]">{col.hex}</span>
-                  <span className="material-symbols-outlined text-xs text-[#707a67] group-hover:text-[#296c00]">
+                  <span className="material-symbols-outlined text-xs text-[#5f5f5b] group-hover:text-[#296c00]">
                     content_copy
                   </span>
                 </div>
@@ -396,18 +396,18 @@ OUTPUT FORMAT:
         </div>
 
         {/* Quick Snippets & Hashtags */}
-        <div className="lg:col-span-6 bg-white border border-[#e5e4de] p-6 rounded-xl shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-[#e5e4de]">
+        <div className="lg:col-span-6 bg-white border border-[#efefed] p-6 rounded-xl shadow-xs space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-[#efefed]">
             <h4 className="font-display-xl text-lg font-bold text-[#1b1c1a]">
               Quick Copy Assets & Snippets
             </h4>
-            <span className="text-xs text-[#707a67]">1-Click Copy</span>
+            <span className="text-xs text-[#5f5f5b]">1-Click Copy</span>
           </div>
 
           <div className="space-y-3">
-            <div className="p-3 bg-[#faf9f5] border border-[#e5e4de] rounded-lg flex items-center justify-between gap-2">
+            <div className="p-3 bg-[#f4f4f3] border border-[#efefed] rounded-lg flex items-center justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <span className="font-label-caps text-[9px] text-[#707a67] uppercase font-bold block">Tagline</span>
+                <span className="font-label-caps text-[9px] text-[#5f5f5b] uppercase font-bold block">Tagline</span>
                 <p className="text-xs font-semibold text-[#1b1c1a] truncate">{brand.tagline}</p>
               </div>
               <button
@@ -419,9 +419,9 @@ OUTPUT FORMAT:
               </button>
             </div>
 
-            <div className="p-3 bg-[#faf9f5] border border-[#e5e4de] rounded-lg flex items-center justify-between gap-2">
+            <div className="p-3 bg-[#f4f4f3] border border-[#efefed] rounded-lg flex items-center justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <span className="font-label-caps text-[9px] text-[#707a67] uppercase font-bold block">Recommended Hashtags</span>
+                <span className="font-label-caps text-[9px] text-[#5f5f5b] uppercase font-bold block">Recommended Hashtags</span>
                 <p className="font-code-sm text-xs text-[#296951] truncate">{brandHashtags}</p>
               </div>
               <button
@@ -433,10 +433,10 @@ OUTPUT FORMAT:
               </button>
             </div>
 
-            <div className="p-3 bg-[#faf9f5] border border-[#e5e4de] rounded-lg flex items-center justify-between gap-2">
+            <div className="p-3 bg-[#f4f4f3] border border-[#efefed] rounded-lg flex items-center justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <span className="font-label-caps text-[9px] text-[#707a67] uppercase font-bold block">Brand Bio</span>
-                <p className="text-xs text-[#404a39] line-clamp-1">{brand.description}</p>
+                <span className="font-label-caps text-[9px] text-[#5f5f5b] uppercase font-bold block">Brand Bio</span>
+                <p className="text-xs text-[#57574f] line-clamp-1">{brand.description}</p>
               </div>
               <button
                 onClick={() => handleCopy(brand.description, 'Brand Bio')}
@@ -453,14 +453,14 @@ OUTPUT FORMAT:
       {/* ── Section 3: Typography Specimen & Voice Rules ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Specimen Scale */}
-        <div className="lg:col-span-6 bg-white border border-[#e5e4de] p-6 rounded-xl shadow-xs space-y-4">
-          <h4 className="font-display-xl text-lg font-bold text-[#1b1c1a] pb-3 border-b border-[#e5e4de]">
+        <div className="lg:col-span-6 bg-white border border-[#efefed] p-6 rounded-xl shadow-xs space-y-4">
+          <h4 className="font-display-xl text-lg font-bold text-[#1b1c1a] pb-3 border-b border-[#efefed]">
             Typography Specimen Scale
           </h4>
 
-          <div className="space-y-4 bg-[#faf9f5] p-4 rounded-lg border border-[#e5e4de]">
+          <div className="space-y-4 bg-[#f4f4f3] p-4 rounded-lg border border-[#efefed]">
             <div>
-              <span className="font-label-caps text-[9px] text-[#707a67] uppercase block mb-1">
+              <span className="font-label-caps text-[9px] text-[#5f5f5b] uppercase block mb-1">
                 Display Font Specimen ({brand.fonts.display})
               </span>
               <p className="font-specimen-display text-2xl font-bold text-[#1b1c1a]">
@@ -469,7 +469,7 @@ OUTPUT FORMAT:
             </div>
 
             <div>
-              <span className="font-label-caps text-[9px] text-[#707a67] uppercase block mb-1">
+              <span className="font-label-caps text-[9px] text-[#5f5f5b] uppercase block mb-1">
                 Headline Specimen ({brand.fonts.headline})
               </span>
               <p className="font-specimen-headline text-lg font-bold text-[#296951]">
@@ -478,10 +478,10 @@ OUTPUT FORMAT:
             </div>
 
             <div>
-              <span className="font-label-caps text-[9px] text-[#707a67] uppercase block mb-1">
+              <span className="font-label-caps text-[9px] text-[#5f5f5b] uppercase block mb-1">
                 Body Copy Specimen ({brand.fonts.body})
               </span>
-              <p className="font-specimen-body text-xs text-[#404a39] leading-relaxed">
+              <p className="font-specimen-body text-xs text-[#57574f] leading-relaxed">
                 {brand.description}
               </p>
             </div>
@@ -489,8 +489,8 @@ OUTPUT FORMAT:
         </div>
 
         {/* Voice Rules */}
-        <div className="lg:col-span-6 bg-white border border-[#e5e4de] p-6 rounded-xl shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-[#e5e4de]">
+        <div className="lg:col-span-6 bg-white border border-[#efefed] p-6 rounded-xl shadow-xs space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-[#efefed]">
             <h4 className="font-display-xl text-lg font-bold text-[#1b1c1a]">
               Editorial Voice Guardrails
             </h4>
@@ -504,7 +504,7 @@ OUTPUT FORMAT:
 
           <div className="space-y-2.5">
             {brand.voiceRules.map((rule, idx) => (
-              <div key={idx} className="p-3 bg-[#faf9f5] border border-[#e5e4de] rounded-lg">
+              <div key={idx} className="p-3 bg-[#f4f4f3] border border-[#efefed] rounded-lg">
                 <span className="font-label-caps text-[9px] text-[#296c00] font-bold block mb-0.5">
                   GUARDRAIL 0{idx + 1}
                 </span>

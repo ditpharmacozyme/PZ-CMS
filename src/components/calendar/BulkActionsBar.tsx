@@ -48,12 +48,12 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
 
       {/* Sticky Floating Bottom Actions Toolbar */}
       {selectedCount > 0 && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-[#1b1c1a] text-white px-4 py-3 rounded-xl shadow-2xl border border-[#404a39] flex items-center gap-3 max-w-[95vw] sm:max-w-xl overflow-x-auto scrollbar-thin animate-slideUp">
-          <span className="font-bold text-xs font-label-caps text-[#bfcab4] whitespace-nowrap">
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-[#1b1c1a] text-white px-4 py-3 rounded-xl shadow-2xl border border-[#57574f] flex items-center gap-3 max-w-[95vw] sm:max-w-xl overflow-x-auto scrollbar-thin animate-slideUp">
+          <span className="font-bold text-xs font-label-caps text-[#e9e9e7] whitespace-nowrap">
             {selectedCount} selected
           </span>
 
-          <div className="h-4 w-[1px] bg-[#404a39]" />
+          <div className="h-4 w-[1px] bg-[#57574f]" />
 
           {/* Select All */}
           <button
@@ -67,7 +67,7 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
           <select
             value={bulkAssignee}
             onChange={(e) => onApplyBulkAssignee(e.target.value)}
-            className="bg-[#2a2b27] text-white text-xs font-label-caps py-1 px-2 rounded border border-[#404a39] focus:outline-none focus:ring-1 focus:ring-[#90da75] flex-shrink-0"
+            className="bg-[#2a2b27] text-white text-xs font-label-caps py-1 px-2 rounded border border-[#57574f] focus:outline-none focus:ring-1 focus:ring-[#90da75] flex-shrink-0"
           >
             <option value="">Assign To...</option>
             {teamMembers.map((m) => (

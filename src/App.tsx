@@ -320,7 +320,7 @@ export function App() {
   // ── Auth Gate ─────────────────────────────────────────────────────────────────
   if (supabase && !authChecked) {
     return (
-      <div className="min-h-screen bg-[#FAF9F5] flex items-center justify-center">
+      <div className="min-h-screen bg-[#f4f4f3] flex items-center justify-center">
         <div className="w-6 h-6 border-2 border-[#296c00]/30 border-t-[#296c00] rounded-full animate-spin" />
       </div>
     );
@@ -329,11 +329,11 @@ export function App() {
   if (supabase && mustSetPassword) return <LoginPage forcedMode="set-password" onPasswordSet={() => setMustSetPassword(false)} />;
   if (noProfileMatch) {
     return (
-      <div className="min-h-screen bg-[#FAF9F5] flex items-center justify-center p-4">
-        <div className="w-full max-w-sm bg-white border border-[#bfcab4] rounded-lg shadow-2xs p-6 text-center space-y-3">
-          <span className="material-symbols-outlined text-3xl text-[#ba1a1a]">person_off</span>
+      <div className="min-h-screen bg-[#f4f4f3] flex items-center justify-center p-4">
+        <div className="w-full max-w-sm bg-white border border-[#e9e9e7] rounded-lg shadow-2xs p-6 text-center space-y-3">
+          <span className="material-symbols-outlined text-3xl text-[#dc2626]">person_off</span>
           <h2 className="font-display-xl text-lg font-bold text-[#1b1c1a]">No matching team profile</h2>
-          <p className="font-body-md text-sm text-[#707a67]">
+          <p className="font-body-md text-sm text-[#5f5f5b]">
             You're signed in as <strong>{authEmail}</strong>, but no one on the team list has that email. Ask Hamza to add you in Settings → Team, or check you used the right account.
           </p>
           <button onClick={handleLogout} className="w-full bg-[#296c00] hover:bg-[#1f5700] text-white font-bold py-2.5 rounded transition-colors text-sm cursor-pointer">
@@ -516,7 +516,7 @@ export function App() {
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
     <ConfirmProvider>
-    <div className="min-h-screen bg-[#FAF9F5] text-[#1b1c1a] font-body-md flex flex-col md:flex-row">
+    <div className="min-h-screen bg-[#f4f4f3] text-[#1b1c1a] font-body-md flex flex-col md:flex-row">
       {/* Toast */}
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
 
@@ -573,7 +573,7 @@ export function App() {
         <main className="flex-1 overflow-x-hidden mobile-content-pad">
           <Suspense
             fallback={
-              <div className="flex items-center justify-center py-24 text-[#707a67]">
+              <div className="flex items-center justify-center py-24 text-[#5f5f5b]">
                 <span className="material-symbols-outlined animate-spin text-2xl">progress_activity</span>
               </div>
             }

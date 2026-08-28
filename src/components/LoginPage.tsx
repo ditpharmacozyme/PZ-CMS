@@ -87,26 +87,26 @@ export const LoginPage: React.FC<LoginPageProps> = ({ forcedMode, onPasswordSet 
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF9F5] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#f4f4f3] flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         {/* Header */}
         <div className="text-center mb-6">
-          <div className="w-14 h-14 rounded-xl bg-white border border-[#bfcab4] p-2 mx-auto flex items-center justify-center shadow-2xs overflow-hidden mb-3">
+          <div className="w-14 h-14 rounded-xl bg-white border border-[#e9e9e7] p-2 mx-auto flex items-center justify-center shadow-2xs overflow-hidden mb-3">
             <img src="/logos/PZ_Logo.png" alt="Pharmacozyme" className="w-full h-full object-contain" />
           </div>
           <h1 className="font-display-xl text-xl text-[#1b1c1a] font-bold">Brand-Ops Studio</h1>
-          <p className="font-body-md text-xs text-[#707a67] mt-1">
+          <p className="font-body-md text-xs text-[#5f5f5b] mt-1">
             {mode === 'signin' ? 'Sign in to continue' : mode === 'set-password' ? 'Set your password to continue' : 'Reset your password'}
           </p>
         </div>
 
         {mode === 'set-password' ? (
-          <form onSubmit={handleSetPassword} className="bg-white border border-[#bfcab4] rounded-lg shadow-2xs p-6 space-y-4">
-            <p className="text-xs text-[#707a67] font-body-md">
+          <form onSubmit={handleSetPassword} className="bg-white border border-[#e9e9e7] rounded-lg shadow-2xs p-6 space-y-4">
+            <p className="text-xs text-[#5f5f5b] font-body-md">
               Welcome! Choose a password to finish setting up your account.
             </p>
             <div className="space-y-1.5">
-              <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold block">
+              <label className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold block">
                 New Password
               </label>
               <input
@@ -118,11 +118,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ forcedMode, onPasswordSet 
                 autoFocus
                 required
                 disabled={isSubmitting}
-                className="w-full bg-[#faf9f5] border border-[#bfcab4] focus:border-[#296c00] text-[#1b1c1a] p-2.5 rounded outline-none transition-colors placeholder:text-[#bfcab4] placeholder:text-sm disabled:opacity-50"
+                className="w-full bg-[#f4f4f3] border border-[#e9e9e7] focus:border-[#296c00] text-[#1b1c1a] p-2.5 rounded outline-none transition-colors placeholder:text-[#e9e9e7] placeholder:text-sm disabled:opacity-50"
               />
             </div>
             <div className="space-y-1.5">
-              <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold block">
+              <label className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold block">
                 Confirm Password
               </label>
               <input
@@ -133,12 +133,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ forcedMode, onPasswordSet 
                 autoComplete="new-password"
                 required
                 disabled={isSubmitting}
-                className="w-full bg-[#faf9f5] border border-[#bfcab4] focus:border-[#296c00] text-[#1b1c1a] p-2.5 rounded outline-none transition-colors placeholder:text-[#bfcab4] placeholder:text-sm disabled:opacity-50"
+                className="w-full bg-[#f4f4f3] border border-[#e9e9e7] focus:border-[#296c00] text-[#1b1c1a] p-2.5 rounded outline-none transition-colors placeholder:text-[#e9e9e7] placeholder:text-sm disabled:opacity-50"
               />
             </div>
 
             {error && (
-              <div className="p-2.5 rounded bg-[#fce8e6] border border-[#ba1a1a]/20 text-[#ba1a1a] text-xs text-center font-body-md">
+              <div className="p-2.5 rounded bg-[#fce8e6] border border-[#dc2626]/20 text-[#dc2626] text-xs text-center font-body-md">
                 {error}
               </div>
             )}
@@ -157,9 +157,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ forcedMode, onPasswordSet 
             </button>
           </form>
         ) : mode === 'signin' ? (
-          <form onSubmit={handleSignIn} className="bg-white border border-[#bfcab4] rounded-lg shadow-2xs p-6 space-y-4">
+          <form onSubmit={handleSignIn} className="bg-white border border-[#e9e9e7] rounded-lg shadow-2xs p-6 space-y-4">
             <div className="space-y-1.5">
-              <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold block">
+              <label className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold block">
                 Email
               </label>
               <input
@@ -171,12 +171,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ forcedMode, onPasswordSet 
                 autoFocus
                 required
                 disabled={isSubmitting}
-                className="w-full bg-[#faf9f5] border border-[#bfcab4] focus:border-[#296c00] text-[#1b1c1a] p-2.5 rounded outline-none transition-colors placeholder:text-[#bfcab4] placeholder:text-sm disabled:opacity-50"
+                className="w-full bg-[#f4f4f3] border border-[#e9e9e7] focus:border-[#296c00] text-[#1b1c1a] p-2.5 rounded outline-none transition-colors placeholder:text-[#e9e9e7] placeholder:text-sm disabled:opacity-50"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold flex items-center gap-1">
+              <label className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold flex items-center gap-1">
                 <span className="material-symbols-outlined text-xs">lock</span>
                 Password
               </label>
@@ -189,12 +189,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ forcedMode, onPasswordSet 
                   autoComplete="current-password"
                   required
                   disabled={isSubmitting}
-                  className="w-full bg-[#faf9f5] border border-[#bfcab4] focus:border-[#296c00] text-[#1b1c1a] p-2.5 pr-10 rounded outline-none transition-colors placeholder:text-[#bfcab4] placeholder:text-sm disabled:opacity-50"
+                  className="w-full bg-[#f4f4f3] border border-[#e9e9e7] focus:border-[#296c00] text-[#1b1c1a] p-2.5 pr-10 rounded outline-none transition-colors placeholder:text-[#e9e9e7] placeholder:text-sm disabled:opacity-50"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(v => !v)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#707a67] hover:text-[#1b1c1a] transition-colors"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#5f5f5b] hover:text-[#1b1c1a] transition-colors"
                   tabIndex={-1}
                 >
                   <span className="material-symbols-outlined text-base">
@@ -205,7 +205,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ forcedMode, onPasswordSet 
             </div>
 
             {error && (
-              <div className="p-2.5 rounded bg-[#fce8e6] border border-[#ba1a1a]/20 text-[#ba1a1a] text-xs text-center font-body-md">
+              <div className="p-2.5 rounded bg-[#fce8e6] border border-[#dc2626]/20 text-[#dc2626] text-xs text-center font-body-md">
                 {error}
               </div>
             )}
@@ -226,13 +226,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ forcedMode, onPasswordSet 
             <button
               type="button"
               onClick={() => { setMode('reset'); setError(null); setResetSent(false); }}
-              className="w-full text-center text-[#707a67] hover:text-[#296c00] text-xs font-body-md transition-colors"
+              className="w-full text-center text-[#5f5f5b] hover:text-[#296c00] text-xs font-body-md transition-colors"
             >
               Forgot your password?
             </button>
           </form>
         ) : (
-          <form onSubmit={handleResetRequest} className="bg-white border border-[#bfcab4] rounded-lg shadow-2xs p-6 space-y-4">
+          <form onSubmit={handleResetRequest} className="bg-white border border-[#e9e9e7] rounded-lg shadow-2xs p-6 space-y-4">
             {resetSent ? (
               <div className="p-3 rounded bg-[#f0fae8] border border-[#296c00]/20 text-[#296c00] text-xs text-center font-body-md">
                 If that email has an account, a reset link is on its way — check your inbox.
@@ -240,7 +240,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ forcedMode, onPasswordSet 
             ) : (
               <>
                 <div className="space-y-1.5">
-                  <label className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold block">
+                  <label className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold block">
                     Email
                   </label>
                   <input
@@ -252,12 +252,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ forcedMode, onPasswordSet 
                     autoFocus
                     required
                     disabled={isSubmitting}
-                    className="w-full bg-[#faf9f5] border border-[#bfcab4] focus:border-[#296c00] text-[#1b1c1a] p-2.5 rounded outline-none transition-colors placeholder:text-[#bfcab4] placeholder:text-sm disabled:opacity-50"
+                    className="w-full bg-[#f4f4f3] border border-[#e9e9e7] focus:border-[#296c00] text-[#1b1c1a] p-2.5 rounded outline-none transition-colors placeholder:text-[#e9e9e7] placeholder:text-sm disabled:opacity-50"
                   />
                 </div>
 
                 {error && (
-                  <div className="p-2.5 rounded bg-[#fce8e6] border border-[#ba1a1a]/20 text-[#ba1a1a] text-xs text-center font-body-md">
+                  <div className="p-2.5 rounded bg-[#fce8e6] border border-[#dc2626]/20 text-[#dc2626] text-xs text-center font-body-md">
                     {error}
                   </div>
                 )}
@@ -275,14 +275,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ forcedMode, onPasswordSet 
             <button
               type="button"
               onClick={() => { setMode('signin'); setError(null); setResetSent(false); }}
-              className="w-full text-center text-[#707a67] hover:text-[#296c00] text-xs font-body-md transition-colors"
+              className="w-full text-center text-[#5f5f5b] hover:text-[#296c00] text-xs font-body-md transition-colors"
             >
               Back to sign in
             </button>
           </form>
         )}
 
-        <p className="text-center text-[#bfcab4] text-[10px] font-body-md mt-5">
+        <p className="text-center text-[#e9e9e7] text-[10px] font-body-md mt-5">
           Pharmacozyme Brand-Ops Studio · Internal Use Only
         </p>
       </div>

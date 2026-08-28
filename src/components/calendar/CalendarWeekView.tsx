@@ -55,20 +55,20 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
   return (
     <div className="hidden md:block">
       {/* Week duplicate forward bar */}
-      <div className="p-3 bg-[#f7f6f2] border-b border-[#e5e4de] flex flex-wrap items-center gap-3">
+      <div className="p-3 bg-[#f4f4f3] border-b border-[#efefed] flex flex-wrap items-center gap-3">
         <button
           onClick={onDuplicateWeekForward}
-          className="flex items-center gap-1.5 bg-white border border-[#bfcab4] hover:bg-[#efeeea] text-[#1b1c1a] font-label-caps text-xs font-bold px-3 py-1.5 rounded-lg shadow-2xs transition-all cursor-pointer"
+          className="flex items-center gap-1.5 bg-white border border-[#e9e9e7] hover:bg-[#f1f1f0] text-[#1b1c1a] font-label-caps text-xs font-bold px-3 py-1.5 rounded-lg shadow-2xs transition-all cursor-pointer"
         >
           <span className="material-symbols-outlined text-sm text-[#296c00]">content_copy</span>
           <span>Duplicate Week → Next Week</span>
         </button>
-        <label className="flex items-center gap-1.5 text-xs text-[#707a67] cursor-pointer">
+        <label className="flex items-center gap-1.5 text-xs text-[#5f5f5b] cursor-pointer">
           <input
             type="checkbox"
             checked={clearCaptionsOnDuplicate}
             onChange={(e) => onSetClearCaptionsOnDuplicate(e.target.checked)}
-            className="w-3.5 h-3.5 text-[#296c00] border-[#bfcab4] rounded focus:ring-[#296c00]"
+            className="w-3.5 h-3.5 text-[#296c00] border-[#e9e9e7] rounded focus:ring-[#296c00]"
           />
           <span className="font-label-caps text-[11px]">Clear captions when duplicating</span>
         </label>
@@ -103,11 +103,11 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                 onDropOnCell(e, dateStr);
               }}
               className={`p-2.5 border rounded-xl min-h-[220px] flex flex-col transition-all ${
-                isToday ? 'bg-white border-[#296c00] ring-1 ring-[#296c00]/30' : 'bg-[#faf9f5] border-[#e5e4de]'
+                isToday ? 'bg-white border-[#296c00] ring-1 ring-[#296c00]/30' : 'bg-[#f4f4f3] border-[#efefed]'
               } ${touchHoverDate === dateStr ? 'ring-2 ring-[#296c00] bg-[#f0fae8]' : ''}`}
             >
               {/* Day Header */}
-              <div className="pb-1.5 mb-2 border-b border-[#e5e4de] flex justify-between items-center flex-shrink-0 gap-1">
+              <div className="pb-1.5 mb-2 border-b border-[#efefed] flex justify-between items-center flex-shrink-0 gap-1">
                 <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                   <span className={`font-label-caps text-xs font-bold ${isToday ? 'text-[#296c00]' : 'text-[#1b1c1a]'}`}>
                     {dayDate.toLocaleDateString('default', { weekday: 'short' })} {dayDate.getDate()}
@@ -129,7 +129,7 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                   {/* Multi-Brand Collision Pill */}
                   {brandSummary.hasCollision && (
                     <span
-                      className="font-label-caps text-[8px] bg-[#f3f2ee] border border-[#bfcab4] text-[#404a39] px-1 py-0.2 rounded font-bold"
+                      className="font-label-caps text-[8px] bg-[#f1f1f0] border border-[#e9e9e7] text-[#57574f] px-1 py-0.2 rounded font-bold"
                       title={`${brandSummary.brandCount} brands scheduled`}
                     >
                       {brandSummary.brandCount}b
@@ -139,7 +139,7 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                   {/* Time Clash Alert Pip */}
                   {brandSummary.timeClashes.length > 0 && (
                     <span
-                      className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-[#ffdad6] text-[#ba1a1a] text-[9px] font-bold"
+                      className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-[#fcebeb] text-[#dc2626] text-[9px] font-bold"
                       title={`Time conflict: ${brandSummary.timeClashes.map((c) => c.time).join(', ')}`}
                     >
                       ⚠️
@@ -149,7 +149,7 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
 
                 <button
                   onClick={() => onOpenNewPostModal(dateStr)}
-                  className="text-[#296c00] hover:bg-[#efeeea] p-1 rounded-lg flex items-center justify-center cursor-pointer flex-shrink-0"
+                  className="text-[#296c00] hover:bg-[#f1f1f0] p-1 rounded-lg flex items-center justify-center cursor-pointer flex-shrink-0"
                   title="Add post"
                 >
                   <span className="material-symbols-outlined text-sm">add</span>
@@ -179,7 +179,7 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                 ))}
                 {hiddenCount > 0 && (
                   <button
-                    className="w-full text-center py-0.5 bg-[#f3f2ee] hover:bg-[#e4e2db] text-[#404a39] font-label-caps text-[9px] font-bold rounded transition-colors"
+                    className="w-full text-center py-0.5 bg-[#f1f1f0] hover:bg-[#e9e9e7] text-[#57574f] font-label-caps text-[9px] font-bold rounded transition-colors"
                     onClick={() => setExpandedDate(isExpanded ? null : dateStr)}
                   >
                     {isExpanded ? 'Show less' : `+${hiddenCount} more`}

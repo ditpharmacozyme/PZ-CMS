@@ -56,7 +56,7 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   weekEnd.setDate(weekEnd.getDate() + 6);
 
   return (
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white p-3 sm:p-4 rounded-xl border border-[#bfcab4] shadow-xs">
+    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white p-3 sm:p-4 rounded-xl border border-[#e9e9e7] shadow-xs">
       {/* Hidden File Input for CSV Upload */}
       <input
         type="file"
@@ -69,11 +69,11 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
       {/* Left: View Mode Toggle & Navigation */}
       <div className="flex flex-wrap items-center gap-2 sm:gap-3">
         {/* Month / Week / List Selector */}
-        <div className="inline-flex p-1 bg-[#efeeea] rounded-lg border border-[#bfcab4]">
+        <div className="inline-flex p-1 bg-[#f1f1f0] rounded-lg border border-[#e9e9e7]">
           <button
             onClick={() => setDisplayMode('month')}
             className={`px-2.5 py-1 text-xs font-bold font-label-caps rounded-md transition-all ${
-              displayMode === 'month' ? 'bg-white text-[#1b1c1a] shadow-2xs' : 'text-[#707a67] hover:text-[#1b1c1a]'
+              displayMode === 'month' ? 'bg-white text-[#1b1c1a] shadow-2xs' : 'text-[#5f5f5b] hover:text-[#1b1c1a]'
             }`}
           >
             Month
@@ -81,7 +81,7 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
           <button
             onClick={() => setDisplayMode('week')}
             className={`px-2.5 py-1 text-xs font-bold font-label-caps rounded-md transition-all ${
-              displayMode === 'week' ? 'bg-white text-[#1b1c1a] shadow-2xs' : 'text-[#707a67] hover:text-[#1b1c1a]'
+              displayMode === 'week' ? 'bg-white text-[#1b1c1a] shadow-2xs' : 'text-[#5f5f5b] hover:text-[#1b1c1a]'
             }`}
           >
             Week
@@ -89,7 +89,7 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
           <button
             onClick={() => setDisplayMode('list')}
             className={`px-2.5 py-1 text-xs font-bold font-label-caps rounded-md transition-all ${
-              displayMode === 'list' ? 'bg-white text-[#1b1c1a] shadow-2xs' : 'text-[#707a67] hover:text-[#1b1c1a]'
+              displayMode === 'list' ? 'bg-white text-[#1b1c1a] shadow-2xs' : 'text-[#5f5f5b] hover:text-[#1b1c1a]'
             }`}
           >
             List
@@ -100,20 +100,20 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
         <div className="flex items-center gap-1">
           <button
             onClick={onPrev}
-            className="w-8 h-8 rounded-lg border border-[#bfcab4] hover:bg-[#efeeea] flex items-center justify-center text-[#1b1c1a] transition-all"
+            className="w-8 h-8 rounded-lg border border-[#e9e9e7] hover:bg-[#f1f1f0] flex items-center justify-center text-[#1b1c1a] transition-all"
             title="Previous"
           >
             <span className="material-symbols-outlined text-sm">chevron_left</span>
           </button>
           <button
             onClick={onToday}
-            className="px-2.5 py-1 text-xs font-bold font-label-caps rounded-lg border border-[#bfcab4] hover:bg-[#efeeea] text-[#1b1c1a] transition-all"
+            className="px-2.5 py-1 text-xs font-bold font-label-caps rounded-lg border border-[#e9e9e7] hover:bg-[#f1f1f0] text-[#1b1c1a] transition-all"
           >
             Today
           </button>
           <button
             onClick={onNext}
-            className="w-8 h-8 rounded-lg border border-[#bfcab4] hover:bg-[#efeeea] flex items-center justify-center text-[#1b1c1a] transition-all"
+            className="w-8 h-8 rounded-lg border border-[#e9e9e7] hover:bg-[#f1f1f0] flex items-center justify-center text-[#1b1c1a] transition-all"
             title="Next"
           >
             <span className="material-symbols-outlined text-sm">chevron_right</span>
@@ -141,7 +141,7 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
             title="Jump to month"
             value={`${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`}
             onChange={(e) => e.target.value && onJumpToMonth(e.target.value)}
-            className="w-[10rem] bg-white border border-[#bfcab4] rounded-lg px-2 py-1.5 text-xs font-label-caps text-[#1b1c1a] focus:outline-none focus:ring-1 focus:ring-[#296c00]"
+            className="w-[10rem] bg-white border border-[#e9e9e7] rounded-lg px-2 py-1.5 text-xs font-label-caps text-[#1b1c1a] focus:outline-none focus:ring-1 focus:ring-[#296c00]"
           />
         )}
       </div>
@@ -151,7 +151,7 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
         {displayMode === 'week' && (
           <button
             onClick={onDuplicateWeekForward}
-            className="px-3 py-1.5 text-xs font-bold font-label-caps rounded-lg border border-[#bfcab4] bg-[#efeeea] hover:bg-[#e4e2dc] text-[#404a39] flex items-center gap-1.5 transition-all"
+            className="px-3 py-1.5 text-xs font-bold font-label-caps rounded-lg border border-[#e9e9e7] bg-[#f1f1f0] hover:bg-[#e4e2dc] text-[#57574f] flex items-center gap-1.5 transition-all"
             title="Duplicate all posts in visible week to next week"
           >
             <span className="material-symbols-outlined text-sm">content_copy</span>
@@ -165,7 +165,7 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
             className={`px-3 py-1.5 text-xs font-bold font-label-caps rounded-lg border flex items-center gap-1.5 transition-all ${
               isSelectMode
                 ? 'bg-[#296c00] border-[#296c00] text-white'
-                : 'bg-white border-[#bfcab4] hover:bg-[#efeeea] text-[#404a39]'
+                : 'bg-white border-[#e9e9e7] hover:bg-[#f1f1f0] text-[#57574f]'
             }`}
             title="Select multiple posts for bulk actions"
           >
@@ -177,7 +177,7 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
         <button
           onClick={() => csvFileInputRef.current?.click()}
           disabled={isUploading}
-          className="px-3 py-1.5 text-xs font-bold font-label-caps rounded-lg border border-[#bfcab4] bg-white hover:bg-[#efeeea] text-[#404a39] flex items-center gap-1.5 transition-all disabled:opacity-50"
+          className="px-3 py-1.5 text-xs font-bold font-label-caps rounded-lg border border-[#e9e9e7] bg-white hover:bg-[#f1f1f0] text-[#57574f] flex items-center gap-1.5 transition-all disabled:opacity-50"
           title="Import Posts from CSV"
         >
           <span className="material-symbols-outlined text-sm">upload_file</span>
@@ -187,7 +187,7 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
         {/* Mobile Backlog Toggle Button */}
         <button
           onClick={() => setMobileBacklogOpen(!mobileBacklogOpen)}
-          className="md:hidden px-3 py-1.5 text-xs font-bold font-label-caps rounded-lg border border-[#bfcab4] bg-[#efeeea] text-[#404a39] flex items-center gap-1.5"
+          className="md:hidden px-3 py-1.5 text-xs font-bold font-label-caps rounded-lg border border-[#e9e9e7] bg-[#f1f1f0] text-[#57574f] flex items-center gap-1.5"
         >
           <span className="material-symbols-outlined text-sm">lightbulb</span>
           <span>Backlog ({backlogCount})</span>

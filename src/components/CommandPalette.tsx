@@ -132,11 +132,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   return (
     <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-xs flex items-start justify-center pt-[12vh] px-4" onClick={onClose}>
       <div
-        className="bg-white border border-[#bfcab4] w-full max-w-lg rounded-lg shadow-2xl overflow-hidden"
+        className="bg-white border border-[#e9e9e7] w-full max-w-lg rounded-lg shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-[#bfcab4]">
-          <span className="material-symbols-outlined text-[#707a67]">search</span>
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-[#e9e9e7]">
+          <span className="material-symbols-outlined text-[#5f5f5b]">search</span>
           <input
             ref={inputRef}
             type="text"
@@ -144,14 +144,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             onChange={(e) => { setQuery(e.target.value); setActiveIndex(0); }}
             onKeyDown={handleKeyDown}
             placeholder="Jump to a post, brand, or page…"
-            className="flex-1 bg-transparent text-sm text-[#1b1c1a] focus:outline-none placeholder:text-[#bfcab4]"
+            className="flex-1 bg-transparent text-sm text-[#1b1c1a] focus:outline-none placeholder:text-[#e9e9e7]"
           />
-          <kbd className="text-[10px] font-label-caps text-[#707a67] border border-[#bfcab4] rounded px-1.5 py-0.5">Esc</kbd>
+          <kbd className="text-[10px] font-label-caps text-[#5f5f5b] border border-[#e9e9e7] rounded px-1.5 py-0.5">Esc</kbd>
         </div>
 
         <div className="max-h-80 overflow-y-auto py-1">
           {items.length === 0 ? (
-            <p className="text-xs font-body-md text-[#707a67] text-center py-8">No matches.</p>
+            <p className="text-xs font-body-md text-[#5f5f5b] text-center py-8">No matches.</p>
           ) : (
             items.map((item, idx) => (
               <button
@@ -159,14 +159,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                 onClick={() => { item.run(); onClose(); }}
                 onMouseEnter={() => setActiveIndex(idx)}
                 className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
-                  idx === activeIndex ? 'bg-[#f0fae8]' : 'hover:bg-[#faf9f5]'
+                  idx === activeIndex ? 'bg-[#f0fae8]' : 'hover:bg-[#f4f4f3]'
                 }`}
               >
                 <span className="material-symbols-outlined text-[#296c00] text-lg flex-shrink-0">{item.icon}</span>
                 <span className="flex-1 min-w-0">
                   <span className="block text-sm text-[#1b1c1a] truncate">{item.label}</span>
                 </span>
-                <span className="text-[10px] font-label-caps text-[#707a67] uppercase flex-shrink-0">{item.hint}</span>
+                <span className="text-[10px] font-label-caps text-[#5f5f5b] uppercase flex-shrink-0">{item.hint}</span>
               </button>
             ))
           )}

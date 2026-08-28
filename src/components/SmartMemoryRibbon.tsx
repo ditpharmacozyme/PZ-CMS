@@ -50,7 +50,7 @@ export const SmartMemoryRibbon: React.FC<SmartMemoryRibbonProps> = ({
             </button>
             <button
               onClick={onDiscardDraft}
-              className="text-[#bfcab4] hover:text-[#ffdad6] p-0.5 rounded cursor-pointer"
+              className="text-[#e9e9e7] hover:text-[#fcebeb] p-0.5 rounded cursor-pointer"
               title="Discard draft"
             >
               <span className="material-symbols-outlined text-xs">close</span>
@@ -61,7 +61,7 @@ export const SmartMemoryRibbon: React.FC<SmartMemoryRibbonProps> = ({
         {/* Recent Items Quick Jump */}
         {recentPosts.length > 0 && !collapsed && (
           <div className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar py-0.5">
-            <span className="font-label-caps text-[9px] text-[#bfcab4] uppercase tracking-wider hidden md:inline">
+            <span className="font-label-caps text-[9px] text-[#e9e9e7] uppercase tracking-wider hidden md:inline">
               Recent:
             </span>
             {recentPosts.slice(0, 4).map((post) => {
@@ -89,7 +89,7 @@ export const SmartMemoryRibbon: React.FC<SmartMemoryRibbonProps> = ({
       {recentPosts.length > 0 && (
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="text-[#bfcab4] hover:text-white text-[10px] font-label-caps flex items-center gap-0.5 ml-auto"
+          className="text-[#e9e9e7] hover:text-white text-[10px] font-label-caps flex items-center gap-0.5 ml-auto"
         >
           <span className="material-symbols-outlined text-xs">
             {collapsed ? 'unfold_more' : 'unfold_less'}

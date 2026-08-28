@@ -137,7 +137,7 @@ export const ContentBank: React.FC<ContentBankProps> = ({
   return (
     <div className="p-4 md:p-8 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#bfcab4]">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#e9e9e7]">
         <div>
           <span className="font-label-caps text-xs text-[#296951] uppercase font-bold tracking-widest">
             Content Bank & Swipe File
@@ -145,7 +145,7 @@ export const ContentBank: React.FC<ContentBankProps> = ({
           <h2 className="font-display-xl text-2xl md:text-3xl text-[#1b1c1a] font-bold mt-1">
             Reusable Copy, Captions & Hooks
           </h2>
-          <p className="text-xs text-[#707a67] mt-1">
+          <p className="text-xs text-[#5f5f5b] mt-1">
             Browse high-performing copy, hooks, and captions to deploy or copy instantly.
           </p>
         </div>
@@ -160,10 +160,10 @@ export const ContentBank: React.FC<ContentBankProps> = ({
       </div>
 
       {/* Filters Bar */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 bg-white p-4 border border-[#bfcab4] rounded shadow-2xs">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 bg-white p-4 border border-[#e9e9e7] rounded shadow-2xs">
         {/* Search */}
         <div className="sm:col-span-2 relative flex items-center">
-          <span className="material-symbols-outlined absolute left-3 text-[#707a67] text-lg pointer-events-none">
+          <span className="material-symbols-outlined absolute left-3 text-[#5f5f5b] text-lg pointer-events-none">
             search
           </span>
           <input
@@ -171,12 +171,12 @@ export const ContentBank: React.FC<ContentBankProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search copy content, tags, or sources..."
-            className="w-full bg-[#faf9f5] border border-[#bfcab4] pl-9 pr-8 py-2 font-body-md text-xs text-[#1b1c1a] focus:bg-white focus:border-[#296c00] focus:outline-none rounded"
+            className="w-full bg-[#f4f4f3] border border-[#e9e9e7] pl-9 pr-8 py-2 font-body-md text-xs text-[#1b1c1a] focus:bg-white focus:border-[#296c00] focus:outline-none rounded"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-3 text-[#707a67] hover:text-[#1b1c1a]"
+              className="absolute right-3 text-[#5f5f5b] hover:text-[#1b1c1a]"
             >
               <span className="material-symbols-outlined text-sm">close</span>
             </button>
@@ -188,7 +188,7 @@ export const ContentBank: React.FC<ContentBankProps> = ({
           <select
             value={selectedBrand}
             onChange={(e) => setSelectedBrand(e.target.value as any)}
-            className="w-full bg-[#faf9f5] border border-[#bfcab4] px-3 py-2 font-label-caps text-xs text-[#1b1c1a] focus:outline-none rounded"
+            className="w-full bg-[#f4f4f3] border border-[#e9e9e7] px-3 py-2 font-label-caps text-xs text-[#1b1c1a] focus:outline-none rounded"
           >
             <option value="all">All Brands / Shared</option>
             <option value="shared">Shared Ecosystem Copy</option>
@@ -205,7 +205,7 @@ export const ContentBank: React.FC<ContentBankProps> = ({
           <select
             value={selectedTag}
             onChange={(e) => setSelectedTag(e.target.value)}
-            className="w-full bg-[#faf9f5] border border-[#bfcab4] px-3 py-2 font-label-caps text-xs text-[#1b1c1a] focus:outline-none rounded"
+            className="w-full bg-[#f4f4f3] border border-[#e9e9e7] px-3 py-2 font-label-caps text-xs text-[#1b1c1a] focus:outline-none rounded"
           >
             <option value="all">All Copy Tags</option>
             {allTags.map((tag) => (
@@ -220,7 +220,7 @@ export const ContentBank: React.FC<ContentBankProps> = ({
       {/* Copy Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredItems.length === 0 ? (
-          <div className="col-span-full bg-white border border-[#bfcab4] p-12 text-center text-xs font-body-md text-[#707a67]">
+          <div className="col-span-full bg-white border border-[#e9e9e7] p-12 text-center text-xs font-body-md text-[#5f5f5b]">
             No reusable copy items found matching the selected parameters.
           </div>
         ) : (
@@ -231,7 +231,7 @@ export const ContentBank: React.FC<ContentBankProps> = ({
             return (
               <div
                 key={item.id}
-                className="bg-white border border-[#bfcab4] rounded-lg p-5 flex flex-col justify-between shadow-2xs hover:shadow-md transition-all gap-4 relative group"
+                className="bg-white border border-[#e9e9e7] rounded-lg p-5 flex flex-col justify-between shadow-2xs hover:shadow-md transition-all gap-4 relative group"
               >
                 {/* Header Labels */}
                 <div className="flex justify-between items-center">
@@ -241,12 +241,12 @@ export const ContentBank: React.FC<ContentBankProps> = ({
                   >
                     {brand ? brand.shortCode : 'SHARED ECOSYSTEM'}
                   </span>
-                  <span className="font-code-sm text-[9px] text-[#707a67]">{item.savedDate}</span>
+                  <span className="font-code-sm text-[9px] text-[#5f5f5b]">{item.savedDate}</span>
                 </div>
 
                 {/* Text Body */}
                 <div className="flex-1">
-                  <blockquote className="font-body-md text-xs sm:text-sm text-[#1b1c1a] leading-relaxed italic border-l-2 border-[#bfcab4] pl-3 py-1 bg-[#faf9f5]/50">
+                  <blockquote className="font-body-md text-xs sm:text-sm text-[#1b1c1a] leading-relaxed italic border-l-2 border-[#e9e9e7] pl-3 py-1 bg-[#f4f4f3]/50">
                     "{item.text}"
                   </blockquote>
                 </div>
@@ -257,25 +257,25 @@ export const ContentBank: React.FC<ContentBankProps> = ({
                     {item.tags.map((tag, i) => (
                       <span
                         key={i}
-                        className="font-label-caps text-[8px] sm:text-[9px] bg-[#efeeea] border border-[#bfcab4] px-1.5 py-0.5 rounded text-[#404a39] font-bold"
+                        className="font-label-caps text-[8px] sm:text-[9px] bg-[#f1f1f0] border border-[#e9e9e7] px-1.5 py-0.5 rounded text-[#57574f] font-bold"
                       >
                         #{tag}
                       </span>
                     ))}
                   </div>
 
-                  <div className="text-[10px] font-code-sm text-[#707a67] flex items-center justify-between">
+                  <div className="text-[10px] font-code-sm text-[#5f5f5b] flex items-center justify-between">
                     <span>Source: {item.source}</span>
                   </div>
 
                   {/* Actions */}
-                  <div className="flex gap-2 pt-2 border-t border-[#bfcab4]/50">
+                  <div className="flex gap-2 pt-2 border-t border-[#e9e9e7]/50">
                     <button
                       onClick={() => handleCopyText(item)}
                       className={`flex-1 font-label-caps text-[10px] font-bold py-2 rounded border transition-colors flex items-center justify-center gap-1 min-h-[36px] ${
                         copiedItemId === item.id
                           ? 'bg-[#296c00] text-white border-[#296c00]'
-                          : 'bg-[#faf9f5] border-[#bfcab4] text-[#296c00] hover:bg-[#efeeea]'
+                          : 'bg-[#f4f4f3] border-[#e9e9e7] text-[#296c00] hover:bg-[#f1f1f0]'
                       }`}
                     >
                       <span className="material-symbols-outlined text-xs">
@@ -312,7 +312,7 @@ export const ContentBank: React.FC<ContentBankProps> = ({
                   <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => handleOpenEditModal(item)}
-                      className="p-1.5 bg-white border border-[#bfcab4] text-[#1b1c1a] rounded shadow-xs hover:bg-[#efeeea]"
+                      className="p-1.5 bg-white border border-[#e9e9e7] text-[#1b1c1a] rounded shadow-xs hover:bg-[#f1f1f0]"
                       title="Edit"
                     >
                       <span className="material-symbols-outlined text-xs font-bold">edit</span>
@@ -323,7 +323,7 @@ export const ContentBank: React.FC<ContentBankProps> = ({
                           onDeleteBankItem(item.id);
                         }
                       }}
-                      className="p-1.5 bg-[#ffdad6] text-[#ba1a1a] border border-[#ffb4ab] rounded shadow-xs hover:bg-[#ffdad6]/80"
+                      className="p-1.5 bg-[#fcebeb] text-[#dc2626] border border-[#ffb4ab] rounded shadow-xs hover:bg-[#fcebeb]/80"
                       title="Delete"
                     >
                       <span className="material-symbols-outlined text-xs font-bold">delete</span>
@@ -339,13 +339,13 @@ export const ContentBank: React.FC<ContentBankProps> = ({
       {/* Add / Edit Swipe Item Modal */}
       {(showAddModal || editingItem) && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white border border-[#bfcab4] max-w-lg w-full p-6 rounded shadow-2xl relative space-y-4 my-8">
+          <div className="bg-white border border-[#e9e9e7] max-w-lg w-full p-6 rounded shadow-2xl relative space-y-4 my-8">
             <button
               onClick={() => {
                 setShowAddModal(false);
                 setEditingItem(null);
               }}
-              className="absolute top-4 right-4 text-[#707a67] hover:text-[#1b1c1a]"
+              className="absolute top-4 right-4 text-[#5f5f5b] hover:text-[#1b1c1a]"
             >
               <span className="material-symbols-outlined">close</span>
             </button>
@@ -356,13 +356,13 @@ export const ContentBank: React.FC<ContentBankProps> = ({
 
             <div className="space-y-4 text-xs font-body-md">
               <div>
-                <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
+                <label className="font-label-caps text-[10px] text-[#5f5f5b] block uppercase font-bold mb-1">
                   Brand Ownership
                 </label>
                 <select
                   value={brandId}
                   onChange={(e) => setBrandId(e.target.value as any)}
-                  className="w-full bg-[#faf9f5] border border-[#bfcab4] p-2.5 font-label-caps text-xs focus:outline-none rounded"
+                  className="w-full bg-[#f4f4f3] border border-[#e9e9e7] p-2.5 font-label-caps text-xs focus:outline-none rounded"
                 >
                   <option value="shared">Shared Ecosystem (All Brands)</option>
                   {Object.values(BRANDS).map((b) => (
@@ -374,7 +374,7 @@ export const ContentBank: React.FC<ContentBankProps> = ({
               </div>
 
               <div>
-                <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
+                <label className="font-label-caps text-[10px] text-[#5f5f5b] block uppercase font-bold mb-1">
                   Copy Text (Captions, Hooks, Snippets) *
                 </label>
                 <textarea
@@ -382,13 +382,13 @@ export const ContentBank: React.FC<ContentBankProps> = ({
                   onChange={(e) => setText(e.target.value)}
                   rows={4}
                   placeholder="Paste or write the swipe copy here..."
-                  className="w-full bg-[#faf9f5] border border-[#bfcab4] p-3 text-xs leading-relaxed focus:outline-none focus:bg-white rounded"
+                  className="w-full bg-[#f4f4f3] border border-[#e9e9e7] p-3 text-xs leading-relaxed focus:outline-none focus:bg-white rounded"
                   required
                 />
               </div>
 
               <div>
-                <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
+                <label className="font-label-caps text-[10px] text-[#5f5f5b] block uppercase font-bold mb-1">
                   Tags (Comma separated)
                 </label>
                 <input
@@ -396,12 +396,12 @@ export const ContentBank: React.FC<ContentBankProps> = ({
                   value={tagsInput}
                   onChange={(e) => setTagsInput(e.target.value)}
                   placeholder="e.g. Clinical, Oncology, Promo, Hook"
-                  className="w-full bg-[#faf9f5] border border-[#bfcab4] p-2.5 text-xs focus:outline-none rounded"
+                  className="w-full bg-[#f4f4f3] border border-[#e9e9e7] p-2.5 text-xs focus:outline-none rounded"
                 />
               </div>
 
               <div>
-                <label className="font-label-caps text-[10px] text-[#707a67] block uppercase font-bold mb-1">
+                <label className="font-label-caps text-[10px] text-[#5f5f5b] block uppercase font-bold mb-1">
                   Source Reference / Attribution
                 </label>
                 <input
@@ -409,18 +409,18 @@ export const ContentBank: React.FC<ContentBankProps> = ({
                   value={source}
                   onChange={(e) => setSource(e.target.value)}
                   placeholder="e.g. Weekly Quiz #4, Dr. Alex, Efficacy report"
-                  className="w-full bg-[#faf9f5] border border-[#bfcab4] p-2.5 text-xs focus:outline-none rounded"
+                  className="w-full bg-[#f4f4f3] border border-[#e9e9e7] p-2.5 text-xs focus:outline-none rounded"
                 />
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 pt-3 border-t border-[#bfcab4]">
+            <div className="flex justify-end gap-2 pt-3 border-t border-[#e9e9e7]">
               <button
                 onClick={() => {
                   setShowAddModal(false);
                   setEditingItem(null);
                 }}
-                className="px-4 py-2 border border-[#bfcab4] font-label-caps text-xs rounded hover:bg-[#efeeea]"
+                className="px-4 py-2 border border-[#e9e9e7] font-label-caps text-xs rounded hover:bg-[#f1f1f0]"
               >
                 Cancel
               </button>

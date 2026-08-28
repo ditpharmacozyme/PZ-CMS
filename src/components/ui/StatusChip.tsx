@@ -31,7 +31,7 @@ export const StatusChip: React.FC<StatusChipProps> = ({ post, variant, title, cl
     return (
       <div className={`flex items-center gap-1 min-w-0 px-1 py-0.2 ${className}`} title={title}>
         <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: statusCfg.color }} />
-        <span className="truncate font-medium text-[8px] text-[#707a67]">{statusCfg.label}</span>
+        <span className="truncate font-medium text-[8px] text-[#5f5f5b]">{statusCfg.label}</span>
       </div>
     );
   }

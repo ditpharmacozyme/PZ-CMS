@@ -652,7 +652,7 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
                     >
                       <span
                         className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] font-bold text-white"
-                        style={{ backgroundColor: m.color || '#707a67' }}
+                        style={{ backgroundColor: m.color || '#5f5f5b' }}
                       >
                         {m.avatarInitials}
                       </span>

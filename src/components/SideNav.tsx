@@ -104,7 +104,7 @@ export const SideNav: React.FC<SideNavProps> = ({
         } ${
           isActive
             ? 'bg-[#aceecf] text-[#07513b] font-bold shadow-xs'
-            : 'text-[#404a39] hover:bg-[#e9e8e4]'
+            : 'text-[#57574f] hover:bg-[#e9e8e4]'
         }`}
       >
         <span
@@ -130,7 +130,7 @@ export const SideNav: React.FC<SideNavProps> = ({
       )}
 
       <aside
-        className={`h-screen flex flex-col py-4 border-r border-[#bfcab4] bg-[#faf9f5] z-50 transition-all duration-200 ease-in-out ${
+        className={`h-screen flex flex-col py-4 border-r border-[#e9e9e7] bg-[#f4f4f3] z-50 transition-all duration-200 ease-in-out ${
           collapsed ? 'md:w-16' : 'w-72 md:w-64'
         } ${
           isMobileOpen
@@ -142,7 +142,7 @@ export const SideNav: React.FC<SideNavProps> = ({
         <div className={`mb-5 ${collapsed ? 'px-2' : 'px-5'}`}>
           <div className={`flex items-center mb-2 ${collapsed ? 'flex-col gap-2' : 'justify-between'}`}>
             <div className={`flex items-center gap-3 ${collapsed ? 'flex-col' : ''} min-w-0`}>
-              <div className="w-10 h-10 rounded bg-white border border-[#bfcab4] p-1 flex items-center justify-center shadow-md flex-shrink-0 overflow-hidden">
+              <div className="w-10 h-10 rounded bg-white border border-[#e9e9e7] p-1 flex items-center justify-center shadow-md flex-shrink-0 overflow-hidden">
                 <img src="/logos/PZ_Logo.png" alt="Pharmacozyme" className="w-full h-full object-contain" />
               </div>
               {!collapsed && (
@@ -160,7 +160,7 @@ export const SideNav: React.FC<SideNavProps> = ({
             {isMobileOpen && (
               <button
                 onClick={onCloseMobile}
-                className="md:hidden p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#707a67] hover:text-[#1b1c1a] active:bg-[#efeeea] rounded-full"
+                className="md:hidden p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#5f5f5b] hover:text-[#1b1c1a] active:bg-[#f1f1f0] rounded-full"
                 title="Close Drawer"
               >
                 <span className="material-symbols-outlined text-xl">close</span>
@@ -169,7 +169,7 @@ export const SideNav: React.FC<SideNavProps> = ({
             {/* Collapse toggle — desktop only, mobile always uses the full drawer */}
             <button
               onClick={toggleCollapsed}
-              className={`hidden md:flex p-2 min-w-[36px] min-h-[36px] items-center justify-center text-[#707a67] hover:text-[#1b1c1a] hover:bg-[#efeeea] rounded-full transition-colors ${collapsed ? 'rotate-180' : ''}`}
+              className={`hidden md:flex p-2 min-w-[36px] min-h-[36px] items-center justify-center text-[#5f5f5b] hover:text-[#1b1c1a] hover:bg-[#f1f1f0] rounded-full transition-colors ${collapsed ? 'rotate-180' : ''}`}
               title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
               <span className="material-symbols-outlined text-lg">left_panel_close</span>
@@ -197,7 +197,7 @@ export const SideNav: React.FC<SideNavProps> = ({
                   } ${
                     activeInMore
                       ? 'bg-[#aceecf] text-[#07513b] font-bold shadow-xs'
-                      : 'text-[#404a39] hover:bg-[#e9e8e4]'
+                      : 'text-[#57574f] hover:bg-[#e9e8e4]'
                   }`}
                 >
                   <span
@@ -221,7 +221,7 @@ export const SideNav: React.FC<SideNavProps> = ({
             })()}
 
             {!collapsed && moreOpen && (
-              <div className="ml-4 pl-3 border-l-2 border-[#bfcab4] mt-1 mb-2 space-y-0.5">
+              <div className="ml-4 pl-3 border-l-2 border-[#e9e9e7] mt-1 mb-2 space-y-0.5">
                 {MORE_ITEMS.map((item) => {
                   const isActive = currentTab === item.tab;
                   return (
@@ -231,7 +231,7 @@ export const SideNav: React.FC<SideNavProps> = ({
                       className={`w-full flex items-center gap-2.5 px-3 py-2 rounded text-left font-label-caps text-xs transition-all min-h-[40px] active:scale-[0.98] ${
                         isActive
                           ? 'nav-item-active text-[#296c00] font-bold'
-                          : 'text-[#404a39] hover:bg-[#e9e8e4]'
+                          : 'text-[#57574f] hover:bg-[#e9e8e4]'
                       }`}
                     >
                       <span
@@ -250,7 +250,7 @@ export const SideNav: React.FC<SideNavProps> = ({
         </nav>
 
         {/* Action & Footer */}
-        <div className={`mt-auto pt-4 border-t border-[#bfcab4] ${collapsed ? 'px-2' : 'px-4'}`}>
+        <div className={`mt-auto pt-4 border-t border-[#e9e9e7] ${collapsed ? 'px-2' : 'px-4'}`}>
           <button
             onClick={() => {
               onOpenNewPostModal();
