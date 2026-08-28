@@ -39,7 +39,7 @@ export const StatusChip: React.FC<StatusChipProps> = ({ post, variant, title, cl
   if (variant === 'pill') {
     return (
       <span
-        className={`font-label-caps text-[8px] font-bold uppercase px-1.5 py-0.2 rounded ${className}`}
+        className={`font-label-caps text-[8px] font-bold px-1.5 py-0.2 rounded ${className}`}
         style={{ backgroundColor: statusCfg.bgColor, color: statusCfg.color }}
         title={title}
       >
@@ -51,7 +51,7 @@ export const StatusChip: React.FC<StatusChipProps> = ({ post, variant, title, cl
   if (variant === 'pill-dot') {
     return (
       <span
-        className={`font-label-caps text-[10px] font-bold uppercase px-2.5 py-1 rounded-full flex items-center justify-center gap-1.5 w-fit ${className}`}
+        className={`font-label-caps text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center justify-center gap-1.5 w-fit ${className}`}
         style={{ backgroundColor: statusCfg.bgColor, color: statusCfg.color }}
         title={title}
       >
@@ -64,7 +64,7 @@ export const StatusChip: React.FC<StatusChipProps> = ({ post, variant, title, cl
   // pill-icon
   return (
     <span
-      className={`font-label-caps text-[9px] font-bold uppercase px-1.5 py-0.5 rounded inline-flex items-center gap-0.5 ${className}`}
+      className={`font-label-caps text-[9px] font-bold px-1.5 py-0.5 rounded inline-flex items-center gap-0.5 ${className}`}
       style={{ backgroundColor: statusCfg.bgColor, color: statusCfg.color }}
       title={title}
     >
