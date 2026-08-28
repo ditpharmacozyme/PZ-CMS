@@ -246,7 +246,7 @@ export const GoogleAppsScriptHub: React.FC<GoogleAppsScriptHubProps> = ({
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-[#4f46e5] text-3xl">terminal</span>
             <div>
-              <span className="font-label-caps text-xs font-bold text-[#4338ca] uppercase tracking-wider">
+              <span className="font-label-caps text-xs font-bold text-[#4338ca] tracking-wider">
                 Storage & Automation
               </span>
               <h1 className="font-display-xl text-xl sm:text-2xl md:text-3xl text-[#1b1c1a] font-bold">
@@ -425,7 +425,7 @@ export const GoogleAppsScriptHub: React.FC<GoogleAppsScriptHubProps> = ({
                 }`}
               >
                 <div className="flex items-center justify-between mb-2 pb-1 border-b border-current/20">
-                  <span className="font-bold font-label-caps uppercase">
+                  <span className="font-bold font-label-caps">
                     Status: {pingResult.data?.status?.toUpperCase() || pingResult.status?.toUpperCase()} (HTTP {pingResult.proxyStatus || 200})
                   </span>
                   {pingResult.data?.status === 'success' && (

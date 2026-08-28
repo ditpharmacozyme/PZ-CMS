@@ -90,7 +90,7 @@ export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = (
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#e9e9e7]">
         <div>
-          <span className="font-label-caps text-xs text-[#4338ca] uppercase font-bold tracking-widest">
+          <span className="font-label-caps text-xs text-[#4338ca] font-bold tracking-widest">
             Overview
           </span>
           <h2 className="font-display-xl text-2xl md:text-3xl text-[#1b1c1a] font-bold mt-1">
@@ -135,7 +135,7 @@ export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = (
           </div>
           <button
             onClick={() => setSelectedTeammateName(null)}
-            className="font-label-caps text-[9px] px-2.5 py-1 rounded bg-[#4f46e5] text-white hover:bg-[#4338ca] transition-colors font-bold uppercase"
+            className="font-label-caps text-[9px] px-2.5 py-1 rounded bg-[#4f46e5] text-white hover:bg-[#4338ca] transition-colors font-bold"
           >
             Clear Filter
           </button>
@@ -145,25 +145,25 @@ export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = (
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-5 bg-white border border-[#e9e9e7] rounded shadow-xs space-y-2">
-          <span className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold block">Posted</span>
+          <span className="font-label-caps text-[10px] text-[#5f5f5b] font-bold block">Posted</span>
           <div className="font-display-xl text-3xl font-bold text-[#15803d]">{postedCount}</div>
           <p className="font-code-sm text-[10px] text-[#15803d]">Published to Instagram</p>
         </div>
 
         <div className="p-5 bg-white border border-[#e9e9e7] rounded shadow-xs space-y-2">
-          <span className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold block">Ready to Post</span>
+          <span className="font-label-caps text-[10px] text-[#5f5f5b] font-bold block">Ready to Post</span>
           <div className="font-display-xl text-3xl font-bold text-[#1b1c1a]">{readyToPostCount}</div>
           <p className="font-code-sm text-[10px] text-[#5f5f5b]">Reminder Set</p>
         </div>
 
         <div className="p-5 bg-white border border-[#e9e9e7] rounded shadow-xs space-y-2">
-          <span className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold block">In Progress</span>
+          <span className="font-label-caps text-[10px] text-[#5f5f5b] font-bold block">In Progress</span>
           <div className="font-display-xl text-3xl font-bold text-[#c77a00]">{inProgressCount}</div>
           <p className="font-code-sm text-[10px] text-[#c77a00]">Being worked on</p>
         </div>
 
         <div className="p-5 bg-white border border-[#e9e9e7] rounded shadow-xs space-y-2">
-          <span className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold block">Ideas</span>
+          <span className="font-label-caps text-[10px] text-[#5f5f5b] font-bold block">Ideas</span>
           <div className="font-display-xl text-3xl font-bold text-[#5a38f0]">{backlogCount}</div>
           <p className="font-code-sm text-[10px] text-[#5a38f0]">No date set yet</p>
         </div>
@@ -173,7 +173,7 @@ export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Next 14 days at a glance */}
         <div className="lg:col-span-2 bg-white border border-[#e9e9e7] p-6 rounded shadow-xs space-y-4">
-          <h3 className="font-label-caps text-xs font-bold text-[#4f46e5] uppercase">Posts over the next 14 days</h3>
+          <h3 className="font-label-caps text-xs font-bold text-[#4f46e5]">Posts over the next 14 days</h3>
 
           <div className="h-44 bg-[#f4f4f3] border border-[#e9e9e7] rounded p-4 flex flex-col justify-between">
             {upcomingDays.every((d) => d.count === 0) ? (
@@ -203,7 +203,7 @@ export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = (
 
         {/* Upcoming posts / reminders */}
         <div className="bg-white border border-[#e9e9e7] p-6 rounded shadow-xs space-y-4">
-          <h3 className="font-label-caps text-xs font-bold text-[#4f46e5] uppercase">
+          <h3 className="font-label-caps text-xs font-bold text-[#4f46e5]">
             Upcoming Posts
           </h3>
 
@@ -211,7 +211,7 @@ export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = (
             {upcomingPosts.length === 0 ? (
               <div className="py-8 text-center">
                 <span className="material-symbols-outlined text-3xl text-[#e9e9e7] block mb-2">notifications_none</span>
-                <p className="font-label-caps text-[10px] text-[#5f5f5b] uppercase">No posts yet</p>
+                <p className="font-label-caps text-[10px] text-[#5f5f5b]">No posts yet</p>
                 <p className="font-body-md text-xs text-[#5f5f5b] mt-1">No upcoming posts found matching filters.</p>
               </div>
             ) : (
@@ -222,11 +222,11 @@ export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = (
                       {post.title}
                     </span>
                     {(post.scheduledDate || post.scheduledTime) ? (
-                      <span className="flex-shrink-0 font-label-caps text-[9px] px-1.5 py-0.5 bg-[#f1f1f0] border border-[#e9e9e7] text-[#5f5f5b] rounded uppercase">
+                      <span className="flex-shrink-0 font-label-caps text-[9px] px-1.5 py-0.5 bg-[#f1f1f0] border border-[#e9e9e7] text-[#5f5f5b] rounded">
                         ⏰ {post.scheduledDate}{post.scheduledTime ? ` ${post.scheduledTime}` : ''}
                       </span>
                     ) : (
-                      <span className="flex-shrink-0 font-label-caps text-[9px] px-1.5 py-0.5 bg-[#f4f4f3] border border-[#e9e9e7] text-[#e9e9e7] rounded uppercase">
+                      <span className="flex-shrink-0 font-label-caps text-[9px] px-1.5 py-0.5 bg-[#f4f4f3] border border-[#e9e9e7] text-[#e9e9e7] rounded">
                         No Reminder
                       </span>
                     )}
@@ -271,14 +271,14 @@ export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = (
       {/* Recent Activity — a shared feed pulled from each post's own log, not a separate audit system */}
       <div className="bg-white border border-[#e9e9e7] rounded shadow-xs">
         <div className="p-5 border-b border-[#e9e9e7]">
-          <h3 className="font-label-caps text-xs font-bold text-[#4f46e5] uppercase">Recent Activity</h3>
+          <h3 className="font-label-caps text-xs font-bold text-[#4f46e5]">Recent Activity</h3>
           <p className="font-body-md text-xs text-[#5f5f5b] mt-0.5">Status changes, reschedules, and stage completions across the team</p>
         </div>
 
         {recentActivity.length === 0 ? (
           <div className="p-8 text-center">
             <span className="material-symbols-outlined text-3xl text-[#e9e9e7] block mb-2">history</span>
-            <p className="font-label-caps text-[10px] text-[#5f5f5b] uppercase">Nothing yet</p>
+            <p className="font-label-caps text-[10px] text-[#5f5f5b]">Nothing yet</p>
             <p className="font-body-md text-xs text-[#5f5f5b] mt-1">No recent activity matching filters.</p>
           </div>
         ) : (
@@ -322,7 +322,7 @@ export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = (
       <div className="bg-white border border-[#e9e9e7] rounded shadow-xs">
         <div className="p-5 border-b border-[#e9e9e7] flex items-center justify-between">
           <div>
-            <h3 className="font-label-caps text-xs font-bold text-[#4f46e5] uppercase">Who Did the Most Work</h3>
+            <h3 className="font-label-caps text-xs font-bold text-[#4f46e5]">Who Did the Most Work</h3>
             <p className="font-body-md text-xs text-[#5f5f5b] mt-0.5">Posts assigned and completed per team member</p>
           </div>
           <span className="material-symbols-outlined text-[#4f46e5]">leaderboard</span>
@@ -331,7 +331,7 @@ export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = (
         {teamMembers.length === 0 ? (
           <div className="p-8 text-center">
             <span className="material-symbols-outlined text-3xl text-[#e9e9e7] block mb-2">group</span>
-            <p className="font-label-caps text-[10px] text-[#5f5f5b] uppercase">No team members added yet</p>
+            <p className="font-label-caps text-[10px] text-[#5f5f5b]">No team members added yet</p>
             <p className="font-body-md text-xs text-[#5f5f5b] mt-1">Go to Settings → Team to add your team.</p>
           </div>
         ) : (
@@ -363,24 +363,24 @@ export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = (
                   <div className="flex-1 min-w-0">
                     <p className="font-body-md text-sm font-bold text-[#1b1c1a] truncate flex items-center gap-1.5">
                       <span>{member.name}</span>
-                      {isSelected && <span className="bg-[#4f46e5] text-white px-1.5 py-0.2 rounded font-bold uppercase text-[8px] font-label-caps">Filter On</span>}
+                      {isSelected && <span className="bg-[#4f46e5] text-white px-1.5 py-0.2 rounded font-bold text-[8px] font-label-caps">Filter On</span>}
                     </p>
-                    <p className="font-label-caps text-[9px] text-[#5f5f5b] uppercase">{member.role}</p>
+                    <p className="font-label-caps text-[9px] text-[#5f5f5b]">{member.role}</p>
                   </div>
 
                   {/* Mini stat badges */}
                   <div className="flex items-center gap-4 flex-shrink-0">
                     <div className="text-center px-1">
                       <div className="font-display-xl text-base font-bold text-[#1b1c1a]">{total}</div>
-                      <div className="font-label-caps text-[8px] text-[#5f5f5b] uppercase">Assigned</div>
+                      <div className="font-label-caps text-[8px] text-[#5f5f5b]">Assigned</div>
                     </div>
                     <div className="text-center px-1">
                       <div className="font-display-xl text-base font-bold text-[#15803d]">{posted}</div>
-                      <div className="font-label-caps text-[8px] text-[#5f5f5b] uppercase">Posted</div>
+                      <div className="font-label-caps text-[8px] text-[#5f5f5b]">Posted</div>
                     </div>
                     <div className="text-center px-1 hidden sm:block">
                       <div className="font-display-xl text-base font-bold text-[#c77a00]">{inProg}</div>
-                      <div className="font-label-caps text-[8px] text-[#5f5f5b] uppercase">Active</div>
+                      <div className="font-label-caps text-[8px] text-[#5f5f5b]">Active</div>
                     </div>
                   </div>
 
@@ -414,11 +414,11 @@ export const MissionControlDashboard: React.FC<MissionControlDashboardProps> = (
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-body-md text-sm font-bold text-[#5f5f5b] truncate">Other / Unassigned</p>
-                    <p className="font-label-caps text-[9px] text-[#e9e9e7] uppercase">Not in current team list</p>
+                    <p className="font-label-caps text-[9px] text-[#e9e9e7]">Not in current team list</p>
                   </div>
                   <div className="text-center flex-shrink-0">
                     <div className="font-display-xl text-lg font-bold text-[#5f5f5b]">{unassignedCount}</div>
-                    <div className="font-label-caps text-[9px] text-[#5f5f5b] uppercase">Total</div>
+                    <div className="font-label-caps text-[9px] text-[#5f5f5b]">Total</div>
                   </div>
                 </div>
               ) : null;

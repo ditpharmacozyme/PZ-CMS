@@ -165,7 +165,7 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
         {selectedDaySummary.hasCollision && (
           <div className="mb-3 p-2.5 rounded-lg bg-white border border-[#e9e9e7] flex items-center justify-between gap-2 shadow-2xs">
             <div className="flex items-center gap-2 min-w-0">
-              <span className="font-label-caps text-[10px] font-bold uppercase text-[#4f46e5] bg-[#eef2ff] px-1.5 py-0.5 rounded">
+              <span className="font-label-caps text-[10px] font-bold text-[#4f46e5] bg-[#eef2ff] px-1.5 py-0.5 rounded">
                 {selectedDaySummary.brandCount} Brands
               </span>
               <p className="text-xs text-[#57574f] truncate">
@@ -265,7 +265,7 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
                     )}
 
                     <div className="flex-1 min-w-0">
-                      <span className="font-label-caps text-[9px] font-bold uppercase" style={{ color: brand?.primaryColor }}>
+                      <span className="font-label-caps text-[9px] font-bold" style={{ color: brand?.primaryColor }}>
                         {brand?.name} • {post.scheduledTime}
                       </span>
                       <p className="font-headline-md text-sm font-bold text-[#1b1c1a] leading-tight mb-1">

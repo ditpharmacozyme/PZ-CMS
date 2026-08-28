@@ -85,7 +85,7 @@ export const AssigneePopover: React.FC<AssigneePopoverProps> = ({
   return (
     <Popover isOpen={isOpen} onClose={onClose} anchorRef={anchorRef} ariaLabel="Assign people and roles" className="w-72">
       <div className="p-2.5 border-b border-[var(--color-line-subtle)]">
-        <p className="font-label-caps text-[10px] uppercase font-bold text-[var(--color-ink-muted)]">Assign &amp; roles</p>
+        <p className="font-label-caps text-[10px] font-bold text-[var(--color-ink-muted)]">Assign &amp; roles</p>
       </div>
 
       {teamMembers.length === 0 ? (

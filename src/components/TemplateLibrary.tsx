@@ -245,7 +245,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
         <div>
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-[#4f46e5] text-xl">quiz</span>
-            <span className="font-label-caps text-xs text-[#4f46e5] uppercase font-bold tracking-widest">
+            <span className="font-label-caps text-xs text-[#4f46e5] font-bold tracking-widest">
               Standardized Blueprint Hub
             </span>
           </div>
@@ -372,7 +372,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                   ) : (
                     <div className="text-center p-4 text-[#e9e9e7] space-y-1">
                       <span className="material-symbols-outlined text-4xl">auto_stories</span>
-                      <p className="font-label-caps text-[9px] uppercase font-bold tracking-wider">
+                      <p className="font-label-caps text-[9px] font-bold tracking-wider">
                         {template.category} Template
                       </p>
                     </div>
@@ -380,14 +380,14 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
 
                   {/* Badges */}
                   <div className="absolute top-3 left-3 flex items-center gap-1.5">
-                    <span className="bg-[#1b1c1a]/90 text-white font-label-caps text-[9px] px-2 py-0.5 rounded-full font-bold uppercase backdrop-blur-xs flex items-center gap-1">
+                    <span className="bg-[#1b1c1a]/90 text-white font-label-caps text-[9px] px-2 py-0.5 rounded-full font-bold backdrop-blur-xs flex items-center gap-1">
                       <span className="material-symbols-outlined text-[10px]">{platformIcon}</span>
                       <span>{template.category}</span>
                     </span>
                   </div>
 
                   <span
-                    className="absolute top-3 right-3 text-white font-label-caps text-[9px] px-2.5 py-0.5 rounded-full font-bold uppercase shadow-xs"
+                    className="absolute top-3 right-3 text-white font-label-caps text-[9px] px-2.5 py-0.5 rounded-full font-bold shadow-xs"
                     style={{ backgroundColor: brand?.primaryColor || '#4f46e5' }}
                   >
                     {brand ? brand.name : 'Shared Ecosystem'}
@@ -505,7 +505,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
 
             <div className="space-y-3.5 text-xs font-body-md">
               <div>
-                <label className="font-label-caps text-[10px] text-[#5f5f5b] block uppercase font-bold mb-1">
+                <label className="font-label-caps text-[10px] text-[#5f5f5b] block font-bold mb-1">
                   Template Name *
                 </label>
                 <input
@@ -526,7 +526,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div>
-                  <label className="font-label-caps text-[10px] text-[#5f5f5b] block uppercase font-bold mb-1">
+                  <label className="font-label-caps text-[10px] text-[#5f5f5b] block font-bold mb-1">
                     Brand
                   </label>
                   <select
@@ -544,7 +544,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                 </div>
 
                 <div>
-                  <label className="font-label-caps text-[10px] text-[#5f5f5b] block uppercase font-bold mb-1">
+                  <label className="font-label-caps text-[10px] text-[#5f5f5b] block font-bold mb-1">
                     Category
                   </label>
                   <select
@@ -562,7 +562,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
               <button
                 type="button"
                 onClick={() => setShowMoreOptions((v) => !v)}
-                className="flex items-center gap-1.5 text-[#4f46e5] font-label-caps text-[10px] font-bold uppercase cursor-pointer"
+                className="flex items-center gap-1.5 text-[#4f46e5] font-label-caps text-[10px] font-bold cursor-pointer"
               >
                 <span className="material-symbols-outlined text-sm">
                   {showMoreOptions ? 'expand_less' : 'expand_more'}
@@ -573,7 +573,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
               {showMoreOptions && (
                 <div className="space-y-3.5 pt-1">
                   <div>
-                    <label className="font-label-caps text-[10px] text-[#5f5f5b] block uppercase font-bold mb-1">
+                    <label className="font-label-caps text-[10px] text-[#5f5f5b] block font-bold mb-1">
                       Description / Purpose
                     </label>
                     <input
@@ -586,7 +586,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                   </div>
 
                   <div>
-                    <label className="font-label-caps text-[10px] text-[#5f5f5b] block uppercase font-bold mb-1">
+                    <label className="font-label-caps text-[10px] text-[#5f5f5b] block font-bold mb-1">
                       Platform
                     </label>
                     <select
@@ -603,7 +603,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                   </div>
 
                   <div>
-                    <label className="font-label-caps text-[10px] text-[#5f5f5b] block uppercase font-bold mb-1">
+                    <label className="font-label-caps text-[10px] text-[#5f5f5b] block font-bold mb-1">
                       Caption
                     </label>
                     <textarea
@@ -616,7 +616,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                   </div>
 
                   <div>
-                    <label className="font-label-caps text-[10px] text-[#5f5f5b] block uppercase font-bold mb-1">
+                    <label className="font-label-caps text-[10px] text-[#5f5f5b] block font-bold mb-1">
                       Tags (comma-separated)
                     </label>
                     <input
@@ -629,7 +629,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                   </div>
 
                   <div>
-                    <label className="font-label-caps text-[10px] text-[#5f5f5b] block uppercase font-bold mb-1">
+                    <label className="font-label-caps text-[10px] text-[#5f5f5b] block font-bold mb-1">
                       Image
                     </label>
                     <div className="flex gap-2 items-center">

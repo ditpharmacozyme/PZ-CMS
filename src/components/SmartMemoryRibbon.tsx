@@ -61,7 +61,7 @@ export const SmartMemoryRibbon: React.FC<SmartMemoryRibbonProps> = ({
         {/* Recent Items Quick Jump */}
         {recentPosts.length > 0 && !collapsed && (
           <div className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar py-0.5">
-            <span className="font-label-caps text-[9px] text-[#e9e9e7] uppercase tracking-wider hidden md:inline">
+            <span className="font-label-caps text-[9px] text-[#e9e9e7] tracking-wider hidden md:inline">
               Recent:
             </span>
             {recentPosts.slice(0, 4).map((post) => {

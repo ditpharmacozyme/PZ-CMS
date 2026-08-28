@@ -141,7 +141,7 @@ OUTPUT FORMAT:
       {/* Header & Brand Selector */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#efefed] bg-white p-5 rounded-xl shadow-xs">
         <div>
-          <span className="font-label-caps text-xs text-[#4338ca] font-bold uppercase tracking-widest">
+          <span className="font-label-caps text-xs text-[#4338ca] font-bold tracking-widest">
             Brand Intelligence & AI Center
           </span>
           <h2 className="font-display-xl text-2xl md:text-3xl text-[#1b1c1a] font-bold mt-1">
@@ -245,7 +245,7 @@ OUTPUT FORMAT:
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div className="lg:col-span-5 space-y-4">
             <div>
-              <label className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold block mb-1.5">
+              <label className="font-label-caps text-[10px] text-[#5f5f5b] font-bold block mb-1.5">
                 1. Content Goal
               </label>
               <select
@@ -263,7 +263,7 @@ OUTPUT FORMAT:
             </div>
 
             <div>
-              <label className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold block mb-1.5">
+              <label className="font-label-caps text-[10px] text-[#5f5f5b] font-bold block mb-1.5">
                 2. Tone & Depth
               </label>
               <select
@@ -280,7 +280,7 @@ OUTPUT FORMAT:
             </div>
 
             <div>
-              <label className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold block mb-1.5">
+              <label className="font-label-caps text-[10px] text-[#5f5f5b] font-bold block mb-1.5">
                 3. Topic / Keyword Focus
               </label>
               <input
@@ -293,7 +293,7 @@ OUTPUT FORMAT:
             </div>
 
             <div>
-              <label className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold block mb-1.5">
+              <label className="font-label-caps text-[10px] text-[#5f5f5b] font-bold block mb-1.5">
                 4. Additional Custom Instructions (Optional)
               </label>
               <textarea
@@ -310,7 +310,7 @@ OUTPUT FORMAT:
           <div className="lg:col-span-7 flex flex-col justify-between bg-[#1b1c1a] text-white p-5 rounded-xl space-y-4">
             <div>
               <div className="flex items-center justify-between mb-2 pb-2 border-b border-white/10">
-                <span className="font-label-caps text-[10px] text-[#15803d] uppercase font-bold tracking-wider flex items-center gap-1.5">
+                <span className="font-label-caps text-[10px] text-[#15803d] font-bold tracking-wider flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-[#15803d] animate-pulse" />
                   Ready to paste into ChatGPT / Claude
                 </span>
@@ -381,7 +381,7 @@ OUTPUT FORMAT:
                   className="h-12 w-full rounded-md border border-[#e9e9e7]/60 mb-2 shadow-inner group-hover:scale-102 transition-transform"
                   style={{ backgroundColor: col.hex }}
                 />
-                <span className="font-label-caps text-[9px] text-[#5f5f5b] block uppercase">
+                <span className="font-label-caps text-[9px] text-[#5f5f5b] block">
                   {col.label}
                 </span>
                 <div className="flex justify-between items-center mt-0.5">
@@ -407,7 +407,7 @@ OUTPUT FORMAT:
           <div className="space-y-3">
             <div className="p-3 bg-[#f4f4f3] border border-[#efefed] rounded-lg flex items-center justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <span className="font-label-caps text-[9px] text-[#5f5f5b] uppercase font-bold block">Tagline</span>
+                <span className="font-label-caps text-[9px] text-[#5f5f5b] font-bold block">Tagline</span>
                 <p className="text-xs font-semibold text-[#1b1c1a] truncate">{brand.tagline}</p>
               </div>
               <button
@@ -421,7 +421,7 @@ OUTPUT FORMAT:
 
             <div className="p-3 bg-[#f4f4f3] border border-[#efefed] rounded-lg flex items-center justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <span className="font-label-caps text-[9px] text-[#5f5f5b] uppercase font-bold block">Recommended Hashtags</span>
+                <span className="font-label-caps text-[9px] text-[#5f5f5b] font-bold block">Recommended Hashtags</span>
                 <p className="font-code-sm text-xs text-[#4338ca] truncate">{brandHashtags}</p>
               </div>
               <button
@@ -435,7 +435,7 @@ OUTPUT FORMAT:
 
             <div className="p-3 bg-[#f4f4f3] border border-[#efefed] rounded-lg flex items-center justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <span className="font-label-caps text-[9px] text-[#5f5f5b] uppercase font-bold block">Brand Bio</span>
+                <span className="font-label-caps text-[9px] text-[#5f5f5b] font-bold block">Brand Bio</span>
                 <p className="text-xs text-[#57574f] line-clamp-1">{brand.description}</p>
               </div>
               <button
@@ -460,7 +460,7 @@ OUTPUT FORMAT:
 
           <div className="space-y-4 bg-[#f4f4f3] p-4 rounded-lg border border-[#efefed]">
             <div>
-              <span className="font-label-caps text-[9px] text-[#5f5f5b] uppercase block mb-1">
+              <span className="font-label-caps text-[9px] text-[#5f5f5b] block mb-1">
                 Display Font Specimen ({brand.fonts.display})
               </span>
               <p className="font-specimen-display text-2xl font-bold text-[#1b1c1a]">
@@ -469,7 +469,7 @@ OUTPUT FORMAT:
             </div>
 
             <div>
-              <span className="font-label-caps text-[9px] text-[#5f5f5b] uppercase block mb-1">
+              <span className="font-label-caps text-[9px] text-[#5f5f5b] block mb-1">
                 Headline Specimen ({brand.fonts.headline})
               </span>
               <p className="font-specimen-headline text-lg font-bold text-[#4338ca]">
@@ -478,7 +478,7 @@ OUTPUT FORMAT:
             </div>
 
             <div>
-              <span className="font-label-caps text-[9px] text-[#5f5f5b] uppercase block mb-1">
+              <span className="font-label-caps text-[9px] text-[#5f5f5b] block mb-1">
                 Body Copy Specimen ({brand.fonts.body})
               </span>
               <p className="font-specimen-body text-xs text-[#57574f] leading-relaxed">

@@ -181,7 +181,7 @@ export const CalendarFilters: React.FC<CalendarFiltersProps> = ({
             <div className="space-y-4 overflow-y-auto max-h-[60vh] pr-1">
               {/* Status Section */}
               <div>
-                <label className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold block mb-2">
+                <label className="font-label-caps text-[10px] text-[#5f5f5b] font-bold block mb-2">
                   Status
                 </label>
                 <div className="flex flex-wrap gap-1.5">
@@ -204,7 +204,7 @@ export const CalendarFilters: React.FC<CalendarFiltersProps> = ({
 
               {/* Platform Section */}
               <div>
-                <label className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold block mb-2">
+                <label className="font-label-caps text-[10px] text-[#5f5f5b] font-bold block mb-2">
                   Platform
                 </label>
                 <div className="flex flex-wrap gap-1.5">
@@ -227,7 +227,7 @@ export const CalendarFilters: React.FC<CalendarFiltersProps> = ({
 
               {/* Assignee Section */}
               <div>
-                <label className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold block mb-2">
+                <label className="font-label-caps text-[10px] text-[#5f5f5b] font-bold block mb-2">
                   Assignee
                 </label>
                 <div className="flex flex-wrap gap-1.5">

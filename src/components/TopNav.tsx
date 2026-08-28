@@ -192,7 +192,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                   <span className="material-symbols-outlined text-base text-[#5f5f5b]">arrow_drop_down</span>
                 </p>
                 <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="font-label-caps text-[9px] text-[#5f5f5b] uppercase tracking-wider">Brand-Ops Studio</span>
+                  <span className="font-label-caps text-[9px] text-[#5f5f5b] tracking-wider">Brand-Ops Studio</span>
                   <span className="w-1.5 h-1.5 rounded-full bg-[#15803d] animate-pulse flex-shrink-0" />
                 </div>
               </div>
@@ -358,7 +358,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                 <span className="font-headline-md text-[11px] font-bold text-[#1b1c1a] leading-none truncate">
                   {activeTeammate ? activeTeammate.name : 'Guest'}
                 </span>
-                <span className="font-label-caps text-[8px] text-[#5f5f5b] uppercase tracking-wider mt-0.5 leading-none truncate">
+                <span className="font-label-caps text-[8px] text-[#5f5f5b] tracking-wider mt-0.5 leading-none truncate">
                   {activeTeammate ? activeTeammate.userRole || activeTeammate.role : 'Editor'}
                 </span>
               </div>
@@ -370,7 +370,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                 <div className="flex items-center justify-between pb-2 border-b border-[#e9e9e7]">
                   <div className="flex items-center gap-1.5">
                     <span className="material-symbols-outlined text-[#4f46e5] text-lg">account_circle</span>
-                    <h3 className="font-label-caps text-[10px] font-bold text-[#1b1c1a] uppercase tracking-wider">Authenticated Profile</h3>
+                    <h3 className="font-label-caps text-[10px] font-bold text-[#1b1c1a] tracking-wider">Authenticated Profile</h3>
                   </div>
                   <button onClick={() => setShowActiveTeammatePopover(false)} className="text-[#5f5f5b] hover:text-[#1b1c1a] p-0.5 cursor-pointer">
                     <span className="material-symbols-outlined text-sm">close</span>
@@ -388,7 +388,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-bold text-[#1b1c1a] truncate">{activeTeammate.name}</p>
                       <p className="text-[10px] text-[#5f5f5b] truncate">{activeTeammate.email}</p>
-                      <span className="inline-block mt-1 font-label-caps text-[8px] font-bold uppercase bg-[#4f46e5]/15 text-[#4f46e5] px-1.5 py-0.5 rounded">
+                      <span className="inline-block mt-1 font-label-caps text-[8px] font-bold bg-[#4f46e5]/15 text-[#4f46e5] px-1.5 py-0.5 rounded">
                         {activeTeammate.userRole || 'Admin'}
                       </span>
                     </div>
@@ -532,10 +532,10 @@ export const TopNav: React.FC<TopNavProps> = ({
                         </>
                       ) : (
                         <>
-                          <p className="font-label-caps text-[10px] text-[#4f46e5] font-bold uppercase">New Team Member</p>
+                          <p className="font-label-caps text-[10px] text-[#4f46e5] font-bold">New Team Member</p>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div className="space-y-1">
-                              <label className="font-label-caps text-[9px] text-[#5f5f5b] uppercase block">Full Name *</label>
+                              <label className="font-label-caps text-[9px] text-[#5f5f5b] block">Full Name *</label>
                               <input
                                 type="text"
                                 value={newMember.name || ''}
@@ -546,7 +546,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                               />
                             </div>
                             <div className="space-y-1">
-                              <label className="font-label-caps text-[9px] text-[#5f5f5b] uppercase block">Role *</label>
+                              <label className="font-label-caps text-[9px] text-[#5f5f5b] block">Role *</label>
                               <input
                                 type="text"
                                 value={newMember.role || ''}
@@ -557,7 +557,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                               />
                             </div>
                             <div className="col-span-2 space-y-1">
-                              <label className="font-label-caps text-[9px] text-[#5f5f5b] uppercase block">Email *</label>
+                              <label className="font-label-caps text-[9px] text-[#5f5f5b] block">Email *</label>
                               <input
                                 type="email"
                                 value={newMember.email || ''}
@@ -568,7 +568,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                               />
                             </div>
                             <div className="col-span-2 space-y-1">
-                              <label className="font-label-caps text-[9px] text-[#5f5f5b] uppercase block">Avatar Colour</label>
+                              <label className="font-label-caps text-[9px] text-[#5f5f5b] block">Avatar Colour</label>
                               <div className="flex gap-2 flex-wrap">
                                 {AVATAR_COLORS.map(c => (
                                   <button
@@ -623,7 +623,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                           <div className="space-y-2">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                               <div className="space-y-1">
-                                <label className="font-label-caps text-[9px] text-[#5f5f5b] uppercase block">Name</label>
+                                <label className="font-label-caps text-[9px] text-[#5f5f5b] block">Name</label>
                                 <input
                                   type="text"
                                   value={editingMember.name}
@@ -632,7 +632,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                                 />
                               </div>
                               <div className="space-y-1">
-                                <label className="font-label-caps text-[9px] text-[#5f5f5b] uppercase block">
+                                <label className="font-label-caps text-[9px] text-[#5f5f5b] block">
                                   Role * {activeTeammate?.userRole !== 'Admin' && ' (Admin only)'}
                                 </label>
                                 <input
@@ -644,7 +644,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                                 />
                               </div>
                               <div className="col-span-2 space-y-1">
-                                <label className="font-label-caps text-[9px] text-[#5f5f5b] uppercase block">
+                                <label className="font-label-caps text-[9px] text-[#5f5f5b] block">
                                   Permission Level {activeTeammate?.userRole !== 'Admin' && ' (Admin only)'}
                                 </label>
                                 <select
@@ -660,7 +660,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                                 </select>
                               </div>
                               <div className="col-span-2 space-y-1">
-                                <label className="font-label-caps text-[9px] text-[#5f5f5b] uppercase block">Email</label>
+                                <label className="font-label-caps text-[9px] text-[#5f5f5b] block">Email</label>
                                 <input
                                   type="email"
                                   value={editingMember.email}
@@ -669,7 +669,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                                 />
                               </div>
                               <div className="col-span-2 space-y-1">
-                                <label className="font-label-caps text-[9px] text-[#5f5f5b] uppercase block">Login PIN / Passcode</label>
+                                <label className="font-label-caps text-[9px] text-[#5f5f5b] block">Login PIN / Passcode</label>
                                 <input
                                   type="password"
                                   value={editingMember.passcode || ''}
@@ -679,7 +679,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                                 />
                               </div>
                               <div className="col-span-2 space-y-1">
-                                <label className="font-label-caps text-[9px] text-[#5f5f5b] uppercase block">Colour</label>
+                                <label className="font-label-caps text-[9px] text-[#5f5f5b] block">Colour</label>
                                 <div className="flex gap-2 flex-wrap">
                                   {AVATAR_COLORS.map(c => (
                                     <button
@@ -707,7 +707,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="font-body-md text-sm font-bold text-[#1b1c1a] truncate">{member.name}</p>
-                              <p className="font-label-caps text-[9px] text-[#5f5f5b] uppercase truncate">{member.role}</p>
+                              <p className="font-label-caps text-[9px] text-[#5f5f5b] truncate">{member.role}</p>
                               {member.email && <p className="font-body-md text-[10px] text-[#5f5f5b] truncate">{member.email}</p>}
                             </div>
                             <div className="flex gap-1 flex-shrink-0">
@@ -741,7 +741,7 @@ export const TopNav: React.FC<TopNavProps> = ({
               {settingsTab === 'system' && (
                 <div className="space-y-4 text-xs font-body-md text-[#57574f]">
                   <div className="p-3 bg-[#f4f4f3] border border-[#e9e9e7] rounded space-y-2">
-                    <p className="font-label-caps text-[10px] text-[#4f46e5] font-bold uppercase">Google Drive / Apps Script</p>
+                    <p className="font-label-caps text-[10px] text-[#4f46e5] font-bold">Google Drive / Apps Script</p>
                     <p>Images upload straight to Google Drive via Apps Script — nothing is stored on this device.</p>
                     {onSelectTab && (
                       <button
@@ -755,7 +755,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                   </div>
 
                   <div className="p-3 bg-[#f4f4f3] border border-[#e9e9e7] rounded space-y-2">
-                    <p className="font-label-caps text-[10px] text-[#4f46e5] font-bold uppercase">Shared Data</p>
+                    <p className="font-label-caps text-[10px] text-[#4f46e5] font-bold">Shared Data</p>
                     {isRemoteConfigured ? (
                       <>
                         <p className="flex items-center gap-1.5">
@@ -792,7 +792,7 @@ export const TopNav: React.FC<TopNavProps> = ({
 
                   {/* Data Export & Backup */}
                   <div className="p-3 bg-[#f4f4f3] border border-[#e9e9e7] rounded space-y-2">
-                    <p className="font-label-caps text-[10px] text-[#4f46e5] font-bold uppercase flex items-center gap-1">
+                    <p className="font-label-caps text-[10px] text-[#4f46e5] font-bold flex items-center gap-1">
                       <span className="material-symbols-outlined text-sm">download</span>
                       <span>1-Click Offline Backup & Export</span>
                     </p>
@@ -824,7 +824,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                   {/* Automated Rolling Local Backups */}
                   <div className="p-3 bg-[#f4f4f3] border border-[#e9e9e7] rounded space-y-2.5">
                     <div className="flex items-center justify-between">
-                      <p className="font-label-caps text-[10px] text-[#4f46e5] font-bold uppercase flex items-center gap-1">
+                      <p className="font-label-caps text-[10px] text-[#4f46e5] font-bold flex items-center gap-1">
                         <span className="material-symbols-outlined text-sm">history</span>
                         <span>Automated Rolling Snapshots</span>
                       </p>

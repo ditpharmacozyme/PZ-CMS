@@ -237,7 +237,7 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#e9e9e7]">
         <div>
-          <span className="font-label-caps text-xs text-[#4338ca] uppercase font-bold tracking-widest">
+          <span className="font-label-caps text-xs text-[#4338ca] font-bold tracking-widest">
             Research & Plans
           </span>
           <h2 className="font-display-xl text-2xl md:text-3xl text-[#1b1c1a] font-bold mt-1">
@@ -368,7 +368,7 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
                       {item.title}
                     </h3>
                   </div>
-                  <p className="font-label-caps text-[9px] text-[#5f5f5b] uppercase tracking-wide">
+                  <p className="font-label-caps text-[9px] text-[#5f5f5b] tracking-wide">
                     {TYPE_LABELS[item.type]} · {item.owner}
                   </p>
                 </div>
@@ -439,7 +439,7 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
 
             <div className="space-y-4 text-xs font-body-md">
               <div>
-                <label className="font-label-caps text-[10px] text-[#5f5f5b] block uppercase font-bold mb-1">
+                <label className="font-label-caps text-[10px] text-[#5f5f5b] block font-bold mb-1">
                   File (CSV, MD, DOCX, or PDF — max 3MB) *
                 </label>
                 <input
@@ -469,7 +469,7 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
               {selectedFile && fileType && (
                 <>
                   <div>
-                    <label className="font-label-caps text-[10px] text-[#5f5f5b] block uppercase font-bold mb-1">
+                    <label className="font-label-caps text-[10px] text-[#5f5f5b] block font-bold mb-1">
                       Title *
                     </label>
                     <input
@@ -483,7 +483,7 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="font-label-caps text-[10px] text-[#5f5f5b] block uppercase font-bold mb-1">
+                      <label className="font-label-caps text-[10px] text-[#5f5f5b] block font-bold mb-1">
                         Brand
                       </label>
                       <select
@@ -498,7 +498,7 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
                       </select>
                     </div>
                     <div>
-                      <label className="font-label-caps text-[10px] text-[#5f5f5b] block uppercase font-bold mb-1">
+                      <label className="font-label-caps text-[10px] text-[#5f5f5b] block font-bold mb-1">
                         Type
                       </label>
                       <select
@@ -515,7 +515,7 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="font-label-caps text-[10px] text-[#5f5f5b] block uppercase font-bold mb-1">
+                      <label className="font-label-caps text-[10px] text-[#5f5f5b] block font-bold mb-1">
                         Owner *
                       </label>
                       {teamMembers.length > 0 ? (
@@ -538,7 +538,7 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
                       )}
                     </div>
                     <div>
-                      <label className="font-label-caps text-[10px] text-[#5f5f5b] block uppercase font-bold mb-1">
+                      <label className="font-label-caps text-[10px] text-[#5f5f5b] block font-bold mb-1">
                         Date
                       </label>
                       <input
@@ -551,7 +551,7 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
                   </div>
 
                   <div>
-                    <label className="font-label-caps text-[10px] text-[#5f5f5b] block uppercase font-bold mb-1">
+                    <label className="font-label-caps text-[10px] text-[#5f5f5b] block font-bold mb-1">
                       Tags (comma separated)
                     </label>
                     <input
@@ -621,7 +621,7 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
             </button>
 
             <div>
-              <span className="font-label-caps text-[10px] text-[#4338ca] uppercase font-bold tracking-widest">
+              <span className="font-label-caps text-[10px] text-[#4338ca] font-bold tracking-widest">
                 {TYPE_LABELS[viewingItem.type]}
               </span>
               <h2 className="font-headline-md text-lg font-bold text-[#1b1c1a] mt-1">{viewingItem.title}</h2>
@@ -650,7 +650,7 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
                     <thead className="bg-[#f4f4f3]">
                       <tr>
                         {CALENDAR_CSV_HEADERS.map((h) => (
-                          <th key={h} className="text-left px-2 py-1.5 font-label-caps text-[9px] uppercase text-[#5f5f5b] border-b border-[#e9e9e7]">
+                          <th key={h} className="text-left px-2 py-1.5 font-label-caps text-[9px] text-[#5f5f5b] border-b border-[#e9e9e7]">
                             {h}
                           </th>
                         ))}

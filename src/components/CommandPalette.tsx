@@ -166,7 +166,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                 <span className="flex-1 min-w-0">
                   <span className="block text-sm text-[#1b1c1a] truncate">{item.label}</span>
                 </span>
-                <span className="text-[10px] font-label-caps text-[#5f5f5b] uppercase flex-shrink-0">{item.hint}</span>
+                <span className="text-[10px] font-label-caps text-[#5f5f5b] flex-shrink-0">{item.hint}</span>
               </button>
             ))
           )}

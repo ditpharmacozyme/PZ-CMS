@@ -485,7 +485,7 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
             {showBankDrawer && (
               <div className="border border-[var(--color-line)] rounded-lg bg-[var(--color-muted)] p-3 max-h-56 overflow-y-auto space-y-2.5">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-label-caps text-[10px] font-bold text-[var(--color-accent)] uppercase">
+                  <span className="font-label-caps text-[10px] font-bold text-[var(--color-accent)]">
                     Reuse saved copy
                   </span>
                   <input

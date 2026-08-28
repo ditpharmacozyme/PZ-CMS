@@ -137,7 +137,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#e9e9e7]">
         <div>
-          <span className="font-label-caps text-xs text-[#4338ca] uppercase font-bold tracking-widest">
+          <span className="font-label-caps text-xs text-[#4338ca] font-bold tracking-widest">
             Logos, fonts & spec sheets
           </span>
           <h2 className="font-display-xl text-2xl md:text-3xl text-[#1b1c1a] font-bold mt-1">

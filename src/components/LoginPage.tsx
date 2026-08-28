@@ -106,7 +106,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ forcedMode, onPasswordSet 
               Welcome! Choose a password to finish setting up your account.
             </p>
             <div className="space-y-1.5">
-              <label className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold block">
+              <label className="font-label-caps text-[10px] text-[#5f5f5b] font-bold block">
                 New Password
               </label>
               <input
@@ -122,7 +122,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ forcedMode, onPasswordSet 
               />
             </div>
             <div className="space-y-1.5">
-              <label className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold block">
+              <label className="font-label-caps text-[10px] text-[#5f5f5b] font-bold block">
                 Confirm Password
               </label>
               <input
@@ -159,7 +159,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ forcedMode, onPasswordSet 
         ) : mode === 'signin' ? (
           <form onSubmit={handleSignIn} className="bg-white border border-[#e9e9e7] rounded-lg shadow-2xs p-6 space-y-4">
             <div className="space-y-1.5">
-              <label className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold block">
+              <label className="font-label-caps text-[10px] text-[#5f5f5b] font-bold block">
                 Email
               </label>
               <input
@@ -176,7 +176,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ forcedMode, onPasswordSet 
             </div>
 
             <div className="space-y-1.5">
-              <label className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold flex items-center gap-1">
+              <label className="font-label-caps text-[10px] text-[#5f5f5b] font-bold flex items-center gap-1">
                 <span className="material-symbols-outlined text-xs">lock</span>
                 Password
               </label>
@@ -240,7 +240,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ forcedMode, onPasswordSet 
             ) : (
               <>
                 <div className="space-y-1.5">
-                  <label className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold block">
+                  <label className="font-label-caps text-[10px] text-[#5f5f5b] font-bold block">
                     Email
                   </label>
                   <input

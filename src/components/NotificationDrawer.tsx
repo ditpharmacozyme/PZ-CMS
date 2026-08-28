@@ -83,7 +83,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
               if (items.length === 0) return null;
               return (
                 <div key={groupName} className="space-y-3">
-                  <h3 className="font-label-caps text-xs font-bold text-[#5f5f5b] uppercase border-b border-[#e9e9e7]/50 pb-1">
+                  <h3 className="font-label-caps text-xs font-bold text-[#5f5f5b] border-b border-[#e9e9e7]/50 pb-1">
                     {groupName}
                   </h3>
                   <div className="space-y-2">
@@ -117,7 +117,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
                                       onViewPost(n.postId!);
                                       onClose();
                                     }}
-                                    className="font-label-caps text-[10px] uppercase font-bold text-[#4f46e5] hover:underline"
+                                    className="font-label-caps text-[10px] font-bold text-[#4f46e5] hover:underline"
                                   >
                                     View Post
                                   </button>
@@ -125,7 +125,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
                                 {!n.read && (
                                   <button 
                                     onClick={() => onMarkAsRead(n.id)}
-                                    className="font-label-caps text-[10px] uppercase font-bold text-[#5f5f5b] hover:text-[#1b1c1a]"
+                                    className="font-label-caps text-[10px] font-bold text-[#5f5f5b] hover:text-[#1b1c1a]"
                                   >
                                     Mark Read
                                   </button>

@@ -91,7 +91,7 @@ export const IdeaBacklog: React.FC<IdeaBacklogProps> = ({
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-base text-[#15803d]">lightbulb</span>
-            <span className="font-label-caps text-xs tracking-wider text-[#1b1c1a] uppercase font-bold">
+            <span className="font-label-caps text-xs tracking-wider text-[#1b1c1a] font-bold">
               Idea Backlog
             </span>
           </div>
@@ -295,7 +295,7 @@ export const IdeaBacklog: React.FC<IdeaBacklogProps> = ({
               {filteredBacklogPosts.length}
             </span>
             <span
-              className="font-label-caps text-[9px] text-[#5f5f5b] group-hover:text-[#1b1c1a] uppercase font-bold tracking-widest mt-4"
+              className="font-label-caps text-[9px] text-[#5f5f5b] group-hover:text-[#1b1c1a] font-bold tracking-widest mt-4"
               style={{ writingMode: 'vertical-rl' }}
             >
               Backlog
@@ -330,7 +330,7 @@ export const IdeaBacklog: React.FC<IdeaBacklogProps> = ({
             <div className="flex items-center justify-between px-4 pt-3 pb-1 border-b border-[#efefed]">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[#15803d]">lightbulb</span>
-                <span className="font-label-caps text-xs font-bold text-[#1b1c1a] uppercase">Idea Backlog</span>
+                <span className="font-label-caps text-xs font-bold text-[#1b1c1a]">Idea Backlog</span>
               </div>
               <button
                 onClick={() => setMobileBacklogOpen(false)}

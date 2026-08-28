@@ -151,7 +151,7 @@ export const SideNav: React.FC<SideNavProps> = ({
                     Pharmacozyme
                   </h1>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className="font-label-caps text-[9px] text-[#4f46e5] tracking-widest uppercase font-bold">Brand-Ops Studio</span>
+                    <span className="font-label-caps text-[9px] text-[#4f46e5] tracking-widest font-bold">Brand-Ops Studio</span>
                     <span className="w-1 h-1 rounded-full bg-[#15803d] animate-pulse inline-block" />
                   </div>
                 </div>

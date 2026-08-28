@@ -244,7 +244,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
         {isUploading && (
           <div className="absolute inset-0 bg-[#f4f4f3]/75 backdrop-blur-xs z-50 flex flex-col items-center justify-center pointer-events-auto">
             <div className="w-8 h-8 rounded-full border-2 border-[#4f46e5] border-t-transparent animate-spin mb-2" />
-            <p className="font-label-caps text-[10px] text-[#4f46e5] font-bold uppercase tracking-wider">Uploading Image...</p>
+            <p className="font-label-caps text-[10px] text-[#4f46e5] font-bold tracking-wider">Uploading Image...</p>
           </div>
         )}
         {/* Drag handle (mobile only) */}
@@ -259,7 +259,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
               className="w-3 h-3 rounded-full flex-shrink-0"
               style={{ backgroundColor: brand?.primaryColor || '#4f46e5' }}
             />
-            <span className="font-label-caps text-[11px] sm:text-xs font-bold text-[#4f46e5] uppercase truncate">
+            <span className="font-label-caps text-[11px] sm:text-xs font-bold text-[#4f46e5] truncate">
               {brand?.name} post
             </span>
           </div>
@@ -302,7 +302,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
           {/* Title & Brand Row */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
             <div className="md:col-span-2 space-y-1">
-              <label className="font-label-caps text-[10px] sm:text-xs text-[#5f5f5b] uppercase font-bold">
+              <label className="font-label-caps text-[10px] sm:text-xs text-[#5f5f5b] font-bold">
                 Title
               </label>
               <input
@@ -314,7 +314,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
             </div>
 
             <div className="space-y-1">
-              <label className="font-label-caps text-[10px] sm:text-xs text-[#5f5f5b] uppercase font-bold">
+              <label className="font-label-caps text-[10px] sm:text-xs text-[#5f5f5b] font-bold">
                 Brand
               </label>
               <select
@@ -334,11 +334,11 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
           {/* STATUS -- derived from the stage checkboxes below, not set here */}
           <div className="bg-white p-3 sm:p-4 border border-[#e9e9e7] rounded shadow-xs space-y-2">
             <div className="flex items-center justify-between">
-              <label className="font-label-caps text-xs text-[#4f46e5] uppercase font-bold">
+              <label className="font-label-caps text-xs text-[#4f46e5] font-bold">
                 Status
               </label>
               <span
-                className="font-label-caps text-[10px] sm:text-xs font-bold uppercase px-2 py-0.5 rounded"
+                className="font-label-caps text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded"
                 style={{ backgroundColor: getPostStatusConfig(editedPost).bgColor, color: getPostStatusConfig(editedPost).color }}
               >
                 {getPostStatusConfig(editedPost).label}
@@ -353,7 +353,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
               so it reads as one scheduling concept with date/time rather than
               a separate box. */}
           <div className="space-y-1 bg-white p-3 border border-[#e9e9e7] rounded">
-            <label className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold">
+            <label className="font-label-caps text-[10px] text-[#5f5f5b] font-bold">
               Assignees {editedPost.assignees.length > 0 && `(${editedPost.assignees.length})`}
             </label>
             {teamMembers && teamMembers.length > 0 ? (
@@ -415,16 +415,16 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
             <div className="flex items-center justify-between pb-2 border-b border-[#e9e9e7]">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[#4338ca]" style={{ fontSize: '18px' }}>alt_route</span>
-                <label className="font-label-caps text-[10px] text-[#4338ca] font-bold uppercase tracking-wider">
+                <label className="font-label-caps text-[10px] text-[#4338ca] font-bold tracking-wider">
                   Who does what
                 </label>
               </div>
-              <span className="font-label-caps text-[9px] text-[#5f5f5b] uppercase font-bold">Multi-person Workflow</span>
+              <span className="font-label-caps text-[9px] text-[#5f5f5b] font-bold">Multi-person Workflow</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="font-label-caps text-[9px] text-[#5f5f5b] uppercase font-bold block mb-1">
+                <label className="font-label-caps text-[9px] text-[#5f5f5b] font-bold block mb-1">
                   🎨 Designer
                 </label>
                 <select
@@ -445,7 +445,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
               </div>
 
               <div>
-                <label className="font-label-caps text-[9px] text-[#5f5f5b] uppercase font-bold block mb-1">
+                <label className="font-label-caps text-[9px] text-[#5f5f5b] font-bold block mb-1">
                   🚀 Publisher
                 </label>
                 <select
@@ -466,7 +466,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
               </div>
 
               <div>
-                <label className="font-label-caps text-[9px] text-[#5f5f5b] uppercase font-bold block mb-1">
+                <label className="font-label-caps text-[9px] text-[#5f5f5b] font-bold block mb-1">
                   💬 Engagement
                 </label>
                 <select
@@ -545,7 +545,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
             <div className="flex items-center justify-between gap-2 pb-2 border-b border-[#e9e9e7]">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[#4f46e5]" style={{ fontSize: '16px' }}>mark_email_unread</span>
-                <label className="font-label-caps text-[10px] text-[#4f46e5] font-bold uppercase">
+                <label className="font-label-caps text-[10px] text-[#4f46e5] font-bold">
                   Instagram Posting Email Reminder
                 </label>
               </div>
@@ -569,7 +569,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             <div className="space-y-1">
-              <label className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold">
+              <label className="font-label-caps text-[10px] text-[#5f5f5b] font-bold">
                 Reminder Date
               </label>
               <input
@@ -581,7 +581,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
             </div>
 
             <div className="space-y-1">
-              <label className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold">
+              <label className="font-label-caps text-[10px] text-[#5f5f5b] font-bold">
                 Reminder Time
               </label>
               <input
@@ -593,7 +593,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
             </div>
 
             <div className="space-y-1">
-              <label className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold">
+              <label className="font-label-caps text-[10px] text-[#5f5f5b] font-bold">
                 Repeat this post
               </label>
               <select
@@ -612,7 +612,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
             </div>
 
             <div className="space-y-1">
-              <label className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold">
+              <label className="font-label-caps text-[10px] text-[#5f5f5b] font-bold">
                 Target Platform
               </label>
               <select
@@ -629,7 +629,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
             </div>
 
             <div className="space-y-1">
-              <label className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold">
+              <label className="font-label-caps text-[10px] text-[#5f5f5b] font-bold">
                 Spec Helper
               </label>
               <select
@@ -646,7 +646,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
             </div>
 
             <div className="space-y-1 sm:col-span-2 md:col-span-1">
-              <label className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold">
+              <label className="font-label-caps text-[10px] text-[#5f5f5b] font-bold">
                 Reminder Email
               </label>
               <div className="flex gap-1.5">
@@ -691,7 +691,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
             {/* Caption & Voice Check */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold">
+                <label className="font-label-caps text-[10px] text-[#5f5f5b] font-bold">
                   Caption
                 </label>
                 {isCrossBrandMention && (
@@ -775,7 +775,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
 
               {/* Inline Brand Guardrails Shelf */}
               <div className="p-3 bg-[#f4f4f3] border border-[#e9e9e7] rounded space-y-2 text-xs">
-                <span className="font-label-caps text-[10px] text-[#4f46e5] font-bold block uppercase">
+                <span className="font-label-caps text-[10px] text-[#4f46e5] font-bold block">
                   Inline Brand Voice Rules ({brand?.name})
                 </span>
                 <ul className="space-y-1 text-[11px] font-body-md text-[#57574f] list-disc list-inside">
@@ -786,7 +786,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
 
                 {/* Color Palette Click-to-Copy */}
                 <div className="pt-2 flex items-center gap-2">
-                  <span className="font-label-caps text-[9px] text-[#5f5f5b] uppercase">Palette:</span>
+                  <span className="font-label-caps text-[9px] text-[#5f5f5b]">Palette:</span>
                   {[brand?.primaryColor, brand?.secondaryColor, brand?.accentColor, '#f4f4f3'].map(
                     (hex, i) => (
                       <button
@@ -809,7 +809,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
 
             {/* Image */}
             <div className="space-y-3">
-              <label className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold">
+              <label className="font-label-caps text-[10px] text-[#5f5f5b] font-bold">
                 Image
               </label>
 
@@ -879,7 +879,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
 
           {/* COMMENTS & COLLABORATION THREAD */}
           <div className="bg-white p-4 border border-[#e9e9e7] rounded space-y-3">
-            <h3 className="font-label-caps text-xs font-bold text-[#4f46e5] uppercase">
+            <h3 className="font-label-caps text-xs font-bold text-[#4f46e5]">
               Collaboration & Feedback Thread ({editedPost.comments.length})
             </h3>
 
@@ -922,7 +922,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
 
           {/* ACTIVITY AUDIT LOG */}
           <div className="p-3 bg-[#f1f1f0] border border-[#e9e9e7] rounded space-y-2">
-            <span className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold block">
+            <span className="font-label-caps text-[10px] text-[#5f5f5b] font-bold block">
               Activity ({editedPost.activityLog.length})
             </span>
             <div className="space-y-1 max-h-28 overflow-y-auto font-code-sm text-[11px] text-[#57574f]">

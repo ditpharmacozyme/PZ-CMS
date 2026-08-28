@@ -93,7 +93,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ teamMembers }) => {
         <div>
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-[#4f46e5]">shield_person</span>
-            <span className="font-label-caps text-xs text-[#4f46e5] uppercase font-bold tracking-widest">
+            <span className="font-label-caps text-xs text-[#4f46e5] font-bold tracking-widest">
               Team Transparency
             </span>
           </div>
@@ -244,7 +244,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ teamMembers }) => {
                           
                           {/* Action Badge */}
                           <span
-                            className="inline-flex items-center gap-1 font-label-caps text-[10px] font-bold px-2 py-0.5 rounded border uppercase"
+                            className="inline-flex items-center gap-1 font-label-caps text-[10px] font-bold px-2 py-0.5 rounded border"
                             style={{
                               backgroundColor: actionMeta.bg,
                               color: actionMeta.text,

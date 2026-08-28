@@ -173,7 +173,7 @@ export const Modal: React.FC<ModalProps> = ({
             {icon}
             <div className="min-w-0">
               {eyebrow && (
-                <p className="font-label-caps text-[10px] uppercase font-bold text-[var(--color-accent)] tracking-widest mb-0.5">{eyebrow}</p>
+                <p className="font-label-caps text-[10px] font-bold text-[var(--color-accent)] tracking-widest mb-0.5">{eyebrow}</p>
               )}
               <h2 id={titleId} className="font-headline-md text-base sm:text-lg font-bold text-[var(--color-ink)]">{title}</h2>
               {description && <p id={descId} className="font-body-md text-xs text-[var(--color-ink-muted)] mt-0.5">{description}</p>}

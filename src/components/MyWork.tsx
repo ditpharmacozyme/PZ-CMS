@@ -168,7 +168,7 @@ export const MyWork: React.FC<MyWorkProps> = ({ posts, activeTeammate, onSelectP
       <div className="p-4 md:p-8 max-w-4xl mx-auto">
         <div className="bg-white border border-[#e9e9e7] rounded shadow-xs p-8 text-center space-y-2">
           <span className="material-symbols-outlined text-3xl text-[#e9e9e7] block">person_off</span>
-          <p className="font-label-caps text-[10px] text-[#5f5f5b] uppercase font-bold">No teammate identified</p>
+          <p className="font-label-caps text-[10px] text-[#5f5f5b] font-bold">No teammate identified</p>
           <p className="font-body-md text-xs text-[#5f5f5b] mt-1">
             Add yourself in Settings → Team to see your personalized work list here.
           </p>
@@ -223,7 +223,7 @@ export const MyWork: React.FC<MyWorkProps> = ({ posts, activeTeammate, onSelectP
               e.stopPropagation();
               handleToggle(post, stage, sectionKey);
             }}
-            className={`flex-shrink-0 px-2.5 py-1.5 rounded-lg font-label-caps text-[10px] font-bold uppercase transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`flex-shrink-0 px-2.5 py-1.5 rounded-lg font-label-caps text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
               isDone ? 'bg-[#15803d] text-white' : 'bg-[#fbf0e1] text-[#b45309] hover:bg-[#ffcb80]'
             }`}
             title={`Click to mark ${stage} ${isDone ? 'not done' : 'done'}`}
@@ -276,7 +276,7 @@ export const MyWork: React.FC<MyWorkProps> = ({ posts, activeTeammate, onSelectP
             {post.assignees.length > 0 ? post.assignees.join(', ') : 'Unassigned'}
           </button>
 
-          <span className="flex-shrink-0 px-2.5 py-1.5 rounded-lg font-label-caps text-[10px] font-bold uppercase flex items-center gap-1.5 bg-[#f1f1f0] text-[#5f5f5b]">
+          <span className="flex-shrink-0 px-2.5 py-1.5 rounded-lg font-label-caps text-[10px] font-bold flex items-center gap-1.5 bg-[#f1f1f0] text-[#5f5f5b]">
             <span className="material-symbols-outlined text-sm">event</span>
             <span>Needs a date</span>
           </span>
@@ -295,7 +295,7 @@ export const MyWork: React.FC<MyWorkProps> = ({ posts, activeTeammate, onSelectP
   return (
     <div className="p-4 md:p-8 space-y-6 max-w-4xl mx-auto">
       <div className="pb-4 border-b border-[#e9e9e7]">
-        <span className="font-label-caps text-xs text-[#4338ca] uppercase font-bold tracking-widest">
+        <span className="font-label-caps text-xs text-[#4338ca] font-bold tracking-widest">
           Welcome back, {activeTeammate.name}
         </span>
         <h2 className="font-display-xl text-2xl md:text-3xl text-[#1b1c1a] font-bold mt-1">My Work</h2>
@@ -326,7 +326,7 @@ export const MyWork: React.FC<MyWorkProps> = ({ posts, activeTeammate, onSelectP
         <div key={section.key} className="bg-white border border-[#e9e9e7] rounded shadow-xs overflow-hidden">
           <div className="p-4 border-b border-[#e9e9e7] flex items-center gap-2">
             <span className="material-symbols-outlined text-[#4f46e5] text-lg">{section.icon}</span>
-            <h3 className="font-label-caps text-xs font-bold text-[#1b1c1a] uppercase">{section.label}</h3>
+            <h3 className="font-label-caps text-xs font-bold text-[#1b1c1a]">{section.label}</h3>
             <span className="font-label-caps text-[10px] text-[#5f5f5b] bg-[#f1f1f0] px-1.5 py-0.2 rounded-full">
               {section.rows.length}
             </span>
@@ -345,7 +345,7 @@ export const MyWork: React.FC<MyWorkProps> = ({ posts, activeTeammate, onSelectP
       <div className="bg-white border border-[#e9e9e7] rounded shadow-xs overflow-hidden">
         <div className="p-4 border-b border-[#e9e9e7] flex items-center gap-2">
           <span className="material-symbols-outlined text-[#4f46e5] text-lg">lightbulb</span>
-          <h3 className="font-label-caps text-xs font-bold text-[#1b1c1a] uppercase">Unscheduled ideas that are mine</h3>
+          <h3 className="font-label-caps text-xs font-bold text-[#1b1c1a]">Unscheduled ideas that are mine</h3>
           <span className="font-label-caps text-[10px] text-[#5f5f5b] bg-[#f1f1f0] px-1.5 py-0.2 rounded-full">
             {unscheduledIdeas.length}
           </span>

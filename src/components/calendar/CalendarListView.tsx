@@ -108,7 +108,7 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
         <div className="flex items-center justify-between md:block md:w-36 font-code-sm text-xs text-[#1b1c1a]">
           <div className="flex items-center gap-1.5 flex-wrap">
             {isToday && (
-              <span className="bg-[#4f46e5] text-white font-label-caps text-[9px] font-bold px-1.5 py-0.2 rounded uppercase">
+              <span className="bg-[#4f46e5] text-white font-label-caps text-[9px] font-bold px-1.5 py-0.2 rounded">
                 Today
               </span>
             )}
@@ -135,7 +135,7 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
         {/* Brand (desktop) */}
         <div className="hidden md:block w-28">
           <span
-            className="px-2 py-0.5 font-label-caps text-[9px] uppercase font-bold rounded text-white inline-block"
+            className="px-2 py-0.5 font-label-caps text-[9px] font-bold rounded text-white inline-block"
             style={{ backgroundColor: brand?.primaryColor || '#4f46e5' }}
           >
             {brand?.name || post.brandId}
@@ -287,7 +287,7 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
             onClick={() => setShowPastPosts(!showPastPosts)}
             className="w-full p-3.5 flex items-center justify-between hover:bg-[#f1f1f0] text-[#5f5f5b] hover:text-[#1b1c1a] transition-colors cursor-pointer"
           >
-            <div className="flex items-center gap-2 font-label-caps text-xs font-bold uppercase tracking-wider">
+            <div className="flex items-center gap-2 font-label-caps text-xs font-bold tracking-wider">
               <span className="material-symbols-outlined text-sm transition-transform" style={{ transform: showPastPosts ? 'rotate(90deg)' : 'none' }}>
                 chevron_right
               </span>
