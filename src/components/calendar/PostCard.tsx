@@ -288,7 +288,7 @@ export const PostCard: React.FC<PostCardProps> = ({
           />
         )}
         <span
-          className="text-[8px] font-bold rounded px-1 truncate text-white font-label-caps leading-none"
+          className="text-[8px] font-bold rounded px-1 shrink-0 whitespace-nowrap text-white font-label-caps leading-none"
           style={{ backgroundColor: brand?.primaryColor || '#4f46e5' }}
         >
           {brand?.shortCode || post.brandId}
