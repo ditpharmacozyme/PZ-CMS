@@ -270,55 +270,47 @@ export const PostCard: React.FC<PostCardProps> = ({
           onSelectPost(post, e);
         }
       }}
-      style={{ borderLeftColor: brand?.primaryColor || '#4f46e5' }}
-      className={`p-1.5 border border-l-3 rounded-md shadow-2xs hover:shadow-xs transition-all text-left cursor-pointer group select-none relative ${
+      className={`p-1.5 border rounded-lg shadow-2xs transition-all text-left cursor-pointer group select-none relative ${
         isSelected
-          ? 'bg-[#eef2ff] ring-2 ring-[#4f46e5] border-[#4f46e5]'
-          : 'bg-white border-[#efefed] hover:border-[#e9e9e7] hover:bg-[#f4f4f3]'
+          ? 'ring-2 ring-[#4f46e5] border-[#4f46e5] bg-[#eef2ff]'
+          : 'bg-white border-[#e9e9e7] hover:border-[#d8d8d5] hover:bg-[#fbfbfa]'
       }`}
     >
-      {/* Top row: Checkbox/Brand code + Platform icon + Time */}
-      <div className="flex items-center justify-between gap-1 mb-0.5">
-        <div className="flex items-center gap-1 min-w-0">
-          {(isSelectMode || isSelected) && (
-            <input
-              type="checkbox"
-              checked={isSelected}
-              onChange={(e) => onToggleSelect && onToggleSelect(post.id, e as any)}
-              onClick={(e) => e.stopPropagation()}
-              className="w-3 h-3 text-[#4f46e5] border-[#e9e9e7] rounded focus:ring-[#4f46e5] cursor-pointer"
-            />
-          )}
-          <span
-            className="px-1 py-0.2 rounded text-[8px] font-bold text-white font-label-caps truncate leading-none"
-            style={{ backgroundColor: brand?.primaryColor || '#4f46e5' }}
-          >
-            {brand?.shortCode || post.brandId}
-          </span>
-          <span className="material-symbols-outlined text-[10px] text-[#5f5f5b]">
-            {platformIcon}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <span className="font-code-sm text-[8px] text-[#5f5f5b]">
-            {post.scheduledTime || '10:00'}
-          </span>
-        </div>
+      {/* Row 1: Checkbox/Brand code + Status pill */}
+      <div className="flex items-center gap-1">
+        {(isSelectMode || isSelected) && (
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={(e) => onToggleSelect && onToggleSelect(post.id, e as any)}
+            onClick={(e) => e.stopPropagation()}
+            className="w-3 h-3 text-[#4f46e5] border-[#e9e9e7] rounded focus:ring-[#4f46e5] cursor-pointer"
+          />
+        )}
+        <span
+          className="text-[8px] font-bold rounded px-1 truncate text-white font-label-caps leading-none"
+          style={{ backgroundColor: brand?.primaryColor || '#4f46e5' }}
+        >
+          {brand?.shortCode || post.brandId}
+        </span>
+        {/* Status is derived from the stage toggles below, not clickable here. */}
+        <StatusChip post={post} variant="pill" className="ml-auto" title="Updates automatically as stages are checked" />
       </div>
 
-      {/* Post Title */}
-      <p className="font-medium text-[10px] sm:text-[11px] text-[#1b1c1a] line-clamp-1 leading-snug tracking-tight">
+      {/* Row 2: Post Title */}
+      <p className="font-medium text-[11px] text-[#1b1c1a] line-clamp-2 leading-snug mt-0.5">
         {post.title}
       </p>
 
-      {/* Bottom row: Status (display only) + Quick Stage Toggles + Assignee */}
-      <div className="flex items-center justify-between mt-1 pt-0.5 border-t border-[#efefed] text-[8px]">
-        {/* Status is derived from the stage toggles on the right, not clickable here. */}
-        <StatusChip post={post} variant="dot" title="Updates automatically as stages are checked" />
+      {/* Row 3 (footer): platform icon + time + Quick Stage Toggles + Assignee */}
+      <div className="mt-1 pt-0.5 border-t border-[#efefed] flex items-center gap-1 text-[8px] text-[#5f5f5b]">
+        <span className="material-symbols-outlined text-[10px] text-[#5f5f5b]">
+          {platformIcon}
+        </span>
+        <span className="font-code-sm">{post.scheduledTime || '10:00'}</span>
 
         {/* Assignee initials badge & Quick Stage Toggles */}
-        <div className="flex items-center gap-0.5 flex-shrink-0">
+        <div className="flex items-center gap-0.5 flex-shrink-0 ml-auto">
           {post.taskRoles?.designer && (
             <button
               type="button"
