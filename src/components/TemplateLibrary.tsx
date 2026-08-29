@@ -2,6 +2,7 @@ import React, { useState, useRef, useMemo } from 'react';
 import { PostTemplate, BrandId, Platform } from '../types';
 import { BRANDS } from '../data/brands';
 import { uploadImage } from '../utils/uploadImage';
+import { copyText } from '../utils/clipboard';
 import { useConfirm } from './ui/ConfirmDialog';
 
 interface TemplateLibraryProps {
@@ -397,6 +398,33 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                     <div className="absolute bottom-2 right-2 bg-black/70 text-white font-code-sm text-[9px] px-2 py-0.5 rounded-full backdrop-blur-xs flex items-center gap-1">
                       <span className="material-symbols-outlined text-[10px] text-[#15803d]">trending_up</span>
                       <span>{template.usesCount} uses</span>
+                    </div>
+                  )}
+
+                  {template.imagePreview && (
+                    <div className="absolute bottom-2 left-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.open(template.imagePreview, '_blank', 'noopener');
+                        }}
+                        className="bg-white/95 border border-[#e9e9e7] text-[#1b1c1a] text-[10px] font-label-caps rounded px-2 py-1 flex items-center gap-1 shadow-xs hover:bg-white"
+                      >
+                        <span className="material-symbols-outlined text-[12px]">open_in_new</span>
+                        <span>Open image</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          await copyText(template.imagePreview!);
+                        }}
+                        className="bg-white/95 border border-[#e9e9e7] text-[#1b1c1a] text-[10px] font-label-caps rounded px-2 py-1 flex items-center gap-1 shadow-xs hover:bg-white"
+                      >
+                        <span className="material-symbols-outlined text-[12px]">link</span>
+                        <span>Copy link</span>
+                      </button>
                     </div>
                   )}
                 </div>
