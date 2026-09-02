@@ -410,7 +410,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
 
                   {template.usesCount > 0 && (
                     <div className="absolute bottom-2 right-2 bg-black/70 text-white font-code-sm text-[9px] px-2 py-0.5 rounded-full backdrop-blur-xs flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[10px] text-[#15803d]">trending_up</span>
+                      <span className="material-symbols-outlined text-[10px] text-[#86efac]">trending_up</span>
                       <span>{template.usesCount} uses</span>
                     </div>
                   )}

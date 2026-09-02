@@ -32,8 +32,8 @@ export const SmartMemoryRibbon: React.FC<SmartMemoryRibbonProps> = ({
         {savedDraft ? (
           <div className="flex items-center gap-2 bg-[#4f46e5]/30 border border-[#4f46e5]/30 px-2.5 py-1 rounded-md">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#15803d] opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#15803d]"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#4ade80] opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#4ade80]"></span>
             </span>
             <span className="font-label-caps text-[10px] sm:text-xs text-[#eef2ff] font-bold">
               Unsaved Draft:
@@ -70,12 +70,12 @@ export const SmartMemoryRibbon: React.FC<SmartMemoryRibbonProps> = ({
                 <button
                   key={post.id}
                   onClick={() => onSelectPost(post)}
-                  className="flex items-center gap-1 bg-white/10 hover:bg-white/20 text-white/90 px-2 py-0.5 rounded text-[10px] font-medium transition-all cursor-pointer whitespace-nowrap border border-white/10 hover:border-[#15803d]/40"
+                  className="flex items-center gap-1 bg-white/10 hover:bg-white/20 text-white/90 px-2 py-0.5 rounded text-[10px] font-medium transition-all cursor-pointer whitespace-nowrap border border-white/10 hover:border-[#4f46e5]/30"
                   title={`Open: ${post.title}`}
                 >
                   <span
                     className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: brand?.primaryColor || '#15803d' }}
+                    style={{ backgroundColor: brand?.primaryColor || '#4f46e5' }}
                   />
                   <span className="max-w-[110px] truncate">{post.title}</span>
                 </button>

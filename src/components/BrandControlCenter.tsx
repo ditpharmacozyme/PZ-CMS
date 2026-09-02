@@ -310,7 +310,7 @@ OUTPUT FORMAT:
           <div className="lg:col-span-7 flex flex-col justify-between bg-[#1b1c1a] text-white p-5 rounded-xl space-y-4">
             <div>
               <div className="flex items-center justify-between mb-2 pb-2 border-b border-white/10">
-                <span className="font-label-caps text-[10px] text-[#15803d] font-bold tracking-wider flex items-center gap-1.5">
+                <span className="font-label-caps text-[10px] text-[#86efac] font-bold tracking-wider flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-[#15803d] animate-pulse" />
                   Ready to paste into ChatGPT / Claude
                 </span>
