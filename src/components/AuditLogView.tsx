@@ -89,18 +89,18 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ teamMembers }) => {
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#bfcab4]">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#e9e9e7]">
         <div>
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#296c00]">shield_person</span>
-            <span className="font-label-caps text-xs text-[#296c00] uppercase font-bold tracking-widest">
+            <span className="material-symbols-outlined text-[#4f46e5]">shield_person</span>
+            <span className="font-label-caps text-xs text-[#4f46e5] font-bold tracking-widest">
               Team Transparency
             </span>
           </div>
           <h2 className="font-display-xl text-2xl md:text-3xl text-[#1b1c1a] font-bold mt-1">
             Activity Log
           </h2>
-          <p className="font-body-md text-sm text-[#707a67] mt-1">
+          <p className="font-body-md text-sm text-[#5f5f5b] mt-1">
             Complete transparent record of who did what, when, and what changed across the team.
           </p>
         </div>
@@ -108,7 +108,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ teamMembers }) => {
         <div className="flex items-center gap-2">
           <button
             onClick={loadLogs}
-            className="bg-[#efeeea] text-[#1b1c1a] hover:bg-[#bfcab4]/40 font-label-caps text-xs px-3.5 py-2 rounded shadow-2xs transition-all flex items-center gap-1.5 font-bold"
+            className="bg-[#f1f1f0] text-[#1b1c1a] hover:bg-[#e9e9e7]/40 font-label-caps text-xs px-3.5 py-2 rounded shadow-2xs transition-all flex items-center gap-1.5 font-bold"
           >
             <span className={`material-symbols-outlined text-sm ${isLoading ? 'animate-spin' : ''}`}>sync</span>
             <span>Refresh</span>
@@ -116,7 +116,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ teamMembers }) => {
 
           <button
             onClick={handleExportCSV}
-            className="bg-[#296c00] text-white hover:bg-[#1f5700] font-label-caps text-xs px-4 py-2 rounded shadow-sm transition-all flex items-center gap-1.5 font-bold"
+            className="bg-[#4f46e5] text-white hover:bg-[#4338ca] font-label-caps text-xs px-4 py-2 rounded shadow-sm transition-all flex items-center gap-1.5 font-bold"
           >
             <span className="material-symbols-outlined text-sm">download</span>
             <span>Export CSV</span>
@@ -125,17 +125,17 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ teamMembers }) => {
       </div>
 
       {/* Filters Bar */}
-      <div className="p-4 bg-white border border-[#bfcab4] rounded shadow-2xs space-y-3">
+      <div className="p-4 bg-white border border-[#e9e9e7] rounded shadow-2xs space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
           {/* Search Input */}
           <div className="relative">
-            <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-[#707a67]">search</span>
+            <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-[#5f5f5b]">search</span>
             <input
               type="text"
               placeholder="Search activity log..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="w-full bg-[#faf9f5] border border-[#bfcab4] pl-8 pr-3 py-1.5 text-xs text-[#1b1c1a] rounded focus:outline-none focus:border-[#296c00]"
+              className="w-full bg-[#f4f4f3] border border-[#e9e9e7] pl-8 pr-3 py-1.5 text-xs text-[#1b1c1a] rounded focus:outline-none focus:border-[#4f46e5]"
             />
           </div>
 
@@ -143,7 +143,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ teamMembers }) => {
           <select
             value={selectedActor}
             onChange={e => setSelectedActor(e.target.value)}
-            className="bg-[#faf9f5] border border-[#bfcab4] px-3 py-1.5 text-xs text-[#1b1c1a] rounded focus:outline-none focus:border-[#296c00]"
+            className="bg-[#f4f4f3] border border-[#e9e9e7] px-3 py-1.5 text-xs text-[#1b1c1a] rounded focus:outline-none focus:border-[#4f46e5]"
           >
             <option value="all">All Teammates</option>
             {teamMembers.map(m => (
@@ -155,7 +155,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ teamMembers }) => {
           <select
             value={selectedAction}
             onChange={e => setSelectedAction(e.target.value)}
-            className="bg-[#faf9f5] border border-[#bfcab4] px-3 py-1.5 text-xs text-[#1b1c1a] rounded focus:outline-none focus:border-[#296c00]"
+            className="bg-[#f4f4f3] border border-[#e9e9e7] px-3 py-1.5 text-xs text-[#1b1c1a] rounded focus:outline-none focus:border-[#4f46e5]"
           >
             <option value="all">All Action Types</option>
             <option value="post_created">Post Created</option>
@@ -173,7 +173,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ teamMembers }) => {
           <select
             value={selectedEntity}
             onChange={e => setSelectedEntity(e.target.value)}
-            className="bg-[#faf9f5] border border-[#bfcab4] px-3 py-1.5 text-xs text-[#1b1c1a] rounded focus:outline-none focus:border-[#296c00]"
+            className="bg-[#f4f4f3] border border-[#e9e9e7] px-3 py-1.5 text-xs text-[#1b1c1a] rounded focus:outline-none focus:border-[#4f46e5]"
           >
             <option value="all">All Entity Types</option>
             <option value="post">Posts</option>
@@ -186,7 +186,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ teamMembers }) => {
         </div>
 
         {(selectedActor !== 'all' || selectedAction !== 'all' || selectedEntity !== 'all' || searchQuery) && (
-          <div className="flex items-center justify-between text-xs text-[#707a67] pt-2 border-t border-[#bfcab4]/30">
+          <div className="flex items-center justify-between text-xs text-[#5f5f5b] pt-2 border-t border-[#e9e9e7]/30">
             <span>Found <strong>{filteredEvents.length}</strong> matching audit entries</span>
             <button
               onClick={() => {
@@ -195,7 +195,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ teamMembers }) => {
                 setSelectedEntity('all');
                 setSearchQuery('');
               }}
-              className="text-[#ba1a1a] hover:underline font-bold text-[11px]"
+              className="text-[#dc2626] hover:underline font-bold text-[11px]"
             >
               Clear Filters
             </button>
@@ -204,30 +204,30 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ teamMembers }) => {
       </div>
 
       {/* Events Timeline */}
-      <div className="bg-white border border-[#bfcab4] rounded shadow-xs overflow-hidden">
+      <div className="bg-white border border-[#e9e9e7] rounded shadow-xs overflow-hidden">
         {isLoading ? (
-          <div className="p-12 text-center text-[#707a67] space-y-2">
-            <span className="material-symbols-outlined text-3xl animate-spin text-[#296c00]">sync</span>
+          <div className="p-12 text-center text-[#5f5f5b] space-y-2">
+            <span className="material-symbols-outlined text-3xl animate-spin text-[#4f46e5]">sync</span>
             <p className="text-xs">Fetching audit trail...</p>
           </div>
         ) : filteredEvents.length === 0 ? (
-          <div className="p-12 text-center text-[#707a67] space-y-2">
-            <span className="material-symbols-outlined text-4xl text-[#bfcab4]">shield</span>
+          <div className="p-12 text-center text-[#5f5f5b] space-y-2">
+            <span className="material-symbols-outlined text-4xl text-[#e9e9e7]">shield</span>
             <p className="font-bold text-sm text-[#1b1c1a]">No Activity Yet</p>
             <p className="text-xs">No events match your current filter settings.</p>
           </div>
         ) : (
-          <div className="divide-y divide-[#bfcab4]/40">
+          <div className="divide-y divide-[#e9e9e7]/40">
             {filteredEvents.map(event => {
               const actorMember = teamMembers.find(m => m.name === event.actorName);
               const initials = actorMember ? actorMember.avatarInitials : event.actorName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-              const bgColor = actorMember ? actorMember.color : '#296c00';
+              const bgColor = actorMember ? actorMember.color : '#4f46e5';
               const actionMeta = ACTION_COLORS[event.actionType] || { bg: '#f1f3f4', text: '#5f6368', border: '#dadce0', icon: 'info' };
               const isExpanded = expandedEventId === event.id;
               const hasDiff = !!(event.beforeValue || event.afterValue);
 
               return (
-                <div key={event.id} className="p-4 hover:bg-[#faf9f5] transition-colors">
+                <div key={event.id} className="p-4 hover:bg-[#f4f4f3] transition-colors">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3 min-w-0">
                       {/* Avatar */}
@@ -244,7 +244,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ teamMembers }) => {
                           
                           {/* Action Badge */}
                           <span
-                            className="inline-flex items-center gap-1 font-label-caps text-[10px] font-bold px-2 py-0.5 rounded border uppercase"
+                            className="inline-flex items-center gap-1 font-label-caps text-[10px] font-bold px-2 py-0.5 rounded border"
                             style={{
                               backgroundColor: actionMeta.bg,
                               color: actionMeta.text,
@@ -256,14 +256,14 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ teamMembers }) => {
                           </span>
 
                           {event.entityType && (
-                            <span className="font-label-caps text-[9px] text-[#707a67] bg-[#efeeea] px-1.5 py-0.5 rounded font-mono uppercase">
+                            <span className="font-label-caps text-[9px] text-[#5f5f5b] bg-[#f1f1f0] px-1.5 py-0.5 rounded font-mono">
                               {event.entityType}
                             </span>
                           )}
                         </div>
 
                         {event.entityTitle && (
-                          <p className="text-xs text-[#404a39] font-medium leading-relaxed">
+                          <p className="text-xs text-[#57574f] font-medium leading-relaxed">
                             Target: <span className="font-bold text-[#1b1c1a]">"{event.entityTitle}"</span>
                           </p>
                         )}
@@ -271,14 +271,14 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ teamMembers }) => {
                     </div>
 
                     <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                      <span className="font-mono text-[10px] text-[#707a67]">
+                      <span className="font-mono text-[10px] text-[#5f5f5b]">
                         {new Date(event.timestamp).toLocaleString()}
                       </span>
 
                       {hasDiff && (
                         <button
                           onClick={() => setExpandedEventId(isExpanded ? null : event.id)}
-                          className="font-label-caps text-[10px] text-[#296c00] hover:underline font-bold flex items-center gap-0.5"
+                          className="font-label-caps text-[10px] text-[#4f46e5] hover:underline font-bold flex items-center gap-0.5"
                         >
                           <span>{isExpanded ? 'Hide Diffs' : 'View Changes'}</span>
                           <span className="material-symbols-outlined text-xs">
@@ -302,7 +302,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ teamMembers }) => {
                       )}
                       {event.afterValue && (
                         <div>
-                          <span className="text-[#78d24b] font-bold block mb-1">After:</span>
+                          <span className="text-[#86efac] font-bold block mb-1">After:</span>
                           <pre className="bg-[#111310] p-2 rounded overflow-x-auto text-[10px] text-[#e0e0e0]">
                             {JSON.stringify(event.afterValue, null, 2)}
                           </pre>

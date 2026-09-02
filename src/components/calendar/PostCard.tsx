@@ -105,15 +105,15 @@ export const PostCard: React.FC<PostCardProps> = ({
           e.stopPropagation();
           if (onPlaceholderClick) onPlaceholderClick(post);
         }}
-        style={{ borderLeftColor: brand?.primaryColor || '#bfcab4' }}
-        className="p-1.5 bg-[#faf9f5] border border-dashed border-[#bfcab4] border-l-3 hover:border-[#296c00] hover:bg-[#f0fae8] transition-all rounded-md text-left opacity-70 hover:opacity-100 cursor-pointer group"
+        style={{ borderLeftColor: brand?.primaryColor || '#e9e9e7' }}
+        className="p-1.5 bg-[#f4f4f3] border border-dashed border-[#e9e9e7] border-l-3 hover:border-[#4f46e5] hover:bg-[#eef2ff] transition-all rounded-md text-left opacity-70 hover:opacity-100 cursor-pointer group"
         title="Repeating slot — click to create"
       >
         <div className="flex items-center gap-1.5">
-          <span className="material-symbols-outlined text-xs text-[#707a67] group-hover:text-[#296c00]">
+          <span className="material-symbols-outlined text-xs text-[#5f5f5b] group-hover:text-[#4f46e5]">
             replay
           </span>
-          <p className="text-[10px] font-medium text-[#707a67] group-hover:text-[#1b1c1a] truncate leading-tight">
+          <p className="text-[10px] font-medium text-[#5f5f5b] group-hover:text-[#1b1c1a] truncate leading-tight">
             Repeating slot — click to create
           </p>
         </div>
@@ -141,8 +141,8 @@ export const PostCard: React.FC<PostCardProps> = ({
           }
         }}
         style={{ borderLeftColor: brand?.primaryColor || statusCfg.color }}
-        className={`p-3 bg-white border border-[#e5e4de] border-l-4 rounded-lg shadow-2xs flex items-center justify-between gap-3 active:scale-[0.99] transition-all cursor-pointer relative ${
-          isSelected ? 'bg-[#f0fae8] ring-2 ring-[#296c00] border-[#296c00]' : 'hover:border-[#bfcab4]'
+        className={`p-3 bg-white border border-[#efefed] border-l-4 rounded-lg shadow-2xs flex items-center justify-between gap-3 active:scale-[0.99] transition-all cursor-pointer relative ${
+          isSelected ? 'bg-[#eef2ff] ring-2 ring-[#4f46e5] border-[#4f46e5]' : 'hover:border-[#e9e9e7]'
         }`}
       >
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -152,7 +152,7 @@ export const PostCard: React.FC<PostCardProps> = ({
               checked={isSelected}
               onChange={(e) => onToggleSelect && onToggleSelect(post.id, e)}
               onClick={(e) => e.stopPropagation()}
-              className="w-4 h-4 text-[#296c00] border-[#bfcab4] rounded focus:ring-[#296c00]"
+              className="w-4 h-4 text-[#4f46e5] border-[#e9e9e7] rounded focus:ring-[#4f46e5]"
             />
           )}
 
@@ -160,11 +160,11 @@ export const PostCard: React.FC<PostCardProps> = ({
             <div className="flex items-center gap-1.5 mb-1 flex-wrap">
               <span
                 className="px-1.5 py-0.5 rounded text-[9px] font-bold text-white font-label-caps"
-                style={{ backgroundColor: brand?.primaryColor || '#296c00' }}
+                style={{ backgroundColor: brand?.primaryColor || '#4f46e5' }}
               >
                 {brand?.shortCode || post.brandId}
               </span>
-              <span className="text-[10px] text-[#707a67] font-medium flex items-center gap-0.5">
+              <span className="text-[10px] text-[#5f5f5b] font-medium flex items-center gap-0.5">
                 <span className="material-symbols-outlined text-[11px]">{platformIcon}</span>
                 <span>{post.scheduledTime || '10:00'}</span>
               </span>
@@ -185,8 +185,8 @@ export const PostCard: React.FC<PostCardProps> = ({
                     onClick={(e) => handleQuickStageToggle('design', e)}
                     className={`px-1.5 py-0.5 rounded transition-all cursor-pointer ${
                       post.stageCompletion?.designDone
-                        ? 'bg-[#296c00] text-white font-bold'
-                        : 'bg-[#efeeea] text-[#404a39] hover:bg-[#e4e2db]'
+                        ? 'bg-[#15803d] text-white font-bold'
+                        : 'bg-[#f1f1f0] text-[#57574f] hover:bg-[#e9e9e7]'
                     }`}
                     title={`Design: ${post.taskRoles.designer} (Click to toggle complete)`}
                   >
@@ -199,8 +199,8 @@ export const PostCard: React.FC<PostCardProps> = ({
                     onClick={(e) => handleQuickStageToggle('publish', e)}
                     className={`px-1.5 py-0.5 rounded transition-all cursor-pointer ${
                       post.stageCompletion?.publishDone
-                        ? 'bg-[#296c00] text-white font-bold'
-                        : 'bg-[#efeeea] text-[#404a39] hover:bg-[#e4e2db]'
+                        ? 'bg-[#15803d] text-white font-bold'
+                        : 'bg-[#f1f1f0] text-[#57574f] hover:bg-[#e9e9e7]'
                     }`}
                     title={`Publisher: ${post.taskRoles.publisher} (Click to toggle complete)`}
                   >
@@ -213,8 +213,8 @@ export const PostCard: React.FC<PostCardProps> = ({
                     onClick={(e) => handleQuickStageToggle('engagement', e)}
                     className={`px-1.5 py-0.5 rounded transition-all cursor-pointer ${
                       post.stageCompletion?.engagementDone
-                        ? 'bg-[#296c00] text-white font-bold'
-                        : 'bg-[#efeeea] text-[#404a39] hover:bg-[#e4e2db]'
+                        ? 'bg-[#15803d] text-white font-bold'
+                        : 'bg-[#f1f1f0] text-[#57574f] hover:bg-[#e9e9e7]'
                     }`}
                     title={`Lead: ${post.taskRoles.engagementLead} (Click to toggle complete)`}
                   >
@@ -230,8 +230,8 @@ export const PostCard: React.FC<PostCardProps> = ({
           ref={assigneeTriggerRef}
           type="button"
           onClick={(e) => { e.stopPropagation(); setIsAssigneePopoverOpen((v) => !v); }}
-          className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0 shadow-xs cursor-pointer hover:ring-2 hover:ring-[#296c00] hover:ring-offset-1 transition-all"
-          style={{ backgroundColor: brand?.primaryColor || '#296c00' }}
+          className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0 shadow-xs cursor-pointer hover:ring-2 hover:ring-[#4f46e5] hover:ring-offset-1 transition-all"
+          style={{ backgroundColor: brand?.primaryColor || '#4f46e5' }}
           title={`Assigned to: ${post.assignees.join(', ') || 'nobody'} (tap to change)`}
         >
           {initials}
@@ -270,55 +270,47 @@ export const PostCard: React.FC<PostCardProps> = ({
           onSelectPost(post, e);
         }
       }}
-      style={{ borderLeftColor: brand?.primaryColor || '#296c00' }}
-      className={`p-1.5 border border-l-3 rounded-md shadow-2xs hover:shadow-xs transition-all text-left cursor-pointer group select-none relative ${
+      className={`p-1.5 border rounded-lg shadow-2xs transition-all text-left cursor-pointer group select-none relative ${
         isSelected
-          ? 'bg-[#f0fae8] ring-2 ring-[#296c00] border-[#296c00]'
-          : 'bg-white border-[#e5e4de] hover:border-[#bfcab4] hover:bg-[#faf9f5]'
+          ? 'ring-2 ring-[#4f46e5] border-[#4f46e5] bg-[#eef2ff]'
+          : 'bg-white border-[#e9e9e7] hover:border-[#d8d8d5] hover:bg-[#fbfbfa]'
       }`}
     >
-      {/* Top row: Checkbox/Brand code + Platform icon + Time */}
-      <div className="flex items-center justify-between gap-1 mb-0.5">
-        <div className="flex items-center gap-1 min-w-0">
-          {(isSelectMode || isSelected) && (
-            <input
-              type="checkbox"
-              checked={isSelected}
-              onChange={(e) => onToggleSelect && onToggleSelect(post.id, e as any)}
-              onClick={(e) => e.stopPropagation()}
-              className="w-3 h-3 text-[#296c00] border-[#bfcab4] rounded focus:ring-[#296c00] cursor-pointer"
-            />
-          )}
-          <span
-            className="px-1 py-0.2 rounded text-[8px] font-bold text-white font-label-caps truncate leading-none"
-            style={{ backgroundColor: brand?.primaryColor || '#296c00' }}
-          >
-            {brand?.shortCode || post.brandId}
-          </span>
-          <span className="material-symbols-outlined text-[10px] text-[#707a67]">
-            {platformIcon}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <span className="font-code-sm text-[8px] text-[#707a67]">
-            {post.scheduledTime || '10:00'}
-          </span>
-        </div>
+      {/* Row 1: Checkbox/Brand code + Status pill */}
+      <div className="flex items-center gap-1">
+        {(isSelectMode || isSelected) && (
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={(e) => onToggleSelect && onToggleSelect(post.id, e as any)}
+            onClick={(e) => e.stopPropagation()}
+            className="w-3 h-3 text-[#4f46e5] border-[#e9e9e7] rounded focus:ring-[#4f46e5] cursor-pointer"
+          />
+        )}
+        <span
+          className="text-[8px] font-bold rounded px-1 shrink-0 whitespace-nowrap text-white font-label-caps leading-none"
+          style={{ backgroundColor: brand?.primaryColor || '#4f46e5' }}
+        >
+          {brand?.shortCode || post.brandId}
+        </span>
+        {/* Status is derived from the stage toggles below, not clickable here. */}
+        <StatusChip post={post} variant="pill" className="ml-auto" title="Updates automatically as stages are checked" />
       </div>
 
-      {/* Post Title */}
-      <p className="font-medium text-[10px] sm:text-[11px] text-[#1b1c1a] line-clamp-1 leading-snug tracking-tight">
+      {/* Row 2: Post Title */}
+      <p className="font-medium text-[11px] text-[#1b1c1a] line-clamp-2 leading-snug mt-0.5">
         {post.title}
       </p>
 
-      {/* Bottom row: Status (display only) + Quick Stage Toggles + Assignee */}
-      <div className="flex items-center justify-between mt-1 pt-0.5 border-t border-[#f0eee6] text-[8px]">
-        {/* Status is derived from the stage toggles on the right, not clickable here. */}
-        <StatusChip post={post} variant="dot" title="Updates automatically as stages are checked" />
+      {/* Row 3 (footer): platform icon + time + Quick Stage Toggles + Assignee */}
+      <div className="mt-1 pt-0.5 border-t border-[#efefed] flex items-center gap-1 text-[8px] text-[#5f5f5b]">
+        <span className="material-symbols-outlined text-[10px] text-[#5f5f5b]">
+          {platformIcon}
+        </span>
+        <span className="font-code-sm">{post.scheduledTime || '10:00'}</span>
 
         {/* Assignee initials badge & Quick Stage Toggles */}
-        <div className="flex items-center gap-0.5 flex-shrink-0">
+        <div className="flex items-center gap-0.5 flex-shrink-0 ml-auto">
           {post.taskRoles?.designer && (
             <button
               type="button"
@@ -353,13 +345,13 @@ export const PostCard: React.FC<PostCardProps> = ({
             ref={assigneeTriggerRef}
             type="button"
             onClick={(e) => { e.stopPropagation(); setIsAssigneePopoverOpen((v) => !v); }}
-            className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-white font-bold text-[7px] cursor-pointer hover:ring-1 hover:ring-[#296c00] hover:ring-offset-1 transition-all"
-            style={{ backgroundColor: brand?.primaryColor || '#296c00' }}
+            className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-white font-bold text-[7px] cursor-pointer hover:ring-1 hover:ring-[#4f46e5] hover:ring-offset-1 transition-all"
+            style={{ backgroundColor: brand?.primaryColor || '#4f46e5' }}
             title={`Assigned to: ${post.assignees.join(', ') || 'nobody'} (tap to change)`}
           >
             {initials}
           </button>
-          {extraAssignees > 0 && <span className="text-[7px] font-bold text-[#707a67]">+{extraAssignees}</span>}
+          {extraAssignees > 0 && <span className="text-[7px] font-bold text-[#5f5f5b]">+{extraAssignees}</span>}
         </div>
       </div>
     </div>

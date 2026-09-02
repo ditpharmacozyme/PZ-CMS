@@ -57,11 +57,11 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({
         role="dialog"
         aria-modal="true"
         aria-label="Quick add idea"
-        className="bg-white border border-[#bfcab4] w-full max-w-lg rounded-lg shadow-2xl overflow-hidden"
+        className="bg-white border border-[#e9e9e7] w-full max-w-lg rounded-lg shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-[#bfcab4]">
-          <span className="material-symbols-outlined text-[#78d24b]">bolt</span>
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-[#e9e9e7]">
+          <span className="material-symbols-outlined text-[#15803d]">bolt</span>
           <input
             ref={inputRef}
             type="text"
@@ -72,19 +72,19 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({
               else if (e.key === 'Escape') { e.preventDefault(); onClose(); }
             }}
             placeholder="Quick idea — press Enter to save"
-            className="flex-1 bg-transparent text-sm text-[#1b1c1a] focus:outline-none placeholder:text-[#bfcab4]"
+            className="flex-1 bg-transparent text-sm text-[#1b1c1a] focus:outline-none placeholder:text-[#e9e9e7]"
           />
-          <kbd className="text-[10px] font-label-caps text-[#707a67] border border-[#bfcab4] rounded px-1.5 py-0.5">Esc</kbd>
+          <kbd className="text-[10px] font-label-caps text-[#5f5f5b] border border-[#e9e9e7] rounded px-1.5 py-0.5">Esc</kbd>
         </div>
-        <div className="flex items-center justify-between gap-2 px-4 py-2.5 bg-[#faf9f5]">
-          <p className="text-[11px] font-body-md text-[#707a67]">
-            Lands in the Idea Backlog · <span className="font-bold text-[#404a39]">{brandLabel}</span>
-            {activeTeammateName ? <> · assigned to <span className="font-bold text-[#404a39]">{activeTeammateName}</span></> : null}
+        <div className="flex items-center justify-between gap-2 px-4 py-2.5 bg-[#f4f4f3]">
+          <p className="text-[11px] font-body-md text-[#5f5f5b]">
+            Lands in the Idea Backlog · <span className="font-bold text-[#57574f]">{brandLabel}</span>
+            {activeTeammateName ? <> · assigned to <span className="font-bold text-[#57574f]">{activeTeammateName}</span></> : null}
           </p>
           <button
             onClick={submit}
             disabled={!title.trim()}
-            className="bg-[#296c00] text-white font-label-caps text-[11px] font-bold px-4 rounded hover:bg-[#1f5700] disabled:opacity-40 min-h-[44px]"
+            className="bg-[#4f46e5] text-white font-label-caps text-[11px] font-bold px-4 rounded hover:bg-[#4338ca] disabled:opacity-40 min-h-[44px]"
           >
             Add idea
           </button>

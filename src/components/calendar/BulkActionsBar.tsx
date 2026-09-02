@@ -29,7 +29,7 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
     <>
       {/* Top Banner when in Select Mode */}
       {isSelectMode && (
-        <div className="bg-[#f0fae8] border border-[#296c00] p-2.5 rounded-lg flex items-center justify-between gap-3 text-xs font-bold text-[#296c00]">
+        <div className="bg-[#eef2ff] border border-[#4f46e5] p-2.5 rounded-lg flex items-center justify-between gap-3 text-xs font-bold text-[#4f46e5]">
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-base">checklist</span>
             <span>Select Mode Active — Tap or click cards to select</span>
@@ -39,7 +39,7 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
               setIsSelectMode(false);
               onClearSelection();
             }}
-            className="px-2.5 py-1 bg-white border border-[#296c00] text-[#296c00] hover:bg-[#296c00] hover:text-white font-label-caps text-[10px] rounded-md transition-all"
+            className="px-2.5 py-1 bg-white border border-[#4f46e5] text-[#4f46e5] hover:bg-[#4f46e5] hover:text-white font-label-caps text-[10px] rounded-md transition-all"
           >
             Exit Select Mode
           </button>
@@ -48,17 +48,17 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
 
       {/* Sticky Floating Bottom Actions Toolbar */}
       {selectedCount > 0 && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-[#1b1c1a] text-white px-4 py-3 rounded-xl shadow-2xl border border-[#404a39] flex items-center gap-3 max-w-[95vw] sm:max-w-xl overflow-x-auto scrollbar-thin animate-slideUp">
-          <span className="font-bold text-xs font-label-caps text-[#bfcab4] whitespace-nowrap">
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-[#1b1c1a] text-white px-4 py-3 rounded-xl shadow-2xl border border-[#57574f] flex items-center gap-3 max-w-[95vw] sm:max-w-xl overflow-x-auto scrollbar-thin animate-slideUp">
+          <span className="font-bold text-xs font-label-caps text-[#e9e9e7] whitespace-nowrap">
             {selectedCount} selected
           </span>
 
-          <div className="h-4 w-[1px] bg-[#404a39]" />
+          <div className="h-4 w-[1px] bg-[#57574f]" />
 
           {/* Select All */}
           <button
             onClick={onSelectAll}
-            className="text-xs font-bold text-white hover:text-[#90da75] font-label-caps transition-all whitespace-nowrap"
+            className="text-xs font-bold text-white hover:text-[#a5b4fc] font-label-caps transition-all whitespace-nowrap"
           >
             Select All
           </button>
@@ -67,7 +67,7 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
           <select
             value={bulkAssignee}
             onChange={(e) => onApplyBulkAssignee(e.target.value)}
-            className="bg-[#2a2b27] text-white text-xs font-label-caps py-1 px-2 rounded border border-[#404a39] focus:outline-none focus:ring-1 focus:ring-[#90da75] flex-shrink-0"
+            className="bg-[#2a2b27] text-white text-xs font-label-caps py-1 px-2 rounded border border-[#57574f] focus:outline-none focus:ring-1 focus:ring-[#4f46e5] flex-shrink-0"
           >
             <option value="">Assign To...</option>
             {teamMembers.map((m) => (

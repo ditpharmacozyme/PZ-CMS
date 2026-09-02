@@ -3,11 +3,11 @@ import { isOverdue } from './date';
 import { deriveStatus } from './postStatus';
 
 export const STATUS_CONFIG: Record<PostStatus | 'overdue', { color: string, bgColor: string, label: string, icon?: string }> = {
-  'not-started': { color: '#707a67', bgColor: '#efeeea', label: 'Not Started' },
-  'in-progress': { color: '#935c00', bgColor: '#ffddb0', label: 'In Progress' },
-  'ready-to-post': { color: '#0061a4', bgColor: '#d1e4ff', label: 'Ready to Post' },
-  'posted': { color: '#296c00', bgColor: '#aceecf', label: 'Posted', icon: 'check_circle' },
-  'overdue': { color: '#ba1a1a', bgColor: '#ffdad6', label: 'Overdue', icon: 'error' },
+  'not-started': { color: '#52525B', bgColor: '#F1F1F0', label: 'Not Started' },
+  'in-progress': { color: '#B45309', bgColor: '#FBF0E1', label: 'In Progress' },
+  'ready-to-post': { color: '#4F46E5', bgColor: '#EEF2FF', label: 'Ready to Post' },
+  'posted': { color: '#15803D', bgColor: '#E6F4EA', label: 'Posted', icon: 'check_circle' },
+  'overdue': { color: '#DC2626', bgColor: '#FCEBEB', label: 'Overdue', icon: 'error' },
 };
 
 /**

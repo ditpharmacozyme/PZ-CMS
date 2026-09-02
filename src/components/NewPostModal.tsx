@@ -30,7 +30,7 @@ const PLATFORM_CONFIG: Record<Platform, { label: string; icon: string; color: st
   instagram: { label: 'Instagram', icon: 'photo_camera', color: '#E1306C', bg: '#fdf2f8' },
   linkedin: { label: 'LinkedIn', icon: 'work', color: '#0A66C2', bg: '#eff6ff' },
   twitter: { label: 'X / Twitter', icon: 'tag', color: '#1DA1F2', bg: '#f0f9ff' },
-  web: { label: 'Web Portal', icon: 'language', color: '#296c00', bg: '#f0fdf4' },
+  web: { label: 'Web Portal', icon: 'language', color: '#4f46e5', bg: '#eef2ff' },
   email: { label: 'Email Broadcast', icon: 'mail', color: '#d97706', bg: '#fffbeb' }
 };
 
@@ -380,7 +380,7 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
       icon={
         <div
           className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-xs flex-shrink-0"
-          style={{ backgroundColor: brand?.primaryColor || '#296c00' }}
+          style={{ backgroundColor: brand?.primaryColor || '#4f46e5' }}
         >
           {brand?.logoUrl ? (
             <img src={brand.logoUrl} alt={brand.name} className="w-6 h-6 object-contain" />
@@ -485,7 +485,7 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
             {showBankDrawer && (
               <div className="border border-[var(--color-line)] rounded-lg bg-[var(--color-muted)] p-3 max-h-56 overflow-y-auto space-y-2.5">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-label-caps text-[10px] font-bold text-[var(--color-accent)] uppercase">
+                  <span className="font-label-caps text-[10px] font-bold text-[var(--color-accent)]">
                     Reuse saved copy
                   </span>
                   <input
@@ -527,7 +527,7 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
                 <div
                   {...dropHandlers}
                   className={`w-24 h-24 rounded-lg bg-[var(--color-muted)] border-2 border-dashed overflow-hidden flex items-center justify-center relative flex-shrink-0 transition-colors ${
-                    isDragging ? 'border-[#296c00] bg-[#f0fae8]' : 'border-[var(--color-line)]'
+                    isDragging ? 'border-[#4f46e5] bg-[#eef2ff]' : 'border-[var(--color-line)]'
                   }`}
                   title="Drop an image or paste a screenshot"
                 >
@@ -652,7 +652,7 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
                     >
                       <span
                         className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] font-bold text-white"
-                        style={{ backgroundColor: m.color || '#707a67' }}
+                        style={{ backgroundColor: m.color || '#5f5f5b' }}
                       >
                         {m.avatarInitials}
                       </span>

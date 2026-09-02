@@ -99,21 +99,21 @@ export const SideNav: React.FC<SideNavProps> = ({
         key={item.tab}
         onClick={() => selectNavItem(item.tab)}
         title={collapsed ? item.label : undefined}
-        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-left transition-all text-xs font-label-caps min-h-[44px] active:scale-[0.98] ${
+        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-left transition-all text-[13px] font-label-caps min-h-[44px] active:scale-[0.98] ${
           collapsed ? 'justify-center px-0' : ''
         } ${
           isActive
-            ? 'bg-[#aceecf] text-[#07513b] font-bold shadow-xs'
-            : 'text-[#404a39] hover:bg-[#e9e8e4]'
+            ? 'nav-item-active font-bold'
+            : 'text-[#5f5f5b] hover:bg-[#e9e9e7]'
         }`}
       >
         <span
           className={`material-symbols-outlined text-lg flex-shrink-0 ${isActive ? 'filled' : ''}`}
-          style={{ color: isActive ? '#07513b' : undefined }}
+          style={{ color: isActive ? '#4338ca' : undefined }}
         >
           {item.icon}
         </span>
-        {!collapsed && <span className="text-sm md:text-xs flex-1 truncate">{item.label}</span>}
+        {!collapsed && <span className="text-[13px] flex-1 truncate">{item.label}</span>}
       </button>
     );
   };
@@ -130,7 +130,7 @@ export const SideNav: React.FC<SideNavProps> = ({
       )}
 
       <aside
-        className={`h-screen flex flex-col py-4 border-r border-[#bfcab4] bg-[#faf9f5] z-50 transition-all duration-200 ease-in-out ${
+        className={`h-screen flex flex-col py-4 border-r border-[#e9e9e7] bg-[#f4f4f3] z-50 transition-all duration-200 ease-in-out ${
           collapsed ? 'md:w-16' : 'w-72 md:w-64'
         } ${
           isMobileOpen
@@ -142,7 +142,7 @@ export const SideNav: React.FC<SideNavProps> = ({
         <div className={`mb-5 ${collapsed ? 'px-2' : 'px-5'}`}>
           <div className={`flex items-center mb-2 ${collapsed ? 'flex-col gap-2' : 'justify-between'}`}>
             <div className={`flex items-center gap-3 ${collapsed ? 'flex-col' : ''} min-w-0`}>
-              <div className="w-10 h-10 rounded bg-white border border-[#bfcab4] p-1 flex items-center justify-center shadow-md flex-shrink-0 overflow-hidden">
+              <div className="w-10 h-10 rounded bg-white border border-[#e9e9e7] p-1 flex items-center justify-center shadow-md flex-shrink-0 overflow-hidden">
                 <img src="/logos/PZ_Logo.png" alt="Pharmacozyme" className="w-full h-full object-contain" />
               </div>
               {!collapsed && (
@@ -151,8 +151,8 @@ export const SideNav: React.FC<SideNavProps> = ({
                     Pharmacozyme
                   </h1>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className="font-label-caps text-[9px] text-[#296c00] tracking-widest uppercase font-bold">Brand-Ops Studio</span>
-                    <span className="w-1 h-1 rounded-full bg-[#78d24b] animate-pulse inline-block" />
+                    <span className="font-label-caps text-[9px] text-[#4f46e5] tracking-widest font-bold">Brand-Ops Studio</span>
+                    <span className="w-1 h-1 rounded-full bg-[#15803d] animate-pulse inline-block" />
                   </div>
                 </div>
               )}
@@ -160,7 +160,7 @@ export const SideNav: React.FC<SideNavProps> = ({
             {isMobileOpen && (
               <button
                 onClick={onCloseMobile}
-                className="md:hidden p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#707a67] hover:text-[#1b1c1a] active:bg-[#efeeea] rounded-full"
+                className="md:hidden p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#5f5f5b] hover:text-[#1b1c1a] active:bg-[#f1f1f0] rounded-full"
                 title="Close Drawer"
               >
                 <span className="material-symbols-outlined text-xl">close</span>
@@ -169,7 +169,7 @@ export const SideNav: React.FC<SideNavProps> = ({
             {/* Collapse toggle — desktop only, mobile always uses the full drawer */}
             <button
               onClick={toggleCollapsed}
-              className={`hidden md:flex p-2 min-w-[36px] min-h-[36px] items-center justify-center text-[#707a67] hover:text-[#1b1c1a] hover:bg-[#efeeea] rounded-full transition-colors ${collapsed ? 'rotate-180' : ''}`}
+              className={`hidden md:flex p-2 min-w-[36px] min-h-[36px] items-center justify-center text-[#5f5f5b] hover:text-[#1b1c1a] hover:bg-[#f1f1f0] rounded-full transition-colors ${collapsed ? 'rotate-180' : ''}`}
               title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
               <span className="material-symbols-outlined text-lg">left_panel_close</span>
@@ -192,17 +192,17 @@ export const SideNav: React.FC<SideNavProps> = ({
                 <button
                   onClick={toggleMore}
                   title={collapsed ? 'More' : undefined}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-left transition-all text-xs font-label-caps min-h-[44px] active:scale-[0.98] ${
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-left transition-all text-[13px] font-label-caps min-h-[44px] active:scale-[0.98] ${
                     collapsed ? 'justify-center px-0' : ''
                   } ${
                     activeInMore
-                      ? 'bg-[#aceecf] text-[#07513b] font-bold shadow-xs'
-                      : 'text-[#404a39] hover:bg-[#e9e8e4]'
+                      ? 'nav-item-active font-bold'
+                      : 'text-[#5f5f5b] hover:bg-[#e9e9e7]'
                   }`}
                 >
                   <span
                     className={`material-symbols-outlined text-lg flex-shrink-0 ${activeInMore ? 'filled' : ''}`}
-                    style={{ color: activeInMore ? '#07513b' : undefined }}
+                    style={{ color: activeInMore ? '#4338ca' : undefined }}
                   >
                     more_horiz
                   </span>
@@ -221,26 +221,26 @@ export const SideNav: React.FC<SideNavProps> = ({
             })()}
 
             {!collapsed && moreOpen && (
-              <div className="ml-4 pl-3 border-l-2 border-[#bfcab4] mt-1 mb-2 space-y-0.5">
+              <div className="ml-4 pl-3 border-l-2 border-[#e9e9e7] mt-1 mb-2 space-y-0.5">
                 {MORE_ITEMS.map((item) => {
                   const isActive = currentTab === item.tab;
                   return (
                     <button
                       key={item.tab}
                       onClick={() => selectNavItem(item.tab)}
-                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded text-left font-label-caps text-xs transition-all min-h-[40px] active:scale-[0.98] ${
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded text-left font-label-caps text-[13px] transition-all min-h-[40px] active:scale-[0.98] ${
                         isActive
-                          ? 'nav-item-active text-[#296c00] font-bold'
-                          : 'text-[#404a39] hover:bg-[#e9e8e4]'
+                          ? 'nav-item-active text-[#4338ca] font-bold'
+                          : 'text-[#5f5f5b] hover:bg-[#e9e9e7]'
                       }`}
                     >
                       <span
                         className={`material-symbols-outlined text-base ${isActive ? 'filled' : ''}`}
-                        style={{ color: isActive ? '#296c00' : undefined }}
+                        style={{ color: isActive ? '#4338ca' : undefined }}
                       >
                         {item.icon}
                       </span>
-                      <span className="text-sm md:text-xs flex-1 truncate">{item.label}</span>
+                      <span className="text-[13px] flex-1 truncate">{item.label}</span>
                     </button>
                   );
                 })}
@@ -250,14 +250,14 @@ export const SideNav: React.FC<SideNavProps> = ({
         </nav>
 
         {/* Action & Footer */}
-        <div className={`mt-auto pt-4 border-t border-[#bfcab4] ${collapsed ? 'px-2' : 'px-4'}`}>
+        <div className={`mt-auto pt-4 border-t border-[#e9e9e7] ${collapsed ? 'px-2' : 'px-4'}`}>
           <button
             onClick={() => {
               onOpenNewPostModal();
               if (onCloseMobile) onCloseMobile();
             }}
             title={collapsed ? 'New Post' : undefined}
-            className={`w-full bg-[#296c00] text-white font-label-caps text-xs py-3.5 rounded shadow-md hover:bg-[#1f5700] active:scale-95 transition-all flex items-center justify-center gap-2 min-h-[48px] font-bold ${
+            className={`w-full bg-[#4f46e5] text-white font-label-caps text-xs py-3.5 rounded shadow-md hover:bg-[#4338ca] active:scale-95 transition-all flex items-center justify-center gap-2 min-h-[48px] font-bold ${
               collapsed ? 'px-0' : 'px-4'
             }`}
           >

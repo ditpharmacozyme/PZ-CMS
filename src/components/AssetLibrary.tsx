@@ -135,9 +135,9 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
   return (
     <div className="p-4 md:p-8 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#bfcab4]">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#e9e9e7]">
         <div>
-          <span className="font-label-caps text-xs text-[#296951] uppercase font-bold tracking-widest">
+          <span className="font-label-caps text-xs text-[#4338ca] font-bold tracking-widest">
             Logos, fonts & spec sheets
           </span>
           <h2 className="font-display-xl text-2xl md:text-3xl text-[#1b1c1a] font-bold mt-1">
@@ -147,7 +147,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
 
         <button
           onClick={handleOpenAddModal}
-          className="bg-[#296c00] text-white font-label-caps text-xs px-4 py-2.5 rounded shadow-sm hover:bg-[#1f5700] transition-all flex items-center gap-2 font-bold"
+          className="bg-[#4f46e5] text-white font-label-caps text-xs px-4 py-2.5 rounded shadow-sm hover:bg-[#4338ca] transition-all flex items-center gap-2 font-bold"
         >
           <span className="material-symbols-outlined text-sm">upload_file</span>
           <span>+ Add New Brand Asset</span>
@@ -155,18 +155,18 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
       </div>
 
       {/* Search */}
-      <div className="flex items-center gap-2 bg-white border border-[#bfcab4] rounded px-3 h-11 max-w-md">
-        <span className="material-symbols-outlined text-[#707a67] text-lg">search</span>
+      <div className="flex items-center gap-2 bg-white border border-[#e9e9e7] rounded px-3 h-11 max-w-md">
+        <span className="material-symbols-outlined text-[#5f5f5b] text-lg">search</span>
         <input
           id="asset-search-input"
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search assets by name or file type…"
-          className="flex-1 bg-transparent text-sm text-[#1b1c1a] focus:outline-none placeholder:text-[#bfcab4]"
+          className="flex-1 bg-transparent text-sm text-[#1b1c1a] focus:outline-none placeholder:text-[#e9e9e7]"
         />
         {searchQuery && (
-          <button onClick={() => setSearchQuery('')} className="text-[#707a67] hover:text-[#1b1c1a] p-1 -mr-1" aria-label="Clear search">
+          <button onClick={() => setSearchQuery('')} className="text-[#5f5f5b] hover:text-[#1b1c1a] p-1 -mr-1" aria-label="Clear search">
             <span className="material-symbols-outlined text-base">close</span>
           </button>
         )}
@@ -180,8 +180,8 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
             onClick={() => setActiveCategory(catType)}
             className={`px-4 py-1.5 font-label-caps text-xs rounded transition-all capitalize ${
               activeCategory === catType
-                ? 'bg-[#296c00] text-white font-bold shadow-xs'
-                : 'bg-white border border-[#bfcab4] text-[#404a39] hover:bg-[#efeeea]'
+                ? 'bg-[#4f46e5] text-white font-bold shadow-xs'
+                : 'bg-white border border-[#e9e9e7] text-[#57574f] hover:bg-[#f1f1f0]'
             }`}
           >
             {catType === 'all' ? 'All Asset Types' : catType.replace('_', ' ')}
@@ -196,24 +196,24 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
           return (
             <div
               key={asset.id}
-              className="bg-white border border-[#bfcab4] p-4 rounded shadow-xs hover:shadow-md transition-all space-y-3 flex flex-col justify-between"
+              className="bg-white border border-[#e9e9e7] p-4 rounded shadow-xs hover:shadow-md transition-all space-y-3 flex flex-col justify-between"
             >
               <div className="flex justify-between items-start">
                 <span
                   className="font-label-caps text-[9px] px-2 py-0.5 text-white font-bold rounded uppercase"
-                  style={{ backgroundColor: brand?.primaryColor || '#296c00' }}
+                  style={{ backgroundColor: brand?.primaryColor || '#4f46e5' }}
                 >
                   {brand?.shortCode || asset.brandId}
                 </span>
-                <span className="font-code-sm text-[10px] text-[#707a67]">{asset.size}</span>
+                <span className="font-code-sm text-[10px] text-[#5f5f5b]">{asset.size}</span>
               </div>
 
               <div>
                 <h3 className="font-headline-md text-sm font-bold text-[#1b1c1a]">{asset.title}</h3>
-                <p className="font-body-md text-xs text-[#707a67] mt-1">{asset.fileType}</p>
+                <p className="font-body-md text-xs text-[#5f5f5b] mt-1">{asset.fileType}</p>
               </div>
 
-              <div className="space-y-2 pt-1 border-t border-[#bfcab4]">
+              <div className="space-y-2 pt-1 border-t border-[#e9e9e7]">
                 <button
                   onClick={() => {
                     if (asset.url && asset.url !== '#') {
@@ -222,7 +222,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
                       alert(`Accessing asset: ${asset.title}`);
                     }
                   }}
-                  className="w-full bg-[#efeeea] border border-[#bfcab4] text-[#296c00] font-label-caps text-xs font-bold py-2 rounded hover:bg-[#296c00] hover:text-white transition-colors flex items-center justify-center gap-2"
+                  className="w-full bg-[#f1f1f0] border border-[#e9e9e7] text-[#4f46e5] font-label-caps text-xs font-bold py-2 rounded hover:bg-[#4f46e5] hover:text-white transition-colors flex items-center justify-center gap-2"
                 >
                   <span className="material-symbols-outlined text-sm">download</span>
                   <span>Open / Download</span>
@@ -231,14 +231,14 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleOpenEditModal(asset)}
-                    className="flex-1 bg-[#faf9f5] border border-[#bfcab4] text-[#1b1c1a] font-label-caps text-[11px] font-bold py-1 rounded hover:bg-[#bfcab4]/30 transition-colors flex items-center justify-center gap-1"
+                    className="flex-1 bg-[#f4f4f3] border border-[#e9e9e7] text-[#1b1c1a] font-label-caps text-[11px] font-bold py-1 rounded hover:bg-[#e9e9e7]/30 transition-colors flex items-center justify-center gap-1"
                   >
                     <span className="material-symbols-outlined text-xs">edit</span>
                     <span>Edit</span>
                   </button>
                   <button
                     onClick={() => handleDeleteAsset(asset)}
-                    className="flex-1 bg-[#ffdad6] text-[#ba1a1a] font-label-caps text-[11px] font-bold py-1 rounded hover:bg-[#ba1a1a] hover:text-white transition-colors flex items-center justify-center gap-1"
+                    className="flex-1 bg-[#fcebeb] text-[#dc2626] font-label-caps text-[11px] font-bold py-1 rounded hover:bg-[#dc2626] hover:text-white transition-colors flex items-center justify-center gap-1"
                   >
                     <span className="material-symbols-outlined text-xs">delete</span>
                     <span>Delete</span>

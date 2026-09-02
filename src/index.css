@@ -6,45 +6,58 @@
    components are not mass-rewritten to use these; they pick them up as they
    adopt the ui/ primitives. */
 @theme {
-  --color-surface: #FAF9F5;
-  --color-raised: #ffffff;
-  --color-muted: #efeeea;
-  --color-line: #bfcab4;
-  --color-line-subtle: #e5e4de;
+  /* ── Surfaces ── */
+  --color-canvas: #FBFBFA;
+  --color-surface: #FFFFFF;
+  --color-raised: #FFFFFF;          /* legacy alias → surface */
+  --color-sunken: #F4F4F3;
+  --color-muted: #F1F1F0;
+  --color-line: #E9E9E7;
+  --color-line-subtle: #EFEFED;
+  /* ── Ink ── */
   --color-ink: #1b1c1a;
-  --color-ink-muted: #707a67;
-  --color-ink-soft: #404a39;
-  --color-accent: #296c00;
-  --color-accent-hover: #1f5700;
-  --color-accent-soft: #aceecf;
-  --color-danger: #ba1a1a;
-  --color-danger-soft: #ffdad6;
-  --color-warn: #935c00;
-  --color-warn-soft: #ffddb0;
+  --color-ink-muted: #5F5F5B;
+  --color-ink-soft: #57574F;
+  /* ── Accent (indigo) ── */
+  --color-accent: #4F46E5;
+  --color-accent-hover: #4338CA;
+  --color-accent-soft: #EEF2FF;
+  --color-accent-on-soft: #4338CA;
+  /* ── Status ── */
+  --color-success: #15803D;
+  --color-success-soft: #E6F4EA;
+  --color-warn: #B45309;
+  --color-warn-soft: #FBF0E1;
+  --color-danger: #DC2626;
+  --color-danger-soft: #FCEBEB;
+  --color-neutral: #52525B;
+  --color-neutral-soft: #F1F1F0;
 }
 
 /* ─── Premium Unified Font System ─── */
 @layer utilities {
   .font-display-xl {
-    font-family: 'Space Grotesk', 'Plus Jakarta Sans', sans-serif;
+    font-family: 'Bricolage Grotesque', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-weight: 700;
     letter-spacing: -0.02em;
   }
   .font-headline-md {
-    font-family: 'Space Grotesk', 'Plus Jakarta Sans', sans-serif;
+    font-family: 'Bricolage Grotesque', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-weight: 600;
     letter-spacing: -0.01em;
   }
   .font-label-caps {
-    font-family: 'Space Mono', monospace;
-    letter-spacing: 0.04em;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
   }
   .font-code-sm {
-    font-family: 'Space Mono', monospace;
+    font-family: 'Space Mono', ui-monospace, monospace;
     font-size: 0.72rem;
   }
   .font-body-md {
-    font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
   
   /* Specimen Previews for Brand Kit Only */
@@ -57,7 +70,7 @@
     font-weight: var(--specimen-font-headline-weight, 600);
   }
   .font-specimen-body {
-    font-family: var(--specimen-font-body, 'Plus Jakarta Sans'), sans-serif;
+    font-family: var(--specimen-font-body, 'Inter'), sans-serif;
   }
 
   .font-poppins {
@@ -68,12 +81,6 @@
   }
   .font-amsterdam {
     font-family: 'New Amsterdam', sans-serif;
-  }
-  .font-fredoka {
-    font-family: 'Fredoka One', cursive;
-  }
-  .font-rajdhani {
-    font-family: 'Rajdhani', sans-serif;
   }
 }
 
@@ -87,8 +94,8 @@ html {
 }
 
 body {
-  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: #F7F6F0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--color-canvas);
   color: #1b1c1a;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -108,14 +115,14 @@ button, input, select, textarea, a {
   height: 4px;
 }
 ::-webkit-scrollbar-track {
-  background: #f3f2ee;
+  background: #F1F1F0;
 }
 ::-webkit-scrollbar-thumb {
-  background: #bfcab4;
+  background: #D8D8D5;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #296c00;
+  background: var(--color-accent);
 }
 
 /* ─── Material Symbols ─── */
@@ -129,7 +136,7 @@ button, input, select, textarea, a {
 }
 
 .spec-grid {
-  background-image: radial-gradient(rgba(191, 202, 180, 0.5) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(0, 0, 0, 0.06) 1px, transparent 1px);
   background-size: 20px 20px;
 }
 
@@ -138,15 +145,15 @@ button, input, select, textarea, a {
   background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(191, 202, 180, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 /* ─── Warm Shadows ─── */
 .warm-shadow {
-  box-shadow: 0 2px 12px rgba(41, 108, 0, 0.06), 0 1px 3px rgba(27, 28, 26, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 .warm-shadow-lg {
-  box-shadow: 0 8px 32px rgba(41, 108, 0, 0.10), 0 2px 8px rgba(27, 28, 26, 0.10);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 /* ─── Brand Accent Chip ─── */
@@ -155,8 +162,8 @@ button, input, select, textarea, a {
   align-items: center;
   gap: 4px;
   padding: 2px 8px;
-  border-radius: 3px;
-  font-family: 'Space Mono', monospace;
+  border-radius: 4px;
+  font-family: 'Inter', sans-serif;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -169,12 +176,12 @@ button, input, select, textarea, a {
   align-items: center;
   gap: 4px;
   padding: 3px 8px;
-  border-radius: 3px;
-  font-family: 'Space Mono', monospace;
+  border-radius: 999px;
+  font-family: 'Inter', sans-serif;
   font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 /* ─── Calendar Cell Hover ─── */
@@ -195,20 +202,21 @@ button, input, select, textarea, a {
 }
 .post-card:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(41, 108, 0, 0.10);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 /* ─── Side Nav Active Glow ─── */
 .nav-item-active {
-  background: linear-gradient(135deg, rgba(41, 108, 0, 0.12), rgba(41, 108, 0, 0.06));
-  border-left: 3px solid #296c00;
+  background: var(--color-accent-soft);
+  border-left: 3px solid var(--color-accent);
+  color: var(--color-accent-on-soft);
 }
 
 /* ─── Input Focus Ring ─── */
 input:focus, textarea:focus, select:focus {
   outline: none;
-  border-color: #296c00 !important;
-  box-shadow: 0 0 0 3px rgba(41, 108, 0, 0.12);
+  border-color: var(--color-accent) !important;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.22);
 }
 
 /* ─── Mobile Input Zoom Fix ───
@@ -224,43 +232,42 @@ input:focus, textarea:focus, select:focus {
 
 /* ─── Primary Button Gradient ─── */
 .btn-primary {
-  background: linear-gradient(135deg, #296c00, #1f5700);
-  color: white;
-  font-family: 'Space Mono', monospace;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  font-size: 11px;
-  text-transform: uppercase;
-  padding: 10px 20px;
-  border-radius: 4px;
-  transition: all 0.15s ease;
+  background: var(--color-accent);
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  letter-spacing: 0;
+  font-size: 12px;
+  text-transform: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
   border: none;
   cursor: pointer;
 }
 .btn-primary:hover {
-  background: linear-gradient(135deg, #1f5700, #163d00);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(41, 108, 0, 0.25);
+  background: var(--color-accent-hover);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.22);
 }
 
 /* ─── Danger Button ─── */
 .btn-danger {
-  background: linear-gradient(135deg, #ba1a1a, #93000a);
-  color: white;
-  font-family: 'Space Mono', monospace;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  font-size: 11px;
-  text-transform: uppercase;
-  padding: 10px 20px;
-  border-radius: 4px;
-  transition: all 0.15s ease;
+  background: var(--color-danger);
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  letter-spacing: 0;
+  font-size: 12px;
+  text-transform: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
   border: none;
   cursor: pointer;
 }
 .btn-danger:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(186, 26, 26, 0.25);
+  background: #B91C1C;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.22);
 }
 
 /* ─── Stamp Badge ─── */
@@ -268,14 +275,14 @@ input:focus, textarea:focus, select:focus {
   border: 1.5px solid currentColor;
   padding: 2px 6px;
   background: rgba(255, 255, 255, 0.4);
-  font-family: 'Space Mono', monospace;
+  font-family: 'Inter', sans-serif;
   letter-spacing: 0.06em;
 }
 
 .ink-stamp {
   border: 1.5px solid currentColor;
   padding: 2px 6px;
-  background: rgba(0, 77, 55, 0.04);
+  background: rgba(79, 70, 229, 0.04);
 }
 
 /* ─── Drag Drop Visual Cues ─── */
@@ -334,7 +341,7 @@ input:focus, textarea:focus, select:focus {
   100% { background-position: 200% 0; }
 }
 .skeleton {
-  background: linear-gradient(90deg, #efeeea 25%, #faf9f5 50%, #efeeea 75%);
+  background: linear-gradient(90deg, #F4F4F3 25%, #FBFBFA 50%, #F4F4F3 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
 }
@@ -345,21 +352,21 @@ input:focus, textarea:focus, select:focus {
   align-items: center;
   padding: 2px 8px;
   border-radius: 2px;
-  background: #efeeea;
-  border: 1px solid #bfcab4;
-  color: #296c00;
-  font-family: 'Space Mono', monospace;
+  background: var(--color-muted);
+  border: 1px solid var(--color-line);
+  color: var(--color-ink-muted);
+  font-family: 'Inter', sans-serif;
   font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
   cursor: default;
   transition: background 0.1s ease;
 }
 .tag-pill:hover {
-  background: #296c00;
-  color: white;
-  border-color: #296c00;
+  background: var(--color-accent-soft);
+  color: var(--color-accent-on-soft);
+  border-color: var(--color-accent-soft);
 }
 
 /* ─── Line Clamp Utilities ─── */
@@ -387,7 +394,7 @@ input:focus, textarea:focus, select:focus {
   transition: background 0.1s ease;
 }
 .table-row-hover:hover {
-  background: rgba(41, 108, 0, 0.035);
+  background: rgba(79, 70, 229, 0.05);
 }
 
 /* ─── Sidebar Scrollable ─── */
@@ -395,7 +402,7 @@ input:focus, textarea:focus, select:focus {
   width: 3px;
 }
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: #bfcab4;
+  background: #D8D8D5;
   border-radius: 3px;
 }
 
@@ -446,7 +453,7 @@ input:focus, textarea:focus, select:focus {
 .sheet-handle {
   width: 40px;
   height: 4px;
-  background: #bfcab4;
+  background: #D8D8D5;
   border-radius: 2px;
   margin: 0 auto 12px;
 }
@@ -460,10 +467,10 @@ input:focus, textarea:focus, select:focus {
   z-index: 45;
   /* iOS safe area padding */
   padding-bottom: var(--safe-bottom);
-  background: rgba(250, 249, 245, 0.96);
+  background: rgba(251, 251, 250, 0.96);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border-top: 1px solid rgba(191, 202, 180, 0.8);
+  border-top: 1px solid #E9E9E7;
   display: flex;
   align-items: stretch;
 }
@@ -482,22 +489,22 @@ input:focus, textarea:focus, select:focus {
   cursor: pointer;
   border: none;
   background: transparent;
-  color: #707a67;
+  color: #5F5F5B;
   transition: color 0.12s ease, background 0.12s ease;
   -webkit-tap-highlight-color: transparent;
 }
 .bottom-tab-item:active {
-  background: rgba(41, 108, 0, 0.06);
+  background: rgba(79, 70, 229, 0.06);
 }
 .bottom-tab-item.active {
-  color: #296c00;
+  color: var(--color-accent);
 }
 .bottom-tab-label {
-  font-family: 'Space Mono', monospace;
+  font-family: 'Inter', sans-serif;
   font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
   line-height: 1;
 }
 
@@ -529,7 +536,7 @@ input:focus, textarea:focus, select:focus {
   left: 0;
   right: 0;
   background: white;
-  border-top: 1px solid #bfcab4;
+  border-top: 1px solid #E9E9E7;
   padding: 12px 16px;
   padding-bottom: calc(12px + var(--safe-bottom));
   display: flex;
@@ -539,7 +546,7 @@ input:focus, textarea:focus, select:focus {
 
 /* ─── Mobile Day-List Calendar Row ─── */
 .cal-day-row {
-  border-bottom: 1px solid #bfcab4;
+  border-bottom: 1px solid #E9E9E7;
 }
 .cal-day-row-header {
   display: flex;
@@ -548,10 +555,10 @@ input:focus, textarea:focus, select:focus {
   padding: 10px 14px;
   cursor: pointer;
   user-select: none;
-  background: #faf9f5;
+  background: #F4F4F3;
   transition: background 0.1s ease;
 }
-.cal-day-row-header:active { background: #efeeea; }
+.cal-day-row-header:active { background: #F1F1F0; }
 .cal-day-row-body {
   padding: 0 10px 10px;
 }

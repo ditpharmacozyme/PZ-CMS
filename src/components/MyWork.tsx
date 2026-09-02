@@ -166,10 +166,10 @@ export const MyWork: React.FC<MyWorkProps> = ({ posts, activeTeammate, onSelectP
   if (!activeTeammate) {
     return (
       <div className="p-4 md:p-8 max-w-4xl mx-auto">
-        <div className="bg-white border border-[#bfcab4] rounded shadow-xs p-8 text-center space-y-2">
-          <span className="material-symbols-outlined text-3xl text-[#bfcab4] block">person_off</span>
-          <p className="font-label-caps text-[10px] text-[#707a67] uppercase font-bold">No teammate identified</p>
-          <p className="font-body-md text-xs text-[#707a67] mt-1">
+        <div className="bg-white border border-[#e9e9e7] rounded shadow-xs p-8 text-center space-y-2">
+          <span className="material-symbols-outlined text-3xl text-[#e9e9e7] block">person_off</span>
+          <p className="font-label-caps text-[10px] text-[#5f5f5b] font-bold">No teammate identified</p>
+          <p className="font-body-md text-xs text-[#5f5f5b] mt-1">
             Add yourself in Settings → Team to see your personalized work list here.
           </p>
         </div>
@@ -186,18 +186,18 @@ export const MyWork: React.FC<MyWorkProps> = ({ posts, activeTeammate, onSelectP
       <div
         key={post.id}
         onClick={() => onSelectPost(post)}
-        className="p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 bg-white hover:bg-[#faf9f5] transition-all cursor-pointer"
+        className="p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 bg-white hover:bg-[#f4f4f3] transition-all cursor-pointer"
       >
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <span
             className="flex-shrink-0 px-2 py-0.5 font-label-caps text-[9px] uppercase font-bold rounded text-white"
-            style={{ backgroundColor: brand?.primaryColor || '#296c00' }}
+            style={{ backgroundColor: brand?.primaryColor || '#4f46e5' }}
           >
             {brand?.shortCode || post.brandId}
           </span>
           <div className="min-w-0">
             <h4 className="font-headline-md text-xs sm:text-sm font-bold text-[#1b1c1a] truncate">{post.title}</h4>
-            <p className="font-code-sm text-[10px] text-[#707a67]">
+            <p className="font-code-sm text-[10px] text-[#5f5f5b]">
               {post.scheduledDate ? `${post.scheduledDate}${post.scheduledTime ? ` · ${post.scheduledTime}` : ''}` : 'No date set'}
             </p>
           </div>
@@ -211,7 +211,7 @@ export const MyWork: React.FC<MyWorkProps> = ({ posts, activeTeammate, onSelectP
               else assigneeTriggerRefs.current.delete(post.id);
             }}
             onClick={(e) => { e.stopPropagation(); setOpenAssigneePostId((cur) => (cur === post.id ? null : post.id)); }}
-            className="px-2 py-1.5 rounded-lg font-body-md text-[10px] text-[#707a67] hover:text-[#296c00] hover:bg-[#f0fae8] transition-all cursor-pointer truncate max-w-[7rem]"
+            className="px-2 py-1.5 rounded-lg font-body-md text-[10px] text-[#5f5f5b] hover:text-[#4f46e5] hover:bg-[#eef2ff] transition-all cursor-pointer truncate max-w-[7rem]"
             title="Tap to assign"
           >
             {post.assignees.length > 0 ? post.assignees.join(', ') : 'Unassigned'}
@@ -223,8 +223,8 @@ export const MyWork: React.FC<MyWorkProps> = ({ posts, activeTeammate, onSelectP
               e.stopPropagation();
               handleToggle(post, stage, sectionKey);
             }}
-            className={`flex-shrink-0 px-2.5 py-1.5 rounded-lg font-label-caps text-[10px] font-bold uppercase transition-all cursor-pointer flex items-center gap-1.5 ${
-              isDone ? 'bg-[#296c00] text-white' : 'bg-[#ffddb0] text-[#935c00] hover:bg-[#ffcb80]'
+            className={`flex-shrink-0 px-2.5 py-1.5 rounded-lg font-label-caps text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              isDone ? 'bg-[#15803d] text-white' : 'bg-[#fbf0e1] text-[#b45309] hover:bg-[#ffcb80]'
             }`}
             title={`Click to mark ${stage} ${isDone ? 'not done' : 'done'}`}
           >
@@ -247,18 +247,18 @@ export const MyWork: React.FC<MyWorkProps> = ({ posts, activeTeammate, onSelectP
       <div
         key={post.id}
         onClick={() => onSelectPost(post)}
-        className="p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 bg-white hover:bg-[#faf9f5] transition-all cursor-pointer"
+        className="p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 bg-white hover:bg-[#f4f4f3] transition-all cursor-pointer"
       >
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <span
             className="flex-shrink-0 px-2 py-0.5 font-label-caps text-[9px] uppercase font-bold rounded text-white"
-            style={{ backgroundColor: brand?.primaryColor || '#296c00' }}
+            style={{ backgroundColor: brand?.primaryColor || '#4f46e5' }}
           >
             {brand?.shortCode || post.brandId}
           </span>
           <div className="min-w-0">
             <h4 className="font-headline-md text-xs sm:text-sm font-bold text-[#1b1c1a] truncate">{post.title}</h4>
-            <p className="font-code-sm text-[10px] text-[#707a67]">No date set</p>
+            <p className="font-code-sm text-[10px] text-[#5f5f5b]">No date set</p>
           </div>
         </div>
 
@@ -270,13 +270,13 @@ export const MyWork: React.FC<MyWorkProps> = ({ posts, activeTeammate, onSelectP
               else assigneeTriggerRefs.current.delete(post.id);
             }}
             onClick={(e) => { e.stopPropagation(); setOpenAssigneePostId((cur) => (cur === post.id ? null : post.id)); }}
-            className="px-2 py-1.5 rounded-lg font-body-md text-[10px] text-[#707a67] hover:text-[#296c00] hover:bg-[#f0fae8] transition-all cursor-pointer truncate max-w-[7rem]"
+            className="px-2 py-1.5 rounded-lg font-body-md text-[10px] text-[#5f5f5b] hover:text-[#4f46e5] hover:bg-[#eef2ff] transition-all cursor-pointer truncate max-w-[7rem]"
             title="Tap to assign"
           >
             {post.assignees.length > 0 ? post.assignees.join(', ') : 'Unassigned'}
           </button>
 
-          <span className="flex-shrink-0 px-2.5 py-1.5 rounded-lg font-label-caps text-[10px] font-bold uppercase flex items-center gap-1.5 bg-[#efeeea] text-[#707a67]">
+          <span className="flex-shrink-0 px-2.5 py-1.5 rounded-lg font-label-caps text-[10px] font-bold flex items-center gap-1.5 bg-[#f1f1f0] text-[#5f5f5b]">
             <span className="material-symbols-outlined text-sm">event</span>
             <span>Needs a date</span>
           </span>
@@ -294,26 +294,26 @@ export const MyWork: React.FC<MyWorkProps> = ({ posts, activeTeammate, onSelectP
 
   return (
     <div className="p-4 md:p-8 space-y-6 max-w-4xl mx-auto">
-      <div className="pb-4 border-b border-[#bfcab4]">
-        <span className="font-label-caps text-xs text-[#296951] uppercase font-bold tracking-widest">
+      <div className="pb-4 border-b border-[#e9e9e7]">
+        <span className="font-label-caps text-xs text-[#4338ca] font-bold tracking-widest">
           Welcome back, {activeTeammate.name}
         </span>
         <h2 className="font-display-xl text-2xl md:text-3xl text-[#1b1c1a] font-bold mt-1">My Work</h2>
-        <p className="font-body-md text-sm text-[#707a67] mt-1">What needs your attention, in order.</p>
-        <div className="mt-3 flex items-center gap-2 bg-white border border-[#bfcab4] rounded px-3 h-11 max-w-sm">
-          <span className="material-symbols-outlined text-[#707a67] text-lg">search</span>
+        <p className="font-body-md text-sm text-[#5f5f5b] mt-1">What needs your attention, in order.</p>
+        <div className="mt-3 flex items-center gap-2 bg-white border border-[#e9e9e7] rounded px-3 h-11 max-w-sm">
+          <span className="material-symbols-outlined text-[#5f5f5b] text-lg">search</span>
           <input
             id="mywork-search-input"
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange?.(e.target.value)}
             placeholder="Filter my work by title, tag, assignee…"
-            className="flex-1 bg-transparent text-sm text-[#1b1c1a] focus:outline-none placeholder:text-[#bfcab4]"
+            className="flex-1 bg-transparent text-sm text-[#1b1c1a] focus:outline-none placeholder:text-[#e9e9e7]"
           />
           {searchQuery && (
             <button
               onClick={() => onSearchChange?.('')}
-              className="text-[#707a67] hover:text-[#1b1c1a] p-1 -mr-1"
+              className="text-[#5f5f5b] hover:text-[#1b1c1a] p-1 -mr-1"
               aria-label="Clear search"
             >
               <span className="material-symbols-outlined text-base">close</span>
@@ -323,40 +323,40 @@ export const MyWork: React.FC<MyWorkProps> = ({ posts, activeTeammate, onSelectP
       </div>
 
       {actionableSections.map((section) => (
-        <div key={section.key} className="bg-white border border-[#bfcab4] rounded shadow-xs overflow-hidden">
-          <div className="p-4 border-b border-[#bfcab4] flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#296c00] text-lg">{section.icon}</span>
-            <h3 className="font-label-caps text-xs font-bold text-[#1b1c1a] uppercase">{section.label}</h3>
-            <span className="font-label-caps text-[10px] text-[#707a67] bg-[#efeeea] px-1.5 py-0.2 rounded-full">
+        <div key={section.key} className="bg-white border border-[#e9e9e7] rounded shadow-xs overflow-hidden">
+          <div className="p-4 border-b border-[#e9e9e7] flex items-center gap-2">
+            <span className="material-symbols-outlined text-[#4f46e5] text-lg">{section.icon}</span>
+            <h3 className="font-label-caps text-xs font-bold text-[#1b1c1a]">{section.label}</h3>
+            <span className="font-label-caps text-[10px] text-[#5f5f5b] bg-[#f1f1f0] px-1.5 py-0.2 rounded-full">
               {section.rows.length}
             </span>
           </div>
 
           {section.rows.length === 0 ? (
             <div className="p-6 text-center">
-              <p className="font-body-md text-xs text-[#707a67]">{section.emptyMessage}</p>
+              <p className="font-body-md text-xs text-[#5f5f5b]">{section.emptyMessage}</p>
             </div>
           ) : (
-            <div className="divide-y divide-[#f0eee6]">{section.rows.map(renderRow(section.key))}</div>
+            <div className="divide-y divide-[#efefed]">{section.rows.map(renderRow(section.key))}</div>
           )}
         </div>
       ))}
 
-      <div className="bg-white border border-[#bfcab4] rounded shadow-xs overflow-hidden">
-        <div className="p-4 border-b border-[#bfcab4] flex items-center gap-2">
-          <span className="material-symbols-outlined text-[#296c00] text-lg">lightbulb</span>
-          <h3 className="font-label-caps text-xs font-bold text-[#1b1c1a] uppercase">Unscheduled ideas that are mine</h3>
-          <span className="font-label-caps text-[10px] text-[#707a67] bg-[#efeeea] px-1.5 py-0.2 rounded-full">
+      <div className="bg-white border border-[#e9e9e7] rounded shadow-xs overflow-hidden">
+        <div className="p-4 border-b border-[#e9e9e7] flex items-center gap-2">
+          <span className="material-symbols-outlined text-[#4f46e5] text-lg">lightbulb</span>
+          <h3 className="font-label-caps text-xs font-bold text-[#1b1c1a]">Unscheduled ideas that are mine</h3>
+          <span className="font-label-caps text-[10px] text-[#5f5f5b] bg-[#f1f1f0] px-1.5 py-0.2 rounded-full">
             {unscheduledIdeas.length}
           </span>
         </div>
 
         {unscheduledIdeas.length === 0 ? (
           <div className="p-6 text-center">
-            <p className="font-body-md text-xs text-[#707a67]">No unscheduled ideas assigned to you.</p>
+            <p className="font-body-md text-xs text-[#5f5f5b]">No unscheduled ideas assigned to you.</p>
           </div>
         ) : (
-          <div className="divide-y divide-[#f0eee6]">{unscheduledIdeas.map(renderIdeaRow)}</div>
+          <div className="divide-y divide-[#efefed]">{unscheduledIdeas.map(renderIdeaRow)}</div>
         )}
       </div>
 

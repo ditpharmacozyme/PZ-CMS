@@ -84,7 +84,7 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
   return (
     <div className="md:hidden flex flex-col">
       {/* Horizontal Date Strip */}
-      <div className="flex overflow-x-auto bg-[#efeeea] border-b border-[#bfcab4] p-2 gap-2 hide-scrollbar">
+      <div className="flex overflow-x-auto bg-[#f1f1f0] border-b border-[#e9e9e7] p-2 gap-2 hide-scrollbar">
         {calendarCells
           .filter((cell) => cell.dateStr && cell.isCurrentMonth)
           .map((cell) => {
@@ -104,15 +104,15 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
                 onClick={() => onSelectMobileDate(cell.dateStr!)}
                 className={`flex flex-col items-center justify-center min-w-[3.5rem] py-2 rounded-lg transition-colors relative flex-shrink-0 ${
                   isDropHover
-                    ? 'bg-[#296c00] text-white ring-2 ring-[#296c00] ring-offset-1 scale-105'
+                    ? 'bg-[#4f46e5] text-white ring-2 ring-[#4f46e5] ring-offset-1 scale-105'
                     : isSelected
-                    ? 'bg-[#296c00] text-white shadow-xs'
+                    ? 'bg-[#4f46e5] text-white shadow-xs'
                     : isToday
-                    ? 'bg-white border border-[#296c00] text-[#296c00]'
-                    : 'bg-white border border-[#bfcab4] text-[#1b1c1a]'
+                    ? 'bg-white border border-[#4f46e5] text-[#4f46e5]'
+                    : 'bg-white border border-[#e9e9e7] text-[#1b1c1a]'
                 }`}
               >
-                <span className="font-label-caps text-[9px] uppercase font-bold opacity-80">{dayShort}</span>
+                <span className="font-label-caps text-[9px] font-bold opacity-80">{dayShort}</span>
                 <span className="font-headline-md text-base font-bold mt-0.5">{dayNum}</span>
 
                 {/* Brand Color Dots below date */}
@@ -122,7 +122,7 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
                       <span
                         key={bId}
                         className="w-1.5 h-1.5 rounded-full"
-                        style={{ backgroundColor: BRANDS[bId]?.primaryColor || '#296c00' }}
+                        style={{ backgroundColor: BRANDS[bId]?.primaryColor || '#4f46e5' }}
                       />
                     ))}
                   </div>
@@ -131,7 +131,7 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
                 {dayPosts.length > 0 && (
                   <div
                     className={`absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center font-label-caps text-[8px] font-bold ${
-                      isSelected ? 'bg-white text-[#296c00]' : 'bg-[#296c00] text-white'
+                      isSelected ? 'bg-white text-[#4f46e5]' : 'bg-[#4f46e5] text-white'
                     }`}
                   >
                     {dayPosts.length}
@@ -143,7 +143,7 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
       </div>
 
       {/* Selected Day Posts List */}
-      <div className="p-3 sm:p-4 bg-[#faf9f5]">
+      <div className="p-3 sm:p-4 bg-[#f4f4f3]">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-headline-md text-lg font-bold text-[#1b1c1a]">
             {fromDateStr(selectedMobileDate).toLocaleDateString('default', {
@@ -154,7 +154,7 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
           </h3>
           <button
             onClick={() => onOpenNewPostModal(selectedMobileDate)}
-            className="flex items-center gap-1 text-[#296c00] font-label-caps text-xs font-bold bg-[#f0fae8] px-3 py-1.5 rounded-full hover:bg-[#aceecf] transition-colors cursor-pointer"
+            className="flex items-center gap-1 text-[#4f46e5] font-label-caps text-xs font-bold bg-[#eef2ff] px-3 py-1.5 rounded-full hover:bg-[#eef2ff] transition-colors cursor-pointer"
           >
             <span className="material-symbols-outlined text-sm">add</span>
             New Post
@@ -163,17 +163,17 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
 
         {/* Multi-Brand / Time Clash Alert Banner on Mobile */}
         {selectedDaySummary.hasCollision && (
-          <div className="mb-3 p-2.5 rounded-lg bg-white border border-[#bfcab4] flex items-center justify-between gap-2 shadow-2xs">
+          <div className="mb-3 p-2.5 rounded-lg bg-white border border-[#e9e9e7] flex items-center justify-between gap-2 shadow-2xs">
             <div className="flex items-center gap-2 min-w-0">
-              <span className="font-label-caps text-[10px] font-bold uppercase text-[#296c00] bg-[#f0fae8] px-1.5 py-0.5 rounded">
+              <span className="font-label-caps text-[10px] font-bold text-[#4f46e5] bg-[#eef2ff] px-1.5 py-0.5 rounded">
                 {selectedDaySummary.brandCount} Brands
               </span>
-              <p className="text-xs text-[#404a39] truncate">
+              <p className="text-xs text-[#57574f] truncate">
                 {selectedDaySummary.brandNames.join(' • ')}
               </p>
             </div>
             {selectedDaySummary.timeClashes.length > 0 && (
-              <span className="text-[10px] font-label-caps font-bold text-[#ba1a1a] bg-[#ffdad6] px-2 py-0.5 rounded whitespace-nowrap">
+              <span className="text-[10px] font-label-caps font-bold text-[#dc2626] bg-[#fcebeb] px-2 py-0.5 rounded whitespace-nowrap">
                 ⚠️ Time Conflict
               </span>
             )}
@@ -184,7 +184,7 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
           const dayPosts = selectedDayPosts;
           if (dayPosts.length === 0) {
             return (
-              <div className="text-center py-10 text-[#707a67] bg-white border border-[#bfcab4] rounded-lg">
+              <div className="text-center py-10 text-[#5f5f5b] bg-white border border-[#e9e9e7] rounded-lg">
                 <span className="material-symbols-outlined text-3xl mb-2 opacity-50">calendar_today</span>
                 <p className="font-body-md text-sm">No posts scheduled</p>
               </div>
@@ -205,7 +205,7 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
                       .join('')
                       .toUpperCase()
                       .slice(0, 2);
-                const bgColor = assigneeMember ? assigneeMember.color : '#bfcab4';
+                const bgColor = assigneeMember ? assigneeMember.color : '#e9e9e7';
                 const extraAssignees = post.assignees.length - 1;
                 const isMobileSelected = selectedPostIds.has(post.id);
 
@@ -245,7 +245,7 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
                     }}
                     style={{ borderLeftColor: brand?.primaryColor }}
                     className={`flex items-start gap-3 p-3 border border-l-4 rounded-lg shadow-2xs active:scale-[0.98] transition-transform cursor-pointer ${
-                      isMobileSelected ? 'bg-[#f0fae8] ring-2 ring-[#296c00] border-[#296c00]' : 'bg-white border-[#bfcab4]'
+                      isMobileSelected ? 'bg-[#eef2ff] ring-2 ring-[#4f46e5] border-[#4f46e5]' : 'bg-white border-[#e9e9e7]'
                     }`}
                   >
                     {(isSelectMode || selectedPostIds.size > 0) && (
@@ -254,18 +254,18 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
                         checked={isMobileSelected}
                         onChange={() => onToggleSelect(post.id)}
                         onClick={(e) => e.stopPropagation()}
-                        className="w-5 h-5 mt-1 text-[#296c00] border-[#bfcab4] rounded flex-shrink-0"
+                        className="w-5 h-5 mt-1 text-[#4f46e5] border-[#e9e9e7] rounded flex-shrink-0"
                       />
                     )}
 
                     {post.visualUrl && (
-                      <div className="w-14 h-14 mt-0.5 rounded overflow-hidden border border-[#bfcab4] bg-[#faf9f5] flex-shrink-0">
+                      <div className="w-14 h-14 mt-0.5 rounded overflow-hidden border border-[#e9e9e7] bg-[#f4f4f3] flex-shrink-0">
                         <img src={post.visualUrl} alt={post.title} className="w-full h-full object-cover" />
                       </div>
                     )}
 
                     <div className="flex-1 min-w-0">
-                      <span className="font-label-caps text-[9px] font-bold uppercase" style={{ color: brand?.primaryColor }}>
+                      <span className="font-label-caps text-[9px] font-bold" style={{ color: brand?.primaryColor }}>
                         {brand?.name} • {post.scheduledTime}
                       </span>
                       <p className="font-headline-md text-sm font-bold text-[#1b1c1a] leading-tight mb-1">
@@ -284,7 +284,7 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
                                 type="button"
                                 onClick={(e) => handleQuickStageToggle(post, 'design', e)}
                                 className={`px-1.5 py-0.5 rounded cursor-pointer ${
-                                  post.stageCompletion?.designDone ? 'bg-[#296c00] text-white' : 'bg-[#efeeea] text-[#404a39]'
+                                  post.stageCompletion?.designDone ? 'bg-[#4f46e5] text-white' : 'bg-[#f1f1f0] text-[#57574f]'
                                 }`}
                               >
                                 🎨 {post.taskRoles.designer}
@@ -295,7 +295,7 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
                                 type="button"
                                 onClick={(e) => handleQuickStageToggle(post, 'publish', e)}
                                 className={`px-1.5 py-0.5 rounded cursor-pointer ${
-                                  post.stageCompletion?.publishDone ? 'bg-[#296c00] text-white' : 'bg-[#efeeea] text-[#404a39]'
+                                  post.stageCompletion?.publishDone ? 'bg-[#4f46e5] text-white' : 'bg-[#f1f1f0] text-[#57574f]'
                                 }`}
                               >
                                 🚀 {post.taskRoles.publisher}
@@ -306,7 +306,7 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
                                 type="button"
                                 onClick={(e) => handleQuickStageToggle(post, 'engagement', e)}
                                 className={`px-1.5 py-0.5 rounded cursor-pointer ${
-                                  post.stageCompletion?.engagementDone ? 'bg-[#296c00] text-white' : 'bg-[#efeeea] text-[#404a39]'
+                                  post.stageCompletion?.engagementDone ? 'bg-[#4f46e5] text-white' : 'bg-[#f1f1f0] text-[#57574f]'
                                 }`}
                               >
                                 💬 {post.taskRoles.engagementLead}
@@ -323,7 +323,7 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
                         else assigneeTriggerRefs.current.delete(post.id);
                       }}
                       onClick={(e) => { e.stopPropagation(); setOpenAssigneePostId((cur) => (cur === post.id ? null : post.id)); }}
-                      className="relative w-8 h-8 rounded-full flex items-center justify-center text-white font-label-caps text-[10px] font-bold flex-shrink-0 shadow-xs cursor-pointer hover:ring-2 hover:ring-[#296c00] hover:ring-offset-1 transition-all"
+                      className="relative w-8 h-8 rounded-full flex items-center justify-center text-white font-label-caps text-[10px] font-bold flex-shrink-0 shadow-xs cursor-pointer hover:ring-2 hover:ring-[#4f46e5] hover:ring-offset-1 transition-all"
                       style={{ backgroundColor: bgColor }}
                       title={`Assigned to: ${post.assignees.join(', ') || 'nobody'} (tap to change)`}
                     >
