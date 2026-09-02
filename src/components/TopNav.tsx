@@ -168,7 +168,7 @@ export const TopNav: React.FC<TopNavProps> = ({
         <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={onToggleMobileNav}
-            className="md:hidden p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#57574f] hover:bg-[#f1f1f0] active:bg-[#e0dfdb] rounded-lg transition-colors"
+            className="md:hidden p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#57574f] hover:bg-[#f1f1f0] active:bg-[#e4e4e2] rounded-lg transition-colors"
             title="Open Menu"
             aria-label="Open Navigation Menu"
           >
@@ -178,7 +178,7 @@ export const TopNav: React.FC<TopNavProps> = ({
           <div className="relative">
             <button
               onClick={() => setShowBrandPicker((prev) => !prev)}
-              className="flex items-center gap-2 pr-1.5 py-1 rounded-lg hover:bg-[#f1f1f0] active:bg-[#e0dfdb] transition-colors cursor-pointer"
+              className="flex items-center gap-2 pr-1.5 py-1 rounded-lg hover:bg-[#f1f1f0] active:bg-[#e4e4e2] transition-colors cursor-pointer"
               title="Switch brand"
               aria-haspopup="listbox"
               aria-expanded={showBrandPicker}
@@ -255,7 +255,7 @@ export const TopNav: React.FC<TopNavProps> = ({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search posts, captions, tags..."
-            className="w-full bg-[#f5f4f0] border-b-2 border-[#e9e9e7] pl-9 pr-8 py-2 font-label-caps text-xs text-[#1b1c1a] focus:bg-white focus:border-[#4f46e5] focus:outline-none transition-all rounded-xs"
+            className="w-full bg-[#f4f4f3] border-b-2 border-[#e9e9e7] pl-9 pr-8 py-2 font-label-caps text-xs text-[#1b1c1a] focus:bg-white focus:border-[#4f46e5] focus:outline-none transition-all rounded-xs"
           />
           {searchQuery ? (
             <button onClick={() => onSearchChange('')} className="absolute right-2.5 text-[#5f5f5b] hover:text-[#1b1c1a]">
@@ -293,7 +293,7 @@ export const TopNav: React.FC<TopNavProps> = ({
           <div className="relative">
             <button
               onClick={() => setShowNotificationsPopover(!showNotificationsPopover)}
-              className="relative p-2 min-w-[40px] min-h-[40px] flex items-center justify-center text-[#57574f] hover:bg-[#f1f1f0] active:bg-[#e0dfdb] rounded-full transition-colors"
+              className="relative p-2 min-w-[40px] min-h-[40px] flex items-center justify-center text-[#57574f] hover:bg-[#f1f1f0] active:bg-[#e4e4e2] rounded-full transition-colors"
               title="Alerts"
             >
               <span className="material-symbols-outlined text-xl">notifications</span>
@@ -440,7 +440,7 @@ export const TopNav: React.FC<TopNavProps> = ({
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Search posts, captions, tags..."
               autoFocus
-              className="w-full bg-[#f5f4f0] border border-[#e9e9e7] pl-9 pr-8 py-2 font-label-caps text-xs text-[#1b1c1a] focus:bg-white focus:border-[#4f46e5] focus:outline-none rounded"
+              className="w-full bg-[#f4f4f3] border border-[#e9e9e7] pl-9 pr-8 py-2 font-label-caps text-xs text-[#1b1c1a] focus:bg-white focus:border-[#4f46e5] focus:outline-none rounded"
             />
             {searchQuery && (
               <button onClick={() => onSearchChange('')} className="absolute right-2.5 top-2 text-[#5f5f5b]">
@@ -475,7 +475,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                 onClick={() => setSettingsTab('team')}
                 className={`flex-1 py-2.5 font-label-caps text-xs font-bold border-b-2 transition-colors flex items-center justify-center gap-1.5 ${
                   settingsTab === 'team'
-                    ? 'border-[#4f46e5] text-[#4f46e5] bg-[#f9f9f6]'
+                    ? 'border-[#4f46e5] text-[#4f46e5] bg-[#f4f4f3]'
                     : 'border-transparent text-[#5f5f5b] hover:text-[#1b1c1a]'
                 }`}
               >
@@ -486,7 +486,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                 onClick={() => setSettingsTab('system')}
                 className={`flex-1 py-2.5 font-label-caps text-xs font-bold border-b-2 transition-colors flex items-center justify-center gap-1.5 ${
                   settingsTab === 'system'
-                    ? 'border-[#4f46e5] text-[#4f46e5] bg-[#f9f9f6]'
+                    ? 'border-[#4f46e5] text-[#4f46e5] bg-[#f4f4f3]'
                     : 'border-transparent text-[#5f5f5b] hover:text-[#1b1c1a]'
                 }`}
               >
@@ -520,7 +520,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                       creates their real login (invite email), which only an Admin
                       can trigger (enforced server-side too). */}
                   {isAddingMember && (
-                    <div className="p-4 bg-[#f0fdf4] border border-[#4f46e5]/30 rounded space-y-3">
+                    <div className="p-4 bg-[#eef2ff] border border-[#4f46e5]/30 rounded space-y-3">
                       {inviteSentTo ? (
                         <>
                           <div className="p-3 rounded bg-white border border-[#4f46e5]/20 text-[#4f46e5] text-xs font-body-md">
@@ -906,7 +906,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                           setShowSettingsModal(false);
                         }
                       }}
-                      className="bg-[#dc2626] text-white px-3 py-2 font-label-caps text-xs rounded hover:bg-[#93000a] min-h-[40px]"
+                      className="bg-[#dc2626] text-white px-3 py-2 font-label-caps text-xs rounded hover:bg-[#b91c1c] min-h-[40px]"
                     >
                       Reset
                     </button>

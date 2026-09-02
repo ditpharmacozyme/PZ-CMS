@@ -90,7 +90,7 @@ export const IdeaBacklog: React.FC<IdeaBacklogProps> = ({
       <div className="px-4 pt-4 pb-3 border-b border-[#efefed] flex-shrink-0 bg-white">
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-base text-[#15803d]">lightbulb</span>
+            <span className="material-symbols-outlined text-base text-[#4f46e5]">lightbulb</span>
             <span className="font-label-caps text-xs tracking-wider text-[#1b1c1a] font-bold">
               Idea Backlog
             </span>
@@ -288,7 +288,7 @@ export const IdeaBacklog: React.FC<IdeaBacklogProps> = ({
             className="flex flex-col items-center gap-1 cursor-pointer group py-2"
             title="Click to open backlog"
           >
-            <span className="material-symbols-outlined text-lg text-[#15803d] group-hover:scale-110 transition-transform">
+            <span className="material-symbols-outlined text-lg text-[#4f46e5] group-hover:scale-110 transition-transform">
               lightbulb
             </span>
             <span className="bg-[#4f46e5] text-white font-label-caps text-[9px] px-1.5 py-0.2 rounded-full font-bold">
@@ -311,7 +311,7 @@ export const IdeaBacklog: React.FC<IdeaBacklogProps> = ({
       {/* ── Mobile Circular Floating Bulb Icon ── */}
       <button
         onClick={() => setMobileBacklogOpen(true)}
-        className="lg:hidden fixed bottom-20 left-4 z-40 w-12 h-12 rounded-full bg-[#1b1c1a] text-[#15803d] shadow-2xl flex items-center justify-center border-2 border-white/20 active:scale-95 transition-all cursor-pointer"
+        className="lg:hidden fixed bottom-20 left-4 z-40 w-12 h-12 rounded-full bg-[#1b1c1a] text-[#a5b4fc] shadow-2xl flex items-center justify-center border-2 border-white/20 active:scale-95 transition-all cursor-pointer"
         title="Open Idea Backlog"
         aria-label="Idea Backlog"
       >
@@ -329,7 +329,7 @@ export const IdeaBacklog: React.FC<IdeaBacklogProps> = ({
           <div className="bg-[#f4f4f3] border-t border-[#e9e9e7] rounded-t-2xl max-h-[85vh] flex flex-col shadow-2xl animate-slideUp">
             <div className="flex items-center justify-between px-4 pt-3 pb-1 border-b border-[#efefed]">
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#15803d]">lightbulb</span>
+                <span className="material-symbols-outlined text-[#4f46e5]">lightbulb</span>
                 <span className="font-label-caps text-xs font-bold text-[#1b1c1a]">Idea Backlog</span>
               </div>
               <button

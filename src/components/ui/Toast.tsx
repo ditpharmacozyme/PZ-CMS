@@ -29,23 +29,28 @@ export interface ToastItem {
   variant?: 'success' | 'error';
 }
 
+// `success` commits to one hue: a green dot/border with a light-green action
+// label. The toast sits on `bg-[#1b1c1a]`, so the dark success green `#15803d`
+// is not legible here -- the on-dark tints (`#4ade80` dot, `#86efac` label at
+// ~12:1) mirror the `error` variant's dark-dot / light-text structure and keep
+// the "Undo" control above AA.
 const VARIANT_ACCENT: Record<NonNullable<ToastItem['variant']>, string> = {
-  success: 'border-[#4f46e5]',
+  success: 'border-[#4ade80]',
   error: 'border-[#dc2626]',
 };
 
 const VARIANT_DOT: Record<NonNullable<ToastItem['variant']>, string> = {
-  success: 'bg-[#4f46e5]',
+  success: 'bg-[#4ade80]',
   error: 'bg-[#dc2626]',
 };
 
 const VARIANT_PING: Record<NonNullable<ToastItem['variant']>, string> = {
-  success: 'bg-[#15803d]',
+  success: 'bg-[#4ade80]',
   error: 'bg-[#ffb4ab]',
 };
 
 const VARIANT_ACTION_TEXT: Record<NonNullable<ToastItem['variant']>, string> = {
-  success: 'text-[#15803d]',
+  success: 'text-[#86efac]',
   error: 'text-[#ffb4ab]',
 };
 

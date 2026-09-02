@@ -30,7 +30,7 @@ const PLATFORM_CONFIG: Record<Platform, { label: string; icon: string; color: st
   instagram: { label: 'Instagram', icon: 'photo_camera', color: '#E1306C', bg: '#fdf2f8' },
   linkedin: { label: 'LinkedIn', icon: 'work', color: '#0A66C2', bg: '#eff6ff' },
   twitter: { label: 'X / Twitter', icon: 'tag', color: '#1DA1F2', bg: '#f0f9ff' },
-  web: { label: 'Web Portal', icon: 'language', color: '#4f46e5', bg: '#f0fdf4' },
+  web: { label: 'Web Portal', icon: 'language', color: '#4f46e5', bg: '#eef2ff' },
   email: { label: 'Email Broadcast', icon: 'mail', color: '#d97706', bg: '#fffbeb' }
 };
 

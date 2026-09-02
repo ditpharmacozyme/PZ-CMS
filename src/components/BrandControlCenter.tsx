@@ -151,7 +151,7 @@ OUTPUT FORMAT:
 
         <div className="flex items-center gap-3">
           {copiedText && (
-            <span className="font-label-caps text-xs font-bold text-[#4f46e5] bg-[#eef2ff] px-3 py-1.5 rounded-lg border border-[#15803d]/40 animate-pulse">
+            <span className="font-label-caps text-xs font-bold text-[#4f46e5] bg-[#eef2ff] px-3 py-1.5 rounded-lg border border-[#4f46e5]/30 animate-pulse">
               ✓ Copied {copiedText}!
             </span>
           )}
@@ -324,7 +324,7 @@ OUTPUT FORMAT:
             <div className="flex items-center justify-between gap-3 pt-2">
               <button
                 onClick={() => handleCopy(generatedPostPrompt, 'Post Prompt')}
-                className="flex-1 bg-[#4f46e5] hover:bg-[#15803d] hover:text-[#1b1c1a] text-white font-label-caps text-xs font-bold py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+                className="flex-1 bg-[#4f46e5] hover:bg-[#4338ca] text-white font-label-caps text-xs font-bold py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-xs cursor-pointer"
               >
                 <span className="material-symbols-outlined text-sm">content_copy</span>
                 <span>Copy Post Prompt</span>

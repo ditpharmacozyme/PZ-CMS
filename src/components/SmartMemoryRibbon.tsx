@@ -30,7 +30,7 @@ export const SmartMemoryRibbon: React.FC<SmartMemoryRibbonProps> = ({
       {/* Left: Draft Recovery Alert OR Recent Items Title */}
       <div className="flex items-center gap-2 flex-wrap min-w-0">
         {savedDraft ? (
-          <div className="flex items-center gap-2 bg-[#4f46e5]/30 border border-[#15803d]/40 px-2.5 py-1 rounded-md">
+          <div className="flex items-center gap-2 bg-[#4f46e5]/30 border border-[#4f46e5]/30 px-2.5 py-1 rounded-md">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#15803d] opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-[#15803d]"></span>
@@ -43,7 +43,7 @@ export const SmartMemoryRibbon: React.FC<SmartMemoryRibbonProps> = ({
             </span>
             <button
               onClick={() => onRestoreDraft(savedDraft)}
-              className="bg-[#4f46e5] hover:bg-[#15803d] hover:text-[#1b1c1a] text-white font-label-caps text-[10px] font-bold px-2 py-0.5 rounded transition-colors ml-1 cursor-pointer flex items-center gap-0.5"
+              className="bg-[#4f46e5] hover:bg-[#4338ca] text-white font-label-caps text-[10px] font-bold px-2 py-0.5 rounded transition-colors ml-1 cursor-pointer flex items-center gap-0.5"
             >
               <span className="material-symbols-outlined text-xs">restore_page</span>
               <span>Resume</span>

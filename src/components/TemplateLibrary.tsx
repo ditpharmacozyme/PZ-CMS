@@ -73,6 +73,20 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
   // disclosure -- only Name, Brand, Category are always visible.
   const [showMoreOptions, setShowMoreOptions] = useState(false);
 
+  // Inline feedback for the thumbnail "Copy link" action -- spec §3 Phase D
+  // wanted a toast, but this component receives no `showToast` prop, so the
+  // button label flips to "Copied" for ~1.5s instead of the copy being silent.
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const handleCopyLink = async (template: PostTemplate) => {
+    const ok = await copyText(template.imagePreview!);
+    if (ok) {
+      setCopiedId(template.id);
+      window.setTimeout(() => {
+        setCopiedId((cur) => (cur === template.id ? null : cur));
+      }, 1500);
+    }
+  };
+
   const handleImageFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
@@ -402,28 +416,30 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                   )}
 
                   {template.imagePreview && (
-                    <div className="absolute bottom-2 left-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute bottom-2 left-2 flex gap-1.5 opacity-0 pointer-events-none transition-opacity group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto">
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           window.open(template.imagePreview, '_blank', 'noopener');
                         }}
-                        className="bg-white/95 border border-[#e9e9e7] text-[#1b1c1a] text-[10px] font-label-caps rounded px-2 py-1 flex items-center gap-1 shadow-xs hover:bg-white"
+                        className="bg-white/95 border border-[#e9e9e7] text-[#1b1c1a] text-[10px] font-label-caps rounded px-2 py-1 flex items-center gap-1 shadow-xs hover:bg-white focus-visible:opacity-100"
                       >
                         <span className="material-symbols-outlined text-[12px]">open_in_new</span>
                         <span>Open image</span>
                       </button>
                       <button
                         type="button"
-                        onClick={async (e) => {
+                        onClick={(e) => {
                           e.stopPropagation();
-                          await copyText(template.imagePreview!);
+                          void handleCopyLink(template);
                         }}
-                        className="bg-white/95 border border-[#e9e9e7] text-[#1b1c1a] text-[10px] font-label-caps rounded px-2 py-1 flex items-center gap-1 shadow-xs hover:bg-white"
+                        className="bg-white/95 border border-[#e9e9e7] text-[#1b1c1a] text-[10px] font-label-caps rounded px-2 py-1 flex items-center gap-1 shadow-xs hover:bg-white focus-visible:opacity-100"
                       >
-                        <span className="material-symbols-outlined text-[12px]">link</span>
-                        <span>Copy link</span>
+                        <span className="material-symbols-outlined text-[12px]">
+                          {copiedId === template.id ? 'check' : 'link'}
+                        </span>
+                        <span>{copiedId === template.id ? 'Copied' : 'Copy link'}</span>
                       </button>
                     </div>
                   )}

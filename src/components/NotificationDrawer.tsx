@@ -99,7 +99,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
                             <div className="flex items-center gap-2 mb-1">
                               {n.type === 'overdue' && <span className="material-symbols-outlined text-[#dc2626] text-[14px]">error</span>}
                               {n.type === 'stage_complete' && <span className="material-symbols-outlined text-[#15803d] text-[14px]">check_circle</span>}
-                              {n.type === 'due_soon' && <span className="material-symbols-outlined text-[#0061a4] text-[14px]">schedule</span>}
+                              {n.type === 'due_soon' && <span className="material-symbols-outlined text-[#4f46e5] text-[14px]">schedule</span>}
                               {n.type === 'stage_blocking' && <span className="material-symbols-outlined text-[#b45309] text-[14px]">pending_actions</span>}
                               
                               <h4 className={`font-headline-md text-sm truncate ${n.read ? 'text-[#57574f]' : 'text-[#1b1c1a] font-bold'}`}>

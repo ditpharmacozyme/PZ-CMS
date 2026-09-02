@@ -39,6 +39,19 @@ export const MAPPINGS = [
   ['#aceecf', '#eef2ff'],
   ['#f0fae8', '#eef2ff'],
   ['#78d24b', '#15803d'],
+  // Final-review fix wave (2026-09-02): stranded legacy hexes the original
+  // sweep never enumerated. `to` values stay disjoint from every `from`, so
+  // the sweep remains idempotent.
+  ['#0061a4', '#4f46e5'],
+  ['#d1e4ff', '#e0e7ff'],
+  ['#f0fdf4', '#eef2ff'],
+  ['#f7faf4', '#f4f4f3'],
+  ['#e4e2dc', '#e9e9e7'],
+  ['#93000a', '#b91c1c'],
+  ['#e9e8e4', '#e9e9e7'],
+  ['#e0dfdb', '#e4e4e2'],
+  ['#f9f9f6', '#f4f4f3'],
+  ['#f5f4f0', '#f4f4f3'],
 ];
 
 function walk(dir) {

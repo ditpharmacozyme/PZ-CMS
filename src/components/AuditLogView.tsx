@@ -302,7 +302,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ teamMembers }) => {
                       )}
                       {event.afterValue && (
                         <div>
-                          <span className="text-[#15803d] font-bold block mb-1">After:</span>
+                          <span className="text-[#86efac] font-bold block mb-1">After:</span>
                           <pre className="bg-[#111310] p-2 rounded overflow-x-auto text-[10px] text-[#e0e0e0]">
                             {JSON.stringify(event.afterValue, null, 2)}
                           </pre>

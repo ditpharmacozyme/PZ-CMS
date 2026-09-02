@@ -123,7 +123,7 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
               }}
               className={`min-h-[125px] lg:min-h-[145px] p-2 bg-white flex flex-col justify-between transition-colors relative group cursor-pointer ${
                 !cell.isCurrentMonth ? 'bg-[#f4f4f3]/70 opacity-40' : 'hover:bg-[#f4f4f3]'
-              } ${isToday ? 'bg-[#f7faf4] ring-1.5 ring-[#4f46e5] ring-inset' : ''} ${
+              } ${isToday ? 'bg-[#f4f4f3] ring-1.5 ring-[#4f46e5] ring-inset' : ''} ${
                 touchHoverDate && touchHoverDate === cell.dateStr ? 'ring-2 ring-[#4f46e5] bg-[#eef2ff]' : ''
               }`}
             >

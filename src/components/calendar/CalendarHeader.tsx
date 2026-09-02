@@ -151,7 +151,7 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
         {displayMode === 'week' && (
           <button
             onClick={onDuplicateWeekForward}
-            className="px-3 py-1.5 text-xs font-bold font-label-caps rounded-lg border border-[#e9e9e7] bg-[#f1f1f0] hover:bg-[#e4e2dc] text-[#57574f] flex items-center gap-1.5 transition-all"
+            className="px-3 py-1.5 text-xs font-bold font-label-caps rounded-lg border border-[#e9e9e7] bg-[#f1f1f0] hover:bg-[#e9e9e7] text-[#57574f] flex items-center gap-1.5 transition-all"
             title="Duplicate all posts in visible week to next week"
           >
             <span className="material-symbols-outlined text-sm">content_copy</span>

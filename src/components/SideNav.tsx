@@ -104,7 +104,7 @@ export const SideNav: React.FC<SideNavProps> = ({
         } ${
           isActive
             ? 'nav-item-active font-bold'
-            : 'text-[#5f5f5b] hover:bg-[#e9e8e4]'
+            : 'text-[#5f5f5b] hover:bg-[#e9e9e7]'
         }`}
       >
         <span
@@ -197,7 +197,7 @@ export const SideNav: React.FC<SideNavProps> = ({
                   } ${
                     activeInMore
                       ? 'nav-item-active font-bold'
-                      : 'text-[#5f5f5b] hover:bg-[#e9e8e4]'
+                      : 'text-[#5f5f5b] hover:bg-[#e9e9e7]'
                   }`}
                 >
                   <span
@@ -231,7 +231,7 @@ export const SideNav: React.FC<SideNavProps> = ({
                       className={`w-full flex items-center gap-2.5 px-3 py-2 rounded text-left font-label-caps text-[13px] transition-all min-h-[40px] active:scale-[0.98] ${
                         isActive
                           ? 'nav-item-active text-[#4338ca] font-bold'
-                          : 'text-[#5f5f5b] hover:bg-[#e9e8e4]'
+                          : 'text-[#5f5f5b] hover:bg-[#e9e9e7]'
                       }`}
                     >
                       <span
