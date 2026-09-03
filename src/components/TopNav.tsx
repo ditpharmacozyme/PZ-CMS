@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AppNotification, BrandId, TeamMember } from '../types';
-import { BRANDS } from '../data/brands';
+import { useBrands } from '../context/BrandsContext';
 import { NavTab } from './SideNav';
 import { provisionTeamMemberAccount } from '../utils/storage';
 import { NotificationDrawer } from './NotificationDrawer';
@@ -78,6 +78,7 @@ export const TopNav: React.FC<TopNavProps> = ({
   onRestoreSnapshot
 }) => {
   const confirm = useConfirm();
+  const { brands } = useBrands();
   const [showNotificationsPopover, setShowNotificationsPopover] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
@@ -93,10 +94,10 @@ export const TopNav: React.FC<TopNavProps> = ({
 
   // Brand picker options — same shape as the brand-group list SideNav used
   // to render before Phase 7 moved brand selection up here: an 'all' option
-  // plus every BRANDS entry, independent of page navigation.
+  // plus every brand entry, independent of page navigation.
   const brandOptions: { id: BrandId | 'all'; label: string; shortCode: string; icon: string; logoUrl?: string; color?: string }[] = [
     { id: 'all', label: 'All 5 Brands', shortCode: 'ALL', icon: 'hub' },
-    ...Object.values(BRANDS).map((b) => ({ id: b.id, label: b.name, shortCode: b.shortCode, icon: b.icon, logoUrl: b.logoUrl, color: b.primaryColor }))
+    ...Object.values(brands).map((b) => ({ id: b.id, label: b.name, shortCode: b.shortCode, icon: b.icon, logoUrl: b.logoUrl, color: b.primaryColor }))
   ];
 
   // Team management local state
@@ -183,11 +184,11 @@ export const TopNav: React.FC<TopNavProps> = ({
               aria-haspopup="listbox"
               aria-expanded={showBrandPicker}
             >
-              {selectedBrandFilter !== 'all' && BRANDS[selectedBrandFilter]?.logoUrl && (
+              {selectedBrandFilter !== 'all' && brands[selectedBrandFilter]?.logoUrl && (
                 <span className="w-7 h-7 rounded-md bg-white p-0.5 border border-[#e9e9e7]/60 flex items-center justify-center flex-shrink-0 overflow-hidden">
                   <img
-                    src={BRANDS[selectedBrandFilter].logoUrl}
-                    alt={BRANDS[selectedBrandFilter].name}
+                    src={brands[selectedBrandFilter].logoUrl}
+                    alt={brands[selectedBrandFilter].name}
                     className="w-full h-full object-contain"
                   />
                 </span>
@@ -197,7 +198,7 @@ export const TopNav: React.FC<TopNavProps> = ({
                   <span className="truncate max-w-[42vw] sm:max-w-none">
                     {selectedBrandFilter === 'all'
                       ? 'All 5 Brands'
-                      : (BRANDS[selectedBrandFilter]?.name || 'Pharmacozyme')}
+                      : (brands[selectedBrandFilter]?.name || 'Pharmacozyme')}
                   </span>
                   <span className="material-symbols-outlined text-base text-[#5f5f5b] flex-shrink-0">arrow_drop_down</span>
                 </p>

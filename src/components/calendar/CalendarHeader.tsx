@@ -1,6 +1,5 @@
 import React from 'react';
 import { BrandId } from '../../types';
-import { BRANDS } from '../../data/brands';
 
 interface CalendarHeaderProps {
   displayMode: 'month' | 'week' | 'list';

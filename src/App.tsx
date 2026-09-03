@@ -33,7 +33,7 @@ import {
   isSupabaseConfigured,
 } from './utils/storage';
 import { supabase } from './lib/supabase';
-import { BRANDS } from './data/brands';
+import { useBrands } from './context/BrandsContext';
 import { applyBrandTypography } from './utils/brandTypography';
 import { exportPostsToCSV, exportFullWorkspaceJSON } from './utils/export';
 import { checkAndTriggerAutoBackup, saveRollingBackup, WorkspaceBackupPayload } from './utils/autoBackup';
@@ -103,6 +103,7 @@ export function App() {
   // its own timeout so dismissing one never touches the others.
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const toastTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const { brands } = useBrands();
 
   const dismissToast = (id: string) => {
     const timeout = toastTimeoutsRef.current.get(id);
@@ -240,9 +241,9 @@ export function App() {
 
   // ── Brand Typography Specimen Setup ──────────────────────────────────────────
   useEffect(() => {
-    const activeBrand = selectedBrandFilter === 'all' ? BRANDS.pharmacozyme : BRANDS[selectedBrandFilter];
+    const activeBrand = selectedBrandFilter === 'all' ? brands.pharmacozyme : brands[selectedBrandFilter];
     applyBrandTypography(activeBrand);
-  }, [selectedBrandFilter]);
+  }, [selectedBrandFilter, brands]);
 
   // ── Persist Secondary Data ────────────────────────────────────────────────────
   useEffect(() => { saveStoredTemplates(templates); }, [templates]);

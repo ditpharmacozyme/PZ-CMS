@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Post, BrandId, Platform, SpecType, PostTemplate, ContentBankItem, TeamMember } from '../types';
-import { BRANDS, SPECS } from '../data/brands';
+import { SPECS } from '../data/brands';
+import { useBrands } from '../context/BrandsContext';
 import { todayStr, logTimestamp } from '../utils/date';
 import { uploadImage } from '../utils/uploadImage';
 import { combineAssigneeEmails } from '../utils/postOwnership';
@@ -60,6 +61,7 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
 }) => {
   const { saveDraft, clearDraft } = useSmartMemory();
   const confirm = useConfirm();
+  const { brands } = useBrands();
 
   // Wizard state
   const [step, setStep] = useState(0);
@@ -360,7 +362,7 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
     }
   };
 
-  const brand = BRANDS[brandId];
+  const brand = brands[brandId];
   const activeSpec = SPECS[specType];
 
   const filteredBankItems = contentBank
@@ -431,7 +433,7 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
                 label="Brand"
                 value={brandId}
                 onChange={(v) => setBrandId(v as BrandId)}
-                options={Object.values(BRANDS).map((b) => ({ value: b.id, label: b.name }))}
+                options={Object.values(brands).map((b) => ({ value: b.id, label: b.name }))}
               />
               <SelectField
                 label="Platform"

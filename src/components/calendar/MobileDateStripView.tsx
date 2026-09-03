@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Post, TeamMember } from '../../types';
-import { BRANDS } from '../../data/brands';
+import { useBrands } from '../../context/BrandsContext';
 import { fromDateStr, visibleStripDates } from '../../utils/date';
 import { toggleStage, Stage } from '../../utils/stages';
 import { getDayBrandSummary } from '../../utils/brandConflicts';
@@ -77,9 +77,10 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
   // inside each row's render.
   const assigneeTriggerRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const [openAssigneePostId, setOpenAssigneePostId] = useState<string | null>(null);
+  const { brands } = useBrands();
 
   const selectedDayPosts = postsByDate[selectedMobileDate] || [];
-  const selectedDaySummary = getDayBrandSummary(selectedDayPosts);
+  const selectedDaySummary = getDayBrandSummary(selectedDayPosts, brands);
 
   // When this strip is showing the month/week that contains today, open on
   // today and drop the earlier days -- a past date in the strip only invites
@@ -106,7 +107,7 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
             const isToday = cell.dateStr === todayIso;
             const isDropHover = !!touchDraggedPostId && touchHoverDate === cell.dateStr;
             const dayPosts = cell.dateStr ? postsByDate[cell.dateStr] || [] : [];
-            const summary = getDayBrandSummary(dayPosts);
+            const summary = getDayBrandSummary(dayPosts, brands);
 
             return (
               <button
@@ -133,7 +134,7 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
                       <span
                         key={bId}
                         className="w-1.5 h-1.5 rounded-full"
-                        style={{ backgroundColor: BRANDS[bId]?.primaryColor || '#4f46e5' }}
+                        style={{ backgroundColor: brands[bId]?.primaryColor || '#4f46e5' }}
                       />
                     ))}
                   </div>
@@ -205,7 +206,7 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
           return (
             <div className="space-y-3">
               {dayPosts.map((post: Post) => {
-                const brand = BRANDS[post.brandId];
+                const brand = brands[post.brandId];
                 const primaryAssignee = post.assignees[0] || '';
                 const assigneeMember = teamMembers.find((m) => m.name === primaryAssignee);
                 const initials = assigneeMember

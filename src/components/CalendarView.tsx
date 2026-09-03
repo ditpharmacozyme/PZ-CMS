@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect, useDeferredValue } from 'react';
 import { Post, BrandId, PostStatus, Platform, TeamMember } from '../types';
-import { BRANDS, SPECS } from '../data/brands';
+import { SPECS } from '../data/brands';
+import { useBrands } from '../context/BrandsContext';
 import { toDateStr, todayStr, fromDateStr, mondayFirstDay, startOfWeek, logTimestamp } from '../utils/date';
 import { uploadImage } from '../utils/uploadImage';
 import { parseCalendarCsv, convertCsvRowsToPosts } from '../utils/researchParse';
@@ -111,6 +112,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   showToast
 }) => {
   const confirm = useConfirm();
+  const { brands } = useBrands();
   // The search box stays on the live prop; filtering (and the grid re-render
   // it triggers) reads the deferred value so a fast typist isn't re-filtering
   // every post on every keystroke.
@@ -447,7 +449,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         const brandFallback = selectedBrandFilter === 'all' ? 'pharmacozyme' : selectedBrandFilter;
         const ownerFallback = activeTeammate?.name || teamMembers[0]?.name || '';
         const ownerEmailFallback = activeTeammate?.email || teamMembers[0]?.email || '';
-        const postsToImport = convertCsvRowsToPosts(result.rows, brandFallback, ownerFallback, ownerEmailFallback);
+        const postsToImport = convertCsvRowsToPosts(result.rows, brandFallback, ownerFallback, ownerEmailFallback, brands);
         onBatchAddPosts(postsToImport);
       }
     } catch (err: any) {
@@ -903,7 +905,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               <div className="space-y-2.5">
                 <label className="font-label-caps text-[10px] text-[#5f5f5b] block font-bold">Details</label>
                 {[
-                  ['Brand', <span key="brand" className="font-label-caps font-bold text-[#4f46e5]">{BRANDS[inspectorPost.brandId]?.name}</span>],
+                  ['Brand', <span key="brand" className="font-label-caps font-bold text-[#4f46e5]">{brands[inspectorPost.brandId]?.name}</span>],
                   ['Owner', <span key="owner" className="font-label-caps font-bold">{inspectorPost.assignees.length > 0 ? inspectorPost.assignees.join(', ') : 'Unassigned'}</span>],
                   ['Status', (() => { const st = getPostStatusConfig(inspectorPost); return <span key="status" className="font-label-caps text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1" style={{ backgroundColor: st.bgColor, color: st.color }}>{st.icon && <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>{st.icon}</span>}{st.label}</span>; })()],
                   ['Reminder', <span key="reminder" className="font-code-sm font-bold text-[#4338ca]">{inspectorPost.scheduledDate ? `${inspectorPost.scheduledDate} ${inspectorPost.scheduledTime || '10:00'}` : 'No date set'}</span>],

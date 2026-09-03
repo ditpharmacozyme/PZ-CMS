@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { ContentBankItem, BrandId } from '../types';
-import { BRANDS } from '../data/brands';
+import { useBrands } from '../context/BrandsContext';
 import { todayStr } from '../utils/date';
 import { useConfirm } from './ui/ConfirmDialog';
 
@@ -22,6 +22,7 @@ export const ContentBank: React.FC<ContentBankProps> = ({
   onCreatePostFromCopy
 }) => {
   const confirm = useConfirm();
+  const { brands } = useBrands();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBrand, setSelectedBrand] = useState<BrandId | 'shared' | 'all'>(
     selectedBrandFilter === 'all' ? 'all' : selectedBrandFilter
@@ -192,7 +193,7 @@ export const ContentBank: React.FC<ContentBankProps> = ({
           >
             <option value="all">All Brands / Shared</option>
             <option value="shared">Shared Ecosystem Copy</option>
-            {Object.values(BRANDS).map((b) => (
+            {Object.values(brands).map((b) => (
               <option key={b.id} value={b.id}>
                 {b.name}
               </option>
@@ -226,7 +227,7 @@ export const ContentBank: React.FC<ContentBankProps> = ({
         ) : (
           filteredItems.map((item) => {
             const isShared = item.brandId === 'shared';
-            const brand = !isShared ? BRANDS[item.brandId] : null;
+            const brand = !isShared ? brands[item.brandId] : null;
 
             return (
               <div
@@ -365,7 +366,7 @@ export const ContentBank: React.FC<ContentBankProps> = ({
                   className="w-full bg-[#f4f4f3] border border-[#e9e9e7] p-2.5 font-label-caps text-xs focus:outline-none rounded"
                 >
                   <option value="shared">Shared Ecosystem (All Brands)</option>
-                  {Object.values(BRANDS).map((b) => (
+                  {Object.values(brands).map((b) => (
                     <option key={b.id} value={b.id}>
                       {b.name}
                     </option>

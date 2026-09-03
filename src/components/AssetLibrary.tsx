@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { BrandAsset, BrandId } from '../types';
-import { BRANDS } from '../data/brands';
+import { useBrands } from '../context/BrandsContext';
 import { Modal } from './ui/Modal';
 import { TextField, SelectField } from './ui/Field';
 import { Button } from './ui/Button';
@@ -29,6 +29,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
   onDeleteAsset
 }) => {
   const confirm = useConfirm();
+  const { brands } = useBrands();
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
@@ -192,7 +193,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
       {/* Asset Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {filteredAssets.map((asset) => {
-          const brand = BRANDS[asset.brandId];
+          const brand = brands[asset.brandId];
           return (
             <div
               key={asset.id}
@@ -286,7 +287,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
             label="Brand"
             value={brandId}
             onChange={(v) => setBrandId(v as BrandId)}
-            options={Object.values(BRANDS).map((b) => ({ value: b.id, label: b.name }))}
+            options={Object.values(brands).map((b) => ({ value: b.id, label: b.name }))}
           />
 
           <SelectField

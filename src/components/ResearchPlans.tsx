@@ -1,6 +1,6 @@
 import React, { useMemo, useState, Suspense } from 'react';
 import { ResearchItem, ResearchType, ResearchFileType, BrandId, TeamMember, Post } from '../types';
-import { BRANDS } from '../data/brands';
+import { useBrands } from '../context/BrandsContext';
 import {
   CALENDAR_CSV_HEADERS,
   CalendarCsvRow,
@@ -62,6 +62,7 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
   onBatchAddPosts
 }) => {
   const confirm = useConfirm();
+  const { brands } = useBrands();
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBrand, setSelectedBrand] = useState<BrandId | 'shared' | 'all'>(
@@ -179,7 +180,7 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
       const { data, body } = parseFrontmatter(text);
       setParsedBody(body);
       if (typeof data.title === 'string' && data.title) setTitle(data.title);
-      if (typeof data.brand === 'string' && data.brand) setBrand(mapBrandNameToId(data.brand));
+      if (typeof data.brand === 'string' && data.brand) setBrand(mapBrandNameToId(data.brand, brands));
       if (typeof data.type === 'string' && RESEARCH_TYPES.includes(data.type as ResearchType)) {
         setType(data.type as ResearchType);
       }
@@ -218,7 +219,7 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
 
       // Auto-populate Calendar if requested and supported
       if (fileType === 'csv' && parsedRows && autoPopulateCalendar && onBatchAddPosts) {
-        const posts = convertCsvRowsToPosts(parsedRows, brand, owner.trim());
+        const posts = convertCsvRowsToPosts(parsedRows, brand, owner.trim(), undefined, brands);
         onBatchAddPosts(posts);
       }
 
@@ -287,7 +288,7 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
         >
           <option value="all">All Brands / Shared</option>
           <option value="shared">Shared</option>
-          {Object.values(BRANDS).map((b) => (
+          {Object.values(brands).map((b) => (
             <option key={b.id} value={b.id}>{b.name}</option>
           ))}
         </select>
@@ -342,7 +343,7 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
         ) : (
           filteredItems.map((item) => {
             const isShared = item.brand === 'shared';
-            const brandCfg = !isShared ? BRANDS[item.brand] : null;
+            const brandCfg = !isShared ? brands[item.brand] : null;
 
             return (
               <div
@@ -492,7 +493,7 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
                         className="w-full bg-[#f4f4f3] border border-[#e9e9e7] p-2.5 font-label-caps text-xs focus:outline-none rounded"
                       >
                         <option value="shared">Shared (All Brands)</option>
-                        {Object.values(BRANDS).map((b) => (
+                        {Object.values(brands).map((b) => (
                           <option key={b.id} value={b.id}>{b.name}</option>
                         ))}
                       </select>
@@ -636,7 +637,7 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
                   <button
                     onClick={() => {
                       const rows = (viewingItem.parsedMetadata as any).rows as CalendarCsvRow[];
-                      const posts = convertCsvRowsToPosts(rows, viewingItem.brand, viewingItem.owner);
+                      const posts = convertCsvRowsToPosts(rows, viewingItem.brand, viewingItem.owner, undefined, brands);
                       onBatchAddPosts(posts);
                     }}
                     className="w-full py-2 bg-[#f1f1f0] border border-[#e9e9e7] text-[#4f46e5] font-label-caps text-xs font-bold rounded hover:bg-[#e9e9e7] flex items-center justify-center gap-2 transition-colors shadow-sm"

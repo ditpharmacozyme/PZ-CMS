@@ -1,6 +1,11 @@
 import { BrandConfig, BrandId, SpecConfig, SpecType } from '../types';
 
-export const BRANDS: Record<BrandId, BrandConfig> = {
+/**
+ * The compiled-in defaults. Consumed at runtime through the `useBrands()`
+ * context (see src/context/BrandsContext.tsx); this is the synchronous seed
+ * + per-field fallback via `getStoredBrands()`.
+ */
+export const SEED_BRANDS: Record<BrandId, BrandConfig> = {
   pharmacozyme: {
     id: 'pharmacozyme',
     name: 'Pharmacozyme',
@@ -167,11 +172,3 @@ export const SPECS: Record<SpecType, SpecConfig> = {
     description: 'High-resolution PDF publication template for medical review.'
   }
 };
-
-/**
- * The compiled-in defaults. `BRANDS` is being migrated to the runtime
- * `useBrands()` context (see src/context/BrandsContext.tsx); this alias is the
- * synchronous seed + per-field fallback and is the name that survives once the
- * migration is done.
- */
-export const SEED_BRANDS = BRANDS;

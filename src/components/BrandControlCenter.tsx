@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { BrandId, ContentBankItem } from '../types';
-import { BRANDS } from '../data/brands';
+import { useBrands } from '../context/BrandsContext';
 import { todayStr } from '../utils/date';
 
 interface BrandControlCenterProps {
@@ -19,6 +19,7 @@ export const BrandControlCenter: React.FC<BrandControlCenterProps> = ({
   onSelectBrandFilter,
   onSaveToLibrary
 }) => {
+  const { brands } = useBrands();
   const [activeBrandId, setActiveBrandId] = useState<BrandId>(
     selectedBrandFilter === 'all' ? 'pharmacozyme' : selectedBrandFilter
   );
@@ -31,7 +32,7 @@ export const BrandControlCenter: React.FC<BrandControlCenterProps> = ({
   const [customTopic, setCustomTopic] = useState('');
   const [additionalNotes, setAdditionalNotes] = useState('');
 
-  const brand = BRANDS[activeBrandId];
+  const brand = brands[activeBrandId];
 
   const handleCopy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -171,7 +172,7 @@ OUTPUT FORMAT:
 
       {/* Brand Switcher Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2">
-        {Object.values(BRANDS).map((b) => {
+        {Object.values(brands).map((b) => {
           const isActive = activeBrandId === b.id;
           return (
             <button

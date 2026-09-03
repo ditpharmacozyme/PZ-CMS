@@ -1,6 +1,6 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { PostTemplate, BrandId, Platform } from '../types';
-import { BRANDS } from '../data/brands';
+import { useBrands } from '../context/BrandsContext';
 import { uploadImage } from '../utils/uploadImage';
 import { copyText } from '../utils/clipboard';
 import { useConfirm } from './ui/ConfirmDialog';
@@ -50,6 +50,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
   selectedBrandFilter
 }) => {
   const confirm = useConfirm();
+  const { brands } = useBrands();
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [activeBrandFilter, setActiveBrandFilter] = useState<BrandId | 'all' | 'shared'>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -322,7 +323,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
           >
             Shared Ecosystem
           </button>
-          {Object.entries(BRANDS).map(([id, b]) => (
+          {Object.entries(brands).map(([id, b]) => (
             <button
               key={id}
               onClick={() => setActiveBrandFilter(id as BrandId)}
@@ -368,7 +369,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTemplates.map((template) => {
-            const brand = template.brandId !== 'shared' ? BRANDS[template.brandId] : null;
+            const brand = template.brandId !== 'shared' ? brands[template.brandId] : null;
             const platformIcon = PLATFORM_ICONS[template.platform] || 'photo_camera';
 
             return (
@@ -579,7 +580,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                     className="w-full bg-[#f4f4f3] border border-[#e9e9e7] rounded-lg p-2 text-xs font-label-caps font-bold"
                   >
                     <option value="shared">Shared (All Brands)</option>
-                    {Object.entries(BRANDS).map(([id, b]) => (
+                    {Object.entries(brands).map(([id, b]) => (
                       <option key={id} value={id}>
                         {b.name}
                       </option>
