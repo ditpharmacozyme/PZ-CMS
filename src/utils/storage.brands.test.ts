@@ -16,6 +16,10 @@ describe('rowToBrand', () => {
     expect(b.fonts.display).toBe('D');
   });
 
+  it('returns null for a row id outside the known brand set', () => {
+    expect(rowToBrand({ id: 'not-a-real-brand', name: 'X', short_code: 'X' })).toBeNull();
+  });
+
   it('falls back to SEED_BRANDS for null columns', () => {
     const b = rowToBrand({ id: 'med-q', name: 'MED-Q', short_code: 'MED_Q',
       primary_color: '#111', secondary_color: '#222', accent_color: '#333', surface_color: '#444',

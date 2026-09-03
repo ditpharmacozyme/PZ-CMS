@@ -481,8 +481,11 @@ export function saveStoredCategories(list: TemplateCategory[]): void {
 }
 
 // ─── Brands ────────────────────────────────────────────────────────────
-export function rowToBrand(row: any): BrandConfig {
+export function rowToBrand(row: any): BrandConfig | null {
   const seed = SEED_BRANDS[row.id as BrandId];
+  // `brands.id` is plain text; a row whose id isn't one of the 5 known brands
+  // has no seed to fall back on. Drop it rather than throwing inside .map().
+  if (!seed) return null;
   return {
     id: row.id,
     name: row.name ?? seed.name,
@@ -523,7 +526,7 @@ export async function fetchRemoteBrands(): Promise<BrandConfig[] | null> {
   if (!supabase) return null;
   const { data, error } = await supabase.from('brands').select('*').order('sort_order', { ascending: true });
   if (error) { console.error('[Supabase] fetchRemoteBrands failed:', error.message); return null; }
-  return data.map(rowToBrand);
+  return data.map(rowToBrand).filter((b): b is BrandConfig => b !== null);
 }
 
 export async function upsertRemoteBrand(b: BrandConfig): Promise<void> {
@@ -676,7 +679,15 @@ function rowToAsset(row: any): BrandAsset {
 }
 
 function assetToRow(a: BrandAsset) {
-  return { id: a.id, brand_id: a.brandId, title: a.title, type: a.type, file_type: a.fileType, size: a.size, url: a.url, storage_path: a.storagePath ?? null };
+  // `storage_path` only exists once migration 0021 is applied. Omit the key
+  // entirely for URL-pasted assets (storagePath === undefined) so the emitted
+  // row stays byte-for-byte what it was before this branch — including the
+  // column would make every upsert fail with PGRST204 until 0021 lands.
+  const row: Record<string, unknown> = {
+    id: a.id, brand_id: a.brandId, title: a.title, type: a.type, file_type: a.fileType, size: a.size, url: a.url,
+  };
+  if (a.storagePath !== undefined) row.storage_path = a.storagePath;
+  return row;
 }
 
 export async function fetchRemoteAssets(): Promise<BrandAsset[] | null> {
