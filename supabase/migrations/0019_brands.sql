@@ -19,7 +19,9 @@ create table if not exists brands (
 );
 
 alter table brands enable row level security;
+drop policy if exists "brands authenticated read"  on brands;
 create policy "brands authenticated read"  on brands for select to authenticated using (true);
+drop policy if exists "brands authenticated write" on brands;
 create policy "brands authenticated write" on brands for all    to authenticated using (true) with check (true);
 
 do $$ begin
