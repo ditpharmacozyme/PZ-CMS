@@ -416,14 +416,14 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                   )}
 
                   {template.imagePreview && (
-                    <div className="absolute bottom-2 left-2 flex gap-1.5 opacity-0 pointer-events-none transition-opacity group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto">
+                    <div className="absolute bottom-2 left-2 flex gap-1.5 opacity-100 pointer-events-auto transition-opacity md:opacity-0 md:pointer-events-none md:group-hover:opacity-100 md:group-hover:pointer-events-auto md:focus-within:opacity-100 md:focus-within:pointer-events-auto">
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           window.open(template.imagePreview, '_blank', 'noopener');
                         }}
-                        className="bg-white/95 border border-[#e9e9e7] text-[#1b1c1a] text-[10px] font-label-caps rounded px-2 py-1 flex items-center gap-1 shadow-xs hover:bg-white focus-visible:opacity-100"
+                        className="bg-white/95 border border-[#e9e9e7] text-[#1b1c1a] text-[10px] font-label-caps rounded px-2 py-1.5 md:py-1 flex items-center gap-1 shadow-xs hover:bg-white focus-visible:opacity-100"
                       >
                         <span className="material-symbols-outlined text-[12px]">open_in_new</span>
                         <span>Open image</span>
@@ -434,7 +434,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                           e.stopPropagation();
                           void handleCopyLink(template);
                         }}
-                        className="bg-white/95 border border-[#e9e9e7] text-[#1b1c1a] text-[10px] font-label-caps rounded px-2 py-1 flex items-center gap-1 shadow-xs hover:bg-white focus-visible:opacity-100"
+                        className="bg-white/95 border border-[#e9e9e7] text-[#1b1c1a] text-[10px] font-label-caps rounded px-2 py-1.5 md:py-1 flex items-center gap-1 shadow-xs hover:bg-white focus-visible:opacity-100"
                       >
                         <span className="material-symbols-outlined text-[12px]">
                           {copiedId === template.id ? 'check' : 'link'}

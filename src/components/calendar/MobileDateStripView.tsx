@@ -1,7 +1,7 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Post, TeamMember } from '../../types';
 import { BRANDS } from '../../data/brands';
-import { todayStr, fromDateStr } from '../../utils/date';
+import { fromDateStr, visibleStripDates } from '../../utils/date';
 import { toggleStage, Stage } from '../../utils/stages';
 import { getDayBrandSummary } from '../../utils/brandConflicts';
 import { StatusChip } from '../ui/StatusChip';
@@ -81,12 +81,23 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
   const selectedDayPosts = postsByDate[selectedMobileDate] || [];
   const selectedDaySummary = getDayBrandSummary(selectedDayPosts);
 
+  // When this strip is showing the month/week that contains today, open on
+  // today and drop the earlier days -- a past date in the strip only invites
+  // scheduling into the past by mistake.
+  const hidePastDays = calendarCells.some((c) => c.dateStr === todayIso);
+  const stripCells = visibleStripDates(calendarCells, todayIso, hidePastDays);
+
+  // If the selection was left on a now-hidden past day (e.g. navigated away and
+  // back), snap it forward to today so the day list below stays in range.
+  useEffect(() => {
+    if (hidePastDays && selectedMobileDate < todayIso) onSelectMobileDate(todayIso);
+  }, [hidePastDays, selectedMobileDate, todayIso, onSelectMobileDate]);
+
   return (
     <div className="md:hidden flex flex-col">
       {/* Horizontal Date Strip */}
       <div className="flex overflow-x-auto bg-[#f1f1f0] border-b border-[#e9e9e7] p-2 gap-2 hide-scrollbar">
-        {calendarCells
-          .filter((cell) => cell.dateStr && cell.isCurrentMonth)
+        {stripCells
           .map((cell) => {
             const d = cell.dateStr ? fromDateStr(cell.dateStr) : null;
             const dayShort = d ? d.toLocaleDateString('default', { weekday: 'short' }) : '';
