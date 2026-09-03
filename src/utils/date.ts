@@ -22,6 +22,25 @@ export function todayStr(): string {
   return toDateStr(new Date());
 }
 
+/**
+ * The dates the mobile calendar date-strip should render.
+ *
+ * Always drops filler cells (empty `dateStr`, or days spilling in from an
+ * adjacent month). When `hidePastDays` is set — the strip is showing the month
+ * that contains today — days before `todayIso` are dropped too, so the strip
+ * opens on today rather than the 1st. Past and future months pass `false` and
+ * render in full.
+ */
+export function visibleStripDates<T extends { dateStr: string; isCurrentMonth: boolean }>(
+  cells: T[],
+  todayIso: string,
+  hidePastDays: boolean
+): T[] {
+  return cells.filter(
+    (c) => c.dateStr && c.isCurrentMonth && (!hidePastDays || c.dateStr >= todayIso)
+  );
+}
+
 /** Parse a `YYYY-MM-DD` string as a local Date (not UTC midnight). */
 export function fromDateStr(dateStr: string): Date {
   const [y, m, d] = dateStr.split('-').map(Number);
