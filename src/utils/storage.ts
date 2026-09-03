@@ -1,4 +1,4 @@
-import { Post, PostTemplate, BrandAsset, AppNotification, ContentBankItem, TeamMember, ResearchItem, BrandConfig, BrandId } from '../types';
+import { Post, PostTemplate, TemplateCategory, BrandAsset, AppNotification, ContentBankItem, TeamMember, ResearchItem, BrandConfig, BrandId } from '../types';
 import { INITIAL_POSTS, INITIAL_TEMPLATES, INITIAL_ASSETS, INITIAL_NOTIFICATIONS, INITIAL_CONTENT_BANK } from '../data/initialData';
 import { SEED_BRANDS } from '../data/brands';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
@@ -12,6 +12,7 @@ const RESEARCH_KEY = 'pharmacozyme_brandops_research_v1';
 const TEAM_KEY = 'pharmacozyme_brandops_team_v4'; // Bumped to v4 to evict old fictional defaults
 const TEAM_KEY_LEGACY = 'pharmacozyme_brandops_team_v3'; // Old key — only used for cleanup
 const BRANDS_KEY = 'pharmacozyme_brandops_brands_v1';
+const TEMPLATE_CATEGORIES_KEY = 'pharmacozyme_brandops_template_categories_v1';
 
 // Default PIN is a generic placeholder, not a real credential — change it per-person in Settings after first login.
 const DEFAULT_TEAM_MEMBERS: TeamMember[] = [
@@ -422,6 +423,63 @@ export function subscribeRemoteTemplates(onChange: (templates: PostTemplate[]) =
   return () => { supabase.removeChannel(channel); };
 }
 
+// ─── Template Categories ─────────────────────────────────────────────────
+export function rowToCategory(row: any): TemplateCategory {
+  return { id: row.id, brandId: row.brand_id, name: row.name, sortOrder: row.sort_order ?? 0, createdAt: row.created_at };
+}
+
+export function categoryToRow(c: Omit<TemplateCategory, 'createdAt'>): Record<string, unknown> {
+  return { id: c.id, brand_id: c.brandId, name: c.name, sort_order: c.sortOrder };
+}
+
+export async function fetchRemoteCategories(): Promise<TemplateCategory[] | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.from('template_categories').select('*').order('sort_order', { ascending: true });
+  if (error) { console.error('[Supabase] fetchRemoteCategories failed:', error.message); return null; }
+  return data.map(rowToCategory);
+}
+
+export async function upsertRemoteCategory(c: Omit<TemplateCategory, 'createdAt'>): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from('template_categories').upsert(categoryToRow(c));
+  if (error) console.error('[Supabase] upsertRemoteCategory failed:', error.message);
+}
+
+export async function deleteRemoteCategory(id: string): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from('template_categories').delete().eq('id', id);
+  if (error) console.error('[Supabase] deleteRemoteCategory failed:', error.message);
+}
+
+export function subscribeRemoteCategories(onChange: (c: TemplateCategory[]) => void): () => void {
+  if (!supabase) return () => {};
+  const channel = supabase
+    .channel('template-categories-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'template_categories' }, async () => {
+      const c = await fetchRemoteCategories();
+      if (c) onChange(c);
+    })
+    .subscribe();
+  return () => { supabase.removeChannel(channel); };
+}
+
+export function getStoredCategories(): TemplateCategory[] {
+  try {
+    const raw = localStorage.getItem(TEMPLATE_CATEGORIES_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveStoredCategories(list: TemplateCategory[]): void {
+  try {
+    localStorage.setItem(TEMPLATE_CATEGORIES_KEY, JSON.stringify(list));
+  } catch {
+    /* quota — ignore */
+  }
+}
+
 // ─── Brands ────────────────────────────────────────────────────────────
 export function rowToBrand(row: any): BrandConfig {
   const seed = SEED_BRANDS[row.id as BrandId];
@@ -614,11 +672,11 @@ export function subscribeRemoteResearchItems(onChange: (items: ResearchItem[]) =
 
 // ─── Assets ──────────────────────────────────────────────────────────────
 function rowToAsset(row: any): BrandAsset {
-  return { id: row.id, brandId: row.brand_id, title: row.title, type: row.type, fileType: row.file_type, size: row.size, url: row.url };
+  return { id: row.id, brandId: row.brand_id, title: row.title, type: row.type, fileType: row.file_type, size: row.size, url: row.url, storagePath: row.storage_path ?? undefined };
 }
 
 function assetToRow(a: BrandAsset) {
-  return { id: a.id, brand_id: a.brandId, title: a.title, type: a.type, file_type: a.fileType, size: a.size, url: a.url };
+  return { id: a.id, brand_id: a.brandId, title: a.title, type: a.type, file_type: a.fileType, size: a.size, url: a.url, storage_path: a.storagePath ?? null };
 }
 
 export async function fetchRemoteAssets(): Promise<BrandAsset[] | null> {

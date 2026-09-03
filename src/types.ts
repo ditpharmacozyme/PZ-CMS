@@ -175,13 +175,21 @@ export interface PostTemplate {
   title: string;
   description: string;
   brandId: BrandId | 'shared';
-  category: 'Clinical' | 'Interactive' | 'Editorial' | 'Patient-Facing' | 'Internal';
+  category: string;
   platform: Platform;
   specType: SpecType;
   defaultCaption: string;
   tags: string[];
   imagePreview: string;
   usesCount: number;
+}
+
+export interface TemplateCategory {
+  id: string;
+  brandId: BrandId | 'shared';
+  name: string;
+  sortOrder: number;
+  createdAt: string;
 }
 
 export interface BrandAsset {
@@ -192,6 +200,7 @@ export interface BrandAsset {
   fileType: string;
   size: string;
   url: string;
+  storagePath?: string;
 }
 
 export interface AppNotification {

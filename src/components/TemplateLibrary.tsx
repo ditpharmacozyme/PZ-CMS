@@ -14,16 +14,19 @@ interface TemplateLibraryProps {
   selectedBrandFilter: BrandId | 'all';
 }
 
-// Icons/labels for the real PostTemplate['category'] union -- reused below
-// to build the browse-filter chips so every value the create form can write
-// (including 'Internal') always has a matching chip to find it again.
-const CATEGORY_CHIP_META: Record<PostTemplate['category'], { label: string; icon: string }> = {
+// Icons/labels for the built-in category names. `category` is now a free
+// string (users can add their own via Task 10), so this is a lookup with a
+// fallback rather than an exhaustive map -- see categoryMeta() below.
+const CATEGORY_META: Record<string, { label: string; icon: string }> = {
   Clinical: { label: 'Clinical & Case Studies', icon: 'biotech' },
   Interactive: { label: 'Quizzes & Diagnostics', icon: 'quiz' },
   Editorial: { label: 'Protocols & Alerts', icon: 'newspaper' },
   'Patient-Facing': { label: 'Patient Guides', icon: 'health_and_safety' },
   Internal: { label: 'Internal / Team Use', icon: 'lock' }
 };
+
+const DEFAULT_CATEGORY_ICON = 'sell';
+const categoryMeta = (name: string) => CATEGORY_META[name] ?? { label: name, icon: DEFAULT_CATEGORY_ICON };
 
 const PLATFORM_ICONS: Record<string, string> = {
   instagram: 'photo_camera',
@@ -33,13 +36,11 @@ const PLATFORM_ICONS: Record<string, string> = {
   email: 'mail'
 };
 
-// Exactly the PostTemplate['category'] union (src/types.ts), derived from
-// CATEGORY_CHIP_META above so the create/edit form's options and the browse
-// chips can never drift apart again -- this is what the form is allowed to
-// write, so it must never include a legacy/invalid value.
-const TEMPLATE_FORM_CATEGORIES: { value: PostTemplate['category']; label: string }[] = (
-  Object.keys(CATEGORY_CHIP_META) as PostTemplate['category'][]
-).map((value) => ({ value, label: CATEGORY_CHIP_META[value].label }));
+// The built-in category options offered by the create/edit form. Derived
+// from CATEGORY_META so the form's options and the browse chips stay in
+// sync. User-defined categories (Task 10) will be merged in separately.
+const TEMPLATE_FORM_CATEGORIES: { value: string; label: string }[] =
+  Object.keys(CATEGORY_META).map((value) => ({ value, label: CATEGORY_META[value].label }));
 
 export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
   templates,
@@ -63,7 +64,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
   const titleInputRef = useRef<HTMLInputElement>(null);
   const [newDesc, setNewDesc] = useState('');
   const [newBrandId, setNewBrandId] = useState<BrandId | 'shared'>('shared');
-  const [newCategory, setNewCategory] = useState<PostTemplate['category']>('Clinical');
+  const [newCategory, setNewCategory] = useState<string>('Clinical');
   const [newPlatform, setNewPlatform] = useState<Platform>('instagram');
   const [newCaption, setNewCaption] = useState('');
   const [newImagePreview, setNewImagePreview] = useState('');
@@ -135,22 +136,20 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
     });
   }, [templates, selectedBrandFilter, activeBrandFilter, categoryFilter, searchQuery]);
 
-  // Browse-filter chips: always include every real PostTemplate['category']
-  // union value (so a template can always be found again by category, even
-  // before/without live data in it -- e.g. 'Internal' right after this fix),
-  // plus any distinct category value still present in live `templates` data
-  // that ISN'T a real union member (legacy rows saved before the create-form
-  // bug fix, e.g. old 'Education'/'Carousels'/'Brand-Ops' values) so those
-  // templates stay filterable without letting new ones be written with them.
+  // Browse-filter chips: always include every built-in category name (so a
+  // template can always be found again by category, even before/without live
+  // data in it -- e.g. 'Internal'), plus any other distinct category value
+  // present in live `templates` data (user-defined or legacy values like old
+  // 'Education'/'Carousels'/'Brand-Ops') so those templates stay filterable.
   const categoryChips = useMemo(() => {
-    const knownValues = Object.keys(CATEGORY_CHIP_META) as PostTemplate['category'][];
-    const legacyValues = Array.from(
-      new Set(templates.map((tpl) => tpl.category).filter((c) => !knownValues.includes(c)))
+    const knownValues = Object.keys(CATEGORY_META);
+    const extraValues = Array.from(
+      new Set(templates.map((tpl) => tpl.category).filter((c) => c && !knownValues.includes(c)))
     );
     return [
       { id: 'all', label: 'All Templates', icon: 'grid_view' },
-      ...knownValues.map((id) => ({ id, label: CATEGORY_CHIP_META[id].label, icon: CATEGORY_CHIP_META[id].icon })),
-      ...legacyValues.map((id) => ({ id, label: id, icon: 'label' }))
+      ...knownValues.map((id) => ({ id, label: categoryMeta(id).label, icon: categoryMeta(id).icon })),
+      ...extraValues.map((id) => ({ id, label: id, icon: DEFAULT_CATEGORY_ICON }))
     ];
   }, [templates]);
 
@@ -594,7 +593,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                   </label>
                   <select
                     value={newCategory}
-                    onChange={(e) => setNewCategory(e.target.value as PostTemplate['category'])}
+                    onChange={(e) => setNewCategory(e.target.value)}
                     className="w-full bg-[#f4f4f3] border border-[#e9e9e7] rounded-lg p-2 text-xs font-label-caps font-bold"
                   >
                     {TEMPLATE_FORM_CATEGORIES.map((c) => (
