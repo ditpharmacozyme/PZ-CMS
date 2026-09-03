@@ -126,13 +126,18 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
   // ── Category management (scoped to `catScope`) ──
   // Rename/delete also cascade onto live templates via the Task 8 helpers;
   // only the templates whose `category` actually changed get pushed back up.
-  const handleRename = async (oldName: string, newName: string) => {
+  // Returns false when nothing changed (no-op, or the hook refused a
+  // duplicate-name collision) so the caller can restore the uncontrolled
+  // rename input. The template cascade only runs on a real, persisted rename.
+  const handleRename = async (oldName: string, newName: string): Promise<boolean> => {
     const trimmed = newName.trim();
-    if (!trimmed || trimmed === oldName) return;
-    await renameCategory(catScope, oldName, trimmed);
+    if (!trimmed || trimmed === oldName) return false;
+    const ok = await renameCategory(catScope, oldName, trimmed);
+    if (!ok) return false;
     applyCategoryRename(templates, catScope, oldName, trimmed)
       .filter((t, i) => t !== templates[i])
       .forEach(onUpdateTemplate);
+    return true;
   };
 
   const handleDelete = async (name: string) => {
@@ -143,6 +148,11 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
       tone: 'danger'
     });
     if (!ok) return;
+    // Spec §3.3: the target category's templates reassign to "Uncategorized",
+    // which is auto-created for this scope if absent. addCategory no-ops on a
+    // case-insensitive duplicate, so calling it unconditionally is safe.
+    // Order: create Uncategorized -> reassign templates -> delete old row.
+    await addCategory(catScope, UNCATEGORIZED);
     applyCategoryDelete(templates, catScope, name)
       .filter((t, i) => t !== templates[i])
       .forEach(onUpdateTemplate);
@@ -479,8 +489,12 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                   <input
                     defaultValue={cat.name}
                     onBlur={(e) => {
-                      if (!e.currentTarget.value.trim()) { e.currentTarget.value = cat.name; return; }
-                      void handleRename(cat.name, e.target.value);
+                      const el = e.currentTarget;
+                      if (!el.value.trim()) { el.value = cat.name; return; }
+                      void handleRename(cat.name, el.value).then((ok) => {
+                        // Refused (duplicate name) or no-op — put the old name back.
+                        if (!ok) el.value = cat.name;
+                      });
                     }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') e.currentTarget.blur();

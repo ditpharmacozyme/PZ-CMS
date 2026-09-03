@@ -118,6 +118,9 @@ export const BrandControlCenter: React.FC<BrandControlCenterProps> = ({
 
   const onLogoFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
+    // Clear the input so re-selecting the same file (e.g. after a failed
+    // upload) still fires a change event — matches AssetLibrary's upload zone.
+    e.target.value = '';
     if (!f) return;
     try {
       const { url } = await uploadAsset(f, 'logos');

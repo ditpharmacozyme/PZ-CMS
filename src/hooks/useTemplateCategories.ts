@@ -19,8 +19,12 @@ export function useTemplateCategories() {
   const [categories, setCategories] = useState<TemplateCategory[]>(() => getStoredCategories());
 
   useEffect(() => {
-    fetchRemoteCategories().then((r) => { if (r) setCategories(r); });
-    const unsub = subscribeRemoteCategories((r) => setCategories(r));
+    // `fetchRemoteCategories` returns null on error but [] on a successful
+    // query of an empty/absent table — and [] is truthy. Guard on length so an
+    // empty remote never clobbers locally-added categories (mirrors
+    // BrandsContext's `remote && remote.length` guard).
+    fetchRemoteCategories().then((r) => { if (r && r.length) setCategories(r); });
+    const unsub = subscribeRemoteCategories((r) => { if (r && r.length) setCategories(r); });
     return () => unsub();
   }, []);
 
@@ -42,15 +46,21 @@ export function useTemplateCategories() {
     await upsertRemoteCategory(cat);
   };
 
-  const renameCategory = async (scope: BrandId | 'shared', oldName: string, newName: string) => {
+  /**
+   * Returns true only when the rename actually persisted. Returns false on an
+   * empty new name or a case-insensitive collision with another category in
+   * the same scope — the caller must NOT run its template cascade on false.
+   */
+  const renameCategory = async (scope: BrandId | 'shared', oldName: string, newName: string): Promise<boolean> => {
     const target = categoriesFor(scope).find((c) => c.name.toLowerCase() === oldName.toLowerCase());
-    if (!target || !newName.trim()) return;
+    if (!target || !newName.trim()) return false;
     // Refuse a rename that would collide with another category in this scope
     // (mirrors addCategory's dedupe check).
-    if (categoriesFor(scope).some((c) => c.id !== target.id && c.name.toLowerCase() === newName.trim().toLowerCase())) return;
+    if (categoriesFor(scope).some((c) => c.id !== target.id && c.name.toLowerCase() === newName.trim().toLowerCase())) return false;
     const updated = { ...target, name: newName.trim() };
     setCategories((prev) => prev.map((c) => (c.id === target.id ? updated : c)));
     await upsertRemoteCategory({ id: updated.id, brandId: updated.brandId, name: updated.name, sortOrder: updated.sortOrder });
+    return true;
   };
 
   const deleteCategory = async (scope: BrandId | 'shared', name: string) => {
