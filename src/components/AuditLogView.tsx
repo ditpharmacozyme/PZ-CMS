@@ -18,6 +18,7 @@ const ACTION_COLORS: Record<AuditActionType, { bg: string; text: string; border:
   member_removed: { bg: '#fce8e6', text: '#c5221f', border: '#fad2cf', icon: 'person_remove' },
   research_uploaded: { bg: '#e6f4ea', text: '#137333', border: '#ceead6', icon: 'upload_file' },
   research_deleted: { bg: '#fce8e6', text: '#c5221f', border: '#fad2cf', icon: 'delete' },
+  brand_edited: { bg: '#e8f0fe', text: '#1a73e8', border: '#d2e3fc', icon: 'palette' },
   login: { bg: '#e8f0fe', text: '#1a73e8', border: '#d2e3fc', icon: 'login' },
   logout: { bg: '#f1f3f4', text: '#5f6368', border: '#dadce0', icon: 'logout' }
 };
@@ -165,6 +166,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ teamMembers }) => {
             <option value="post_scheduled">Post Scheduled</option>
             <option value="post_duplicated">Post Duplicated</option>
             <option value="status_changed">Status Changed</option>
+            <option value="brand_edited">Brand Edited</option>
             <option value="login">Login</option>
             <option value="logout">Logout</option>
           </select>
@@ -181,6 +183,7 @@ export const AuditLogView: React.FC<AuditLogViewProps> = ({ teamMembers }) => {
             <option value="template">Templates</option>
             <option value="asset">Assets</option>
             <option value="content_bank">Content Bank</option>
+            <option value="brand">Brands</option>
             <option value="session">Sessions</option>
           </select>
         </div>

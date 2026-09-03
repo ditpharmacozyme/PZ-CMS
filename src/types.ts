@@ -26,6 +26,7 @@ export type AuditActionType =
   | 'member_removed'
   | 'research_uploaded'
   | 'research_deleted'
+  | 'brand_edited'
   | 'login'
   | 'logout';
 
@@ -34,7 +35,7 @@ export interface AuditEvent {
   actorId: string;
   actorName: string;
   actionType: AuditActionType;
-  entityType: 'post' | 'member' | 'template' | 'asset' | 'content_bank' | 'research' | 'session';
+  entityType: 'post' | 'member' | 'template' | 'asset' | 'content_bank' | 'research' | 'session' | 'brand';
   entityId?: string;
   entityTitle?: string;
   beforeValue?: Record<string, unknown>;

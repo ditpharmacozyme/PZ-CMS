@@ -612,7 +612,7 @@ export function App() {
             <TemplateLibrary templates={templates} onUseTemplate={handleUseTemplate} onSaveNewTemplate={handleSaveNewTemplate} onUpdateTemplate={handleUpdateTemplate} onDeleteTemplate={handleDeleteTemplate} selectedBrandFilter={selectedBrandFilter} />
           )}
           {currentTab === 'brand-kit' && (
-            <BrandControlCenter selectedBrandFilter={selectedBrandFilter} onSelectBrandFilter={setSelectedBrandFilter} onSaveToLibrary={handleAddBankItem} />
+            <BrandControlCenter selectedBrandFilter={selectedBrandFilter} onSelectBrandFilter={setSelectedBrandFilter} onSaveToLibrary={handleAddBankItem} showToast={showToast} />
           )}
           {currentTab === 'assets' && (
             <AssetLibrary assets={assets} selectedBrandFilter={selectedBrandFilter} onAddAsset={handleAddAsset} onUpdateAsset={handleUpdateAsset} onDeleteAsset={handleDeleteAsset} />

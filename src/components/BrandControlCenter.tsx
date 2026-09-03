@@ -1,7 +1,48 @@
 import React, { useState, useMemo } from 'react';
-import { BrandId, ContentBankItem } from '../types';
+import { BrandId, BrandConfig, ContentBankItem } from '../types';
 import { useBrands } from '../context/BrandsContext';
 import { todayStr } from '../utils/date';
+import { voiceRulesReducer } from '../utils/voiceRules';
+import { uploadAsset } from '../utils/uploadAsset';
+import { logAuditEvent, buildAuditEvent } from '../utils/audit';
+
+type ShowToast = (
+  message: string,
+  action?: undefined,
+  durationMs?: number,
+  variant?: 'success' | 'error'
+) => void;
+
+/** Plain, JSON-safe snapshot of a brand for the audit trail's before/after values. */
+const brandSnapshot = (b: BrandConfig): Record<string, unknown> => ({
+  name: b.name,
+  shortCode: b.shortCode,
+  tagline: b.tagline,
+  description: b.description,
+  primaryColor: b.primaryColor,
+  secondaryColor: b.secondaryColor,
+  accentColor: b.accentColor,
+  surfaceColor: b.surfaceColor,
+  icon: b.icon,
+  logoUrl: b.logoUrl ?? null,
+  voiceRules: [...b.voiceRules],
+  fonts: { ...b.fonts },
+});
+
+const COLOR_FIELDS: { key: 'primaryColor' | 'secondaryColor' | 'accentColor' | 'surfaceColor'; label: string }[] = [
+  { key: 'primaryColor', label: 'Primary' },
+  { key: 'secondaryColor', label: 'Secondary' },
+  { key: 'accentColor', label: 'Accent' },
+  { key: 'surfaceColor', label: 'Surface' },
+];
+
+const FONT_FIELDS: (keyof BrandConfig['fonts'])[] = ['display', 'headline', 'code', 'body'];
+
+const HEX_RE = /^#[0-9a-fA-F]{6}$/;
+
+const inputCls =
+  'w-full bg-[#f4f4f3] border border-[#e9e9e7] rounded-lg p-2.5 text-xs text-[#1b1c1a] focus:ring-1 focus:ring-[#4f46e5] focus:outline-none';
+const fieldLabelCls = 'font-label-caps text-[10px] text-[#5f5f5b] font-bold block mb-1.5';
 
 interface BrandControlCenterProps {
   selectedBrandFilter: BrandId | 'all';
@@ -9,6 +50,9 @@ interface BrandControlCenterProps {
   /** Persist a tuned prompt into the Content Bank (source 'AI Prompt') so it
    *  survives the next tweak -- the section otherwise only offered Copy. */
   onSaveToLibrary?: (item: ContentBankItem) => void;
+  /** Toast callback from App. Optional so the panel degrades gracefully when
+   *  rendered in isolation (tests, Storybook). */
+  showToast?: ShowToast;
 }
 
 type PromptGoal = 'carousel' | 'quiz' | 'flashcard' | 'clinical-breakdown' | 'weekly-digest' | 'patient-guide';
@@ -17,9 +61,10 @@ type PromptTone = 'clinical-rigor' | 'engaging-educational' | 'urgent-diagnostic
 export const BrandControlCenter: React.FC<BrandControlCenterProps> = ({
   selectedBrandFilter,
   onSelectBrandFilter,
-  onSaveToLibrary
+  onSaveToLibrary,
+  showToast
 }) => {
-  const { brands } = useBrands();
+  const { brands, updateBrand } = useBrands();
   const [activeBrandId, setActiveBrandId] = useState<BrandId>(
     selectedBrandFilter === 'all' ? 'pharmacozyme' : selectedBrandFilter
   );
@@ -33,6 +78,54 @@ export const BrandControlCenter: React.FC<BrandControlCenterProps> = ({
   const [additionalNotes, setAdditionalNotes] = useState('');
 
   const brand = brands[activeBrandId];
+
+  // ── Brand kit edit panel state ──────────────────────────────────────────────
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState<BrandConfig | null>(null);
+
+  const startEdit = () => {
+    setDraft({ ...brand, voiceRules: [...brand.voiceRules], fonts: { ...brand.fonts } });
+    setIsEditing(true);
+  };
+  const cancelEdit = () => {
+    setDraft(null);
+    setIsEditing(false);
+  };
+  const patch = (p: Partial<BrandConfig>) => setDraft((d) => (d ? { ...d, ...p } : d));
+  const patchVoiceRules = (action: Parameters<typeof voiceRulesReducer>[1]) =>
+    setDraft((d) => (d ? { ...d, voiceRules: voiceRulesReducer(d.voiceRules, action) } : d));
+
+  const saveEdit = async () => {
+    if (!draft) return;
+    logAuditEvent(
+      buildAuditEvent({
+        actorId: 'brand-kit',
+        actorName: 'Brand Kit',
+        actionType: 'brand_edited',
+        entityType: 'brand',
+        entityId: draft.id,
+        entityTitle: draft.name,
+        beforeValue: brandSnapshot(brand),
+        afterValue: brandSnapshot(draft),
+      })
+    );
+    await updateBrand(draft.id, draft);
+    // Keep the panel open so the saved values stay visible for further tweaks;
+    // Cancel is the way out (and discards).
+    setDraft((d) => (d ? { ...d } : d));
+    showToast?.(`${draft.name} brand kit updated.`, undefined, 3000, 'success');
+  };
+
+  const onLogoFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    try {
+      const { url } = await uploadAsset(f, 'logos');
+      patch({ logoUrl: url });
+    } catch (err) {
+      showToast?.(err instanceof Error ? err.message : 'Upload failed', undefined, 4000, 'error');
+    }
+  };
 
   const handleCopy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -167,6 +260,19 @@ OUTPUT FORMAT:
             <span className="material-symbols-outlined text-sm">grid_3x3</span>
             <span>Spec Grid: {specGridActive ? 'ON' : 'OFF'}</span>
           </button>
+
+          <button
+            onClick={isEditing ? cancelEdit : startEdit}
+            aria-label={isEditing ? 'Close editor' : 'Edit brand kit'}
+            className={`px-3 py-1.5 font-label-caps text-xs rounded-lg border transition-all flex items-center gap-1.5 font-bold ${
+              isEditing
+                ? 'bg-white text-[#5f5f5b] border-[#e9e9e7] hover:bg-[#f1f1f0]'
+                : 'bg-[#1b1c1a] text-white border-[#1b1c1a] hover:bg-[#4f46e5] shadow-xs'
+            }`}
+          >
+            <span className="material-symbols-outlined text-sm" aria-hidden="true">{isEditing ? 'close' : 'tune'}</span>
+            <span>{isEditing ? 'Close editor' : 'Edit brand kit'}</span>
+          </button>
         </div>
       </div>
 
@@ -203,6 +309,205 @@ OUTPUT FORMAT:
           );
         })}
       </div>
+
+      {/* ── Edit brand kit panel ── */}
+      {isEditing && draft && (
+        <div className="bg-white border border-[#4f46e5]/30 rounded-xl shadow-xs p-6 space-y-6">
+          <div className="flex items-center justify-between pb-3 border-b border-[#efefed]">
+            <div>
+              <h3 className="font-display-xl text-xl font-bold text-[#1b1c1a]">
+                Edit {brand.name} Brand Kit
+              </h3>
+              <p className="text-xs text-[#5f5f5b]">
+                Changes persist for this session and sync to Supabase when available.
+              </p>
+            </div>
+          </div>
+
+          {/* Identity */}
+          <div className="space-y-4">
+            <h4 className="font-label-caps text-xs text-[#4338ca] font-bold tracking-widest">Identity</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className={fieldLabelCls} htmlFor="brand-name">Name</label>
+                <input id="brand-name" type="text" className={inputCls} value={draft.name}
+                  onChange={(e) => patch({ name: e.target.value })} />
+              </div>
+              <div>
+                <label className={fieldLabelCls} htmlFor="brand-shortcode">Short code</label>
+                <input id="brand-shortcode" type="text" className={inputCls} value={draft.shortCode}
+                  onChange={(e) => patch({ shortCode: e.target.value })} />
+              </div>
+              <div>
+                <label className={fieldLabelCls} htmlFor="brand-tagline">Tagline</label>
+                <input id="brand-tagline" type="text" className={inputCls} value={draft.tagline}
+                  onChange={(e) => patch({ tagline: e.target.value })} />
+              </div>
+            </div>
+            <div>
+              <label className={fieldLabelCls} htmlFor="brand-description">Description</label>
+              <textarea id="brand-description" rows={2} className={`${inputCls} resize-none`} value={draft.description}
+                onChange={(e) => patch({ description: e.target.value })} />
+            </div>
+          </div>
+
+          {/* Colours */}
+          <div className="space-y-4">
+            <h4 className="font-label-caps text-xs text-[#4338ca] font-bold tracking-widest">Colours</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {COLOR_FIELDS.map(({ key, label }) => {
+                const val = draft[key];
+                return (
+                  <div key={key} className="p-3 bg-[#f4f4f3] border border-[#efefed] rounded-lg space-y-2">
+                    <span className={fieldLabelCls}>{label}</span>
+                    <div
+                      className="h-10 w-full rounded-md border border-[#e9e9e7]/60"
+                      style={{ backgroundColor: HEX_RE.test(val) ? val : 'transparent' }}
+                    />
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        aria-label={`${label} colour picker`}
+                        className="h-8 w-9 flex-shrink-0 rounded border border-[#e9e9e7] bg-white cursor-pointer"
+                        value={HEX_RE.test(val) ? val.toLowerCase() : '#000000'}
+                        onChange={(e) => patch({ [key]: e.target.value } as Partial<BrandConfig>)}
+                      />
+                      <input
+                        type="text"
+                        aria-label={`${label} colour hex`}
+                        className={`${inputCls} font-code-sm`}
+                        value={val}
+                        onChange={(e) => patch({ [key]: e.target.value } as Partial<BrandConfig>)}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Logo */}
+          <div className="space-y-4">
+            <h4 className="font-label-caps text-xs text-[#4338ca] font-bold tracking-widest">Logo</h4>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="w-16 h-16 rounded-lg bg-white p-1.5 border border-[#e9e9e7] flex items-center justify-center flex-shrink-0 overflow-hidden">
+                {draft.logoUrl
+                  ? <img src={draft.logoUrl} alt={`${draft.name} logo`} className="w-full h-full object-contain" />
+                  : <span className="material-symbols-outlined text-[#5f5f5b]">image</span>}
+              </div>
+              <div className="flex-1 space-y-2">
+                <input
+                  type="file"
+                  accept="image/*"
+                  aria-label="Upload logo image"
+                  onChange={onLogoFile}
+                  className="block w-full text-xs text-[#5f5f5b] file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border file:border-[#e9e9e7] file:bg-white file:text-[#4f46e5] file:font-bold file:text-xs"
+                />
+                <input
+                  type="text"
+                  aria-label="Logo URL"
+                  placeholder="…or paste a logo URL"
+                  className={inputCls}
+                  value={draft.logoUrl ?? ''}
+                  onChange={(e) => patch({ logoUrl: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Voice rules */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="font-label-caps text-xs text-[#4338ca] font-bold tracking-widest">Voice rules</h4>
+              <button
+                onClick={() => patchVoiceRules({ type: 'add' })}
+                className="px-3 py-1.5 bg-white border border-[#e9e9e7] hover:bg-[#eef2ff] text-[#4f46e5] font-label-caps text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5"
+              >
+                <span className="material-symbols-outlined text-sm">add</span>
+                <span>Add rule</span>
+              </button>
+            </div>
+            <div className="space-y-2">
+              {draft.voiceRules.map((rule, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    aria-label={`Voice rule ${i + 1} text`}
+                    className={inputCls}
+                    value={rule}
+                    onChange={(e) => patchVoiceRules({ type: 'edit', index: i, text: e.target.value })}
+                  />
+                  <button
+                    aria-label={`Move voice rule ${i + 1} up`}
+                    disabled={i === 0}
+                    onClick={() => patchVoiceRules({ type: 'move', from: i, to: i - 1 })}
+                    className="p-1.5 text-[#5f5f5b] hover:text-[#4f46e5] hover:bg-[#eef2ff] rounded-md transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
+                  >
+                    <span className="material-symbols-outlined text-sm">arrow_upward</span>
+                  </button>
+                  <button
+                    aria-label={`Move voice rule ${i + 1} down`}
+                    disabled={i === draft.voiceRules.length - 1}
+                    onClick={() => patchVoiceRules({ type: 'move', from: i, to: i + 1 })}
+                    className="p-1.5 text-[#5f5f5b] hover:text-[#4f46e5] hover:bg-[#eef2ff] rounded-md transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
+                  >
+                    <span className="material-symbols-outlined text-sm">arrow_downward</span>
+                  </button>
+                  <button
+                    aria-label={`Remove voice rule ${i + 1}`}
+                    onClick={() => patchVoiceRules({ type: 'remove', index: i })}
+                    className="p-1.5 text-[#dc2626] hover:bg-[#dc2626]/10 rounded-md transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-sm">delete</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Fonts */}
+          <div className="space-y-4">
+            <h4 className="font-label-caps text-xs text-[#4338ca] font-bold tracking-widest">Fonts</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {FONT_FIELDS.map((fk) => (
+                <div key={fk}>
+                  <label className={fieldLabelCls} htmlFor={`brand-font-${fk}`}>{fk}</label>
+                  <input
+                    id={`brand-font-${fk}`}
+                    type="text"
+                    aria-label={`${fk} font label`}
+                    className={inputCls}
+                    value={draft.fonts[fk]}
+                    onChange={(e) => patch({ fonts: { ...draft.fonts, [fk]: e.target.value } })}
+                  />
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-[#5f5f5b] italic">
+              Reference labels for the team — these do not re-skin the app.
+            </p>
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#efefed]">
+            <button
+              onClick={cancelEdit}
+              aria-label="Cancel"
+              className="px-4 py-2 bg-white border border-[#e9e9e7] hover:bg-[#f1f1f0] text-[#5f5f5b] font-label-caps text-xs font-bold rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={saveEdit}
+              aria-label="Save"
+              className="px-4 py-2 bg-[#4f46e5] hover:bg-[#4338ca] text-white font-label-caps text-xs font-bold rounded-lg transition-colors flex items-center gap-2 shadow-xs"
+            >
+              <span className="material-symbols-outlined text-sm" aria-hidden="true">save</span>
+              <span>Save</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Section 1: AI Prompting Hub (Hero Feature) ── */}
       <div className="bg-white border border-[#efefed] rounded-xl shadow-xs p-6 space-y-6">
