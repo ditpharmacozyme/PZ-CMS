@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 import { BrandsProvider, useBrands } from './BrandsContext';
+import { upsertRemoteBrand } from '../utils/storage';
 
 vi.mock('../utils/storage', async (orig) => {
   const actual = await orig<typeof import('../utils/storage')>();
@@ -40,5 +41,8 @@ describe('useBrands', () => {
     const btn = screen.getByRole('button');
     await act(async () => { btn.click(); });
     expect(btn.textContent).toBe('#000000');
+    expect(upsertRemoteBrand).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'med-q', primaryColor: '#000000' }),
+    );
   });
 });

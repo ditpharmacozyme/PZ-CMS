@@ -1,6 +1,5 @@
-import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { BrandConfig, BrandId } from '../types';
-import { SEED_BRANDS } from '../data/brands';
 import {
   getStoredBrands, saveStoredBrands, fetchRemoteBrands, upsertRemoteBrand, subscribeRemoteBrands,
 } from '../utils/storage';
@@ -38,6 +37,9 @@ export const BrandsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   useEffect(() => { saveStoredBrands(brands); }, [brands]);
 
+  const brandsRef = useRef(brands);
+  useEffect(() => { brandsRef.current = brands; }, [brands]);
+
   const getBrand = useCallback(
     (id: BrandId | 'all' | 'shared') =>
       (id === 'all' || id === 'shared' ? brands.pharmacozyme : brands[id] ?? brands.pharmacozyme),
@@ -45,12 +47,9 @@ export const BrandsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   );
 
   const updateBrand = useCallback(async (id: BrandId, patch: Partial<BrandConfig>) => {
-    let updated: BrandConfig | undefined;
-    setBrands((prev) => {
-      updated = { ...prev[id], ...patch };
-      return { ...prev, [id]: updated };
-    });
-    if (updated) await upsertRemoteBrand(updated);
+    const updated = { ...brandsRef.current[id], ...patch };
+    setBrands((prev) => ({ ...prev, [id]: updated }));
+    await upsertRemoteBrand(updated);
   }, []);
 
   const value = useMemo(() => ({ brands, getBrand, updateBrand }), [brands, getBrand, updateBrand]);
