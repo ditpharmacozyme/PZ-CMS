@@ -45,6 +45,9 @@ export function useTemplateCategories() {
   const renameCategory = async (scope: BrandId | 'shared', oldName: string, newName: string) => {
     const target = categoriesFor(scope).find((c) => c.name.toLowerCase() === oldName.toLowerCase());
     if (!target || !newName.trim()) return;
+    // Refuse a rename that would collide with another category in this scope
+    // (mirrors addCategory's dedupe check).
+    if (categoriesFor(scope).some((c) => c.id !== target.id && c.name.toLowerCase() === newName.trim().toLowerCase())) return;
     const updated = { ...target, name: newName.trim() };
     setCategories((prev) => prev.map((c) => (c.id === target.id ? updated : c)));
     await upsertRemoteCategory({ id: updated.id, brandId: updated.brandId, name: updated.name, sortOrder: updated.sortOrder });

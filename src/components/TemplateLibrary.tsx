@@ -54,13 +54,23 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
   const confirm = useConfirm();
   const { brands } = useBrands();
   const { categoriesFor, addCategory, renameCategory, deleteCategory, reorderCategories } = useTemplateCategories();
-  // Category scope for the browse chips + "Manage categories" panel: the
-  // app-selected brand, or 'shared' when the app filter is "all".
-  const catScope = toCatScope(selectedBrandFilter);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [showManageCategories, setShowManageCategories] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [activeBrandFilter, setActiveBrandFilter] = useState<BrandId | 'all' | 'shared'>('all');
+
+  // Category scope for the browse chips + "Manage categories" panel: follows
+  // the in-view brand-selector tabs (`activeBrandFilter`), NOT the app-level
+  // prop -- those tabs are the control the user is actually operating here.
+  // 'all'/'shared' both map to the 'shared' scope.
+  const catScope = toCatScope(activeBrandFilter);
+
+  // Switching the brand-tab scope: also drop the active category chip, since
+  // it may not exist in the new scope (which would filter the grid to empty).
+  const selectBrandTab = (next: BrandId | 'all' | 'shared') => {
+    setActiveBrandFilter(next);
+    setCategoryFilter('all');
+  };
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showCreateTemplateModal, setShowCreateTemplateModal] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<PostTemplate | null>(null);
@@ -370,7 +380,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
         {/* Brand Selector Tabs */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0">
           <button
-            onClick={() => setActiveBrandFilter('all')}
+            onClick={() => selectBrandTab('all')}
             className={`px-3 py-1.5 rounded-lg text-xs font-label-caps font-bold transition-all cursor-pointer whitespace-nowrap ${
               activeBrandFilter === 'all'
                 ? 'bg-[#4f46e5] text-white shadow-xs'
@@ -380,7 +390,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
             All Brands
           </button>
           <button
-            onClick={() => setActiveBrandFilter('shared')}
+            onClick={() => selectBrandTab('shared')}
             className={`px-3 py-1.5 rounded-lg text-xs font-label-caps font-bold transition-all cursor-pointer whitespace-nowrap ${
               activeBrandFilter === 'shared'
                 ? 'bg-[#4f46e5] text-white shadow-xs'
@@ -392,7 +402,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
           {Object.entries(brands).map(([id, b]) => (
             <button
               key={id}
-              onClick={() => setActiveBrandFilter(id as BrandId)}
+              onClick={() => selectBrandTab(id as BrandId)}
               className={`px-3 py-1.5 rounded-lg text-xs font-label-caps font-bold transition-all cursor-pointer whitespace-nowrap ${
                 activeBrandFilter === id
                   ? 'bg-[#4f46e5] text-white shadow-xs'
@@ -444,7 +454,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
               <h3 className="font-headline-md text-sm font-bold text-[#1b1c1a]">Manage Categories</h3>
               <p className="font-body-md text-[11px] text-[#5f5f5b]">
                 Scope: <span className="font-bold">{catScopeLabel}</span>
-                {selectedBrandFilter === 'all' && ' (switch the app brand filter to manage a specific brand)'}
+                {catScope === 'shared' && ' (pick a brand tab above to manage that brand’s categories)'}
               </p>
             </div>
             <button
@@ -468,7 +478,10 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                   </span>
                   <input
                     defaultValue={cat.name}
-                    onBlur={(e) => { void handleRename(cat.name, e.target.value); }}
+                    onBlur={(e) => {
+                      if (!e.currentTarget.value.trim()) { e.currentTarget.value = cat.name; return; }
+                      void handleRename(cat.name, e.target.value);
+                    }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') e.currentTarget.blur();
                       if (e.key === 'Escape') { e.currentTarget.value = cat.name; e.currentTarget.blur(); }
