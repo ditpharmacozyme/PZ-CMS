@@ -3,6 +3,7 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 import { BrandsProvider } from '../context/BrandsContext';
 import { BrandControlCenter } from './BrandControlCenter';
 import { upsertRemoteBrand } from '../utils/storage';
+import { logAuditEvent } from '../utils/audit';
 
 vi.mock('../utils/storage', async (orig) => {
   const actual = await orig<typeof import('../utils/storage')>();
@@ -14,8 +15,17 @@ vi.mock('../utils/storage', async (orig) => {
   };
 });
 
+vi.mock('../utils/audit', async (orig) => {
+  const actual = await orig<typeof import('../utils/audit')>();
+  return {
+    ...actual,
+    logAuditEvent: vi.fn().mockResolvedValue(undefined),
+  };
+});
+
 beforeEach(() => {
   localStorage.clear();
+  vi.mocked(logAuditEvent).mockClear();
 });
 
 describe('BrandControlCenter — edit brand kit panel', () => {
@@ -73,5 +83,41 @@ describe('BrandControlCenter — edit brand kit panel', () => {
 
     expect((screen.getByLabelText(/^voice rule 1 text$/i) as HTMLInputElement).value).toBe(secondRuleBefore);
     expect((screen.getByLabelText(/^voice rule 2 text$/i) as HTMLInputElement).value).toBe(firstRuleBefore);
+  });
+
+  it('closes the editor when the brand tab is switched mid-edit', async () => {
+    render(
+      <BrandsProvider>
+        <BrandControlCenter selectedBrandFilter="pharmacozyme" onSelectBrandFilter={() => {}} />
+      </BrandsProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /edit brand kit/i }));
+    expect(screen.getByLabelText(/primary colour hex/i)).toBeInTheDocument();
+
+    // Switch to another brand while the editor is open.
+    fireEvent.click(screen.getByRole('button', { name: /MED-Q/i }));
+
+    expect(screen.queryByLabelText(/primary colour hex/i)).toBeNull();
+  });
+
+  it('emits a brand_edited audit event on Save', async () => {
+    render(
+      <BrandsProvider>
+        <BrandControlCenter selectedBrandFilter="pharmacozyme" onSelectBrandFilter={() => {}} />
+      </BrandsProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /edit brand kit/i }));
+    fireEvent.change(screen.getByLabelText(/primary colour hex/i), { target: { value: '#123456' } });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
+    });
+
+    expect(logAuditEvent).toHaveBeenCalledTimes(1);
+    expect(logAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ actionType: 'brand_edited', entityType: 'brand', entityId: 'pharmacozyme' }),
+    );
   });
 });

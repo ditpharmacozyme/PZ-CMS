@@ -110,9 +110,9 @@ export const BrandControlCenter: React.FC<BrandControlCenterProps> = ({
       })
     );
     await updateBrand(draft.id, draft);
-    // Keep the panel open so the saved values stay visible for further tweaks;
-    // Cancel is the way out (and discards).
-    setDraft((d) => (d ? { ...d } : d));
+    // Panel stays open so the saved values remain visible for further tweaks;
+    // the visible refresh comes from updateBrand updating context. Cancel is the
+    // way out (and discards).
     showToast?.(`${draft.name} brand kit updated.`, undefined, 3000, 'success');
   };
 
@@ -284,6 +284,9 @@ OUTPUT FORMAT:
             <button
               key={b.id}
               onClick={() => {
+                // Close the editor on brand switch — otherwise the panel keeps
+                // binding (and Save keeps targeting) the brand we navigated away from.
+                if (isEditing) cancelEdit();
                 setActiveBrandId(b.id);
                 onSelectBrandFilter(b.id);
               }}
