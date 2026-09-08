@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Post, TeamMember } from '../../types';
-import { BRANDS } from '../../data/brands';
+import { useBrands } from '../../context/BrandsContext';
 import { toDateStr, todayStr } from '../../utils/date';
 import { getDayBrandSummary } from '../../utils/brandConflicts';
 import { PostCard } from './PostCard';
@@ -50,6 +50,7 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
 }) => {
   // Period navigation lives once, in CalendarHeader -- this view used to
   // render its own second prev / This Week / next cluster on top of it.
+  const { brands } = useBrands();
   const [expandedDate, setExpandedDate] = useState<string | null>(null);
 
   return (
@@ -81,7 +82,7 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
           dayDate.setDate(dayDate.getDate() + i);
           const dateStr = toDateStr(dayDate);
           const dayPosts = postsByDate[dateStr] || [];
-          const brandSummary = getDayBrandSummary(dayPosts);
+          const brandSummary = getDayBrandSummary(dayPosts, brands);
           const isToday = dateStr === todayIso;
           const isExpanded = expandedDate === dateStr;
           const visiblePosts = isExpanded ? dayPosts : dayPosts.slice(0, WEEK_CAP);
@@ -120,7 +121,7 @@ export const CalendarWeekView: React.FC<CalendarWeekViewProps> = ({
                         <span
                           key={bId}
                           className="w-2 h-2 rounded-full ring-1 ring-white"
-                          style={{ backgroundColor: BRANDS[bId]?.primaryColor || '#4f46e5' }}
+                          style={{ backgroundColor: brands[bId]?.primaryColor || '#4f46e5' }}
                         />
                       ))}
                     </div>

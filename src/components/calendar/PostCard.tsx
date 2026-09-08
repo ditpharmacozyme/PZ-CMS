@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Post, TeamMember } from '../../types';
-import { BRANDS } from '../../data/brands';
+import { useBrands } from '../../context/BrandsContext';
 import { getPostStatusConfig } from '../../utils/statusConfig';
 import { toggleStage, Stage } from '../../utils/stages';
 import { StatusChip } from '../ui/StatusChip';
@@ -54,7 +54,8 @@ export const PostCard: React.FC<PostCardProps> = ({
   teamMembers = [],
   activeTeammate = null
 }) => {
-  const brand = BRANDS[post.brandId];
+  const { brands } = useBrands();
+  const brand = brands[post.brandId];
   const statusCfg = getPostStatusConfig(post);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const assigneeTriggerRef = useRef<HTMLButtonElement>(null);

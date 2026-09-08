@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { getDayBrandSummary, getPostTimeConflict } from './brandConflicts';
 import { Post } from '../types';
+import { SEED_BRANDS } from '../data/brands';
 
 const basePost: Post = {
   id: 'p1',
@@ -22,7 +23,7 @@ const basePost: Post = {
 
 describe('brandConflicts utility', () => {
   it('returns empty summary when dayPosts is empty', () => {
-    const summary = getDayBrandSummary([]);
+    const summary = getDayBrandSummary([], SEED_BRANDS);
     expect(summary.brandCount).toBe(0);
     expect(summary.hasCollision).toBe(false);
     expect(summary.timeClashes).toHaveLength(0);
@@ -36,7 +37,7 @@ describe('brandConflicts utility', () => {
       title: 'MedQ Post'
     };
 
-    const summary = getDayBrandSummary([basePost, post2]);
+    const summary = getDayBrandSummary([basePost, post2], SEED_BRANDS);
     expect(summary.brandCount).toBe(2);
     expect(summary.hasCollision).toBe(true);
     expect(summary.distinctBrandIds).toContain('pharmacozyme');
@@ -51,7 +52,7 @@ describe('brandConflicts utility', () => {
       scheduledTime: '10:00 AM'
     };
 
-    const summary = getDayBrandSummary([basePost, post2]);
+    const summary = getDayBrandSummary([basePost, post2], SEED_BRANDS);
     expect(summary.timeClashes).toHaveLength(1);
     expect(summary.timeClashes[0].time).toBe('10:00 AM');
     expect(summary.timeClashes[0].posts).toHaveLength(2);

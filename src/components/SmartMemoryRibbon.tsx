@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Post, BrandId } from '../types';
-import { BRANDS } from '../data/brands';
+import { useBrands } from '../context/BrandsContext';
 import { PostDraft } from '../hooks/useSmartMemory';
 
 interface SmartMemoryRibbonProps {
@@ -18,6 +18,7 @@ export const SmartMemoryRibbon: React.FC<SmartMemoryRibbonProps> = ({
   recentPosts,
   onSelectPost,
 }) => {
+  const { brands } = useBrands();
   const [collapsed, setCollapsed] = useState(false);
 
   // If there's neither a draft nor recent posts, don't take up space
@@ -65,7 +66,7 @@ export const SmartMemoryRibbon: React.FC<SmartMemoryRibbonProps> = ({
               Recent:
             </span>
             {recentPosts.slice(0, 4).map((post) => {
-              const brand = BRANDS[post.brandId];
+              const brand = brands[post.brandId];
               return (
                 <button
                   key={post.id}

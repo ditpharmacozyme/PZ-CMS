@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Post, BrandId, TeamMember } from '../../types';
-import { BRANDS } from '../../data/brands';
+import { useBrands } from '../../context/BrandsContext';
 import { logTimestamp } from '../../utils/date';
 import { AssigneePopover } from '../AssigneePopover';
 import { buildQuickPost } from '../../utils/quickPost';
@@ -52,6 +52,7 @@ export const IdeaBacklog: React.FC<IdeaBacklogProps> = ({
   isSelectMode = false,
   onToggleSelect
 }) => {
+  const { brands } = useBrands();
   const [newBacklogTitle, setNewBacklogTitle] = useState('');
   const [isDesktopCollapsed, setIsDesktopCollapsed] = useState(false);
 
@@ -152,7 +153,7 @@ export const IdeaBacklog: React.FC<IdeaBacklogProps> = ({
           </div>
         ) : (
           filteredBacklogPosts.map((post) => {
-            const brand = BRANDS[post.brandId];
+            const brand = brands[post.brandId];
             const isTouchDraggingThis = touchDraggedPostId === post.id;
             const isSelected = selectedPostIds.has(post.id);
             return (

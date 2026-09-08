@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Post, TeamMember } from '../../types';
-import { BRANDS } from '../../data/brands';
+import { useBrands } from '../../context/BrandsContext';
 import { todayStr } from '../../utils/date';
 import { toggleStage, Stage } from '../../utils/stages';
 import { getPostTimeConflict } from '../../utils/brandConflicts';
@@ -37,6 +37,7 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
   activeTeammate = null
 }) => {
   const confirm = useConfirm();
+  const { brands } = useBrands();
   // Only one row's assignee popover can be open at a time, so a single Map
   // of trigger refs (keyed by post id) plus one shared popover instance
   // avoids calling hooks inside the per-row renderPostRow closure, which
@@ -68,7 +69,7 @@ export const CalendarListView: React.FC<CalendarListViewProps> = ({
   };
 
   const renderPostRow = (post: Post, isPast = false) => {
-    const brand = BRANDS[post.brandId];
+    const brand = brands[post.brandId];
     const isSelected = selectedPostIds.has(post.id);
     const isToday = post.scheduledDate === today;
     const timeConflict = getPostTimeConflict(post, filteredCalendarPosts);

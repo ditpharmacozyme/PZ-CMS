@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { BRANDS } from '../data/brands';
+import { useBrands } from '../context/BrandsContext';
 import { BrandId } from '../types';
 
 interface QuickAddBarProps {
@@ -24,6 +24,7 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({
   selectedBrandFilter,
   activeTeammateName,
 }) => {
+  const { brands } = useBrands();
   const [title, setTitle] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const restoreFocusRef = useRef<HTMLElement | null>(null);
@@ -40,7 +41,7 @@ export const QuickAddBar: React.FC<QuickAddBarProps> = ({
 
   if (!isOpen) return null;
 
-  const brandLabel = selectedBrandFilter === 'all' ? 'Pharmacozyme' : BRANDS[selectedBrandFilter]?.name || 'Pharmacozyme';
+  const brandLabel = selectedBrandFilter === 'all' ? 'Pharmacozyme' : brands[selectedBrandFilter]?.name || 'Pharmacozyme';
 
   const submit = () => {
     if (!title.trim()) return;

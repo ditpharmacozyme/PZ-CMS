@@ -1,5 +1,4 @@
-import { Post, BrandId } from '../types';
-import { BRANDS } from '../data/brands';
+import { Post, BrandId, BrandConfig } from '../types';
 
 export interface TimeClash {
   time: string;
@@ -19,7 +18,7 @@ export interface DayBrandSummary {
 /**
  * Computes multi-brand density and schedule time clashes for a given set of day posts.
  */
-export function getDayBrandSummary(dayPosts: Post[]): DayBrandSummary {
+export function getDayBrandSummary(dayPosts: Post[], brands: Record<BrandId, BrandConfig>): DayBrandSummary {
   if (!dayPosts || dayPosts.length === 0) {
     return {
       distinctBrandIds: [],
@@ -32,7 +31,7 @@ export function getDayBrandSummary(dayPosts: Post[]): DayBrandSummary {
   }
 
   const distinctBrandIds: BrandId[] = Array.from(new Set(dayPosts.map((p) => p.brandId)));
-  const brandNames = distinctBrandIds.map((bId) => BRANDS[bId]?.name || bId);
+  const brandNames = distinctBrandIds.map((bId) => brands[bId]?.name || bId);
 
   // Group by non-empty scheduledTime to detect exact time clashes
   const byTime: Record<string, Post[]> = {};

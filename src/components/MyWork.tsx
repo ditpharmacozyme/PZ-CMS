@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { Post, TeamMember } from '../types';
-import { BRANDS } from '../data/brands';
+import { useBrands } from '../context/BrandsContext';
 import { todayStr, toDateStr, startOfWeek, isOverdue } from '../utils/date';
 import { deriveStatus } from '../utils/postStatus';
 import { isMine } from '../utils/postOwnership';
@@ -70,6 +70,7 @@ export const MyWork: React.FC<MyWorkProps> = ({ posts, activeTeammate, onSelectP
   // the row (and the done-state button styling) visible and reversible in
   // place for the rest of this viewing session.
   const [sessionPins, setSessionPins] = useState<Record<string, { sectionKey: ActionableSectionKey; stage: Stage }>>({});
+  const { brands } = useBrands();
 
   // Rows are built by renderRow/renderIdeaRow closures inside .map(), not
   // separate components, so hooks can't live per-row -- same shared-ref-Map
@@ -178,7 +179,7 @@ export const MyWork: React.FC<MyWorkProps> = ({ posts, activeTeammate, onSelectP
   }
 
   const renderRow = (sectionKey: ActionableSectionKey) => ({ post, stage }: Row) => {
-    const brand = BRANDS[post.brandId];
+    const brand = brands[post.brandId];
     const isDone =
       stage === 'design' ? post.stageCompletion?.designDone : stage === 'publish' ? post.stageCompletion?.publishDone : post.stageCompletion?.engagementDone;
 
@@ -242,7 +243,7 @@ export const MyWork: React.FC<MyWorkProps> = ({ posts, activeTeammate, onSelectP
   // unscheduled idea as posted. The real next action here is picking a
   // date, so the row just opens the post instead.
   const renderIdeaRow = (post: Post) => {
-    const brand = BRANDS[post.brandId];
+    const brand = brands[post.brandId];
     return (
       <div
         key={post.id}

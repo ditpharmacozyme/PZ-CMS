@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Post, BrandId, Platform, SpecType, PostComment, ContentBankItem, TeamMember } from '../types';
-import { BRANDS, SPECS } from '../data/brands';
+import { SPECS } from '../data/brands';
+import { useBrands } from '../context/BrandsContext';
 import { logTimestamp } from '../utils/date';
 import { uploadImage } from '../utils/uploadImage';
 import { supabase } from '../lib/supabase';
@@ -32,6 +33,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
   activeTeammate = null
 }) => {
   const confirm = useConfirm();
+  const { brands } = useBrands();
   const defaultAuthor = activeTeammate
     ? `${activeTeammate.name} (${activeTeammate.role})`
     : (teamMembers && teamMembers.length > 0 ? `${teamMembers[0].name} (${teamMembers[0].role})` : 'Team');
@@ -46,7 +48,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const brand = BRANDS[editedPost.brandId];
+  const brand = brands[editedPost.brandId];
   const spec = SPECS[editedPost.specType];
 
   const handleDuplicateClick = () => {
@@ -56,9 +58,9 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
   // Cross-brand Voice Check (Soft Warning)
   const isCrossBrandMention = React.useMemo(() => {
     const text = editedPost.caption.toLowerCase() + ' ' + editedPost.title.toLowerCase();
-    const otherBrands = Object.values(BRANDS).filter((b) => b.id !== editedPost.brandId);
+    const otherBrands = Object.values(brands).filter((b) => b.id !== editedPost.brandId);
     return otherBrands.some((b) => text.includes(b.name.toLowerCase()));
-  }, [editedPost.caption, editedPost.title, editedPost.brandId]);
+  }, [editedPost.caption, editedPost.title, editedPost.brandId, brands]);
 
   // Send real test email reminder via Apps Script Proxy.
   // No hardcoded fallback recipient -- if reminderEmail is empty there is no
@@ -322,7 +324,7 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
                 onChange={(e) => setEditedPost({ ...editedPost, brandId: e.target.value as BrandId })}
                 className="w-full bg-white border border-[#e9e9e7] p-2.5 min-h-[44px] font-label-caps text-xs font-bold text-[#1b1c1a] focus:border-[#4f46e5] focus:outline-none rounded-xs"
               >
-                {Object.values(BRANDS).map((b) => (
+                {Object.values(brands).map((b) => (
                   <option key={b.id} value={b.id}>
                     {b.name} ({b.shortCode})
                   </option>

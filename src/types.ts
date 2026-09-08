@@ -26,6 +26,7 @@ export type AuditActionType =
   | 'member_removed'
   | 'research_uploaded'
   | 'research_deleted'
+  | 'brand_edited'
   | 'login'
   | 'logout';
 
@@ -34,7 +35,7 @@ export interface AuditEvent {
   actorId: string;
   actorName: string;
   actionType: AuditActionType;
-  entityType: 'post' | 'member' | 'template' | 'asset' | 'content_bank' | 'research' | 'session';
+  entityType: 'post' | 'member' | 'template' | 'asset' | 'content_bank' | 'research' | 'session' | 'brand';
   entityId?: string;
   entityTitle?: string;
   beforeValue?: Record<string, unknown>;
@@ -174,13 +175,21 @@ export interface PostTemplate {
   title: string;
   description: string;
   brandId: BrandId | 'shared';
-  category: 'Clinical' | 'Interactive' | 'Editorial' | 'Patient-Facing' | 'Internal';
+  category: string;
   platform: Platform;
   specType: SpecType;
   defaultCaption: string;
   tags: string[];
   imagePreview: string;
   usesCount: number;
+}
+
+export interface TemplateCategory {
+  id: string;
+  brandId: BrandId | 'shared';
+  name: string;
+  sortOrder: number;
+  createdAt: string;
 }
 
 export interface BrandAsset {
@@ -191,6 +200,7 @@ export interface BrandAsset {
   fileType: string;
   size: string;
   url: string;
+  storagePath?: string;
 }
 
 export interface AppNotification {

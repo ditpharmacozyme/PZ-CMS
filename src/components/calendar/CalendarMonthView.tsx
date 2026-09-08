@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Post, TeamMember } from '../../types';
-import { BRANDS } from '../../data/brands';
+import { useBrands } from '../../context/BrandsContext';
 import { getDayBrandSummary } from '../../utils/brandConflicts';
 import { PostCard } from './PostCard';
 
@@ -54,6 +54,7 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
   currentUserName,
   activeTeammate
 }) => {
+  const { brands } = useBrands();
   const [expandedDate, setExpandedDate] = useState<string | null>(null);
   const [inlineDate, setInlineDate] = useState<string | null>(null);
   const [inlineTitle, setInlineTitle] = useState('');
@@ -92,7 +93,7 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
       <div className="grid grid-cols-7 bg-[#efefed] gap-[1px]">
         {calendarCells.map((cell, idx) => {
           const dayPosts = cell.dateStr ? postsByDate[cell.dateStr] || [] : [];
-          const brandSummary = getDayBrandSummary(dayPosts);
+          const brandSummary = getDayBrandSummary(dayPosts, brands);
           const isToday = cell.dateStr === todayIso;
           const isExpanded = expandedDate === cell.dateStr;
 
@@ -149,7 +150,7 @@ export const CalendarMonthView: React.FC<CalendarMonthViewProps> = ({
                         <span
                           key={bId}
                           className="w-2 h-2 rounded-full ring-1 ring-white"
-                          style={{ backgroundColor: BRANDS[bId]?.primaryColor || '#4f46e5' }}
+                          style={{ backgroundColor: brands[bId]?.primaryColor || '#4f46e5' }}
                         />
                       ))}
                     </div>

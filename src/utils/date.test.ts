@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { isOverdue, todayStr } from './date';
+import { isOverdue, todayStr, visibleStripDates } from './date';
 import { Post } from '../types';
 
 function makePost(overrides: Partial<Post>): Post {
@@ -59,5 +59,40 @@ describe('isOverdue', () => {
   it('is false for a future date', () => {
     const post = makePost({ scheduledDate: '2999-01-01', status: 'not-started' });
     expect(isOverdue(post)).toBe(false);
+  });
+});
+
+describe('visibleStripDates', () => {
+  const monthCells = [
+    { dateStr: '', isCurrentMonth: false },            // leading filler
+    { dateStr: '2026-03-01', isCurrentMonth: true },
+    { dateStr: '2026-03-02', isCurrentMonth: true },
+    { dateStr: '2026-03-15', isCurrentMonth: true },
+    { dateStr: '2026-03-16', isCurrentMonth: true },
+    { dateStr: '2026-03-31', isCurrentMonth: true },
+    { dateStr: '', isCurrentMonth: false },            // trailing filler
+  ];
+
+  it('always drops filler cells (empty dateStr / not current month)', () => {
+    const out = visibleStripDates(monthCells, '2026-03-15', false);
+    expect(out.map((c) => c.dateStr)).toEqual([
+      '2026-03-01', '2026-03-02', '2026-03-15', '2026-03-16', '2026-03-31',
+    ]);
+  });
+
+  it('drops days before today when hidePastDays is set', () => {
+    const out = visibleStripDates(monthCells, '2026-03-15', true);
+    expect(out.map((c) => c.dateStr)).toEqual(['2026-03-15', '2026-03-16', '2026-03-31']);
+  });
+
+  it('keeps today itself when hiding past days', () => {
+    const out = visibleStripDates(monthCells, '2026-03-16', true);
+    expect(out.map((c) => c.dateStr)).toContain('2026-03-16');
+    expect(out.map((c) => c.dateStr)).not.toContain('2026-03-15');
+  });
+
+  it('shows the whole month when hidePastDays is false (past/future month)', () => {
+    const out = visibleStripDates(monthCells, '2026-06-10', false);
+    expect(out).toHaveLength(5);
   });
 });

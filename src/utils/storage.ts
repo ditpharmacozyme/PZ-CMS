@@ -1,5 +1,6 @@
-import { Post, PostTemplate, BrandAsset, AppNotification, ContentBankItem, TeamMember, ResearchItem } from '../types';
+import { Post, PostTemplate, TemplateCategory, BrandAsset, AppNotification, ContentBankItem, TeamMember, ResearchItem, BrandConfig, BrandId } from '../types';
 import { INITIAL_POSTS, INITIAL_TEMPLATES, INITIAL_ASSETS, INITIAL_NOTIFICATIONS, INITIAL_CONTENT_BANK } from '../data/initialData';
+import { SEED_BRANDS } from '../data/brands';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 const POSTS_KEY = 'pharmacozyme_brandops_posts_v3';
@@ -10,6 +11,8 @@ const CONTENT_BANK_KEY = 'pharmacozyme_brandops_contentbank_v3';
 const RESEARCH_KEY = 'pharmacozyme_brandops_research_v1';
 const TEAM_KEY = 'pharmacozyme_brandops_team_v4'; // Bumped to v4 to evict old fictional defaults
 const TEAM_KEY_LEGACY = 'pharmacozyme_brandops_team_v3'; // Old key — only used for cleanup
+const BRANDS_KEY = 'pharmacozyme_brandops_brands_v1';
+const TEMPLATE_CATEGORIES_KEY = 'pharmacozyme_brandops_template_categories_v1';
 
 // Default PIN is a generic placeholder, not a real credential — change it per-person in Settings after first login.
 const DEFAULT_TEAM_MEMBERS: TeamMember[] = [
@@ -420,6 +423,146 @@ export function subscribeRemoteTemplates(onChange: (templates: PostTemplate[]) =
   return () => { supabase.removeChannel(channel); };
 }
 
+// ─── Template Categories ─────────────────────────────────────────────────
+export function rowToCategory(row: any): TemplateCategory {
+  return { id: row.id, brandId: row.brand_id, name: row.name, sortOrder: row.sort_order ?? 0, createdAt: row.created_at };
+}
+
+export function categoryToRow(c: Omit<TemplateCategory, 'createdAt'>): Record<string, unknown> {
+  return { id: c.id, brand_id: c.brandId, name: c.name, sort_order: c.sortOrder };
+}
+
+export async function fetchRemoteCategories(): Promise<TemplateCategory[] | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.from('template_categories').select('*').order('sort_order', { ascending: true });
+  if (error) { console.error('[Supabase] fetchRemoteCategories failed:', error.message); return null; }
+  return data.map(rowToCategory);
+}
+
+export async function upsertRemoteCategory(c: Omit<TemplateCategory, 'createdAt'>): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from('template_categories').upsert(categoryToRow(c));
+  if (error) console.error('[Supabase] upsertRemoteCategory failed:', error.message);
+}
+
+export async function deleteRemoteCategory(id: string): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from('template_categories').delete().eq('id', id);
+  if (error) console.error('[Supabase] deleteRemoteCategory failed:', error.message);
+}
+
+export function subscribeRemoteCategories(onChange: (c: TemplateCategory[]) => void): () => void {
+  if (!supabase) return () => {};
+  const channel = supabase
+    .channel('template-categories-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'template_categories' }, async () => {
+      const c = await fetchRemoteCategories();
+      if (c) onChange(c);
+    })
+    .subscribe();
+  return () => { supabase.removeChannel(channel); };
+}
+
+export function getStoredCategories(): TemplateCategory[] {
+  try {
+    const raw = localStorage.getItem(TEMPLATE_CATEGORIES_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveStoredCategories(list: TemplateCategory[]): void {
+  try {
+    localStorage.setItem(TEMPLATE_CATEGORIES_KEY, JSON.stringify(list));
+  } catch {
+    /* quota — ignore */
+  }
+}
+
+// ─── Brands ────────────────────────────────────────────────────────────
+export function rowToBrand(row: any): BrandConfig | null {
+  const seed = SEED_BRANDS[row.id as BrandId];
+  // `brands.id` is plain text; a row whose id isn't one of the 5 known brands
+  // has no seed to fall back on. Drop it rather than throwing inside .map().
+  if (!seed) return null;
+  return {
+    id: row.id,
+    name: row.name ?? seed.name,
+    shortCode: row.short_code ?? seed.shortCode,
+    tagline: row.tagline ?? seed.tagline,
+    description: row.description ?? seed.description,
+    primaryColor: row.primary_color ?? seed.primaryColor,
+    secondaryColor: row.secondary_color ?? seed.secondaryColor,
+    accentColor: row.accent_color ?? seed.accentColor,
+    surfaceColor: row.surface_color ?? seed.surfaceColor,
+    icon: row.icon ?? seed.icon,
+    logoUrl: row.logo_url ?? seed.logoUrl,
+    voiceRules: Array.isArray(row.voice_rules) && row.voice_rules.length ? row.voice_rules : seed.voiceRules,
+    fonts: row.fonts && Object.keys(row.fonts).length ? row.fonts : seed.fonts,
+  };
+}
+
+export function brandToRow(b: BrandConfig): Record<string, unknown> {
+  return {
+    id: b.id,
+    name: b.name,
+    short_code: b.shortCode,
+    tagline: b.tagline,
+    description: b.description,
+    primary_color: b.primaryColor,
+    secondary_color: b.secondaryColor,
+    accent_color: b.accentColor,
+    surface_color: b.surfaceColor,
+    icon: b.icon,
+    logo_url: b.logoUrl ?? null,
+    voice_rules: b.voiceRules,
+    fonts: b.fonts,
+    updated_at: new Date().toISOString(),
+  };
+}
+
+export async function fetchRemoteBrands(): Promise<BrandConfig[] | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.from('brands').select('*').order('sort_order', { ascending: true });
+  if (error) { console.error('[Supabase] fetchRemoteBrands failed:', error.message); return null; }
+  return data.map(rowToBrand).filter((b): b is BrandConfig => b !== null);
+}
+
+export async function upsertRemoteBrand(b: BrandConfig): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from('brands').upsert(brandToRow(b));
+  if (error) console.error('[Supabase] upsertRemoteBrand failed:', error.message);
+}
+
+export function subscribeRemoteBrands(onChange: (brands: BrandConfig[]) => void): () => void {
+  if (!supabase) return () => {};
+  const channel = supabase
+    .channel('brands-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'brands' }, async () => {
+      const brands = await fetchRemoteBrands();
+      if (brands) onChange(brands);
+    })
+    .subscribe();
+  return () => { supabase.removeChannel(channel); };
+}
+
+export function getStoredBrands(): Record<BrandId, BrandConfig> {
+  const merged = { ...SEED_BRANDS };
+  try {
+    const raw = localStorage.getItem(BRANDS_KEY);
+    if (raw) {
+      const list: BrandConfig[] = JSON.parse(raw);
+      for (const b of list) if (b?.id && merged[b.id as BrandId]) merged[b.id as BrandId] = b;
+    }
+  } catch { /* fall through to seeds */ }
+  return merged;
+}
+
+export function saveStoredBrands(map: Record<BrandId, BrandConfig>): void {
+  try { localStorage.setItem(BRANDS_KEY, JSON.stringify(Object.values(map))); } catch { /* quota — ignore */ }
+}
+
 // ─── Content Bank ────────────────────────────────────────────────────────
 function rowToBankItem(row: any): ContentBankItem {
   return { id: row.id, text: row.text, tags: row.tags || [], source: row.source, savedDate: row.saved_date, brandId: row.brand_id };
@@ -532,11 +675,19 @@ export function subscribeRemoteResearchItems(onChange: (items: ResearchItem[]) =
 
 // ─── Assets ──────────────────────────────────────────────────────────────
 function rowToAsset(row: any): BrandAsset {
-  return { id: row.id, brandId: row.brand_id, title: row.title, type: row.type, fileType: row.file_type, size: row.size, url: row.url };
+  return { id: row.id, brandId: row.brand_id, title: row.title, type: row.type, fileType: row.file_type, size: row.size, url: row.url, storagePath: row.storage_path ?? undefined };
 }
 
 function assetToRow(a: BrandAsset) {
-  return { id: a.id, brand_id: a.brandId, title: a.title, type: a.type, file_type: a.fileType, size: a.size, url: a.url };
+  // `storage_path` only exists once migration 0021 is applied. Omit the key
+  // entirely for URL-pasted assets (storagePath === undefined) so the emitted
+  // row stays byte-for-byte what it was before this branch — including the
+  // column would make every upsert fail with PGRST204 until 0021 lands.
+  const row: Record<string, unknown> = {
+    id: a.id, brand_id: a.brandId, title: a.title, type: a.type, file_type: a.fileType, size: a.size, url: a.url,
+  };
+  if (a.storagePath !== undefined) row.storage_path = a.storagePath;
+  return row;
 }
 
 export async function fetchRemoteAssets(): Promise<BrandAsset[] | null> {

@@ -1,9 +1,11 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { PostTemplate, BrandId, Platform } from '../types';
-import { BRANDS } from '../data/brands';
+import { useBrands } from '../context/BrandsContext';
 import { uploadImage } from '../utils/uploadImage';
 import { copyText } from '../utils/clipboard';
 import { useConfirm } from './ui/ConfirmDialog';
+import { useTemplateCategories } from '../hooks/useTemplateCategories';
+import { applyCategoryRename, applyCategoryDelete, UNCATEGORIZED } from '../utils/templateCategories';
 
 interface TemplateLibraryProps {
   templates: PostTemplate[];
@@ -14,16 +16,24 @@ interface TemplateLibraryProps {
   selectedBrandFilter: BrandId | 'all';
 }
 
-// Icons/labels for the real PostTemplate['category'] union -- reused below
-// to build the browse-filter chips so every value the create form can write
-// (including 'Internal') always has a matching chip to find it again.
-const CATEGORY_CHIP_META: Record<PostTemplate['category'], { label: string; icon: string }> = {
+// Icons/labels for the built-in category names. `category` is now a free
+// string (users can add their own via Task 10), so this is a lookup with a
+// fallback rather than an exhaustive map -- see categoryMeta() below.
+const CATEGORY_META: Record<string, { label: string; icon: string }> = {
   Clinical: { label: 'Clinical & Case Studies', icon: 'biotech' },
   Interactive: { label: 'Quizzes & Diagnostics', icon: 'quiz' },
   Editorial: { label: 'Protocols & Alerts', icon: 'newspaper' },
   'Patient-Facing': { label: 'Patient Guides', icon: 'health_and_safety' },
   Internal: { label: 'Internal / Team Use', icon: 'lock' }
 };
+
+const DEFAULT_CATEGORY_ICON = 'sell';
+const categoryMeta = (name: string) => CATEGORY_META[name] ?? { label: name, icon: DEFAULT_CATEGORY_ICON };
+
+// Maps the app-level brand filter (or a modal Brand value) to the scope key
+// used by useTemplateCategories / the templateCategories helpers.
+const toCatScope = (brand: BrandId | 'all' | 'shared'): BrandId | 'shared' =>
+  brand === 'all' ? 'shared' : brand;
 
 const PLATFORM_ICONS: Record<string, string> = {
   instagram: 'photo_camera',
@@ -32,14 +42,6 @@ const PLATFORM_ICONS: Record<string, string> = {
   web: 'language',
   email: 'mail'
 };
-
-// Exactly the PostTemplate['category'] union (src/types.ts), derived from
-// CATEGORY_CHIP_META above so the create/edit form's options and the browse
-// chips can never drift apart again -- this is what the form is allowed to
-// write, so it must never include a legacy/invalid value.
-const TEMPLATE_FORM_CATEGORIES: { value: PostTemplate['category']; label: string }[] = (
-  Object.keys(CATEGORY_CHIP_META) as PostTemplate['category'][]
-).map((value) => ({ value, label: CATEGORY_CHIP_META[value].label }));
 
 export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
   templates,
@@ -50,8 +52,25 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
   selectedBrandFilter
 }) => {
   const confirm = useConfirm();
+  const { brands } = useBrands();
+  const { categoriesFor, addCategory, renameCategory, deleteCategory, reorderCategories } = useTemplateCategories();
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [showManageCategories, setShowManageCategories] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
   const [activeBrandFilter, setActiveBrandFilter] = useState<BrandId | 'all' | 'shared'>('all');
+
+  // Category scope for the browse chips + "Manage categories" panel: follows
+  // the in-view brand-selector tabs (`activeBrandFilter`), NOT the app-level
+  // prop -- those tabs are the control the user is actually operating here.
+  // 'all'/'shared' both map to the 'shared' scope.
+  const catScope = toCatScope(activeBrandFilter);
+
+  // Switching the brand-tab scope: also drop the active category chip, since
+  // it may not exist in the new scope (which would filter the grid to empty).
+  const selectBrandTab = (next: BrandId | 'all' | 'shared') => {
+    setActiveBrandFilter(next);
+    setCategoryFilter('all');
+  };
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showCreateTemplateModal, setShowCreateTemplateModal] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<PostTemplate | null>(null);
@@ -62,7 +81,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
   const titleInputRef = useRef<HTMLInputElement>(null);
   const [newDesc, setNewDesc] = useState('');
   const [newBrandId, setNewBrandId] = useState<BrandId | 'shared'>('shared');
-  const [newCategory, setNewCategory] = useState<PostTemplate['category']>('Clinical');
+  const [newCategory, setNewCategory] = useState<string>('Clinical');
   const [newPlatform, setNewPlatform] = useState<Platform>('instagram');
   const [newCaption, setNewCaption] = useState('');
   const [newImagePreview, setNewImagePreview] = useState('');
@@ -104,6 +123,68 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
     }
   };
 
+  // ── Category management (scoped to `catScope`) ──
+  // Rename/delete also cascade onto live templates via the Task 8 helpers;
+  // only the templates whose `category` actually changed get pushed back up.
+  // Returns false when nothing changed (no-op, or the hook refused a
+  // duplicate-name collision) so the caller can restore the uncontrolled
+  // rename input. The template cascade only runs on a real, persisted rename.
+  const handleRename = async (oldName: string, newName: string): Promise<boolean> => {
+    const trimmed = newName.trim();
+    if (!trimmed || trimmed === oldName) return false;
+    const ok = await renameCategory(catScope, oldName, trimmed);
+    if (!ok) return false;
+    applyCategoryRename(templates, catScope, oldName, trimmed)
+      .filter((t, i) => t !== templates[i])
+      .forEach(onUpdateTemplate);
+    return true;
+  };
+
+  const handleDelete = async (name: string) => {
+    const ok = await confirm({
+      title: `Delete category "${name}"?`,
+      body: `Templates in it move to "${UNCATEGORIZED}".`,
+      confirmLabel: 'Delete',
+      tone: 'danger'
+    });
+    if (!ok) return;
+    // Spec §3.3: the target category's templates reassign to "Uncategorized",
+    // which is auto-created for this scope if absent. addCategory no-ops on a
+    // case-insensitive duplicate, so calling it unconditionally is safe.
+    // Order: create Uncategorized -> reassign templates -> delete old row.
+    await addCategory(catScope, UNCATEGORIZED);
+    applyCategoryDelete(templates, catScope, name)
+      .filter((t, i) => t !== templates[i])
+      .forEach(onUpdateTemplate);
+    await deleteCategory(catScope, name);
+  };
+
+  // Up/down reorder: build the new id order for this scope and hand the id
+  // array to reorderCategories (it maps ids -> sortOrder).
+  const handleReorder = (id: string, direction: -1 | 1) => {
+    const ids = scopedCategories.map((c) => c.id);
+    const idx = ids.indexOf(id);
+    const target = idx + direction;
+    if (idx < 0 || target < 0 || target >= ids.length) return;
+    [ids[idx], ids[target]] = [ids[target], ids[idx]];
+    void reorderCategories(catScope, ids);
+  };
+
+  const handleAddCategory = async () => {
+    const name = newCategoryName.trim();
+    if (!name) return;
+    await addCategory(catScope, name);
+    setNewCategoryName('');
+  };
+
+  const catScopeLabel = catScope === 'shared'
+    ? 'Shared Ecosystem'
+    : brands[catScope]?.name ?? catScope;
+
+  // Category <select> options for the create/edit modal, scoped to the
+  // modal's own Brand field (independent of the browse-filter scope).
+  const modalCategoryOptions = categoriesFor(newBrandId);
+
   // Filter Templates
   const filteredTemplates = useMemo(() => {
     return templates.filter((tpl) => {
@@ -134,24 +215,30 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
     });
   }, [templates, selectedBrandFilter, activeBrandFilter, categoryFilter, searchQuery]);
 
-  // Browse-filter chips: always include every real PostTemplate['category']
-  // union value (so a template can always be found again by category, even
-  // before/without live data in it -- e.g. 'Internal' right after this fix),
-  // plus any distinct category value still present in live `templates` data
-  // that ISN'T a real union member (legacy rows saved before the create-form
-  // bug fix, e.g. old 'Education'/'Carousels'/'Brand-Ops' values) so those
-  // templates stay filterable without letting new ones be written with them.
+  // Browse-filter chips for the current scope: 'all', then the managed
+  // categories for `catScope` (from useTemplateCategories), then any orphan
+  // `category` value present on live templates in this scope that has no
+  // managed entry yet (user-defined / legacy values, or -- until migrations
+  // 0019-0021 land -- every value, since the managed list starts empty).
+  const scopedCategories = categoriesFor(catScope);
   const categoryChips = useMemo(() => {
-    const knownValues = Object.keys(CATEGORY_CHIP_META) as PostTemplate['category'][];
-    const legacyValues = Array.from(
-      new Set(templates.map((tpl) => tpl.category).filter((c) => !knownValues.includes(c)))
+    const managedNames = scopedCategories.map((c) => c.name);
+    const isManaged = (name: string) =>
+      managedNames.some((n) => n.toLowerCase() === name.toLowerCase());
+    const orphanNames = Array.from(
+      new Set(
+        templates
+          .filter((tpl) => tpl.brandId === catScope)
+          .map((tpl) => tpl.category)
+          .filter((c): c is string => Boolean(c) && !isManaged(c))
+      )
     );
     return [
       { id: 'all', label: 'All Templates', icon: 'grid_view' },
-      ...knownValues.map((id) => ({ id, label: CATEGORY_CHIP_META[id].label, icon: CATEGORY_CHIP_META[id].icon })),
-      ...legacyValues.map((id) => ({ id, label: id, icon: 'label' }))
+      ...managedNames.map((name) => ({ id: name, label: categoryMeta(name).label, icon: categoryMeta(name).icon })),
+      ...orphanNames.map((name) => ({ id: name, label: categoryMeta(name).label, icon: categoryMeta(name).icon }))
     ];
-  }, [templates]);
+  }, [templates, catScope, scopedCategories]);
 
   const handleCreateTemplate = () => {
     if (!newTitle.trim()) {
@@ -303,7 +390,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
         {/* Brand Selector Tabs */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0">
           <button
-            onClick={() => setActiveBrandFilter('all')}
+            onClick={() => selectBrandTab('all')}
             className={`px-3 py-1.5 rounded-lg text-xs font-label-caps font-bold transition-all cursor-pointer whitespace-nowrap ${
               activeBrandFilter === 'all'
                 ? 'bg-[#4f46e5] text-white shadow-xs'
@@ -313,7 +400,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
             All Brands
           </button>
           <button
-            onClick={() => setActiveBrandFilter('shared')}
+            onClick={() => selectBrandTab('shared')}
             className={`px-3 py-1.5 rounded-lg text-xs font-label-caps font-bold transition-all cursor-pointer whitespace-nowrap ${
               activeBrandFilter === 'shared'
                 ? 'bg-[#4f46e5] text-white shadow-xs'
@@ -322,10 +409,10 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
           >
             Shared Ecosystem
           </button>
-          {Object.entries(BRANDS).map(([id, b]) => (
+          {Object.entries(brands).map(([id, b]) => (
             <button
               key={id}
-              onClick={() => setActiveBrandFilter(id as BrandId)}
+              onClick={() => selectBrandTab(id as BrandId)}
               className={`px-3 py-1.5 rounded-lg text-xs font-label-caps font-bold transition-all cursor-pointer whitespace-nowrap ${
                 activeBrandFilter === id
                   ? 'bg-[#4f46e5] text-white shadow-xs'
@@ -339,22 +426,136 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
       </div>
 
       {/* ── Category Filter Pills ── */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-        {categoryChips.map((cat) => (
-          <button
-            key={cat.id}
-            onClick={() => setCategoryFilter(cat.id)}
-            className={`px-3.5 py-2 font-label-caps text-xs rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
-              categoryFilter === cat.id
-                ? 'bg-[#1b1c1a] text-white font-bold shadow-md'
-                : 'bg-white border border-[#efefed] text-[#57574f] hover:bg-[#f1f1f0]'
-            }`}
-          >
-            <span className="material-symbols-outlined text-sm">{cat.icon}</span>
-            <span>{cat.label}</span>
-          </button>
-        ))}
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none flex-1 min-w-0">
+          {categoryChips.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setCategoryFilter(cat.id)}
+              className={`px-3.5 py-2 font-label-caps text-xs rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+                categoryFilter === cat.id
+                  ? 'bg-[#1b1c1a] text-white font-bold shadow-md'
+                  : 'bg-white border border-[#efefed] text-[#57574f] hover:bg-[#f1f1f0]'
+              }`}
+            >
+              <span className="material-symbols-outlined text-sm">{cat.icon}</span>
+              <span>{cat.label}</span>
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={() => setShowManageCategories((v) => !v)}
+          className={`px-3 py-2 font-label-caps text-xs font-bold rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer shrink-0 ${
+            showManageCategories
+              ? 'bg-[#4f46e5] text-white shadow-xs'
+              : 'bg-white border border-[#e9e9e7] text-[#57574f] hover:bg-[#f1f1f0]'
+          }`}
+        >
+          <span className="material-symbols-outlined text-sm">tune</span>
+          <span>Manage categories</span>
+        </button>
       </div>
+
+      {/* ── Manage Categories Panel (scoped to catScope) ── */}
+      {showManageCategories && (
+        <div className="bg-white border border-[#efefed] rounded-2xl p-4 space-y-3 shadow-xs">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-headline-md text-sm font-bold text-[#1b1c1a]">Manage Categories</h3>
+              <p className="font-body-md text-[11px] text-[#5f5f5b]">
+                Scope: <span className="font-bold">{catScopeLabel}</span>
+                {catScope === 'shared' && ' (pick a brand tab above to manage that brand’s categories)'}
+              </p>
+            </div>
+            <button
+              onClick={() => setShowManageCategories(false)}
+              className="p-1.5 text-[#5f5f5b] hover:text-[#1b1c1a] cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-base">close</span>
+            </button>
+          </div>
+
+          {scopedCategories.length === 0 ? (
+            <p className="font-body-md text-xs text-[#5f5f5b] py-1">
+              No categories for this scope yet. Add one below.
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {scopedCategories.map((cat, idx) => (
+                <li key={cat.id} className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-sm text-[#5f5f5b] shrink-0">
+                    {categoryMeta(cat.name).icon}
+                  </span>
+                  <input
+                    defaultValue={cat.name}
+                    onBlur={(e) => {
+                      const el = e.currentTarget;
+                      if (!el.value.trim()) { el.value = cat.name; return; }
+                      void handleRename(cat.name, el.value).then((ok) => {
+                        // Refused (duplicate name) or no-op — put the old name back.
+                        if (!ok) el.value = cat.name;
+                      });
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') e.currentTarget.blur();
+                      if (e.key === 'Escape') { e.currentTarget.value = cat.name; e.currentTarget.blur(); }
+                    }}
+                    className="flex-1 min-w-0 bg-[#f4f4f3] border border-[#e9e9e7] rounded-lg p-2 text-xs font-bold text-[#1b1c1a] focus:outline-none focus:border-[#4f46e5]"
+                  />
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleReorder(cat.id, -1)}
+                      disabled={idx === 0}
+                      className="p-1.5 text-[#5f5f5b] hover:bg-[#f1f1f0] rounded-lg cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                      title="Move up"
+                    >
+                      <span className="material-symbols-outlined text-sm">arrow_upward</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleReorder(cat.id, 1)}
+                      disabled={idx === scopedCategories.length - 1}
+                      className="p-1.5 text-[#5f5f5b] hover:bg-[#f1f1f0] rounded-lg cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                      title="Move down"
+                    >
+                      <span className="material-symbols-outlined text-sm">arrow_downward</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { void handleDelete(cat.name); }}
+                      className="p-1.5 bg-[#fcebeb] hover:bg-[#dc2626] text-[#dc2626] hover:text-white rounded-lg transition-colors cursor-pointer flex items-center justify-center"
+                      title="Delete category"
+                    >
+                      <span className="material-symbols-outlined text-sm">delete</span>
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div className="flex gap-2 pt-3 border-t border-[#efefed]">
+            <input
+              type="text"
+              value={newCategoryName}
+              onChange={(e) => setNewCategoryName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void handleAddCategory(); } }}
+              placeholder="New category name"
+              className="flex-1 min-w-0 bg-[#f4f4f3] border border-[#e9e9e7] rounded-lg p-2 text-xs text-[#1b1c1a] focus:outline-none focus:border-[#4f46e5]"
+            />
+            <button
+              type="button"
+              onClick={() => { void handleAddCategory(); }}
+              disabled={!newCategoryName.trim()}
+              className="bg-[#4f46e5] hover:bg-[#4338ca] text-white font-label-caps text-xs font-bold px-4 py-2 rounded-lg shadow-xs transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <span className="material-symbols-outlined text-sm">add</span>
+              <span>Add category</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Template Cards Grid ── */}
       {filteredTemplates.length === 0 ? (
@@ -368,7 +569,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTemplates.map((template) => {
-            const brand = template.brandId !== 'shared' ? BRANDS[template.brandId] : null;
+            const brand = template.brandId !== 'shared' ? brands[template.brandId] : null;
             const platformIcon = PLATFORM_ICONS[template.platform] || 'photo_camera';
 
             return (
@@ -416,14 +617,14 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                   )}
 
                   {template.imagePreview && (
-                    <div className="absolute bottom-2 left-2 flex gap-1.5 opacity-0 pointer-events-none transition-opacity group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto">
+                    <div className="absolute bottom-2 left-2 flex gap-1.5 opacity-100 pointer-events-auto transition-opacity md:opacity-0 md:pointer-events-none md:group-hover:opacity-100 md:group-hover:pointer-events-auto md:focus-within:opacity-100 md:focus-within:pointer-events-auto">
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           window.open(template.imagePreview, '_blank', 'noopener');
                         }}
-                        className="bg-white/95 border border-[#e9e9e7] text-[#1b1c1a] text-[10px] font-label-caps rounded px-2 py-1 flex items-center gap-1 shadow-xs hover:bg-white focus-visible:opacity-100"
+                        className="bg-white/95 border border-[#e9e9e7] text-[#1b1c1a] text-[10px] font-label-caps rounded px-2 py-1.5 md:py-1 flex items-center gap-1 shadow-xs hover:bg-white focus-visible:opacity-100"
                       >
                         <span className="material-symbols-outlined text-[12px]">open_in_new</span>
                         <span>Open image</span>
@@ -434,7 +635,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                           e.stopPropagation();
                           void handleCopyLink(template);
                         }}
-                        className="bg-white/95 border border-[#e9e9e7] text-[#1b1c1a] text-[10px] font-label-caps rounded px-2 py-1 flex items-center gap-1 shadow-xs hover:bg-white focus-visible:opacity-100"
+                        className="bg-white/95 border border-[#e9e9e7] text-[#1b1c1a] text-[10px] font-label-caps rounded px-2 py-1.5 md:py-1 flex items-center gap-1 shadow-xs hover:bg-white focus-visible:opacity-100"
                       >
                         <span className="material-symbols-outlined text-[12px]">
                           {copiedId === template.id ? 'check' : 'link'}
@@ -575,11 +776,19 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                   </label>
                   <select
                     value={newBrandId}
-                    onChange={(e) => setNewBrandId(e.target.value as BrandId | 'shared')}
+                    onChange={(e) => {
+                      const nextBrand = e.target.value as BrandId | 'shared';
+                      setNewBrandId(nextBrand);
+                      // Keep Category valid for the new brand's scope.
+                      const nextList = categoriesFor(nextBrand);
+                      if (!nextList.some((c) => c.name === newCategory)) {
+                        setNewCategory(nextList[0]?.name ?? '');
+                      }
+                    }}
                     className="w-full bg-[#f4f4f3] border border-[#e9e9e7] rounded-lg p-2 text-xs font-label-caps font-bold"
                   >
                     <option value="shared">Shared (All Brands)</option>
-                    {Object.entries(BRANDS).map(([id, b]) => (
+                    {Object.entries(brands).map(([id, b]) => (
                       <option key={id} value={id}>
                         {b.name}
                       </option>
@@ -593,14 +802,45 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                   </label>
                   <select
                     value={newCategory}
-                    onChange={(e) => setNewCategory(e.target.value as PostTemplate['category'])}
+                    onChange={(e) => setNewCategory(e.target.value)}
                     className="w-full bg-[#f4f4f3] border border-[#e9e9e7] rounded-lg p-2 text-xs font-label-caps font-bold"
                   >
-                    {TEMPLATE_FORM_CATEGORIES.map((c) => (
-                      <option key={c.value} value={c.value}>{c.label}</option>
+                    {modalCategoryOptions.length === 0 && !newCategory && (
+                      <option value="">Uncategorized</option>
+                    )}
+                    {modalCategoryOptions.map((c) => (
+                      <option key={c.id} value={c.name}>{categoryMeta(c.name).label}</option>
                     ))}
+                    {newCategory && !modalCategoryOptions.some((c) => c.name === newCategory) && (
+                      <option value={newCategory}>{categoryMeta(newCategory).label}</option>
+                    )}
                   </select>
                 </div>
+              </div>
+
+              {/* Image (upload-first: visible without expanding "More options") */}
+              <div>
+                <label className="font-label-caps text-[10px] text-[#5f5f5b] block font-bold mb-1">
+                  Image
+                </label>
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="text"
+                    value={newImagePreview}
+                    onChange={(e) => setNewImagePreview(e.target.value)}
+                    placeholder="https://... or upload below"
+                    className="flex-1 bg-[#f4f4f3] border border-[#e9e9e7] rounded-lg p-2 text-xs text-[#1b1c1a] focus:outline-none"
+                  />
+                  <label className="bg-[#f1f1f0] border border-[#e9e9e7] text-[#4f46e5] px-3 py-2 rounded-lg font-label-caps text-xs font-bold hover:bg-[#4f46e5] hover:text-white transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap">
+                    <span className="material-symbols-outlined text-sm">upload</span>
+                    <span>{isUploading ? 'Uploading...' : 'Upload'}</span>
+                    <input type="file" accept="image/*" onChange={handleImageFileUpload} className="hidden" />
+                  </label>
+                </div>
+                {uploadError && <p className="text-[10px] text-[#dc2626] mt-1">{uploadError}</p>}
+                {newImagePreview && (
+                  <img src={newImagePreview} alt="" className="h-24 w-full object-cover rounded-lg border border-[#e9e9e7] mt-2" />
+                )}
               </div>
 
               <button
@@ -611,7 +851,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                 <span className="material-symbols-outlined text-sm">
                   {showMoreOptions ? 'expand_less' : 'expand_more'}
                 </span>
-                <span>{showMoreOptions ? 'Hide more options' : 'More options (description, platform, caption, tags, image)'}</span>
+                <span>{showMoreOptions ? 'Hide more options' : 'More options (description, platform, caption, tags)'}</span>
               </button>
 
               {showMoreOptions && (
@@ -670,27 +910,6 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                       placeholder="Pharmacology, StudyGuide, MedicalEducation, BioTech"
                       className="w-full bg-[#f4f4f3] border border-[#e9e9e7] rounded-lg p-2 text-xs text-[#1b1c1a] focus:outline-none focus:border-[#4f46e5]"
                     />
-                  </div>
-
-                  <div>
-                    <label className="font-label-caps text-[10px] text-[#5f5f5b] block font-bold mb-1">
-                      Image
-                    </label>
-                    <div className="flex gap-2 items-center">
-                      <input
-                        type="text"
-                        value={newImagePreview}
-                        onChange={(e) => setNewImagePreview(e.target.value)}
-                        placeholder="https://... or upload below"
-                        className="flex-1 bg-[#f4f4f3] border border-[#e9e9e7] rounded-lg p-2 text-xs text-[#1b1c1a] focus:outline-none"
-                      />
-                      <label className="bg-[#f1f1f0] border border-[#e9e9e7] text-[#4f46e5] px-3 py-2 rounded-lg font-label-caps text-xs font-bold hover:bg-[#4f46e5] hover:text-white transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap">
-                        <span className="material-symbols-outlined text-sm">upload</span>
-                        <span>{isUploading ? 'Uploading...' : 'Upload'}</span>
-                        <input type="file" accept="image/*" onChange={handleImageFileUpload} className="hidden" />
-                      </label>
-                    </div>
-                    {uploadError && <p className="text-[10px] text-[#dc2626] mt-1">{uploadError}</p>}
                   </div>
                 </div>
               )}

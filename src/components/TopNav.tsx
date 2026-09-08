@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AppNotification, BrandId, TeamMember } from '../types';
-import { BRANDS } from '../data/brands';
+import { useBrands } from '../context/BrandsContext';
 import { NavTab } from './SideNav';
 import { provisionTeamMemberAccount } from '../utils/storage';
 import { NotificationDrawer } from './NotificationDrawer';
@@ -78,6 +78,7 @@ export const TopNav: React.FC<TopNavProps> = ({
   onRestoreSnapshot
 }) => {
   const confirm = useConfirm();
+  const { brands } = useBrands();
   const [showNotificationsPopover, setShowNotificationsPopover] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
@@ -93,10 +94,10 @@ export const TopNav: React.FC<TopNavProps> = ({
 
   // Brand picker options — same shape as the brand-group list SideNav used
   // to render before Phase 7 moved brand selection up here: an 'all' option
-  // plus every BRANDS entry, independent of page navigation.
+  // plus every brand entry, independent of page navigation.
   const brandOptions: { id: BrandId | 'all'; label: string; shortCode: string; icon: string; logoUrl?: string; color?: string }[] = [
     { id: 'all', label: 'All 5 Brands', shortCode: 'ALL', icon: 'hub' },
-    ...Object.values(BRANDS).map((b) => ({ id: b.id, label: b.name, shortCode: b.shortCode, icon: b.icon, logoUrl: b.logoUrl, color: b.primaryColor }))
+    ...Object.values(brands).map((b) => ({ id: b.id, label: b.name, shortCode: b.shortCode, icon: b.icon, logoUrl: b.logoUrl, color: b.primaryColor }))
   ];
 
   // Team management local state
@@ -183,15 +184,25 @@ export const TopNav: React.FC<TopNavProps> = ({
               aria-haspopup="listbox"
               aria-expanded={showBrandPicker}
             >
-              <span className="material-symbols-outlined text-[#4f46e5] text-2xl hidden sm:inline-block">science</span>
-              <div className="text-left">
-                <p className="font-headline-md text-base sm:text-lg font-bold text-[#4f46e5] tracking-tight leading-none flex items-center gap-1">
-                  {selectedBrandFilter === 'all'
-                    ? 'All 5 Brands'
-                    : (BRANDS[selectedBrandFilter]?.name || 'Pharmacozyme')}
-                  <span className="material-symbols-outlined text-base text-[#5f5f5b]">arrow_drop_down</span>
+              {selectedBrandFilter !== 'all' && brands[selectedBrandFilter]?.logoUrl && (
+                <span className="w-7 h-7 rounded-md bg-white p-0.5 border border-[#e9e9e7]/60 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                  <img
+                    src={brands[selectedBrandFilter].logoUrl}
+                    alt={brands[selectedBrandFilter].name}
+                    className="w-full h-full object-contain"
+                  />
+                </span>
+              )}
+              <div className="text-left min-w-0">
+                <p className="font-headline-md text-base sm:text-lg font-bold text-[#4f46e5] tracking-tight leading-none flex items-center gap-1 whitespace-nowrap">
+                  <span className="truncate max-w-[42vw] sm:max-w-none">
+                    {selectedBrandFilter === 'all'
+                      ? 'All 5 Brands'
+                      : (brands[selectedBrandFilter]?.name || 'Pharmacozyme')}
+                  </span>
+                  <span className="material-symbols-outlined text-base text-[#5f5f5b] flex-shrink-0">arrow_drop_down</span>
                 </p>
-                <div className="flex items-center gap-1.5 mt-0.5">
+                <div className="hidden sm:flex items-center gap-1.5 mt-0.5">
                   <span className="font-label-caps text-[9px] text-[#5f5f5b] tracking-wider">Brand-Ops Studio</span>
                   <span className="w-1.5 h-1.5 rounded-full bg-[#15803d] animate-pulse flex-shrink-0" />
                 </div>
@@ -293,13 +304,18 @@ export const TopNav: React.FC<TopNavProps> = ({
           <div className="relative">
             <button
               onClick={() => setShowNotificationsPopover(!showNotificationsPopover)}
-              className="relative p-2 min-w-[40px] min-h-[40px] flex items-center justify-center text-[#57574f] hover:bg-[#f1f1f0] active:bg-[#e4e4e2] rounded-full transition-colors"
+              className={`relative p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-full transition-colors ${
+                unreadCount > 0
+                  ? 'text-[#4f46e5] bg-[#eef2ff] hover:bg-[#e0e7ff]'
+                  : 'text-[#57574f] hover:bg-[#f1f1f0] active:bg-[#e4e4e2]'
+              }`}
               title="Alerts"
+              aria-label={unreadCount > 0 ? `Alerts, ${unreadCount} unread` : 'Alerts'}
             >
               <span className="material-symbols-outlined text-xl">notifications</span>
               {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 w-5 h-5 bg-[#dc2626] text-white text-[10px] font-label-caps font-bold rounded-full flex items-center justify-center animate-pulse">
-                  {unreadCount}
+                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-[#dc2626] text-white text-[10px] font-bold rounded-full flex items-center justify-center ring-2 ring-white animate-pulse">
+                  {unreadCount > 99 ? '99+' : unreadCount}
                 </span>
               )}
             </button>

@@ -5,8 +5,7 @@
  */
 
 import * as Papa from 'papaparse';
-import { BRANDS } from '../data/brands';
-import { BrandId, Post, Platform, SpecType, PostStatus } from '../types';
+import { BrandId, BrandConfig, Post, Platform, SpecType, PostStatus } from '../types';
 import { todayStr, logTimestamp } from './date';
 
 // ─── Type A: Calendar CSV ──────────────────────────────────────────────
@@ -132,9 +131,9 @@ function stripQuotes(value: string): string {
 // ─── Brand name mapping ─────────────────────────────────────────────────
 
 /** Maps a display name ("PZ Academy") or slug ("pz-academy") to a BrandId, falling back to 'shared'. */
-export function mapBrandNameToId(name: string): BrandId | 'shared' {
+export function mapBrandNameToId(name: string, brands: Record<BrandId, BrandConfig>): BrandId | 'shared' {
   const normalized = name.trim().toLowerCase();
-  const match = Object.values(BRANDS).find(
+  const match = Object.values(brands).find(
     (b) => b.name.toLowerCase() === normalized || b.id.toLowerCase() === normalized
   );
   return match ? match.id : 'shared';
@@ -193,16 +192,17 @@ function normalizeDate(dStr: string): string {
 /** Converts parsed Calendar CSV rows into fully-editable Post objects for the Content Calendar. */
 export function convertCsvRowsToPosts(
   rows: CalendarCsvRow[],
-  fallbackBrand?: BrandId | 'shared',
-  defaultOwner?: string,
-  defaultOwnerEmail?: string
+  fallbackBrand: BrandId | 'shared' | undefined,
+  defaultOwner: string | undefined,
+  defaultOwnerEmail: string | undefined,
+  brands: Record<BrandId, BrandConfig>
 ): Post[] {
   const now = Date.now();
   const timestamp = logTimestamp();
 
   return rows.map((row, idx) => {
     let brandId: BrandId = 'pharmacozyme';
-    const mappedRowBrand = mapBrandNameToId(row.brand);
+    const mappedRowBrand = mapBrandNameToId(row.brand, brands);
     if (mappedRowBrand !== 'shared') {
       brandId = mappedRowBrand;
     } else if (fallbackBrand && fallbackBrand !== 'shared') {

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { BrandAsset, BrandId } from '../types';
-import { BRANDS } from '../data/brands';
+import { useBrands } from '../context/BrandsContext';
 import { Modal } from './ui/Modal';
 import { TextField, SelectField } from './ui/Field';
 import { Button } from './ui/Button';
 import { useConfirm } from './ui/ConfirmDialog';
+import { uploadAsset } from '../utils/uploadAsset';
 
 interface AssetLibraryProps {
   assets: BrandAsset[];
@@ -29,6 +30,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
   onDeleteAsset
 }) => {
   const confirm = useConfirm();
+  const { brands } = useBrands();
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
@@ -42,6 +44,26 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
   const [fileType, setFileType] = useState('SVG / Vector');
   const [size, setSize] = useState('1.5 MB');
   const [url, setUrl] = useState('');
+  const [storagePath, setStoragePath] = useState<string | undefined>(undefined);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const handleFile = async (file: File | undefined) => {
+    if (!file) return;
+    setUploadError(null);
+    setIsUploading(true);
+    try {
+      const res = await uploadAsset(file, 'assets');
+      setUrl(res.url);
+      setStoragePath(res.storagePath);
+      setFileType(res.contentType || fileType);
+      setSize(res.size);
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Upload failed.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const isDirty = editingAsset
     ? title !== editingAsset.title || brandId !== editingAsset.brandId || type !== editingAsset.type ||
@@ -66,6 +88,8 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
     setFileType('SVG / Vector');
     setSize('1.5 MB');
     setUrl('');
+    setStoragePath(undefined);
+    setUploadError(null);
   };
 
   const handleOpenAddModal = () => {
@@ -76,12 +100,14 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
   const handleOpenEditModal = (asset: BrandAsset) => {
     setEditingAsset(asset);
     setTitleError(null);
+    setUploadError(null);
     setTitle(asset.title);
     setBrandId(asset.brandId);
     setType(asset.type);
     setFileType(asset.fileType);
     setSize(asset.size);
     setUrl(asset.url);
+    setStoragePath(asset.storagePath);
   };
 
   const closeModal = () => {
@@ -102,7 +128,8 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
         type,
         fileType: fileType.trim() || 'Asset',
         size: size.trim() || '1.0 MB',
-        url: url.trim() || '#'
+        url: url.trim() || '#',
+        storagePath
       };
       onUpdateAsset(updated);
     } else {
@@ -113,7 +140,8 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
         type,
         fileType: fileType.trim() || 'Asset',
         size: size.trim() || '1.0 MB',
-        url: url.trim() || '#'
+        url: url.trim() || '#',
+        storagePath
       };
       onAddAsset(newAsset);
     }
@@ -192,7 +220,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
       {/* Asset Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {filteredAssets.map((asset) => {
-          const brand = BRANDS[asset.brandId];
+          const brand = brands[asset.brandId];
           return (
             <div
               key={asset.id}
@@ -273,6 +301,24 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
         }
       >
         <div className="space-y-3.5">
+          <div>
+            <label className="flex flex-col items-center justify-center gap-1 border-2 border-dashed border-[#e9e9e7] rounded-lg p-6 text-center cursor-pointer hover:border-[#4f46e5] hover:bg-[#f1f1f0] transition-colors">
+              <span className="material-symbols-outlined text-[#4f46e5]">upload_file</span>
+              <span className="font-label-caps text-xs font-bold text-[#1b1c1a]">
+                {isUploading ? 'Uploading…' : 'Upload image, PDF or document'}
+              </span>
+              <span className="font-body-md text-[11px] text-[#5f5f5b]">Up to 50 MB · or paste a link below</span>
+              <input
+                type="file"
+                className="hidden"
+                disabled={isUploading}
+                accept="image/*,application/pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt"
+                onChange={(e) => { void handleFile(e.target.files?.[0]); e.target.value = ''; }}
+              />
+            </label>
+            {uploadError && <p className="text-[11px] text-[#dc2626] mt-1">{uploadError}</p>}
+          </div>
+
           <TextField
             label="Asset name"
             required
@@ -286,7 +332,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({
             label="Brand"
             value={brandId}
             onChange={(v) => setBrandId(v as BrandId)}
-            options={Object.values(BRANDS).map((b) => ({ value: b.id, label: b.name }))}
+            options={Object.values(brands).map((b) => ({ value: b.id, label: b.name }))}
           />
 
           <SelectField

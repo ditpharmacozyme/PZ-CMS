@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Post, BrandId } from '../types';
-import { BRANDS } from '../data/brands';
+import { useBrands } from '../context/BrandsContext';
 import { NavTab } from './SideNav';
 
 interface CommandPaletteProps {
@@ -46,6 +46,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onOpenNewPostModal,
   onQuickAdd
 }) => {
+  const { brands } = useBrands();
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -69,7 +70,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         run: () => { onSelectTab('calendar'); onOpenNewPostModal(); }
       },
       { id: 'brand-all', label: 'Show all 5 brands', hint: 'Brand filter', icon: 'apps', run: () => onSelectBrandFilter('all') },
-      ...Object.values(BRANDS).map((b) => ({
+      ...Object.values(brands).map((b) => ({
         id: `brand-${b.id}`,
         label: b.name,
         hint: 'Brand filter',
@@ -86,7 +87,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       ...posts.slice(0, 200).map((p) => ({
         id: `post-${p.id}`,
         label: p.title,
-        hint: `${BRANDS[p.brandId]?.name || p.brandId} · ${p.scheduledDate || 'Idea'}`,
+        hint: `${brands[p.brandId]?.name || p.brandId} · ${p.scheduledDate || 'Idea'}`,
         icon: 'description',
         run: () => { onSelectTab('calendar'); onSelectPost(p); }
       }))
@@ -108,7 +109,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       });
     }
     return matches;
-  }, [query, posts, onSelectTab, onSelectBrandFilter, onSelectPost, onOpenNewPostModal, onQuickAdd]);
+  }, [query, posts, brands, onSelectTab, onSelectBrandFilter, onSelectPost, onOpenNewPostModal, onQuickAdd]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown') {

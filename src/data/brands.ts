@@ -1,6 +1,11 @@
 import { BrandConfig, BrandId, SpecConfig, SpecType } from '../types';
 
-export const BRANDS: Record<BrandId, BrandConfig> = {
+/**
+ * The compiled-in defaults. Consumed at runtime through the `useBrands()`
+ * context (see src/context/BrandsContext.tsx); this is the synchronous seed
+ * + per-field fallback via `getStoredBrands()`.
+ */
+export const SEED_BRANDS: Record<BrandId, BrandConfig> = {
   pharmacozyme: {
     id: 'pharmacozyme',
     name: 'Pharmacozyme',
