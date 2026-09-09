@@ -36,6 +36,12 @@ export const GOOGLE_APPS_SCRIPT_CODE = `/**
  *        select value from private.app_secrets where name = 'reminder_rpc_secret';
  *     The reminder RPCs reject the call without it, so the trigger sends nothing until
  *     this is set. (Optional: REMINDER_TIMEZONE to override the default Asia/Karachi.)
+ * 15. AFTER updating this script (delete-cascade release): click Deploy ->
+ *     "Manage deployments" -> edit the active deployment -> "New version" ->
+ *     Deploy. This activates the deleteFile / listManagedFiles actions the
+ *     app's delete buttons and Storage Cleanup panel need. deleteFile only
+ *     ever trashes files that live under "Pharmacozyme CMS Uploads" or
+ *     "Research & Plans" -- anything else is refused.
  */
 
 // Global Configuration
@@ -109,6 +115,10 @@ function doPost(e) {
       return ContentService
         .createTextOutput(JSON.stringify({ status: "success", installed: isReminderTriggerInstalled() }))
         .setMimeType(ContentService.MimeType.JSON);
+    } else if (action === "deleteFile") {
+      return handleDeleteFile(data);
+    } else if (action === "listManagedFiles") {
+      return handleListManagedFiles();
     } else {
       throw new Error("Unknown action requested: " + action);
     }
@@ -238,6 +248,121 @@ function handleUploadResearchFile(data) {
       webViewLink: file.getUrl(),
       downloadUrl: "https://drive.google.com/uc?export=download&id=" + file.getId()
     }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
+ * Move a Drive file to Trash (auto-purged after ~30 days). Missing or
+ * already-trashed files are reported as alreadyGone rather than throwing,
+ * so the CMS retry queue treats them as done. A file that is NOT under a
+ * CMS-managed folder ("Pharmacozyme CMS Uploads" / "Research & Plans") is
+ * refused outright -- the proxy also role-gates this action, but this is the
+ * last line of defense against trashing arbitrary files in the owner's Drive.
+ */
+function handleDeleteFile(data) {
+  if (!data.fileId) {
+    throw new Error("Missing fileId in payload.");
+  }
+  try {
+    var file = DriveApp.getFileById(data.fileId);
+    if (file.isTrashed()) {
+      return ContentService
+        .createTextOutput(JSON.stringify({ status: "success", alreadyGone: true }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    if (!isUnderManagedFolder(file)) {
+      return ContentService
+        .createTextOutput(JSON.stringify({ status: "error", error: "File is not a CMS-managed file; refusing to trash." }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    file.setTrashed(true);
+    return ContentService
+      .createTextOutput(JSON.stringify({ status: "success" }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    // Only a genuine missing / invalid id is alreadyGone. A transient Drive
+    // error (rate limit, backend 5xx) must stay an error so cascadeFileDelete
+    // keeps the ref queued for retry instead of dropping it.
+    var msg = String(err);
+    if (/not found|no item|does not exist|invalid.*id/i.test(msg)) {
+      return ContentService
+        .createTextOutput(JSON.stringify({ status: "success", alreadyGone: true, note: msg }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    return ContentService
+      .createTextOutput(JSON.stringify({ status: "error", error: msg }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+/**
+ * True if the given file lives somewhere under the "Pharmacozyme CMS Uploads"
+ * or "Research & Plans" folder tree. Walks parent folders upward breadth-first
+ * with a depth cap so a pathological parent chain can't loop forever.
+ */
+function isUnderManagedFolder(file) {
+  var managed = {};
+  managed[DRIVE_FOLDER_NAME] = true;
+  managed["Research & Plans"] = true;
+
+  var seen = {};
+  var level = [];
+  var parents = file.getParents();
+  while (parents.hasNext()) level.push(parents.next());
+
+  for (var depth = 0; depth < 20 && level.length; depth++) {
+    var nextLevel = [];
+    for (var i = 0; i < level.length; i++) {
+      var folder = level[i];
+      var id = folder.getId();
+      if (seen[id]) continue;
+      seen[id] = true;
+      if (managed[folder.getName()]) return true;
+      var up = folder.getParents();
+      while (up.hasNext()) nextLevel.push(up.next());
+    }
+    level = nextLevel;
+  }
+  return false;
+}
+
+/**
+ * List every non-trashed file the CMS created: the flat "Pharmacozyme CMS
+ * Uploads" folder plus every file under "Research & Plans/**". Used by the
+ * app's Storage Cleanup sweep to find orphans.
+ */
+function handleListManagedFiles() {
+  var out = [];
+
+  function pushFile(file, folderLabel) {
+    if (file.isTrashed()) return;
+    out.push({
+      id: file.getId(),
+      name: file.getName(),
+      folder: folderLabel,
+      createdMs: file.getDateCreated().getTime(),
+      sizeBytes: file.getSize()
+    });
+  }
+
+  function walk(folder, label) {
+    var files = folder.getFiles();
+    while (files.hasNext()) pushFile(files.next(), label);
+    var subs = folder.getFolders();
+    while (subs.hasNext()) {
+      var sub = subs.next();
+      walk(sub, label + "/" + sub.getName());
+    }
+  }
+
+  var uploads = DriveApp.getFoldersByName(DRIVE_FOLDER_NAME);
+  if (uploads.hasNext()) walk(uploads.next(), DRIVE_FOLDER_NAME);
+
+  var research = DriveApp.getFoldersByName("Research & Plans");
+  if (research.hasNext()) walk(research.next(), "Research & Plans");
+
+  return ContentService
+    .createTextOutput(JSON.stringify({ status: "success", files: out }))
     .setMimeType(ContentService.MimeType.JSON);
 }
 

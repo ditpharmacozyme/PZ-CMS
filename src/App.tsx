@@ -32,6 +32,9 @@ import {
   importLocalDataToRemote,
   isSupabaseConfigured,
 } from './utils/storage';
+import { flushFailedDeletes } from './utils/fileCleanup';
+import type { CleanupRecords } from './utils/fileCleanup';
+import { makeCascadeFor } from './utils/cascadeFor';
 import { supabase } from './lib/supabase';
 import { useBrands } from './context/BrandsContext';
 import { applyBrandTypography } from './utils/brandTypography';
@@ -150,6 +153,26 @@ export function App() {
 
   const authEmail = session?.user?.email?.toLowerCase() || null;
 
+  // ── File-cleanup wiring ─────────────────────────────────────────────────────
+  // recordsRef + cascadeFor are declared ABOVE usePosts so the post
+  // onAfterDelete arrow (3rd usePosts arg) can close over cascadeFor without
+  // tripping "used before declaration". The two effects that sync the ref and
+  // flush the retry queue live AFTER the templates/assets/researchItems state.
+  const brandLogoUrls = () =>
+    Object.values(brands).map((b) => b.logoUrl).filter((u): u is string => Boolean(u));
+
+  const recordsRef = useRef<CleanupRecords>({
+    posts: [],
+    templates: getStoredTemplates(),
+    assets: getStoredAssets(),
+    research: getStoredResearchItems(),
+    logoUrls: brandLogoUrls(),
+  });
+
+  // Delete the record's backing file unless another record still points at it.
+  // Real logic lives in src/utils/cascadeFor.ts so it stays unit-testable.
+  const cascadeFor = makeCascadeFor(() => recordsRef.current);
+
   // ── Posts ───────────────────────────────────────────────────────────────────
   const {
     posts,
@@ -160,7 +183,9 @@ export function App() {
     handleDuplicatePost: duplicatePostBase,
     handleBatchAddPosts,
     handleBatchSavePosts,
-  } = usePosts(showToast, activeTeammate);
+  } = usePosts(showToast, activeTeammate, (removed) => {
+    cascadeFor({ url: removed.visualUrl }, removed.id, { deferMs: 6000 });
+  });
 
   const [activeModalPost, setActiveModalPost] = useState<Post | null>(null);
 
@@ -203,6 +228,19 @@ export function App() {
   const [assets, setAssets] = useState<BrandAsset[]>(() => getStoredAssets());
   const [contentBank, setContentBank] = useState<ContentBankItem[]>(() => getStoredContentBank());
   const [researchItems, setResearchItems] = useState<ResearchItem[]>(() => getStoredResearchItems());
+
+  // Keep the cleanup reference-count snapshot current (declared above usePosts).
+  useEffect(() => {
+    recordsRef.current = { posts, templates, assets, research: researchItems, logoUrls: brandLogoUrls() };
+  });
+
+  // Retry any file deletes that failed while offline / mid-session, once on
+  // mount. Passes a records accessor so a ref whose record was re-created
+  // since the failure is dropped instead of deleted; the batch cap inside
+  // keeps a large backlog from firing hundreds of sequential calls.
+  useEffect(() => {
+    void flushFailedDeletes(() => recordsRef.current);
+  }, []);
 
   const [currentTab, setCurrentTabState] = useState<NavTab>(persistedTab);
   const [selectedBrandFilter, setSelectedBrandFilterState] = useState<BrandId | 'all'>(persistedBrand);
@@ -251,20 +289,30 @@ export function App() {
   useEffect(() => { saveStoredContentBank(contentBank); }, [contentBank]);
   useEffect(() => { saveStoredResearchItems(researchItems); }, [researchItems]);
 
+  // True once the first remote fetch for the cleanup collections has settled
+  // (or immediately when there's no remote store). The Storage Cleanup sweep
+  // must not run against a localStorage-only snapshot, or every managed file
+  // looks like an orphan.
+  const [recordsLoaded, setRecordsLoaded] = useState(!isSupabaseConfigured());
+
   // ── Remote Bootstrap + Realtime Subscriptions ─────────────────────────────────
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
     (async () => {
-      const [remoteTemplates, remoteAssets, remoteBank, remoteResearch] = await Promise.all([
-        fetchRemoteTemplates(),
-        fetchRemoteAssets(),
-        fetchRemoteContentBank(),
-        fetchRemoteResearchItems(),
-      ]);
-      if (remoteTemplates && remoteTemplates.length > 0) setTemplates(remoteTemplates);
-      if (remoteAssets && remoteAssets.length > 0) setAssets(remoteAssets);
-      if (remoteBank && remoteBank.length > 0) setContentBank(remoteBank);
-      if (remoteResearch && remoteResearch.length > 0) setResearchItems(remoteResearch);
+      try {
+        const [remoteTemplates, remoteAssets, remoteBank, remoteResearch] = await Promise.all([
+          fetchRemoteTemplates(),
+          fetchRemoteAssets(),
+          fetchRemoteContentBank(),
+          fetchRemoteResearchItems(),
+        ]);
+        if (remoteTemplates && remoteTemplates.length > 0) setTemplates(remoteTemplates);
+        if (remoteAssets && remoteAssets.length > 0) setAssets(remoteAssets);
+        if (remoteBank && remoteBank.length > 0) setContentBank(remoteBank);
+        if (remoteResearch && remoteResearch.length > 0) setResearchItems(remoteResearch);
+      } finally {
+        setRecordsLoaded(true);
+      }
     })();
     const unsubs = [
       subscribeRemoteTemplates((data) => setTemplates(data)),
@@ -357,17 +405,17 @@ export function App() {
   };
   const handleSaveNewTemplate = (newTpl: PostTemplate) => { setTemplates((prev) => [newTpl, ...prev]); upsertRemoteTemplate(newTpl); showToast(`Saved new template: "${newTpl.title}"`); };
   const handleUpdateTemplate = (updatedTpl: PostTemplate) => { setTemplates((prev) => prev.map((t) => (t.id === updatedTpl.id ? updatedTpl : t))); upsertRemoteTemplate(updatedTpl); showToast(`Updated template: "${updatedTpl.title}"`); };
-  const handleDeleteTemplate = (id: string) => { setTemplates((prev) => prev.filter((t) => t.id !== id)); deleteRemoteTemplate(id); showToast('Template deleted.'); };
+  const handleDeleteTemplate = (id: string) => { const removed = templates.find((t) => t.id === id); setTemplates((prev) => prev.filter((t) => t.id !== id)); deleteRemoteTemplate(id); if (removed) cascadeFor({ url: removed.imagePreview }, id); showToast('Template deleted.'); };
 
   // ── Asset Handlers ────────────────────────────────────────────────────
   const handleAddAsset = (newAsset: BrandAsset) => { setAssets((prev) => [newAsset, ...prev]); upsertRemoteAsset(newAsset); showToast(`Added brand asset: "${newAsset.title}"`); };
   const handleUpdateAsset = (updatedAsset: BrandAsset) => { setAssets((prev) => prev.map((a) => (a.id === updatedAsset.id ? updatedAsset : a))); upsertRemoteAsset(updatedAsset); showToast(`Updated asset: "${updatedAsset.title}"`); };
-  const handleDeleteAsset = (id: string) => { setAssets((prev) => prev.filter((a) => a.id !== id)); deleteRemoteAsset(id); showToast('Asset deleted.'); };
+  const handleDeleteAsset = (id: string) => { const removed = assets.find((a) => a.id === id); setAssets((prev) => prev.filter((a) => a.id !== id)); deleteRemoteAsset(id); if (removed) cascadeFor({ url: removed.url, storagePath: removed.storagePath }, id); showToast('Asset deleted.'); };
 
   // ── Content Bank Handlers ─────────────────────────────────────────────────────
   const handleAddBankItem = (newItem: ContentBankItem) => { setContentBank((prev) => [newItem, ...prev]); upsertRemoteContentBankItem(newItem); showToast('Added copy item to bank.'); };
   const handleUpdateBankItem = (updatedItem: ContentBankItem) => { setContentBank((prev) => prev.map((item) => (item.id === updatedItem.id ? updatedItem : item))); upsertRemoteContentBankItem(updatedItem); showToast('Updated copy item in bank.'); };
-  const handleDeleteBankItem = (id: string) => { setContentBank((prev) => prev.filter((item) => item.id !== id)); deleteRemoteContentBankItem(id); showToast('Deleted copy item from bank.'); };
+  const handleDeleteBankItem = (id: string) => { setContentBank((prev) => prev.filter((item) => item.id !== id)); deleteRemoteContentBankItem(id); showToast('Deleted copy item from bank.'); }; // no file field
 
   // ── Research Handlers ─────────────────────────────────────────────────────────
   const handleAddResearchItem = (newItem: ResearchItem) => {
@@ -382,6 +430,7 @@ export function App() {
     const removed = researchItems.find((item) => item.id === id);
     setResearchItems((prev) => prev.filter((item) => item.id !== id));
     deleteRemoteResearchItem(id);
+    if (removed) cascadeFor({ driveFileId: removed.driveFileId }, id);
     showToast(removed ? `Deleted "${removed.title}".` : 'Research item deleted.');
     if (activeTeammate && removed) {
       logAuditEvent(buildAuditEvent({ actorId: activeTeammate.id, actorName: activeTeammate.name, actionType: 'research_deleted', entityType: 'research', entityId: id, entityTitle: removed.title, beforeValue: { title: removed.title, brand: removed.brand, type: removed.type } }));
@@ -621,7 +670,7 @@ export function App() {
             <MissionControlDashboard posts={posts} teamMembers={teamMembers} onOpenNewPostModal={() => { setNewPostInitialDate(undefined); setIsNewPostModalOpen(true); }} onSelectPost={handleSelectPost} onDeletePost={handleDeletePost} activeTeammate={activeTeammate} />
           )}
           {currentTab === 'integrations' && (
-            <GoogleAppsScriptHub posts={posts} onUploadComplete={(newUrl) => showToast(`Asset uploaded! Direct URL: ${newUrl}`)} />
+            <GoogleAppsScriptHub posts={posts} onUploadComplete={(newUrl) => showToast(`Asset uploaded! Direct URL: ${newUrl}`)} cleanupRecords={{ posts, templates, assets, research: researchItems, logoUrls: brandLogoUrls() }} recordsLoaded={recordsLoaded} isAdmin={activeTeammate?.userRole === 'Admin'} />
           )}
           {currentTab === 'content-bank' && (
             <ContentBank contentBank={contentBank} selectedBrandFilter={selectedBrandFilter} onAddBankItem={handleAddBankItem} onUpdateBankItem={handleUpdateBankItem} onDeleteBankItem={handleDeleteBankItem} onCreatePostFromCopy={handleCreatePostFromCopy} />
