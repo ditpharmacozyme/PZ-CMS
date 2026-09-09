@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { GOOGLE_APPS_SCRIPT_CODE } from '../data/googleAppsScript';
 import { Post } from '../types';
 import { supabase } from '../lib/supabase';
+import type { CleanupRecords } from '../utils/fileCleanup';
+import { StorageCleanupPanel } from './StorageCleanupPanel';
 
 // /api/appscript/proxy now requires a real Supabase session (see that file
 // for why) -- every call from this admin hub needs the bearer token too.
@@ -17,13 +19,17 @@ async function getProxyAuthHeaders(): Promise<Record<string, string>> {
 interface GoogleAppsScriptHubProps {
   posts: Post[];
   onUploadComplete?: (newUrl: string) => void;
+  cleanupRecords: CleanupRecords;
+  isAdmin: boolean;
 }
 
 export const GoogleAppsScriptHub: React.FC<GoogleAppsScriptHubProps> = ({
   posts,
-  onUploadComplete
+  onUploadComplete,
+  cleanupRecords,
+  isAdmin
 }) => {
-  const [activeTab, setActiveTab] = useState<'script' | 'tester' | 'guide' | 'backend'>('script');
+  const [activeTab, setActiveTab] = useState<'script' | 'tester' | 'guide' | 'backend' | 'cleanup'>('script');
   const [scriptUrl, setScriptUrl] = useState<string>('');
   const [copied, setCopied] = useState(false);
   const [testingPing, setTestingPing] = useState(false);
@@ -325,6 +331,18 @@ export const GoogleAppsScriptHub: React.FC<GoogleAppsScriptHubProps> = ({
         >
           Server info
         </button>
+        {isAdmin && (
+          <button
+            onClick={() => setActiveTab('cleanup')}
+            className={`px-4 py-2.5 font-label-caps text-xs font-bold transition-all border-b-2 whitespace-nowrap min-h-[42px] ${
+              activeTab === 'cleanup'
+                ? 'border-[#4f46e5] text-[#4f46e5] bg-white'
+                : 'border-transparent text-[#5f5f5b] hover:text-[#1b1c1a]'
+            }`}
+          >
+            Storage Cleanup
+          </button>
+        )}
       </div>
 
       {/* TAB 1: APPS SCRIPT CODE */}
@@ -743,6 +761,13 @@ export const GoogleAppsScriptHub: React.FC<GoogleAppsScriptHubProps> = ({
               </pre>
             </div>
           )}
+        </div>
+      )}
+
+      {/* TAB 5: STORAGE CLEANUP (admin only) */}
+      {activeTab === 'cleanup' && isAdmin && (
+        <div className="bg-white border border-[#e9e9e7] p-4 sm:p-6 rounded-lg shadow-xs">
+          <StorageCleanupPanel records={cleanupRecords} />
         </div>
       )}
     </div>
