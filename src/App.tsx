@@ -32,14 +32,9 @@ import {
   importLocalDataToRemote,
   isSupabaseConfigured,
 } from './utils/storage';
-import {
-  identifyFile,
-  isFileStillReferenced,
-  cascadeFileDelete,
-  scheduleFileDelete,
-  flushFailedDeletes,
-} from './utils/fileCleanup';
+import { flushFailedDeletes } from './utils/fileCleanup';
 import type { CleanupRecords } from './utils/fileCleanup';
+import { makeCascadeFor } from './utils/cascadeFor';
 import { supabase } from './lib/supabase';
 import { useBrands } from './context/BrandsContext';
 import { applyBrandTypography } from './utils/brandTypography';
@@ -175,24 +170,8 @@ export function App() {
   });
 
   // Delete the record's backing file unless another record still points at it.
-  const cascadeFor = (
-    file: Parameters<typeof identifyFile>[0],
-    recordId: string,
-    opts?: { deferMs?: number }
-  ) => {
-    const ref = identifyFile(file);
-    if (!ref) return;
-    if (opts?.deferMs) {
-      // Deferred (post delete): re-check at fire time with NO exclusion, so an
-      // Undo restore -- which puts the post back under its original id -- or the
-      // same image reused on a new post within the window cancels the delete.
-      scheduleFileDelete(ref, opts.deferMs, () => !isFileStillReferenced(ref, recordsRef.current, ''));
-    } else if (!isFileStillReferenced(ref, recordsRef.current, recordId)) {
-      // Immediate (template/asset/research): the just-deleted record's React
-      // state hasn't flushed yet, so it must still be excluded by its own id.
-      void cascadeFileDelete(ref);
-    }
-  };
+  // Real logic lives in src/utils/cascadeFor.ts so it stays unit-testable.
+  const cascadeFor = makeCascadeFor(() => recordsRef.current);
 
   // ── Posts ───────────────────────────────────────────────────────────────────
   const {
