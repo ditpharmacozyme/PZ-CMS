@@ -282,6 +282,27 @@ async function startServer() {
     try {
       const { scriptUrl: clientScriptUrl, payload } = req.body ?? {};
 
+      // ── File-cleanup actions are Admin-only ───────────────────────────────
+      // Mirrors api/appscript/proxy.ts: deleteFile / listManagedFiles are
+      // gated to Admins; every other action is unaffected. Fails closed if
+      // the service-role key is missing, for these two actions only.
+      const DESTRUCTIVE_ACTIONS = new Set(["deleteFile", "listManagedFiles"]);
+      if (DESTRUCTIVE_ACTIONS.has(payload?.action)) {
+        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        if (!serviceRoleKey) {
+          return res.status(500).json({ status: "error", message: "Server missing SUPABASE_SERVICE_ROLE_KEY." });
+        }
+        const adminClient = createClient(supabaseUrl, serviceRoleKey, {
+          auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false }
+        });
+        const { data: callerRow, error: callerErr } = await adminClient
+          .from("team_members").select("user_role").eq("auth_user_id", userData.user.id).maybeSingle();
+        if (callerErr) return res.status(500).json({ status: "error", message: callerErr.message });
+        if (!callerRow || callerRow.user_role !== "Admin") {
+          return res.status(403).json({ status: "error", message: "Only an Admin can perform file cleanup." });
+        }
+      }
+
       // ── Direct Brevo Transactional Email Option ──────────────────────────────
       if (payload?.action === 'sendEmailReminder' && process.env.BREVO_API_KEY) {
         const post = payload.post || {};
