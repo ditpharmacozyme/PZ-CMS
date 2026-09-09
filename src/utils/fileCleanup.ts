@@ -1,4 +1,5 @@
 import type { Post, PostTemplate, BrandAsset, ResearchItem } from '../types';
+import { supabase } from '../lib/supabase';
 
 export type FileRef =
   | { backend: 'drive'; fileId: string }
@@ -89,4 +90,49 @@ export function enqueueFailedDelete(ref: FileRef): void {
 
 export function removeFromDeleteQueue(ref: FileRef): void {
   writeDeleteQueue(readDeleteQueue().filter((r) => !fileRefsEqual(r, ref)));
+}
+
+const GONE_RE = /not found|no item|does not exist/i;
+
+async function deleteDrive(fileId: string): Promise<boolean> {
+  const token = (await supabase?.auth.getSession())?.data.session?.access_token;
+  const res = await fetch('/api/appscript/proxy', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: JSON.stringify({ payload: { action: 'deleteFile', fileId } }),
+  });
+  if (!res.ok) return false;
+  const body = await res.json().catch(() => ({}));
+  const d = body?.data ?? {};
+  return d.status === 'success' || d.alreadyGone === true || (typeof d.error === 'string' && GONE_RE.test(d.error));
+}
+
+async function deleteSupabase(path: string): Promise<boolean> {
+  if (!supabase) return false;
+  const { error } = await supabase.storage.from('brand-assets').remove([path]);
+  return !error || GONE_RE.test(error.message);
+}
+
+export async function cascadeFileDelete(ref: FileRef): Promise<void> {
+  try {
+    const ok = ref.backend === 'drive' ? await deleteDrive(ref.fileId) : await deleteSupabase(ref.path);
+    if (ok) removeFromDeleteQueue(ref);
+    else enqueueFailedDelete(ref);
+  } catch {
+    enqueueFailedDelete(ref);
+  }
+}
+
+export function scheduleFileDelete(ref: FileRef, delayMs: number, shouldProceed: () => boolean): void {
+  setTimeout(() => {
+    if (shouldProceed()) void cascadeFileDelete(ref);
+  }, delayMs);
+}
+
+export async function flushFailedDeletes(): Promise<void> {
+  const queued = readDeleteQueue();
+  for (const ref of queued) {
+    removeFromDeleteQueue(ref);
+    await cascadeFileDelete(ref);
+  }
 }

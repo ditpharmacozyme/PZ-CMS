@@ -1,6 +1,14 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { identifyFile, fileRefsEqual, isFileStillReferenced, PENDING_DELETES_KEY, readDeleteQueue, enqueueFailedDelete, removeFromDeleteQueue } from './fileCleanup';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { identifyFile, fileRefsEqual, isFileStillReferenced, PENDING_DELETES_KEY, readDeleteQueue, enqueueFailedDelete, removeFromDeleteQueue, cascadeFileDelete, scheduleFileDelete, flushFailedDeletes } from './fileCleanup';
 import type { Post, PostTemplate, BrandAsset, ResearchItem } from '../types';
+
+const mockRemove = vi.fn();
+vi.mock('../lib/supabase', () => ({
+  supabase: {
+    auth: { getSession: () => Promise.resolve({ data: { session: { access_token: 'tok' } } }) },
+    storage: { from: () => ({ remove: (...a: unknown[]) => mockRemove(...a) }) },
+  },
+}));
 
 describe('identifyFile', () => {
   it('prefers explicit storagePath', () => {
@@ -134,5 +142,82 @@ describe('retry queue', () => {
     expect(readDeleteQueue()).toEqual([]);
     enqueueFailedDelete({ backend: 'drive', fileId: 'A' });
     expect(readDeleteQueue()).toEqual([{ backend: 'drive', fileId: 'A' }]);
+  });
+});
+
+describe('cascadeFileDelete', () => {
+  beforeEach(() => { localStorage.clear(); mockRemove.mockReset(); vi.restoreAllMocks(); });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('supabase: calls storage.remove with the path, no enqueue on success', async () => {
+    mockRemove.mockResolvedValue({ data: [{}], error: null });
+    await cascadeFileDelete({ backend: 'supabase', path: 'assets/x.pdf' });
+    expect(mockRemove).toHaveBeenCalledWith(['assets/x.pdf']);
+    expect(readDeleteQueue()).toEqual([]);
+  });
+
+  it('supabase: enqueues on a real error', async () => {
+    mockRemove.mockResolvedValue({ data: null, error: { message: 'network down' } });
+    await cascadeFileDelete({ backend: 'supabase', path: 'assets/x.pdf' });
+    expect(readDeleteQueue()).toEqual([{ backend: 'supabase', path: 'assets/x.pdf' }]);
+  });
+
+  it('supabase: "not found" counts as success', async () => {
+    mockRemove.mockResolvedValue({ data: null, error: { message: 'Object not found' } });
+    await cascadeFileDelete({ backend: 'supabase', path: 'assets/x.pdf' });
+    expect(readDeleteQueue()).toEqual([]);
+  });
+
+  it('drive: posts the deleteFile action, no enqueue on success', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ data: { status: 'success' } }) });
+    vi.stubGlobal('fetch', fetchMock);
+    await cascadeFileDelete({ backend: 'drive', fileId: 'D1' });
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body.payload).toEqual({ action: 'deleteFile', fileId: 'D1' });
+    expect(readDeleteQueue()).toEqual([]);
+  });
+
+  it('drive: enqueues on HTTP failure', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, json: () => Promise.resolve({}) }));
+    await cascadeFileDelete({ backend: 'drive', fileId: 'D1' });
+    expect(readDeleteQueue()).toEqual([{ backend: 'drive', fileId: 'D1' }]);
+  });
+
+  it('never throws even if fetch rejects', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('boom')));
+    await expect(cascadeFileDelete({ backend: 'drive', fileId: 'D1' })).resolves.toBeUndefined();
+    expect(readDeleteQueue()).toEqual([{ backend: 'drive', fileId: 'D1' }]);
+  });
+});
+
+describe('scheduleFileDelete', () => {
+  beforeEach(() => { localStorage.clear(); mockRemove.mockReset(); vi.useFakeTimers(); });
+  afterEach(() => vi.useRealTimers());
+
+  it('skips the delete when shouldProceed() is false', async () => {
+    mockRemove.mockResolvedValue({ data: [{}], error: null });
+    scheduleFileDelete({ backend: 'supabase', path: 'assets/x.pdf' }, 6000, () => false);
+    await vi.advanceTimersByTimeAsync(6000);
+    expect(mockRemove).not.toHaveBeenCalled();
+  });
+
+  it('runs the delete when shouldProceed() is true', async () => {
+    mockRemove.mockResolvedValue({ data: [{}], error: null });
+    scheduleFileDelete({ backend: 'supabase', path: 'assets/x.pdf' }, 6000, () => true);
+    await vi.advanceTimersByTimeAsync(6000);
+    expect(mockRemove).toHaveBeenCalledWith(['assets/x.pdf']);
+  });
+});
+
+describe('flushFailedDeletes', () => {
+  beforeEach(() => { localStorage.clear(); mockRemove.mockReset(); });
+
+  it('retries queued entries and clears the ones that succeed', async () => {
+    enqueueFailedDelete({ backend: 'supabase', path: 'assets/ok.pdf' });
+    enqueueFailedDelete({ backend: 'supabase', path: 'assets/still-broken.pdf' });
+    mockRemove.mockImplementation((paths: string[]) =>
+      Promise.resolve(paths[0] === 'assets/ok.pdf' ? { error: null } : { error: { message: 'network down' } }));
+    await flushFailedDeletes();
+    expect(readDeleteQueue()).toEqual([{ backend: 'supabase', path: 'assets/still-broken.pdf' }]);
   });
 });
