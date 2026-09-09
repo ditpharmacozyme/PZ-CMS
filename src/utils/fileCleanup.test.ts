@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-import { identifyFile, fileRefsEqual, isFileStillReferenced } from './fileCleanup';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { identifyFile, fileRefsEqual, isFileStillReferenced, PENDING_DELETES_KEY, readDeleteQueue, enqueueFailedDelete, removeFromDeleteQueue } from './fileCleanup';
 import type { Post, PostTemplate, BrandAsset, ResearchItem } from '../types';
 
 describe('identifyFile', () => {
@@ -93,5 +93,46 @@ describe('isFileStillReferenced', () => {
   it('ignores records whose file is an external / null ref', () => {
     const records = { ...emptyRecords, posts: [post('p1', driveUrl), post('p2', 'https://images.unsplash.com/y')] };
     expect(isFileStillReferenced(driveRef, records, 'p1')).toBe(false);
+  });
+});
+
+describe('retry queue', () => {
+  beforeEach(() => localStorage.clear());
+
+  it('starts empty', () => {
+    expect(readDeleteQueue()).toEqual([]);
+  });
+
+  it('enqueues and reads back', () => {
+    enqueueFailedDelete({ backend: 'drive', fileId: 'A' });
+    expect(readDeleteQueue()).toEqual([{ backend: 'drive', fileId: 'A' }]);
+  });
+
+  it('dedupes by ref-equality', () => {
+    enqueueFailedDelete({ backend: 'drive', fileId: 'A' });
+    enqueueFailedDelete({ backend: 'drive', fileId: 'A' });
+    expect(readDeleteQueue()).toHaveLength(1);
+  });
+
+  it('removes a specific ref', () => {
+    enqueueFailedDelete({ backend: 'drive', fileId: 'A' });
+    enqueueFailedDelete({ backend: 'supabase', path: 'p/b' });
+    removeFromDeleteQueue({ backend: 'drive', fileId: 'A' });
+    expect(readDeleteQueue()).toEqual([{ backend: 'supabase', path: 'p/b' }]);
+  });
+
+  it('caps at 200, dropping oldest', () => {
+    for (let i = 0; i < 205; i++) enqueueFailedDelete({ backend: 'drive', fileId: `F${i}` });
+    const q = readDeleteQueue();
+    expect(q).toHaveLength(200);
+    expect(q[0]).toEqual({ backend: 'drive', fileId: 'F5' });
+    expect(q[199]).toEqual({ backend: 'drive', fileId: 'F204' });
+  });
+
+  it('survives a corrupt payload', () => {
+    localStorage.setItem(PENDING_DELETES_KEY, '{not json');
+    expect(readDeleteQueue()).toEqual([]);
+    enqueueFailedDelete({ backend: 'drive', fileId: 'A' });
+    expect(readDeleteQueue()).toEqual([{ backend: 'drive', fileId: 'A' }]);
   });
 });

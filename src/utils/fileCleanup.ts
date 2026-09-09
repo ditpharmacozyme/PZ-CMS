@@ -59,3 +59,34 @@ export function isFileStillReferenced(
     records.research.some((r) => r.id !== excludeId && hit(identifyFile({ driveFileId: r.driveFileId })))
   );
 }
+
+export const PENDING_DELETES_KEY = 'pharmacozyme_brandops_pending_file_deletes_v1';
+const QUEUE_CAP = 200;
+
+export function readDeleteQueue(): FileRef[] {
+  try {
+    const raw = localStorage.getItem(PENDING_DELETES_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeDeleteQueue(list: FileRef[]): void {
+  try {
+    localStorage.setItem(PENDING_DELETES_KEY, JSON.stringify(list.slice(-QUEUE_CAP)));
+  } catch {
+    /* private mode / quota — nothing we can do */
+  }
+}
+
+export function enqueueFailedDelete(ref: FileRef): void {
+  const q = readDeleteQueue();
+  if (q.some((r) => fileRefsEqual(r, ref))) return;
+  writeDeleteQueue([...q, ref]);
+}
+
+export function removeFromDeleteQueue(ref: FileRef): void {
+  writeDeleteQueue(readDeleteQueue().filter((r) => !fileRefsEqual(r, ref)));
+}
