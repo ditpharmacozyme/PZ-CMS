@@ -408,7 +408,7 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
                   <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={async () => {
-                        if (await confirm({ title: `Delete "${item.title}" from Research & Plans?`, body: 'This does not delete the file from Drive.', confirmLabel: 'Delete', tone: 'danger' })) {
+                        if (await confirm({ title: `Delete "${item.title}" from Research & Plans?`, body: 'The file is also moved to Drive Trash (recoverable for 30 days).', confirmLabel: 'Delete', tone: 'danger' })) {
                           onDeleteResearchItem(item.id);
                         }
                       }}

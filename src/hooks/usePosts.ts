@@ -19,7 +19,8 @@ interface ToastAction {
 
 export function usePosts(
   showToast: (msg: string, action?: ToastAction, duration?: number, variant?: 'success' | 'error') => void,
-  activeTeammate: TeamMember | null
+  activeTeammate: TeamMember | null,
+  onAfterDelete?: (removed: Post) => void
 ) {
   const [posts, setPosts] = useState<Post[]>(() => getStoredPosts());
 
@@ -148,6 +149,7 @@ export function usePosts(
     if (onDeletedModalCallback) onDeletedModalCallback();
 
     if (removed) {
+      onAfterDelete?.(removed);
       showToast(
         `Deleted "${removed.title}"`,
         {
