@@ -36,6 +36,10 @@ export const GOOGLE_APPS_SCRIPT_CODE = `/**
  *        select value from private.app_secrets where name = 'reminder_rpc_secret';
  *     The reminder RPCs reject the call without it, so the trigger sends nothing until
  *     this is set. (Optional: REMINDER_TIMEZONE to override the default Asia/Karachi.)
+ * 15. AFTER updating this script (delete-cascade release): click Deploy ->
+ *     "Manage deployments" -> edit the active deployment -> "New version" ->
+ *     Deploy. This activates the deleteFile / listManagedFiles actions the
+ *     app's delete buttons and Storage Cleanup panel need.
  */
 
 // Global Configuration
@@ -109,6 +113,10 @@ function doPost(e) {
       return ContentService
         .createTextOutput(JSON.stringify({ status: "success", installed: isReminderTriggerInstalled() }))
         .setMimeType(ContentService.MimeType.JSON);
+    } else if (action === "deleteFile") {
+      return handleDeleteFile(data);
+    } else if (action === "listManagedFiles") {
+      return handleListManagedFiles();
     } else {
       throw new Error("Unknown action requested: " + action);
     }
@@ -238,6 +246,74 @@ function handleUploadResearchFile(data) {
       webViewLink: file.getUrl(),
       downloadUrl: "https://drive.google.com/uc?export=download&id=" + file.getId()
     }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
+ * Move a Drive file to Trash (auto-purged after ~30 days). Missing or
+ * already-trashed files are reported as alreadyGone rather than throwing,
+ * so the CMS retry queue treats them as done.
+ */
+function handleDeleteFile(data) {
+  if (!data.fileId) {
+    throw new Error("Missing fileId in payload.");
+  }
+  try {
+    var file = DriveApp.getFileById(data.fileId);
+    if (file.isTrashed()) {
+      return ContentService
+        .createTextOutput(JSON.stringify({ status: "success", alreadyGone: true }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    file.setTrashed(true);
+    return ContentService
+      .createTextOutput(JSON.stringify({ status: "success" }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    // getFileById throws for a nonexistent / permanently-removed id.
+    return ContentService
+      .createTextOutput(JSON.stringify({ status: "success", alreadyGone: true, note: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+/**
+ * List every non-trashed file the CMS created: the flat "Pharmacozyme CMS
+ * Uploads" folder plus every file under "Research & Plans/**". Used by the
+ * app's Storage Cleanup sweep to find orphans.
+ */
+function handleListManagedFiles() {
+  var out = [];
+
+  function pushFile(file, folderLabel) {
+    if (file.isTrashed()) return;
+    out.push({
+      id: file.getId(),
+      name: file.getName(),
+      folder: folderLabel,
+      createdMs: file.getDateCreated().getTime(),
+      sizeBytes: file.getSize()
+    });
+  }
+
+  function walk(folder, label) {
+    var files = folder.getFiles();
+    while (files.hasNext()) pushFile(files.next(), label);
+    var subs = folder.getFolders();
+    while (subs.hasNext()) {
+      var sub = subs.next();
+      walk(sub, label + "/" + sub.getName());
+    }
+  }
+
+  var uploads = DriveApp.getFoldersByName(DRIVE_FOLDER_NAME);
+  if (uploads.hasNext()) walk(uploads.next(), DRIVE_FOLDER_NAME);
+
+  var research = DriveApp.getFoldersByName("Research & Plans");
+  if (research.hasNext()) walk(research.next(), "Research & Plans");
+
+  return ContentService
+    .createTextOutput(JSON.stringify({ status: "success", files: out }))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
