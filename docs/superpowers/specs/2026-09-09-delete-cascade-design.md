@@ -115,8 +115,14 @@ Two `FileRef`s are equal iff same `backend` and same `fileId` / `path`.
 // Delete now. Never throws — a failure enqueues the ref for retry.
 export function cascadeFileDelete(ref: FileRef): Promise<void>;
 
-// Delete after delayMs unless the returned cancel fn is called first.
-export function scheduleFileDelete(ref: FileRef, delayMs: number): () => void;
+// After delayMs, run cascadeFileDelete(ref) IFF shouldProceed() is still true.
+// Used for the post Undo window: shouldProceed re-checks reference-counting at
+// fire time, so an undone delete (post back in state) naturally cancels it.
+export function scheduleFileDelete(
+  ref: FileRef,
+  delayMs: number,
+  shouldProceed: () => boolean,
+): void;
 
 // Drain the retry queue. Called once from App on mount.
 export function flushFailedDeletes(): Promise<void>;
@@ -184,22 +190,26 @@ All cascade calls live in `App.tsx`.
 | `handleDeleteBankItem` | no change; add a `// no file field` comment |
 | `handleDeletePost` (via `usePosts`) | see below |
 
-**Post + Undo coordination.** `usePosts.handleDeletePost` gains an optional
-`onAfterDelete?: (removed: Post) => void` and an optional
-`onBeforeUndo?: (postId: string) => void` (both passed from `App.tsx`).
+**Post + Undo coordination.** `usePosts.handleDeletePost` gains one optional
+param: `onAfterDelete?: (removed: Post) => void`, passed from `App.tsx`. No Undo
+hook is needed — the timing works itself out:
 
 - On delete: `usePosts` calls `onAfterDelete(removed)` after removing the row.
-  `App`'s implementation computes the ref, checks `isFileStillReferenced`, and if
-  it should delete, calls `scheduleFileDelete(ref, 6000)` and stores the returned
-  cancel fn in a `Map<postId, () => void>` (module-level or a `useRef` in `App`).
-- On Undo: `usePosts`'s existing Undo `onClick` first calls `onBeforeUndo(postId)`.
-  `App`'s implementation looks up the cancel fn for that id, calls it, and clears
-  the map entry.
-- The 6s delay is deliberately longer than the 5s toast so the timer never fires
-  while Undo is still on screen.
+  `App`'s implementation computes the ref (returns early if `null`), then calls
+  `scheduleFileDelete(ref, 6000, shouldProceed)` where
+  `shouldProceed = () => !isFileStillReferenced(ref, recordsRef.current, removed.id)`.
+- `recordsRef` is a `useRef` in `App` updated every render with the current
+  `{ posts, templates, assets, research }`. When the timer fires 6s later,
+  `shouldProceed` reads the *latest* lists.
+- On **Undo** (existing `usePosts` toast `onClick`): the post goes back into
+  `posts` state → `recordsRef.current.posts` includes it again → at fire time
+  `isFileStillReferenced` is `true` → `shouldProceed()` is `false` → the delete
+  is skipped. Same mechanism also covers "user re-uses that image on a new post
+  within 6s".
+- The 6s delay is longer than the 5s toast so the timer never races the toast.
 
 Bulk delete routes through the same `handleDeletePost`, so each selected post
-gets its own scheduled delete and its own map entry.
+gets its own scheduled delete with its own `shouldProceed`.
 
 ## 9. Apps Script additions
 
@@ -254,8 +264,9 @@ Unit (Vitest, `globals: false`):
   unique file; supabase path shared by two assets; `excludeId` respected.
 - retry queue — push on failure; dedupe; drain on flush; already-gone treated as
   success; 200-cap evicts oldest.
-- `scheduleFileDelete` — cancel fn prevents the delete; uncancelled fires after
-  `delayMs` (fake timers); `cascadeFileDelete` mocked.
+- `scheduleFileDelete` — `shouldProceed` returning `false` prevents the delete;
+  returning `true` fires `cascadeFileDelete` after `delayMs` (fake timers);
+  `cascadeFileDelete` mocked.
 - delete handlers — mock the cleanup module; assert `cascadeFileDelete` /
   `scheduleFileDelete` called with the right ref, and **not** called when
   `isFileStillReferenced` returns `true`.
