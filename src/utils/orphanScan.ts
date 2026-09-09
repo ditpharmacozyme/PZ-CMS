@@ -1,4 +1,4 @@
-import { identifyFile, isFileStillReferenced, fileRefsEqual, type FileRef, type CleanupRecords } from './fileCleanup';
+import { isFileStillReferenced, type FileRef, type CleanupRecords } from './fileCleanup';
 
 export interface ManagedFile {
   ref: FileRef;
@@ -8,20 +8,12 @@ export interface ManagedFile {
   sizeBytes?: number;
 }
 
-export function findOrphans(
-  files: ManagedFile[],
-  records: CleanupRecords,
-  logoUrls: string[],
-): ManagedFile[] {
-  const logoRefs = logoUrls
-    .map((u) => identifyFile({ url: u }))
-    .filter((r): r is FileRef => r !== null);
-
-  return files.filter((f) => {
-    // The scan itself establishes non-reference, so we want NO record excluded.
-    // '' is the "exclude nothing" sentinel Task 6 settled on (no record id is empty).
-    if (isFileStillReferenced(f.ref, records, '')) return false;
-    if (logoRefs.some((r) => fileRefsEqual(r, f.ref))) return false;
-    return true;
-  });
+/**
+ * A managed file is an orphan when no live record — post, template, asset,
+ * research item, or brand logo — references it. Brand-logo protection lives
+ * inside isFileStillReferenced via records.logoUrls. '' is the "exclude
+ * nothing" sentinel: the scan itself establishes non-reference.
+ */
+export function findOrphans(files: ManagedFile[], records: CleanupRecords): ManagedFile[] {
+  return files.filter((f) => !isFileStillReferenced(f.ref, records, ''));
 }

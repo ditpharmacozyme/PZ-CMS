@@ -72,7 +72,7 @@ export const StorageCleanupPanel: React.FC<Props> = ({ records }) => {
       const [drive, bucket] = await Promise.all([listDriveFiles(), listBucketFiles()]);
       const all = [...drive, ...bucket];
       const logoUrls = Object.values(brands).map((b) => b.logoUrl).filter((u): u is string => Boolean(u));
-      const found = findOrphans(all, records, logoUrls);
+      const found = findOrphans(all, { ...records, logoUrls });
       setScanned(all.length);
       setOrphans(found);
       setSelected(new Set(found.map(keyOf)));

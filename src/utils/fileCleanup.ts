@@ -5,11 +5,33 @@ export type FileRef =
   | { backend: 'drive'; fileId: string }
   | { backend: 'supabase'; path: string };
 
-const SUPABASE_PUBLIC_RE = /\/storage\/v1\/object\/(?:public|sign)\/brand-assets\/([^?#]+)/;
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Anchor the Supabase storage-URL match to our own project host when we can
+// resolve it from VITE_SUPABASE_URL, so a foreign *.supabase.co URL pasted
+// into a record can't resolve against OUR bucket path. When the env var is
+// absent (some test runs) fall back to matching any *.supabase.co host.
+const SUPABASE_HOST = (() => {
+  try {
+    const u = import.meta.env?.VITE_SUPABASE_URL as string | undefined;
+    return u ? new URL(u).host : null;
+  } catch {
+    return null;
+  }
+})();
+
+const SUPABASE_PUBLIC_RE = new RegExp(
+  `^https?://${SUPABASE_HOST ? escapeRegExp(SUPABASE_HOST) : '[a-z0-9-]+\\.supabase\\.co'}` +
+    '/storage/v1/object/(?:public|sign)/brand-assets/([^?#]+)',
+  'i',
+);
+
 const DRIVE_RES = [
   /lh3\.googleusercontent\.com\/d\/([-\w]+)/,
   /drive\.google\.com\/file\/d\/([-\w]+)/,
-  /drive\.google\.com\/[^?#]*[?&].*?id=([-\w]+)/,
+  /drive\.google\.com\/[^#]*[?&]id=([-\w]+)/,
 ];
 
 export function identifyFile(input: {
@@ -24,7 +46,15 @@ export function identifyFile(input: {
   if (!url || url.startsWith('data:') || url.startsWith('/')) return null;
 
   const sb = url.match(SUPABASE_PUBLIC_RE);
-  if (sb) return { backend: 'supabase', path: decodeURIComponent(sb[1]) };
+  if (sb) {
+    let path = sb[1];
+    try {
+      path = decodeURIComponent(sb[1]);
+    } catch {
+      /* malformed %-escape — use the raw path */
+    }
+    return { backend: 'supabase', path };
+  }
 
   for (const re of DRIVE_RES) {
     const m = url.match(re);
@@ -34,10 +64,9 @@ export function identifyFile(input: {
 }
 
 export function fileRefsEqual(a: FileRef, b: FileRef): boolean {
-  if (a.backend !== b.backend) return false;
-  return a.backend === 'drive'
-    ? a.fileId === (b as { fileId: string }).fileId
-    : a.path === (b as { path: string }).path;
+  if (a.backend === 'drive' && b.backend === 'drive') return a.fileId === b.fileId;
+  if (a.backend === 'supabase' && b.backend === 'supabase') return a.path === b.path;
+  return false;
 }
 
 export interface CleanupRecords {
@@ -45,6 +74,7 @@ export interface CleanupRecords {
   templates: PostTemplate[];
   assets: BrandAsset[];
   research: ResearchItem[];
+  logoUrls: string[];
 }
 
 export function isFileStillReferenced(
@@ -57,18 +87,30 @@ export function isFileStillReferenced(
     records.posts.some((p) => p.id !== excludeId && hit(identifyFile({ url: p.visualUrl }))) ||
     records.templates.some((t) => t.id !== excludeId && hit(identifyFile({ url: t.imagePreview }))) ||
     records.assets.some((a) => a.id !== excludeId && hit(identifyFile({ url: a.url, storagePath: a.storagePath }))) ||
-    records.research.some((r) => r.id !== excludeId && hit(identifyFile({ driveFileId: r.driveFileId })))
+    records.research.some((r) => r.id !== excludeId && hit(identifyFile({ driveFileId: r.driveFileId }))) ||
+    // Brand logos are never keyed by a record id, so they can't be excluded —
+    // a logo reference always protects the file.
+    records.logoUrls.some((u) => hit(identifyFile({ url: u })))
   );
 }
 
 export const PENDING_DELETES_KEY = 'pharmacozyme_brandops_pending_file_deletes_v1';
 const QUEUE_CAP = 200;
 
+/** Process at most this many queued refs per flushFailedDeletes() call. */
+export const FLUSH_BATCH_CAP = 25;
+
 export function readDeleteQueue(): FileRef[] {
   try {
     const raw = localStorage.getItem(PENDING_DELETES_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+    // Drop anything that isn't a well-formed FileRef — a hand-edited or
+    // schema-changed localStorage value must not throw on mount.
+    return parsed.filter((r): r is FileRef =>
+      r && typeof r === 'object' &&
+      ((r.backend === 'drive' && typeof r.fileId === 'string') ||
+        (r.backend === 'supabase' && typeof r.path === 'string')));
   } catch {
     return [];
   }
@@ -113,25 +155,51 @@ async function deleteSupabase(path: string): Promise<boolean> {
   return !error || GONE_RE.test(error.message);
 }
 
-export async function cascadeFileDelete(ref: FileRef): Promise<void> {
+/**
+ * Delete a file's backing storage. Resolves `true` when the file was deleted
+ * or was already gone; `false` when the delete failed and the ref was
+ * enqueued for a later retry. Never throws — callers are fire-and-forget.
+ */
+export async function cascadeFileDelete(ref: FileRef): Promise<boolean> {
   try {
     const ok = ref.backend === 'drive' ? await deleteDrive(ref.fileId) : await deleteSupabase(ref.path);
-    if (ok) removeFromDeleteQueue(ref);
-    else enqueueFailedDelete(ref);
+    if (ok) {
+      removeFromDeleteQueue(ref);
+      return true;
+    }
+    enqueueFailedDelete(ref);
+    return false;
   } catch {
     enqueueFailedDelete(ref);
+    return false;
   }
 }
 
+/**
+ * Fire a delete after `delayMs` unless `shouldProceed()` says otherwise at
+ * fire time. Note: a tab closed within `delayMs` orphans the file — the
+ * Storage Cleanup sweep is the recovery path for that case.
+ */
 export function scheduleFileDelete(ref: FileRef, delayMs: number, shouldProceed: () => boolean): void {
   setTimeout(() => {
     if (shouldProceed()) void cascadeFileDelete(ref);
   }, delayMs);
 }
 
-export async function flushFailedDeletes(): Promise<void> {
-  const queued = readDeleteQueue();
-  for (const ref of queued) {
+/**
+ * Retry queued failed deletes, oldest first, at most FLUSH_BATCH_CAP per call
+ * (the rest wait for the next mount) so a large backlog can't fire hundreds
+ * of sequential Apps Script calls. If `getRecords` is supplied, a ref that is
+ * once again referenced by a live record (a record was re-created since the
+ * failure) is dropped from the queue and skipped.
+ */
+export async function flushFailedDeletes(getRecords?: () => CleanupRecords): Promise<void> {
+  const batch = readDeleteQueue().slice(0, FLUSH_BATCH_CAP);
+  for (const ref of batch) {
+    if (getRecords && isFileStillReferenced(ref, getRecords(), '')) {
+      removeFromDeleteQueue(ref);
+      continue;
+    }
     removeFromDeleteQueue(ref);
     await cascadeFileDelete(ref);
   }

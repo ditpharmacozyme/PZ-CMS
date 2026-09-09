@@ -163,7 +163,16 @@ export function App() {
   // onAfterDelete arrow (3rd usePosts arg) can close over cascadeFor without
   // tripping "used before declaration". The two effects that sync the ref and
   // flush the retry queue live AFTER the templates/assets/researchItems state.
-  const recordsRef = useRef<CleanupRecords>({ posts: [], templates: [], assets: [], research: [] });
+  const brandLogoUrls = () =>
+    Object.values(brands).map((b) => b.logoUrl).filter((u): u is string => Boolean(u));
+
+  const recordsRef = useRef<CleanupRecords>({
+    posts: [],
+    templates: getStoredTemplates(),
+    assets: getStoredAssets(),
+    research: getStoredResearchItems(),
+    logoUrls: brandLogoUrls(),
+  });
 
   // Delete the record's backing file unless another record still points at it.
   const cascadeFor = (
@@ -243,12 +252,15 @@ export function App() {
 
   // Keep the cleanup reference-count snapshot current (declared above usePosts).
   useEffect(() => {
-    recordsRef.current = { posts, templates, assets, research: researchItems };
+    recordsRef.current = { posts, templates, assets, research: researchItems, logoUrls: brandLogoUrls() };
   });
 
-  // Retry any file deletes that failed while offline / mid-session, once on mount.
+  // Retry any file deletes that failed while offline / mid-session, once on
+  // mount. Passes a records accessor so a ref whose record was re-created
+  // since the failure is dropped instead of deleted; the batch cap inside
+  // keeps a large backlog from firing hundreds of sequential calls.
   useEffect(() => {
-    void flushFailedDeletes();
+    void flushFailedDeletes(() => recordsRef.current);
   }, []);
 
   const [currentTab, setCurrentTabState] = useState<NavTab>(persistedTab);
@@ -669,7 +681,7 @@ export function App() {
             <MissionControlDashboard posts={posts} teamMembers={teamMembers} onOpenNewPostModal={() => { setNewPostInitialDate(undefined); setIsNewPostModalOpen(true); }} onSelectPost={handleSelectPost} onDeletePost={handleDeletePost} activeTeammate={activeTeammate} />
           )}
           {currentTab === 'integrations' && (
-            <GoogleAppsScriptHub posts={posts} onUploadComplete={(newUrl) => showToast(`Asset uploaded! Direct URL: ${newUrl}`)} cleanupRecords={{ posts, templates, assets, research: researchItems }} isAdmin={activeTeammate?.userRole === 'Admin'} />
+            <GoogleAppsScriptHub posts={posts} onUploadComplete={(newUrl) => showToast(`Asset uploaded! Direct URL: ${newUrl}`)} cleanupRecords={{ posts, templates, assets, research: researchItems, logoUrls: brandLogoUrls() }} isAdmin={activeTeammate?.userRole === 'Admin'} />
           )}
           {currentTab === 'content-bank' && (
             <ContentBank contentBank={contentBank} selectedBrandFilter={selectedBrandFilter} onAddBankItem={handleAddBankItem} onUpdateBankItem={handleUpdateBankItem} onDeleteBankItem={handleDeleteBankItem} onCreatePostFromCopy={handleCreatePostFromCopy} />

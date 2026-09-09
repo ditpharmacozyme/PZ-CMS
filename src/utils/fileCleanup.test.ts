@@ -67,7 +67,7 @@ describe('fileRefsEqual', () => {
   });
 });
 
-const emptyRecords = { posts: [], templates: [], assets: [], research: [] };
+const emptyRecords = { posts: [], templates: [], assets: [], research: [], logoUrls: [] };
 const post = (id: string, visualUrl: string): Post => ({ id, visualUrl } as Post);
 const tpl = (id: string, imagePreview: string): PostTemplate => ({ id, imagePreview } as PostTemplate);
 const asset = (id: string, url: string, storagePath?: string): BrandAsset => ({ id, url, storagePath } as BrandAsset);
@@ -185,7 +185,7 @@ describe('cascadeFileDelete', () => {
 
   it('never throws even if fetch rejects', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('boom')));
-    await expect(cascadeFileDelete({ backend: 'drive', fileId: 'D1' })).resolves.toBeUndefined();
+    await expect(cascadeFileDelete({ backend: 'drive', fileId: 'D1' })).resolves.toBe(false);
     expect(readDeleteQueue()).toEqual([{ backend: 'drive', fileId: 'D1' }]);
   });
 });

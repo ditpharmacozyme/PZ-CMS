@@ -21,7 +21,7 @@ describe('App delete-cascade wiring contract', () => {
 
   it('cancels the deferred post file-delete when the post is restored via Undo (same id)', async () => {
     mockRemove.mockResolvedValue({ data: [{}], error: null });
-    const records: cleanup.CleanupRecords = { posts: [], templates: [], assets: [], research: [] };
+    const records: cleanup.CleanupRecords = { posts: [], templates: [], assets: [], research: [], logoUrls: [] };
     const ref = cleanup.identifyFile({ url: POST_URL })!;
 
     // schedule exactly as cascadeFor's deferred branch does: NO exclusion.
@@ -36,7 +36,7 @@ describe('App delete-cascade wiring contract', () => {
 
   it('runs the deferred post file-delete when the post is never restored', async () => {
     mockRemove.mockResolvedValue({ data: [{}], error: null });
-    const records: cleanup.CleanupRecords = { posts: [], templates: [], assets: [], research: [] };
+    const records: cleanup.CleanupRecords = { posts: [], templates: [], assets: [], research: [], logoUrls: [] };
     const ref = cleanup.identifyFile({ url: POST_URL })!;
 
     cleanup.scheduleFileDelete(ref, 6000, () => !cleanup.isFileStillReferenced(ref, records, ''));
@@ -48,9 +48,9 @@ describe('App delete-cascade wiring contract', () => {
   });
 
   it('deletes a template image immediately when nothing else references it', () => {
-    const spy = vi.spyOn(cleanup, 'cascadeFileDelete').mockResolvedValue();
+    const spy = vi.spyOn(cleanup, 'cascadeFileDelete').mockResolvedValue(true);
     const ref = cleanup.identifyFile({ url: 'https://lh3.googleusercontent.com/d/TPLIMG' })!;
-    const records: cleanup.CleanupRecords = { posts: [], templates: [], assets: [], research: [] };
+    const records: cleanup.CleanupRecords = { posts: [], templates: [], assets: [], research: [], logoUrls: [] };
     // immediate branch: the just-deleted record is still excluded by its own id.
     if (!cleanup.isFileStillReferenced(ref, records, 't1')) void cleanup.cascadeFileDelete(ref);
     expect(spy).toHaveBeenCalledWith(ref);
