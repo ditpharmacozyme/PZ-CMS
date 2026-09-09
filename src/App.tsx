@@ -310,20 +310,30 @@ export function App() {
   useEffect(() => { saveStoredContentBank(contentBank); }, [contentBank]);
   useEffect(() => { saveStoredResearchItems(researchItems); }, [researchItems]);
 
+  // True once the first remote fetch for the cleanup collections has settled
+  // (or immediately when there's no remote store). The Storage Cleanup sweep
+  // must not run against a localStorage-only snapshot, or every managed file
+  // looks like an orphan.
+  const [recordsLoaded, setRecordsLoaded] = useState(!isSupabaseConfigured());
+
   // ── Remote Bootstrap + Realtime Subscriptions ─────────────────────────────────
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
     (async () => {
-      const [remoteTemplates, remoteAssets, remoteBank, remoteResearch] = await Promise.all([
-        fetchRemoteTemplates(),
-        fetchRemoteAssets(),
-        fetchRemoteContentBank(),
-        fetchRemoteResearchItems(),
-      ]);
-      if (remoteTemplates && remoteTemplates.length > 0) setTemplates(remoteTemplates);
-      if (remoteAssets && remoteAssets.length > 0) setAssets(remoteAssets);
-      if (remoteBank && remoteBank.length > 0) setContentBank(remoteBank);
-      if (remoteResearch && remoteResearch.length > 0) setResearchItems(remoteResearch);
+      try {
+        const [remoteTemplates, remoteAssets, remoteBank, remoteResearch] = await Promise.all([
+          fetchRemoteTemplates(),
+          fetchRemoteAssets(),
+          fetchRemoteContentBank(),
+          fetchRemoteResearchItems(),
+        ]);
+        if (remoteTemplates && remoteTemplates.length > 0) setTemplates(remoteTemplates);
+        if (remoteAssets && remoteAssets.length > 0) setAssets(remoteAssets);
+        if (remoteBank && remoteBank.length > 0) setContentBank(remoteBank);
+        if (remoteResearch && remoteResearch.length > 0) setResearchItems(remoteResearch);
+      } finally {
+        setRecordsLoaded(true);
+      }
     })();
     const unsubs = [
       subscribeRemoteTemplates((data) => setTemplates(data)),
@@ -681,7 +691,7 @@ export function App() {
             <MissionControlDashboard posts={posts} teamMembers={teamMembers} onOpenNewPostModal={() => { setNewPostInitialDate(undefined); setIsNewPostModalOpen(true); }} onSelectPost={handleSelectPost} onDeletePost={handleDeletePost} activeTeammate={activeTeammate} />
           )}
           {currentTab === 'integrations' && (
-            <GoogleAppsScriptHub posts={posts} onUploadComplete={(newUrl) => showToast(`Asset uploaded! Direct URL: ${newUrl}`)} cleanupRecords={{ posts, templates, assets, research: researchItems, logoUrls: brandLogoUrls() }} isAdmin={activeTeammate?.userRole === 'Admin'} />
+            <GoogleAppsScriptHub posts={posts} onUploadComplete={(newUrl) => showToast(`Asset uploaded! Direct URL: ${newUrl}`)} cleanupRecords={{ posts, templates, assets, research: researchItems, logoUrls: brandLogoUrls() }} recordsLoaded={recordsLoaded} isAdmin={activeTeammate?.userRole === 'Admin'} />
           )}
           {currentTab === 'content-bank' && (
             <ContentBank contentBank={contentBank} selectedBrandFilter={selectedBrandFilter} onAddBankItem={handleAddBankItem} onUpdateBankItem={handleUpdateBankItem} onDeleteBankItem={handleDeleteBankItem} onCreatePostFromCopy={handleCreatePostFromCopy} />

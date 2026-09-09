@@ -20,6 +20,7 @@ interface GoogleAppsScriptHubProps {
   posts: Post[];
   onUploadComplete?: (newUrl: string) => void;
   cleanupRecords: CleanupRecords;
+  recordsLoaded: boolean;
   isAdmin: boolean;
 }
 
@@ -27,6 +28,7 @@ export const GoogleAppsScriptHub: React.FC<GoogleAppsScriptHubProps> = ({
   posts,
   onUploadComplete,
   cleanupRecords,
+  recordsLoaded,
   isAdmin
 }) => {
   const [activeTab, setActiveTab] = useState<'script' | 'tester' | 'guide' | 'backend' | 'cleanup'>('script');
@@ -767,7 +769,7 @@ export const GoogleAppsScriptHub: React.FC<GoogleAppsScriptHubProps> = ({
       {/* TAB 5: STORAGE CLEANUP (admin only) */}
       {activeTab === 'cleanup' && isAdmin && (
         <div className="bg-white border border-[#e9e9e7] p-4 sm:p-6 rounded-lg shadow-xs">
-          <StorageCleanupPanel records={cleanupRecords} />
+          <StorageCleanupPanel records={cleanupRecords} recordsLoaded={recordsLoaded} />
         </div>
       )}
     </div>
