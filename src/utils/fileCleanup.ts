@@ -1,3 +1,5 @@
+import type { Post, PostTemplate, BrandAsset, ResearchItem } from '../types';
+
 export type FileRef =
   | { backend: 'drive'; fileId: string }
   | { backend: 'supabase'; path: string };
@@ -35,4 +37,25 @@ export function fileRefsEqual(a: FileRef, b: FileRef): boolean {
   return a.backend === 'drive'
     ? a.fileId === (b as { fileId: string }).fileId
     : a.path === (b as { path: string }).path;
+}
+
+export interface CleanupRecords {
+  posts: Post[];
+  templates: PostTemplate[];
+  assets: BrandAsset[];
+  research: ResearchItem[];
+}
+
+export function isFileStillReferenced(
+  ref: FileRef,
+  records: CleanupRecords,
+  excludeId: string,
+): boolean {
+  const hit = (r: FileRef | null) => r !== null && fileRefsEqual(r, ref);
+  return (
+    records.posts.some((p) => p.id !== excludeId && hit(identifyFile({ url: p.visualUrl }))) ||
+    records.templates.some((t) => t.id !== excludeId && hit(identifyFile({ url: t.imagePreview }))) ||
+    records.assets.some((a) => a.id !== excludeId && hit(identifyFile({ url: a.url, storagePath: a.storagePath }))) ||
+    records.research.some((r) => r.id !== excludeId && hit(identifyFile({ driveFileId: r.driveFileId })))
+  );
 }

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { identifyFile, fileRefsEqual } from './fileCleanup';
+import { identifyFile, fileRefsEqual, isFileStillReferenced } from './fileCleanup';
+import type { Post, PostTemplate, BrandAsset, ResearchItem } from '../types';
 
 describe('identifyFile', () => {
   it('prefers explicit storagePath', () => {
@@ -55,5 +56,42 @@ describe('fileRefsEqual', () => {
   it('rejects different id or backend', () => {
     expect(fileRefsEqual({ backend: 'drive', fileId: 'X' }, { backend: 'drive', fileId: 'Y' })).toBe(false);
     expect(fileRefsEqual({ backend: 'drive', fileId: 'X' }, { backend: 'supabase', path: 'X' })).toBe(false);
+  });
+});
+
+const emptyRecords = { posts: [], templates: [], assets: [], research: [] };
+const post = (id: string, visualUrl: string): Post => ({ id, visualUrl } as Post);
+const tpl = (id: string, imagePreview: string): PostTemplate => ({ id, imagePreview } as PostTemplate);
+const asset = (id: string, url: string, storagePath?: string): BrandAsset => ({ id, url, storagePath } as BrandAsset);
+const research = (id: string, driveFileId: string): ResearchItem => ({ id, driveFileId } as ResearchItem);
+
+describe('isFileStillReferenced', () => {
+  const driveRef = { backend: 'drive' as const, fileId: 'SHARED' };
+  const driveUrl = 'https://lh3.googleusercontent.com/d/SHARED';
+
+  it('true when another post still uses the same drive file', () => {
+    const records = { ...emptyRecords, posts: [post('p1', driveUrl), post('p2', driveUrl)] };
+    expect(isFileStillReferenced(driveRef, records, 'p1')).toBe(true);
+  });
+
+  it('false when only the excluded record used it', () => {
+    const records = { ...emptyRecords, posts: [post('p1', driveUrl)] };
+    expect(isFileStillReferenced(driveRef, records, 'p1')).toBe(false);
+  });
+
+  it('true across collections — a template reuses a post image', () => {
+    const records = { ...emptyRecords, posts: [post('p1', driveUrl)], templates: [tpl('t1', driveUrl)] };
+    expect(isFileStillReferenced(driveRef, records, 'p1')).toBe(true);
+  });
+
+  it('matches a supabase asset by storagePath', () => {
+    const sbRef = { backend: 'supabase' as const, path: 'assets/x.pdf' };
+    const records = { ...emptyRecords, assets: [asset('a1', 'https://cdn/x', 'assets/x.pdf'), asset('a2', 'https://cdn/x', 'assets/x.pdf')] };
+    expect(isFileStillReferenced(sbRef, records, 'a1')).toBe(true);
+  });
+
+  it('ignores records whose file is an external / null ref', () => {
+    const records = { ...emptyRecords, posts: [post('p1', driveUrl), post('p2', 'https://images.unsplash.com/y')] };
+    expect(isFileStillReferenced(driveRef, records, 'p1')).toBe(false);
   });
 });
