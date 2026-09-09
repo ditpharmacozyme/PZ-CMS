@@ -276,6 +276,18 @@ Unit (Vitest, `globals: false`):
 Not unit-testable (verified by the user's redeploy + a live delete, same as every
 prior Apps Script change): `handleDeleteFile`, `handleListManagedFiles`.
 
+### Accepted risks
+
+**Cross-client reference-count race (accepted).** Reference counting reads the
+*local* client's React state. If teammate B creates a record reusing file X and
+teammate A deletes their record referencing X within A's 6-second window — before
+Supabase realtime delivers B's row to A — A's client will delete X. Drive's
+30-day Trash absorbs this; **Supabase Storage `remove()` is permanent**, so a
+Supabase-hosted file lost this way is unrecoverable except by re-upload. The
+Storage Cleanup sweep is the only backstop. A server-side cascade (spec §3,
+rejected) would close this but cannot coordinate with the client Undo toast.
+Revisit if Supabase-hosted asset churn grows.
+
 ## 12. Out of scope
 
 - **Brand logo replacement cleanup** — old logo orphaned when a new one is
