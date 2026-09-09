@@ -173,10 +173,14 @@ export function App() {
   ) => {
     const ref = identifyFile(file);
     if (!ref) return;
-    const stillUsed = () => isFileStillReferenced(ref, recordsRef.current, recordId);
     if (opts?.deferMs) {
-      scheduleFileDelete(ref, opts.deferMs, () => !stillUsed());
-    } else if (!stillUsed()) {
+      // Deferred (post delete): re-check at fire time with NO exclusion, so an
+      // Undo restore -- which puts the post back under its original id -- or the
+      // same image reused on a new post within the window cancels the delete.
+      scheduleFileDelete(ref, opts.deferMs, () => !isFileStillReferenced(ref, recordsRef.current, ''));
+    } else if (!isFileStillReferenced(ref, recordsRef.current, recordId)) {
+      // Immediate (template/asset/research): the just-deleted record's React
+      // state hasn't flushed yet, so it must still be excluded by its own id.
       void cascadeFileDelete(ref);
     }
   };
