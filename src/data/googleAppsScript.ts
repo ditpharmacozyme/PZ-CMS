@@ -301,10 +301,6 @@ function handleDeleteFile(data) {
  * with a depth cap so a pathological parent chain can't loop forever.
  */
 function isUnderManagedFolder(file) {
-  var managed = {};
-  managed[DRIVE_FOLDER_NAME] = true;
-  managed["Research & Plans"] = true;
-
   var seen = {};
   var level = [];
   var parents = file.getParents();
@@ -315,9 +311,13 @@ function isUnderManagedFolder(file) {
     for (var i = 0; i < level.length; i++) {
       var folder = level[i];
       var id = folder.getId();
-      if (seen[id]) continue;
+      if (Object.prototype.hasOwnProperty.call(seen, id)) continue;
       seen[id] = true;
-      if (managed[folder.getName()]) return true;
+      // Direct string compare -- a bare-object lookup would treat an ancestor
+      // folder literally named "constructor" / "__proto__" / "hasOwnProperty"
+      // as a match via Object.prototype.
+      var name = folder.getName();
+      if (name === DRIVE_FOLDER_NAME || name === "Research & Plans") return true;
       var up = folder.getParents();
       while (up.hasNext()) nextLevel.push(up.next());
     }

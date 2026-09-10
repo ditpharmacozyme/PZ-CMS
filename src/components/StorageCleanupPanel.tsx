@@ -136,8 +136,8 @@ export const StorageCleanupPanel: React.FC<Props> = ({ records, recordsLoaded })
     const ok = await confirm({
       title: `Delete ${targets.length} file${targets.length === 1 ? '' : 's'}?`,
       body:
-        `${driveCount} Drive file${driveCount === 1 ? '' : 's'} go to Trash (recoverable ~30 days). ` +
-        `${sbCount} Supabase Storage file${sbCount === 1 ? '' : 's'} are deleted permanently.`,
+        `${driveCount} Drive file${driveCount === 1 ? '' : 's'} ${driveCount === 1 ? 'goes' : 'go'} to Trash (recoverable ~30 days). ` +
+        `${sbCount} Supabase Storage file${sbCount === 1 ? ' is' : 's are'} deleted permanently.`,
       confirmLabel: 'Delete',
       cancelLabel: 'Cancel',
       tone: 'danger',
