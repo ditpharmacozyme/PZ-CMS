@@ -67,16 +67,17 @@ Rejected alternatives:
 ## 4. Data model
 
 New migration `supabase/migrations/0022_carousel_images.sql` (idempotent, matching
-the style of `0018`-`0021`):
+the style of `0018`-`0021`). The actual Supabase table for templates is `templates`
+(verified in `src/utils/storage.ts`), not `post_templates`:
 
 ```sql
 alter table posts add column if not exists images jsonb not null default '[]'::jsonb;
-alter table post_templates add column if not exists images jsonb not null default '[]'::jsonb;
+alter table templates add column if not exists images jsonb not null default '[]'::jsonb;
 
 update posts set images = jsonb_build_array(visual_url)
   where images = '[]'::jsonb and coalesce(visual_url, '') <> '';
 
-update post_templates set images = jsonb_build_array(image_preview)
+update templates set images = jsonb_build_array(image_preview)
   where images = '[]'::jsonb and coalesce(image_preview, '') <> '';
 ```
 
