@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { identifyFile, fileRefsEqual, isFileStillReferenced, PENDING_DELETES_KEY, readDeleteQueue, enqueueFailedDelete, removeFromDeleteQueue, cascadeFileDelete, scheduleFileDelete, flushFailedDeletes } from './fileCleanup';
+import { identifyFile, fileRefsEqual, isFileStillReferenced, PENDING_DELETES_KEY, readDeleteQueue, enqueueFailedDelete, removeFromDeleteQueue, cascadeFileDelete, scheduleFileDelete, flushFailedDeletes, FLUSH_BATCH_CAP } from './fileCleanup';
 import type { Post, PostTemplate, BrandAsset, ResearchItem } from '../types';
 
 const mockRemove = vi.fn();
@@ -219,5 +219,31 @@ describe('flushFailedDeletes', () => {
       Promise.resolve(paths[0] === 'assets/ok.pdf' ? { error: null } : { error: { message: 'network down' } }));
     await flushFailedDeletes();
     expect(readDeleteQueue()).toEqual([{ backend: 'supabase', path: 'assets/still-broken.pdf' }]);
+  });
+
+  it('processes at most FLUSH_BATCH_CAP per call, oldest first', async () => {
+    mockRemove.mockResolvedValue({ error: null });
+    for (let i = 0; i < FLUSH_BATCH_CAP + 5; i++) enqueueFailedDelete({ backend: 'supabase', path: `assets/f${i}.pdf` });
+
+    await flushFailedDeletes();
+    expect(mockRemove).toHaveBeenCalledTimes(FLUSH_BATCH_CAP);
+    expect(readDeleteQueue()).toEqual(
+      Array.from({ length: 5 }, (_, k) => ({ backend: 'supabase' as const, path: `assets/f${FLUSH_BATCH_CAP + k}.pdf` })),
+    );
+
+    await flushFailedDeletes();
+    expect(mockRemove).toHaveBeenCalledTimes(FLUSH_BATCH_CAP + 5);
+    expect(readDeleteQueue()).toEqual([]);
+  });
+
+  it('drops a queued ref that a live record references again, without deleting the file', async () => {
+    mockRemove.mockResolvedValue({ error: null });
+    enqueueFailedDelete({ backend: 'supabase', path: 'assets/reused.pdf' });
+    const records = { ...emptyRecords, assets: [asset('a1', 'https://cdn/x', 'assets/reused.pdf')] };
+
+    await flushFailedDeletes(() => records);
+
+    expect(mockRemove).not.toHaveBeenCalled();
+    expect(readDeleteQueue()).toEqual([]);
   });
 });
