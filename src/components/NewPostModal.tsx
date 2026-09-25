@@ -3,16 +3,16 @@ import { Post, BrandId, Platform, SpecType, PostTemplate, ContentBankItem, TeamM
 import { SPECS } from '../data/brands';
 import { useBrands } from '../context/BrandsContext';
 import { todayStr, logTimestamp } from '../utils/date';
-import { uploadImage } from '../utils/uploadImage';
 import { combineAssigneeEmails } from '../utils/postOwnership';
 import { useSmartMemory, PostDraft } from '../hooks/useSmartMemory';
-import { useImageUploadZone } from '../hooks/useImageUploadZone';
 import { supabase } from '../lib/supabase';
 import { Modal } from './ui/Modal';
 import { TextField, TextAreaField, SelectField } from './ui/Field';
 import { Button } from './ui/Button';
 import { Stepper, StepDef } from './ui/Stepper';
 import { useConfirm } from './ui/ConfirmDialog';
+import { ImageCarouselField } from './ui/ImageCarouselField';
+import { coverOf } from '../utils/images';
 
 interface NewPostModalProps {
   initialDate?: string;
@@ -96,10 +96,8 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
   const [emailStatus, setEmailStatus] = useState<string | null>(null);
 
   // Visual Media
-  const [visualUrl, setVisualUrl] = useState(initialDraft?.visualUrl || '');
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [images, setImages] = useState<string[]>(initialDraft?.images || (initialDraft?.visualUrl ? [initialDraft.visualUrl] : []));
+  const visualUrl = coverOf(images);
 
   // Content Bank / Swipe Copy Drawer
   const [showBankDrawer, setShowBankDrawer] = useState(false);
@@ -124,7 +122,7 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
         setCaption(tpl.defaultCaption);
         setPlatform(tpl.platform);
         setSpecType(tpl.specType);
-        if (tpl.imagePreview) setVisualUrl(tpl.imagePreview);
+        if (tpl.images.length) setImages(tpl.images);
       }
     }
   }, [initialTemplateId, templates]);
@@ -146,38 +144,16 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
         scheduledTime: isBacklog ? '' : scheduledTime,
         assignees,
         visualUrl,
+        images,
         reminderEmail
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, caption, brandId, platform, isBacklog, scheduledDate, scheduledTime, assignees, visualUrl, reminderEmail, saveDraft]);
+  }, [title, caption, brandId, platform, isBacklog, scheduledDate, scheduledTime, assignees, images, reminderEmail, saveDraft]);
 
   const toggleAssignee = (name: string) => {
     setAssignees((prev) => (prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]));
   };
-
-  // Image Upload -- reuses src/utils/uploadImage.ts unchanged (compression,
-  // auth token, Drive upload, UploadNotConfiguredError all live there).
-  const uploadFile = async (file: File) => {
-    setIsUploading(true);
-    setUploadError(null);
-    try {
-      const { url } = await uploadImage(file);
-      setVisualUrl(url);
-    } catch (err: any) {
-      setUploadError(err?.message || 'Failed to upload image.');
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const handleImageFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (file) uploadFile(file);
-  };
-
-  const { isDragging, dropHandlers } = useImageUploadZone(uploadFile, isUploading);
 
   // Send immediate test reminder email
   const handleSendTestEmail = async () => {
@@ -315,7 +291,7 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
       status: 'not-started',
       assignees: assignees.length > 0 ? assignees : (defaultAssignee ? [defaultAssignee] : []),
       visualUrl,
-      images: visualUrl ? [visualUrl] : [],
+      images,
       approved: false,
       emailReminderEnabled: !isBacklog && emailReminderEnabled,
       reminderEmail: reminderEmail.trim(),
@@ -526,56 +502,7 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
                 </span>
               </div>
 
-              <div className="flex items-center gap-4">
-                <div
-                  {...dropHandlers}
-                  className={`w-24 h-24 rounded-lg bg-[var(--color-muted)] border-2 border-dashed overflow-hidden flex items-center justify-center relative flex-shrink-0 transition-colors ${
-                    isDragging ? 'border-[#4f46e5] bg-[#eef2ff]' : 'border-[var(--color-line)]'
-                  }`}
-                  title="Drop an image or paste a screenshot"
-                >
-                  {visualUrl ? (
-                    <img src={visualUrl} alt="Preview" className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="material-symbols-outlined text-2xl text-[var(--color-ink-muted)]">
-                      {isDragging ? 'download' : 'image'}
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex-1 space-y-2">
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleImageFileUpload}
-                    accept="image/*"
-                    className="hidden"
-                  />
-                  <div className="flex gap-2 items-center flex-wrap">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      icon="upload"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={isUploading}
-                    >
-                      {isUploading ? 'Uploading...' : visualUrl ? 'Replace image' : 'Upload image'}
-                    </Button>
-                    {visualUrl && (
-                      <button
-                        type="button"
-                        onClick={() => setVisualUrl('')}
-                        className="px-2 py-1 text-xs text-[var(--color-danger)] hover:underline cursor-pointer"
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-                  <p className="text-[10px] text-[var(--color-ink-muted)]">Max 5MB (JPG, PNG, WebP)</p>
-                  {uploadError && <p className="text-[10px] text-[var(--color-danger)]">{uploadError}</p>}
-                </div>
-              </div>
+              <ImageCarouselField images={images} onChange={setImages} />
             </div>
           </div>
         )}

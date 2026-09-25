@@ -49,6 +49,7 @@ export interface PostDraft {
   scheduledTime: string;
   assignees: string[];
   visualUrl?: string;
+  images?: string[];
   reminderEmail?: string;
   timestamp: number;
 }
