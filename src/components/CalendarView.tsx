@@ -889,6 +889,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                       <p className="font-label-caps text-[10px] mt-1">No image yet</p>
                     </div>
                   )}
+                  {inspectorPost.images && inspectorPost.images.length > 1 && (
+                    <span className="absolute top-2 right-2 bg-[#1b1c1a]/80 text-white font-label-caps text-[9px] px-2 py-0.5 rounded">
+                      1/{inspectorPost.images.length}
+                    </span>
+                  )}
                   <span className="absolute bottom-2 left-2 bg-[#1b1c1a]/80 text-white font-label-caps text-[9px] px-2 py-0.5 rounded">
                     {SPECS[inspectorPost.specType]?.dimensions || inspectorPost.specType}
                   </span>

@@ -271,8 +271,13 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
                     )}
 
                     {post.visualUrl && (
-                      <div className="w-14 h-14 mt-0.5 rounded overflow-hidden border border-[#e9e9e7] bg-[#f4f4f3] flex-shrink-0">
+                      <div className="relative w-14 h-14 mt-0.5 rounded overflow-hidden border border-[#e9e9e7] bg-[#f4f4f3] flex-shrink-0">
                         <img src={post.visualUrl} alt={post.title} className="w-full h-full object-cover" />
+                        {post.images && post.images.length > 1 && (
+                          <span className="absolute bottom-0.5 right-0.5 bg-black/70 text-white text-[8px] font-bold rounded px-1">
+                            1/{post.images.length}
+                          </span>
+                        )}
                       </div>
                     )}
 

@@ -3,13 +3,13 @@ import { Post, BrandId, Platform, SpecType, PostComment, ContentBankItem, TeamMe
 import { SPECS } from '../data/brands';
 import { useBrands } from '../context/BrandsContext';
 import { logTimestamp } from '../utils/date';
-import { uploadImage } from '../utils/uploadImage';
 import { supabase } from '../lib/supabase';
 import { getPostStatusConfig } from '../utils/statusConfig';
 import { setStageDone, Stage } from '../utils/stages';
 import { combineAssigneeEmails } from '../utils/postOwnership';
 import { useConfirm } from './ui/ConfirmDialog';
-import { useImageUploadZone } from '../hooks/useImageUploadZone';
+import { ImageCarouselField } from './ui/ImageCarouselField';
+import { coverOf } from '../utils/images';
 
 interface PostDetailModalProps {
   post: Post;
@@ -46,7 +46,6 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailStatus, setEmailStatus] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const brand = brands[editedPost.brandId];
   const spec = SPECS[editedPost.specType];
@@ -128,40 +127,21 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
     setTimeout(() => setCopyFeedback(null), 1500);
   };
 
-  // Upload to Drive and store only the returned URL — never base64.
-  const uploadFile = async (file: File) => {
-    setUploadError(null);
-    setIsUploading(true);
-    try {
-      const { url } = await uploadImage(file);
-      const actorName = activeTeammate ? activeTeammate.name : (editedPost.assignees[0] || 'Someone');
-      setEditedPost((prev) => ({
-        ...prev,
-        visualUrl: url,
-        activityLog: [
-          {
-            id: `act-${Date.now()}`,
-            actor: actorName,
-            action: `Added image "${file.name}"`,
-            timestamp: logTimestamp()
-          },
-          ...prev.activityLog
-        ]
-      }));
-    } catch (err: any) {
-      setUploadError(err?.message || 'Upload failed.');
-    } finally {
-      setIsUploading(false);
-    }
+  const handleImagesChange = (images: string[]) => {
+    const actorName = activeTeammate ? activeTeammate.name : (editedPost.assignees[0] || 'Someone');
+    const added = images.length > editedPost.images.length;
+    setEditedPost((prev) => ({
+      ...prev,
+      images,
+      visualUrl: coverOf(images),
+      activityLog: added
+        ? [
+            { id: `act-${Date.now()}`, actor: actorName, action: 'Updated post image(s)', timestamp: logTimestamp() },
+            ...prev.activityLog,
+          ]
+        : prev.activityLog,
+    }));
   };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (file) uploadFile(file);
-  };
-
-  const { isDragging, dropHandlers } = useImageUploadZone(uploadFile, isUploading);
 
   // Handle a stage checkbox flip -- persists immediately (see comment at the
   // checkbox grid) via the same utils/stages.ts mutator the calendar quick
@@ -809,73 +789,13 @@ export const PostDetailModal: React.FC<PostDetailModalProps> = ({
               </div>
             </div>
 
-            {/* Image */}
+            {/* Image(s) -- up to 10, reorderable; images[0] is the cover shown
+                on the calendar, Sheets sync, and the reminder email. */}
             <div className="space-y-3">
               <label className="font-label-caps text-[10px] text-[#5f5f5b] font-bold">
-                Image
+                Image{editedPost.images.length > 1 ? 's' : ''}
               </label>
-
-              {/* Preview Box -- also a drop target; a screenshot can be pasted
-                  anywhere in the modal. */}
-              <div
-                {...dropHandlers}
-                className={`h-44 bg-white border rounded overflow-hidden flex items-center justify-center relative shadow-inner transition-colors ${
-                  isDragging ? 'border-[#4f46e5] border-2 bg-[#eef2ff]' : 'border-[#e9e9e7]'
-                }`}
-              >
-                {editedPost.visualUrl ? (
-                  <img
-                    src={editedPost.visualUrl}
-                    alt="Post image"
-                    draggable={false}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="text-center p-4 text-[#5f5f5b]">
-                    <span className="material-symbols-outlined text-4xl">cloud_upload</span>
-                    <p className="font-label-caps text-xs mt-1">
-                      {isDragging ? 'Drop to upload' : 'Drop an image, paste a screenshot, or use the picker below'}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Attachment Inputs */}
-              <div className="space-y-2">
-                <div>
-                  <label className="font-label-caps text-[9px] text-[#5f5f5b] block mb-1">
-                    Upload from your device
-                  </label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    disabled={isUploading}
-                    className="w-full text-xs font-label-caps text-[#57574f] file:mr-2 file:py-1 file:px-3 file:border-0 file:text-xs file:font-label-caps file:bg-[#4f46e5] file:text-white hover:file:bg-[#4338ca] disabled:opacity-60"
-                  />
-                  {isUploading && (
-                    <p className="mt-1 text-[10px] font-label-caps text-[#4f46e5]">Uploading…</p>
-                  )}
-                  {uploadError && (
-                    <p className="mt-1 text-[11px] font-body-md text-[#dc2626] bg-[#fcebeb] border border-[#ffb4ab] rounded p-2">
-                      {uploadError}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="font-label-caps text-[9px] text-[#5f5f5b] block mb-1">
-                    Or paste a link (Drive, Canva, Figma)
-                  </label>
-                  <input
-                    type="text"
-                    value={editedPost.visualUrl}
-                    onChange={(e) => setEditedPost({ ...editedPost, visualUrl: e.target.value })}
-                    placeholder="https://drive.google.com/..."
-                    className="w-full bg-white border border-[#e9e9e7] p-1.5 font-code-sm text-xs text-[#1b1c1a]"
-                  />
-                </div>
-              </div>
+              <ImageCarouselField images={editedPost.images} onChange={handleImagesChange} onUploadingChange={setIsUploading} />
             </div>
           </div>
 
