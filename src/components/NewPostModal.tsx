@@ -91,7 +91,11 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
   // Email Reminder State
   const [emailReminderEnabled, setEmailReminderEnabled] = useState<boolean>(true);
   const initialEmail = activeTeammate?.email || (teamMembers.length > 0 ? teamMembers[0].email : '');
-  const [reminderEmail, setReminderEmail] = useState<string>(initialDraft?.reminderEmail || initialEmail || '');
+  const [reminderEmail, setReminderEmail] = useState<string>(initialDraft?.reminderEmail || '');
+  // Once the user has typed into the recipient field directly, stop
+  // auto-deriving it from assignees -- otherwise their manual edit would get
+  // silently clobbered the next time the assignee list changes.
+  const [emailTouched, setEmailTouched] = useState<boolean>(Boolean(initialDraft?.reminderEmail));
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailStatus, setEmailStatus] = useState<string | null>(null);
 
@@ -105,14 +109,16 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
   const [showBankDrawer, setShowBankDrawer] = useState(false);
   const [bankSearchQuery, setBankSearchQuery] = useState('');
 
-  // Auto-sync reminder email when assignees change
+  // Auto-derive the reminder recipient from the current assignees until the
+  // user types into the field directly. Previously this only ran once (while
+  // reminderEmail was still empty) -- but reminderEmail started out already
+  // set to the *creator's own* email, so the sync never fired and every new
+  // post's reminder went to whoever created it, never to who it was assigned to.
   useEffect(() => {
-    if (!teamMembers || teamMembers.length === 0) return;
+    if (!teamMembers || teamMembers.length === 0 || emailTouched) return;
     const combined = combineAssigneeEmails(assignees, teamMembers);
-    if (combined && !reminderEmail) {
-      setReminderEmail(combined);
-    }
-  }, [assignees, teamMembers, reminderEmail]);
+    setReminderEmail(combined || initialEmail);
+  }, [assignees, teamMembers, emailTouched, initialEmail]);
 
   // Apply initial template if supplied
   useEffect(() => {
@@ -690,7 +696,7 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
                           label="Recipient email(s)"
                           type="email"
                           value={reminderEmail}
-                          onChange={setReminderEmail}
+                          onChange={(v) => { setReminderEmail(v); setEmailTouched(true); }}
                           placeholder="e.g. name@example.com"
                         />
                       </div>
