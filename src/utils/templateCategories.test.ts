@@ -4,7 +4,7 @@ import { PostTemplate } from '../types';
 
 const t = (id: string, brandId: PostTemplate['brandId'], category: string): PostTemplate => ({
   id, title: id, description: '', brandId, category, platform: 'instagram', specType: 'feed-post',
-  defaultCaption: '', tags: [], imagePreview: '', usesCount: 0,
+  defaultCaption: '', tags: [], imagePreview: '', images: [], usesCount: 0,
 });
 
 describe('applyCategoryRename', () => {

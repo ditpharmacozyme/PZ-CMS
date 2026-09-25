@@ -264,6 +264,7 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
       defaultCaption: newCaption.trim(),
       tags: tagArray.length > 0 ? tagArray : [newCategory],
       imagePreview: newImagePreview.trim(),
+      images: newImagePreview.trim() ? [newImagePreview.trim()] : [],
       usesCount: 0
     };
     onSaveNewTemplate(tpl);

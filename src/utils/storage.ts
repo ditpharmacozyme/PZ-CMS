@@ -40,6 +40,7 @@ export function getStoredPosts(): Post[] {
     return parsed.map((p) => ({
       ...p,
       assignees: p.assignees || (p.assignee ? [p.assignee] : []),
+      images: p.images || (p.visualUrl ? [p.visualUrl] : []),
     }));
   } catch (err) {
     console.error('Error reading stored posts:', err);
@@ -62,7 +63,11 @@ export function getStoredTemplates(): PostTemplate[] {
       saveStoredTemplates(INITIAL_TEMPLATES);
       return INITIAL_TEMPLATES;
     }
-    return JSON.parse(raw);
+    const parsed: PostTemplate[] = JSON.parse(raw);
+    return parsed.map((t) => ({
+      ...t,
+      images: t.images || (t.imagePreview ? [t.imagePreview] : []),
+    }));
   } catch (err) {
     return INITIAL_TEMPLATES;
   }
@@ -236,6 +241,7 @@ type PostRow = {
   task_roles?: unknown;
   stage_completion?: unknown;
   visual_url: string;
+  images: string[];
   template_id: string | null;
   approved: boolean;
   approved_by: string | null;
@@ -265,6 +271,7 @@ function rowToPost(row: PostRow): Post {
     taskRoles: (row.task_roles as Post['taskRoles']) || undefined,
     stageCompletion: (row.stage_completion as Post['stageCompletion']) || undefined,
     visualUrl: row.visual_url,
+    images: Array.isArray(row.images) ? row.images : [],
     templateId: row.template_id || undefined,
     approved: row.approved,
     approvedBy: row.approved_by || undefined,
@@ -295,6 +302,7 @@ function postToRow(post: Post): PostRow {
     task_roles: post.taskRoles || null,
     stage_completion: post.stageCompletion || null,
     visual_url: post.visualUrl,
+    images: post.images || [],
     template_id: post.templateId || null,
     approved: post.approved,
     approved_by: post.approvedBy || null,
@@ -360,7 +368,7 @@ export function subscribeRemotePosts(onChange: (posts: Post[]) => void): () => v
 }
 
 // ─── Templates ───────────────────────────────────────────────────────────
-function rowToTemplate(row: any): PostTemplate {
+export function rowToTemplate(row: any): PostTemplate {
   return {
     id: row.id,
     title: row.title,
@@ -372,11 +380,12 @@ function rowToTemplate(row: any): PostTemplate {
     defaultCaption: row.default_caption,
     tags: row.tags || [],
     imagePreview: row.image_preview || '',
+    images: Array.isArray(row.images) ? row.images : [],
     usesCount: row.uses_count || 0
   };
 }
 
-function templateToRow(t: PostTemplate) {
+export function templateToRow(t: PostTemplate) {
   return {
     id: t.id,
     title: t.title,
@@ -388,6 +397,7 @@ function templateToRow(t: PostTemplate) {
     default_caption: t.defaultCaption,
     tags: t.tags || [],
     image_preview: t.imagePreview || '',
+    images: t.images || [],
     uses_count: t.usesCount || 0
   };
 }

@@ -20,7 +20,7 @@ vi.mock('../utils/storage', async (orig) => {
 
 const tpl = (id: string, category: string): PostTemplate => ({
   id, title: id, description: '', brandId: 'shared', category, platform: 'instagram',
-  specType: 'feed-post', defaultCaption: '', tags: [], imagePreview: '', usesCount: 0,
+  specType: 'feed-post', defaultCaption: '', tags: [], imagePreview: '', images: [], usesCount: 0,
 });
 
 const cat = (id: string, name: string, sortOrder: number): TemplateCategory => ({

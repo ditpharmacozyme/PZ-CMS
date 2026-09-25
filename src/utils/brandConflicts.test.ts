@@ -15,6 +15,7 @@ const basePost: Post = {
   status: 'not-started',
   assignees: ['Dr. A'],
   visualUrl: '',
+  images: [],
   approved: false,
   tags: [],
   comments: [],

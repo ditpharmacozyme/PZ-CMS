@@ -466,6 +466,7 @@ export function App() {
       status: 'not-started',
       assignees: creatorName !== 'Someone' ? [creatorName] : [],
       visualUrl: '',
+      images: [],
       approved: false,
       tags: [],
       comments: [],

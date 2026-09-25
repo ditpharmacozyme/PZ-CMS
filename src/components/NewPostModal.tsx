@@ -315,6 +315,7 @@ export const NewPostModal: React.FC<NewPostModalProps> = ({
       status: 'not-started',
       assignees: assignees.length > 0 ? assignees : (defaultAssignee ? [defaultAssignee] : []),
       visualUrl,
+      images: visualUrl ? [visualUrl] : [],
       approved: false,
       emailReminderEnabled: !isBacklog && emailReminderEnabled,
       reminderEmail: reminderEmail.trim(),
