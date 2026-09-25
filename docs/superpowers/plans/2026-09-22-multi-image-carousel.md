@@ -504,43 +504,30 @@ Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
 
 **Interfaces:**
 - Consumes: `uploadImage(file: File): Promise<UploadResult>` (unchanged, existing export).
-- Produces: `uploadImages(files: File[], onProgress?: (done: number, total: number) => void): Promise<{ succeeded: UploadResult[]; failed: { file: File; error: string }[] }>` — used by `ImageCarouselField` in Task 3.
+- Produces: `uploadImages(files: File[], onProgress?: (done: number, total: number) => void, uploadFn?: typeof uploadImage): Promise<{ succeeded: UploadResult[]; failed: { file: File; error: string }[] }>` — used by `ImageCarouselField` in Task 3. `uploadFn` defaults to the real `uploadImage` and exists purely so tests can inject a fake instead of mocking network/FileReader/canvas internals (spying on a function from within its own module is unreliable across bundler/transform setups).
 
 - [ ] **Step 1: Write the failing tests**
 
 ```ts
 // src/utils/uploadImage.test.ts
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-
-const mockGetSession = vi.fn().mockResolvedValue({ data: { session: { access_token: 'tok' } } });
-vi.mock('../lib/supabase', () => ({
-  supabase: { auth: { getSession: (...a: unknown[]) => mockGetSession(...a) } },
-}));
-
-// FileReader/canvas aren't implemented in jsdom the way the real browser
-// compress() step needs -- readAsDataUrl and compress are exercised already
-// by nothing (uploadImage.ts had no test file before this task), so this
-// suite stubs them the same way uploadImage()'s own network call is stubbed:
-// only uploadImages()'s sequencing/aggregation is under test here.
-import * as uploadImageModule from './uploadImage';
+import { describe, it, expect, vi } from 'vitest';
+import { uploadImages } from './uploadImage';
 
 function makeFile(name: string): File {
   return new File(['x'], name, { type: 'image/png' });
 }
 
 describe('uploadImages', () => {
-  beforeEach(() => vi.restoreAllMocks());
-
   it('uploads sequentially, in order, reporting progress before each call', async () => {
     const calls: string[] = [];
     const progress: Array<[number, number]> = [];
-    vi.spyOn(uploadImageModule, 'uploadImage').mockImplementation(async (file: File) => {
+    const uploadFn = vi.fn(async (file: File) => {
       calls.push(file.name);
       return { url: `https://drive/${file.name}`, fileName: file.name };
     });
 
     const files = [makeFile('a.png'), makeFile('b.png'), makeFile('c.png')];
-    const result = await uploadImageModule.uploadImages(files, (done, total) => progress.push([done, total]));
+    const result = await uploadImages(files, (done, total) => progress.push([done, total]), uploadFn);
 
     expect(calls).toEqual(['a.png', 'b.png', 'c.png']);
     expect(progress).toEqual([[1, 3], [2, 3], [3, 3]]);
@@ -549,23 +536,35 @@ describe('uploadImages', () => {
   });
 
   it('keeps already-succeeded uploads and reports a failure without aborting the rest', async () => {
-    vi.spyOn(uploadImageModule, 'uploadImage').mockImplementation(async (file: File) => {
+    const uploadFn = vi.fn(async (file: File) => {
       if (file.name === 'bad.png') throw new Error('Upload failed: Google Drive did not return a file URL.');
       return { url: `https://drive/${file.name}`, fileName: file.name };
     });
 
     const files = [makeFile('a.png'), makeFile('bad.png'), makeFile('c.png')];
-    const result = await uploadImageModule.uploadImages(files);
+    const result = await uploadImages(files, undefined, uploadFn);
 
     expect(result.succeeded.map((r) => r.fileName)).toEqual(['a.png', 'c.png']);
     expect(result.failed).toEqual([{ file: files[1], error: 'Upload failed: Google Drive did not return a file URL.' }]);
   });
 
-  it('resolves with two empty arrays for an empty file list, calling onProgress zero times', async () => {
+  it('resolves with two empty arrays for an empty file list, calling onProgress and uploadFn zero times', async () => {
     const onProgress = vi.fn();
-    const result = await uploadImageModule.uploadImages([], onProgress);
+    const uploadFn = vi.fn();
+    const result = await uploadImages([], onProgress, uploadFn);
     expect(result).toEqual({ succeeded: [], failed: [] });
     expect(onProgress).not.toHaveBeenCalled();
+    expect(uploadFn).not.toHaveBeenCalled();
+  });
+
+  it('defaults uploadFn to the real uploadImage export when not supplied', async () => {
+    // Confirms the default-parameter wiring only -- not a network test. A
+    // non-image file rejects inside the real uploadImage() before any
+    // network/FileReader call, so this exercises the "no uploadFn passed"
+    // path safely.
+    const result = await uploadImages([new File(['x'], 'a.txt', { type: 'text/plain' })]);
+    expect(result.succeeded).toEqual([]);
+    expect(result.failed).toEqual([{ file: expect.any(File), error: '"a.txt" is not an image.' }]);
   });
 });
 ```
@@ -573,7 +572,7 @@ describe('uploadImages', () => {
 - [ ] **Step 2: Run it to verify it fails**
 
 Run: `npx vitest run src/utils/uploadImage.test.ts`
-Expected: FAIL — `uploadImageModule.uploadImages is not a function`.
+Expected: FAIL — `uploadImages is not a function` (doesn't exist in `./uploadImage` yet).
 
 - [ ] **Step 3: Implement `uploadImages`**
 
@@ -588,10 +587,15 @@ Add to `src/utils/uploadImage.ts`, after the existing `uploadImage` function:
  * back both the ones that succeeded (in original order) and the ones that
  * didn't, each with its error message, so a partial failure is visible and
  * the user can retry just the failed slide.
+ *
+ * `uploadFn` defaults to the real `uploadImage` -- it's a parameter (rather
+ * than calling `uploadImage` directly) purely so tests can inject a fake
+ * instead of mocking FileReader/canvas/network for every case.
  */
 export async function uploadImages(
   files: File[],
   onProgress?: (done: number, total: number) => void,
+  uploadFn: (file: File) => Promise<UploadResult> = uploadImage,
 ): Promise<{ succeeded: UploadResult[]; failed: { file: File; error: string }[] }> {
   const succeeded: UploadResult[] = [];
   const failed: { file: File; error: string }[] = [];
@@ -599,7 +603,7 @@ export async function uploadImages(
   for (let i = 0; i < files.length; i++) {
     onProgress?.(i + 1, files.length);
     try {
-      succeeded.push(await uploadImage(files[i]));
+      succeeded.push(await uploadFn(files[i]));
     } catch (err: any) {
       failed.push({ file: files[i], error: err?.message || 'Upload failed.' });
     }
@@ -612,7 +616,7 @@ export async function uploadImages(
 - [ ] **Step 4: Run the tests to verify they pass**
 
 Run: `npx vitest run src/utils/uploadImage.test.ts`
-Expected: PASS (3 tests).
+Expected: PASS (4 tests).
 
 - [ ] **Step 5: Run the full gate**
 
