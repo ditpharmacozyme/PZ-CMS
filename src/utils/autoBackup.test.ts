@@ -23,6 +23,7 @@ const mockPayload: WorkspaceBackupPayload = {
       status: 'not-started',
       assignees: [],
       visualUrl: '',
+      images: [],
       approved: false,
       tags: [],
       comments: [],

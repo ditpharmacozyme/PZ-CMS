@@ -225,6 +225,7 @@ export function convertCsvRowsToPosts(
       status: normalizeStatus(row.status || ''),
       assignees,
       visualUrl: '',
+      images: [],
       approved: false,
       emailReminderEnabled: !!scheduledDate,
       reminderEmail: defaultOwnerEmail || '',

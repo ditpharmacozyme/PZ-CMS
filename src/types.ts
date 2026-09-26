@@ -158,7 +158,8 @@ export interface Post {
   assignees: string[];
   taskRoles?: TaskRoles; // Specialized handoff roles (designer, publisher, engagementLead)
   stageCompletion?: StageCompletion; // Handoff stage checkboxes with timestamps
-  visualUrl: string; // image preview or drive URL
+  visualUrl: string; // derived: images[0] ?? '' (see utils/images.ts:coverOf) -- kept in sync on every write
+  images: string[]; // ordered carousel slides (max MAX_CAROUSEL_IMAGES, enforced in the UI)
   templateId?: string;
   approved: boolean;
   approvedBy?: string;
@@ -180,7 +181,8 @@ export interface PostTemplate {
   specType: SpecType;
   defaultCaption: string;
   tags: string[];
-  imagePreview: string;
+  imagePreview: string; // derived: images[0] ?? '' -- see Post.visualUrl above
+  images: string[];
   usesCount: number;
 }
 

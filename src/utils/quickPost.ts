@@ -33,6 +33,7 @@ export function buildQuickPost(title: string, opts: QuickPostOptions): Post {
     status: 'not-started',
     assignees: opts.assignee ? [opts.assignee] : [],
     visualUrl: '',
+    images: [],
     approved: false,
     tags: [],
     comments: [],

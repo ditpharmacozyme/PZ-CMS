@@ -1,11 +1,12 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { PostTemplate, BrandId, Platform } from '../types';
 import { useBrands } from '../context/BrandsContext';
-import { uploadImage } from '../utils/uploadImage';
 import { copyText } from '../utils/clipboard';
 import { useConfirm } from './ui/ConfirmDialog';
 import { useTemplateCategories } from '../hooks/useTemplateCategories';
 import { applyCategoryRename, applyCategoryDelete, UNCATEGORIZED } from '../utils/templateCategories';
+import { ImageCarouselField } from './ui/ImageCarouselField';
+import { coverOf } from '../utils/images';
 
 interface TemplateLibraryProps {
   templates: PostTemplate[];
@@ -84,10 +85,8 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
   const [newCategory, setNewCategory] = useState<string>('Clinical');
   const [newPlatform, setNewPlatform] = useState<Platform>('instagram');
   const [newCaption, setNewCaption] = useState('');
-  const [newImagePreview, setNewImagePreview] = useState('');
+  const [newImages, setNewImages] = useState<string[]>([]);
   const [newTags, setNewTags] = useState('');
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
   // Caption / Tags / Image (plus Description & Platform) live behind this
   // disclosure -- only Name, Brand, Category are always visible.
   const [showMoreOptions, setShowMoreOptions] = useState(false);
@@ -103,23 +102,6 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
       window.setTimeout(() => {
         setCopiedId((cur) => (cur === template.id ? null : cur));
       }, 1500);
-    }
-  };
-
-  const handleImageFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
-
-    setUploadError(null);
-    setIsUploading(true);
-    try {
-      const { url } = await uploadImage(file);
-      setNewImagePreview(url);
-    } catch (err: any) {
-      setUploadError(err?.message || 'Upload failed.');
-    } finally {
-      setIsUploading(false);
     }
   };
 
@@ -263,7 +245,8 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
       specType: 'feed-post',
       defaultCaption: newCaption.trim(),
       tags: tagArray.length > 0 ? tagArray : [newCategory],
-      imagePreview: newImagePreview.trim(),
+      imagePreview: coverOf(newImages),
+      images: newImages,
       usesCount: 0
     };
     onSaveNewTemplate(tpl);
@@ -280,11 +263,11 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
     setNewCategory(tpl.category);
     setNewPlatform(tpl.platform);
     setNewCaption(tpl.defaultCaption || '');
-    setNewImagePreview(tpl.imagePreview || '');
+    setNewImages(tpl.images || []);
     setNewTags((tpl.tags || []).join(', '));
     // Open with "More options" already expanded when there's existing
     // caption/tags/image content to see, so editing doesn't hide data.
-    setShowMoreOptions(Boolean(tpl.defaultCaption?.trim() || (tpl.tags && tpl.tags.length > 0) || tpl.imagePreview?.trim()));
+    setShowMoreOptions(Boolean(tpl.defaultCaption?.trim() || (tpl.tags && tpl.tags.length > 0) || (tpl.images && tpl.images.length > 0)));
   };
 
   const handleDuplicateTemplate = (tpl: PostTemplate) => {
@@ -319,7 +302,8 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
       platform: newPlatform,
       defaultCaption: newCaption.trim(),
       tags: tagArray.length > 0 ? tagArray : editingTemplate.tags,
-      imagePreview: newImagePreview.trim() || editingTemplate.imagePreview
+      images: newImages.length > 0 ? newImages : editingTemplate.images,
+      imagePreview: newImages.length > 0 ? coverOf(newImages) : editingTemplate.imagePreview,
     };
     onUpdateTemplate(updated);
     setEditingTemplate(null);
@@ -331,12 +315,11 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
     setTitleError(null);
     setNewDesc('');
     setNewCaption('');
-    setNewImagePreview('');
+    setNewImages([]);
     setNewTags('');
     setNewBrandId('shared');
     setNewCategory('Clinical');
     setNewPlatform('instagram');
-    setUploadError(null);
     setShowMoreOptions(false);
   };
 
@@ -616,6 +599,12 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                     </div>
                   )}
 
+                  {template.images && template.images.length > 1 && (
+                    <span className="absolute top-3 right-3 mt-6 bg-black/70 text-white font-label-caps text-[9px] px-2 py-0.5 rounded-full backdrop-blur-xs">
+                      1/{template.images.length}
+                    </span>
+                  )}
+
                   {template.imagePreview && (
                     <div className="absolute bottom-2 left-2 flex gap-1.5 opacity-100 pointer-events-auto transition-opacity md:opacity-0 md:pointer-events-none md:group-hover:opacity-100 md:group-hover:pointer-events-auto md:focus-within:opacity-100 md:focus-within:pointer-events-auto">
                       <button
@@ -818,29 +807,12 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                 </div>
               </div>
 
-              {/* Image (upload-first: visible without expanding "More options") */}
+              {/* Image(s) -- up to 10, reorderable; images[0] is the card cover */}
               <div>
                 <label className="font-label-caps text-[10px] text-[#5f5f5b] block font-bold mb-1">
-                  Image
+                  Image{newImages.length > 1 ? 's' : ''}
                 </label>
-                <div className="flex gap-2 items-center">
-                  <input
-                    type="text"
-                    value={newImagePreview}
-                    onChange={(e) => setNewImagePreview(e.target.value)}
-                    placeholder="https://... or upload below"
-                    className="flex-1 bg-[#f4f4f3] border border-[#e9e9e7] rounded-lg p-2 text-xs text-[#1b1c1a] focus:outline-none"
-                  />
-                  <label className="bg-[#f1f1f0] border border-[#e9e9e7] text-[#4f46e5] px-3 py-2 rounded-lg font-label-caps text-xs font-bold hover:bg-[#4f46e5] hover:text-white transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap">
-                    <span className="material-symbols-outlined text-sm">upload</span>
-                    <span>{isUploading ? 'Uploading...' : 'Upload'}</span>
-                    <input type="file" accept="image/*" onChange={handleImageFileUpload} className="hidden" />
-                  </label>
-                </div>
-                {uploadError && <p className="text-[10px] text-[#dc2626] mt-1">{uploadError}</p>}
-                {newImagePreview && (
-                  <img src={newImagePreview} alt="" className="h-24 w-full object-cover rounded-lg border border-[#e9e9e7] mt-2" />
-                )}
+                <ImageCarouselField images={newImages} onChange={setNewImages} />
               </div>
 
               <button

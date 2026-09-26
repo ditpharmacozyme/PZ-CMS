@@ -134,3 +134,36 @@ export async function uploadImage(file: File): Promise<UploadResult> {
 
   return { url, fileName: file.name };
 }
+
+/**
+ * Upload several files one at a time (never Promise.all -- the Apps Script
+ * Drive endpoint is prone to slow/cold-start responses, and firing several
+ * requests at once against the same Google account's Drive makes that
+ * worse, not better). A failed file doesn't abort the rest; the caller gets
+ * back both the ones that succeeded (in original order) and the ones that
+ * didn't, each with its error message, so a partial failure is visible and
+ * the user can retry just the failed slide.
+ *
+ * `uploadFn` defaults to the real `uploadImage` -- it's a parameter (rather
+ * than calling `uploadImage` directly) purely so tests can inject a fake
+ * instead of mocking FileReader/canvas/network for every case.
+ */
+export async function uploadImages(
+  files: File[],
+  onProgress?: (done: number, total: number) => void,
+  uploadFn: (file: File) => Promise<UploadResult> = uploadImage,
+): Promise<{ succeeded: UploadResult[]; failed: { file: File; error: string }[] }> {
+  const succeeded: UploadResult[] = [];
+  const failed: { file: File; error: string }[] = [];
+
+  for (let i = 0; i < files.length; i++) {
+    onProgress?.(i + 1, files.length);
+    try {
+      succeeded.push(await uploadFn(files[i]));
+    } catch (err: any) {
+      failed.push({ file: files[i], error: err?.message || 'Upload failed.' });
+    }
+  }
+
+  return { succeeded, failed };
+}

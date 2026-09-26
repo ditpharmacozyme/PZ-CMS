@@ -302,6 +302,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               status: 'not-started',
               assignees: series.assignees,
               visualUrl: series.visualUrl,
+              images: series.images,
               approved: false,
               isPlaceholder: true,
               originalSeriesId: series.id
@@ -398,6 +399,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       status: 'not-started',
       assignees: placeholder.assignees || [],
       visualUrl: placeholder.visualUrl,
+      images: placeholder.images || [],
       approved: false,
       emailReminderEnabled: true,
       reminderEmail: combineAssigneeEmails(placeholder.assignees || [], teamMembers) || undefined,
@@ -418,13 +420,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     try {
       const { url } = await uploadImage(file);
       if (targetPost) {
-        onSavePost({ ...targetPost, visualUrl: url, activityLog: [{ id: `act-${Date.now()}`, actor: targetPost.assignees[0] || defaultAssignee || 'Someone', action: `Added image "${file.name}"`, timestamp: logTimestamp() }, ...targetPost.activityLog] });
+        onSavePost({ ...targetPost, visualUrl: url, images: [url], activityLog: [{ id: `act-${Date.now()}`, actor: targetPost.assignees[0] || defaultAssignee || 'Someone', action: `Added image "${file.name}"`, timestamp: logTimestamp() }, ...targetPost.activityLog] });
       } else {
         // Prefer the logged-in user over "first person in the roster" -- a
         // quick-created post used to always land on whoever is
         // alphabetically/chronologically first in teamMembers, not on you.
         const imageCreateAssignee = activeTeammate?.name || defaultAssignee;
-        const newPost: Post = { id: `post-${Date.now()}`, brandId: selectedBrandFilter === 'all' ? 'pharmacozyme' : selectedBrandFilter, title: file.name.replace(/\.[^/.]+$/, '') || 'Untitled post', caption: '', platform: 'instagram', specType: 'feed-post', scheduledDate: targetDate || '', scheduledTime: targetDate ? '10:00' : '', status: 'not-started', assignees: imageCreateAssignee ? [imageCreateAssignee] : [], visualUrl: url, approved: false, emailReminderEnabled: !!targetDate, reminderEmail: combineAssigneeEmails(imageCreateAssignee ? [imageCreateAssignee] : [], teamMembers) || undefined, tags: [], comments: [], activityLog: [{ id: `act-${Date.now()}`, actor: imageCreateAssignee || 'Someone', action: `Created from image "${file.name}"`, timestamp: logTimestamp() }] };
+        const newPost: Post = { id: `post-${Date.now()}`, brandId: selectedBrandFilter === 'all' ? 'pharmacozyme' : selectedBrandFilter, title: file.name.replace(/\.[^/.]+$/, '') || 'Untitled post', caption: '', platform: 'instagram', specType: 'feed-post', scheduledDate: targetDate || '', scheduledTime: targetDate ? '10:00' : '', status: 'not-started', assignees: imageCreateAssignee ? [imageCreateAssignee] : [], visualUrl: url, images: [url], approved: false, emailReminderEnabled: !!targetDate, reminderEmail: combineAssigneeEmails(imageCreateAssignee ? [imageCreateAssignee] : [], teamMembers) || undefined, tags: [], comments: [], activityLog: [{ id: `act-${Date.now()}`, actor: imageCreateAssignee || 'Someone', action: `Created from image "${file.name}"`, timestamp: logTimestamp() }] };
         onAddPost(newPost);
         onSelectPost(newPost);
       }
@@ -886,6 +888,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                       <span className="material-symbols-outlined text-3xl">image</span>
                       <p className="font-label-caps text-[10px] mt-1">No image yet</p>
                     </div>
+                  )}
+                  {inspectorPost.images && inspectorPost.images.length > 1 && (
+                    <span className="absolute top-2 right-2 bg-[#1b1c1a]/80 text-white font-label-caps text-[9px] px-2 py-0.5 rounded">
+                      1/{inspectorPost.images.length}
+                    </span>
                   )}
                   <span className="absolute bottom-2 left-2 bg-[#1b1c1a]/80 text-white font-label-caps text-[9px] px-2 py-0.5 rounded">
                     {SPECS[inspectorPost.specType]?.dimensions || inspectorPost.specType}

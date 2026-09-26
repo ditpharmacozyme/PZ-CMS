@@ -243,8 +243,13 @@ export const IdeaBacklog: React.FC<IdeaBacklogProps> = ({
                 </div>
 
                 {post.visualUrl && (
-                  <div className="my-1.5 h-16 w-full rounded overflow-hidden border border-[#efefed] bg-[#f4f4f3]">
+                  <div className="relative my-1.5 h-16 w-full rounded overflow-hidden border border-[#efefed] bg-[#f4f4f3]">
                     <img src={post.visualUrl} alt={post.title} className="w-full h-full object-cover" />
+                    {post.images && post.images.length > 1 && (
+                      <span className="absolute bottom-1 right-1 bg-black/70 text-white text-[9px] font-bold rounded px-1.5 py-0.5">
+                        1/{post.images.length}
+                      </span>
+                    )}
                   </div>
                 )}
 

@@ -20,7 +20,7 @@ vi.mock('../utils/storage', async (orig) => {
 
 const tpl = (id: string, category: string): PostTemplate => ({
   id, title: id, description: '', brandId: 'shared', category, platform: 'instagram',
-  specType: 'feed-post', defaultCaption: '', tags: [], imagePreview: '', usesCount: 0,
+  specType: 'feed-post', defaultCaption: '', tags: [], imagePreview: '', images: [], usesCount: 0,
 });
 
 const cat = (id: string, name: string, sortOrder: number): TemplateCategory => ({
@@ -62,5 +62,43 @@ describe('TemplateLibrary — category rename cascade', () => {
     expect(onUpdateTemplate).not.toHaveBeenCalled();
     // Uncontrolled input restored to the category's real name.
     await waitFor(() => expect(input.value).toBe('Editorial'));
+  });
+});
+
+describe('TemplateLibrary — carousel images', () => {
+  it('shows a slide-count badge on a multi-image template card', () => {
+    render(
+      <BrandsProvider>
+        <ConfirmProvider>
+          <TemplateLibrary
+            templates={[{ ...tpl('t1', 'Clinical'), images: ['https://a', 'https://b', 'https://c'], imagePreview: 'https://a' }]}
+            onUseTemplate={() => {}}
+            onSaveNewTemplate={() => {}}
+            onUpdateTemplate={() => {}}
+            onDeleteTemplate={() => {}}
+            selectedBrandFilter="all"
+          />
+        </ConfirmProvider>
+      </BrandsProvider>,
+    );
+    expect(screen.getByText('1/3')).toBeTruthy();
+  });
+
+  it('does not show a badge on a single-image template card', () => {
+    render(
+      <BrandsProvider>
+        <ConfirmProvider>
+          <TemplateLibrary
+            templates={[{ ...tpl('t1', 'Clinical'), images: ['https://a'], imagePreview: 'https://a' }]}
+            onUseTemplate={() => {}}
+            onSaveNewTemplate={() => {}}
+            onUpdateTemplate={() => {}}
+            onDeleteTemplate={() => {}}
+            selectedBrandFilter="all"
+          />
+        </ConfirmProvider>
+      </BrandsProvider>,
+    );
+    expect(screen.queryByText(/^1\//)).toBeNull();
   });
 });
