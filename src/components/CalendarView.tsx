@@ -9,6 +9,7 @@ import { getPostStatusConfig } from '../utils/statusConfig';
 import { deriveStatus } from '../utils/postStatus';
 import { isMine, combineAssigneeEmails } from '../utils/postOwnership';
 import { CalendarHeader } from './calendar/CalendarHeader';
+import { MasterPromptModal } from './calendar/MasterPromptModal';
 import { CalendarFilters } from './calendar/CalendarFilters';
 import { BulkActionsBar } from './calendar/BulkActionsBar';
 import { CalendarMonthView } from './calendar/CalendarMonthView';
@@ -156,6 +157,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   // ── Upload State ────────────────────────────────────────────────────────────
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isPromptModalOpen, setIsPromptModalOpen] = useState(false);
 
   // ── Backlog State ───────────────────────────────────────────────────────────
   const [mobileBacklogOpen, setMobileBacklogOpen] = useState(false);
@@ -690,6 +692,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             onCsvFileSelect={handleCsvImport}
             csvFileInputRef={csvFileInputRef}
             isUploading={isUploading}
+            onOpenPromptModal={() => setIsPromptModalOpen(true)}
             mobileBacklogOpen={mobileBacklogOpen}
             setMobileBacklogOpen={setMobileBacklogOpen}
             backlogCount={filteredBacklogPosts.length}
@@ -952,6 +955,12 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           )}
         </aside>
       </div>
+
+      <MasterPromptModal
+        isOpen={isPromptModalOpen}
+        onClose={() => setIsPromptModalOpen(false)}
+        showToast={showToast ? (message) => showToast(message) : undefined}
+      />
     </div>
   );
 };

@@ -18,6 +18,7 @@ interface CalendarHeaderProps {
   onCsvFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
   csvFileInputRef: React.RefObject<HTMLInputElement | null>;
   isUploading: boolean;
+  onOpenPromptModal: () => void;
   mobileBacklogOpen: boolean;
   setMobileBacklogOpen: (open: boolean) => void;
   backlogCount: number;
@@ -44,6 +45,7 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   onCsvFileSelect,
   csvFileInputRef,
   isUploading,
+  onOpenPromptModal,
   mobileBacklogOpen,
   setMobileBacklogOpen,
   backlogCount,
@@ -172,6 +174,15 @@ export const CalendarHeader: React.FC<CalendarHeaderProps> = ({
             <span className="hidden sm:inline">{isSelectMode ? 'Selecting…' : 'Select'}</span>
           </button>
         )}
+
+        <button
+          onClick={onOpenPromptModal}
+          className="px-3 py-1.5 text-xs font-bold font-label-caps rounded-lg border border-[#e9e9e7] bg-white hover:bg-[#f1f1f0] text-[#57574f] flex items-center gap-1.5 transition-all"
+          title="Get an AI prompt to generate a calendar CSV"
+        >
+          <span className="material-symbols-outlined text-sm">auto_awesome</span>
+          <span className="hidden sm:inline">AI Prompt</span>
+        </button>
 
         <button
           onClick={() => csvFileInputRef.current?.click()}
