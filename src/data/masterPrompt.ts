@@ -14,7 +14,10 @@ campaign themes/topics, goals or outcomes for this content, target
 audience, any specific post ideas, tone/voice notes, number of posts, and
 anything else that would change what you'd plan. Ask as a short list, not
 one question at a time, and wait for my answers. Skip anything I've
-already told you below.
+already told you below. Even if an attached file or my message already
+answers some of these, you must still summarize what you found and
+explicitly ask me to confirm or correct it -- never skip straight to an
+outline or CSV just because information is available.
 
 STAGE 2 — OUTLINE
 Once you have enough to work with, propose a plain-text outline of the
