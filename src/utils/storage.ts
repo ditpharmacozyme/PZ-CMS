@@ -573,6 +573,38 @@ export function saveStoredBrands(map: Record<BrandId, BrandConfig>): void {
   try { localStorage.setItem(BRANDS_KEY, JSON.stringify(Object.values(map))); } catch { /* quota — ignore */ }
 }
 
+// ─── App Settings (generic shared key/value, e.g. master_prompt) ───────────
+
+export async function fetchRemoteSetting(key: string): Promise<string | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.from('app_settings').select('value').eq('key', key).maybeSingle();
+  if (error) { console.error('[Supabase] fetchRemoteSetting failed:', error.message); return null; }
+  return data?.value ?? null;
+}
+
+export async function upsertRemoteSetting(key: string, value: string): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from('app_settings').upsert({ key, value, updated_at: new Date().toISOString() });
+  if (error) console.error('[Supabase] upsertRemoteSetting failed:', error.message);
+}
+
+export async function deleteRemoteSetting(key: string): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from('app_settings').delete().eq('key', key);
+  if (error) console.error('[Supabase] deleteRemoteSetting failed:', error.message);
+}
+
+export function subscribeRemoteSetting(key: string, onChange: (value: string | null) => void): () => void {
+  if (!supabase) return () => {};
+  const channel = supabase
+    .channel(`app-settings-${key}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'app_settings', filter: `key=eq.${key}` }, async () => {
+      onChange(await fetchRemoteSetting(key));
+    })
+    .subscribe();
+  return () => { supabase.removeChannel(channel); };
+}
+
 // ─── Content Bank ────────────────────────────────────────────────────────
 function rowToBankItem(row: any): ContentBankItem {
   return { id: row.id, text: row.text, tags: row.tags || [], source: row.source, savedDate: row.saved_date, brandId: row.brand_id };
