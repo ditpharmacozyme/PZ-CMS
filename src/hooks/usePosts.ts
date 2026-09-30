@@ -243,14 +243,15 @@ export function usePosts(
     }
   };
 
-  const handleBatchAddPosts = async (newPosts: Post[]) => {
+  const handleBatchAddPosts = async (newPosts: Post[], toastMessage?: string) => {
     if (newPosts.length === 0) return;
     setPosts((prev) => [...newPosts, ...prev]);
     const { error } = await upsertRemotePosts(newPosts);
+    const summary = toastMessage || `Imported ${newPosts.length} posts to Content Calendar!`;
     if (error) {
-      showToast(`Added ${newPosts.length} posts locally (Supabase batch warning: ${error})`, undefined, 3000, 'error');
+      showToast(`${summary} (Supabase batch warning: ${error})`, undefined, 3000, 'error');
     } else {
-      showToast(`Imported ${newPosts.length} posts to Content Calendar!`);
+      showToast(summary);
     }
   };
 

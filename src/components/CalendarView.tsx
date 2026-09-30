@@ -5,6 +5,7 @@ import { useBrands } from '../context/BrandsContext';
 import { toDateStr, todayStr, fromDateStr, mondayFirstDay, startOfWeek, logTimestamp } from '../utils/date';
 import { uploadImage } from '../utils/uploadImage';
 import { parseCalendarCsv, convertCsvRowsToPosts } from '../utils/researchParse';
+import { findDuplicateMatches, formatImportSummary } from '../utils/duplicateImportCheck';
 import { getPostStatusConfig } from '../utils/statusConfig';
 import { deriveStatus } from '../utils/postStatus';
 import { isMine, combineAssigneeEmails } from '../utils/postOwnership';
@@ -30,7 +31,7 @@ interface CalendarViewProps {
   onSearchChange: (value: string) => void;
   onSavePost: (post: Post, opts?: { silent?: boolean }) => void;
   onAddPost: (post: Post) => void;
-  onBatchAddPosts?: (posts: Post[]) => void;
+  onBatchAddPosts?: (posts: Post[], toastMessage?: string) => void;
   onBatchSavePosts?: (posts: Post[], toastMessage?: string) => void;
   teamMembers?: TeamMember[];
   activeTeammate?: TeamMember | null;
@@ -454,7 +455,18 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         const ownerFallback = activeTeammate?.name || teamMembers[0]?.name || '';
         const ownerEmailFallback = activeTeammate?.email || teamMembers[0]?.email || '';
         const postsToImport = convertCsvRowsToPosts(result.rows, brandFallback, ownerFallback, ownerEmailFallback, brands);
-        onBatchAddPosts(postsToImport);
+        const duplicates = findDuplicateMatches(postsToImport, posts);
+        if (duplicates.length > 0) {
+          const proceed = await confirm({
+            title: 'Possible duplicate import',
+            body: `${duplicates.length} of these ${postsToImport.length} posts already appear to be on the calendar -- ${formatImportSummary(duplicates, brands)}. Import all ${postsToImport.length} anyway?`,
+            confirmLabel: 'Import Anyway',
+            cancelLabel: 'Cancel',
+            tone: 'danger',
+          });
+          if (!proceed) return;
+        }
+        onBatchAddPosts(postsToImport, `Imported ${postsToImport.length} posts to ${formatImportSummary(postsToImport, brands)}!`);
       }
     } catch (err: any) {
       setUploadError(err?.message || 'Failed to read CSV.');

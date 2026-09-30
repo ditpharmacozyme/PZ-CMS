@@ -11,6 +11,7 @@ import {
 } from '../utils/researchParse';
 import { uploadResearchFile, MAX_RESEARCH_FILE_BYTES } from '../utils/uploadResearchFile';
 import { useConfirm } from './ui/ConfirmDialog';
+import { findDuplicateMatches, formatImportSummary } from '../utils/duplicateImportCheck';
 
 // Lazy-loaded: only downloaded when someone actually opens a Markdown doc,
 // keeping it off the main bundle (already past Vite's 500KB warning).
@@ -21,9 +22,10 @@ interface ResearchPlansProps {
   selectedBrandFilter: BrandId | 'all';
   teamMembers: TeamMember[];
   activeTeammate?: TeamMember | null;
+  posts: Post[];
   onAddResearchItem: (item: ResearchItem) => void;
   onDeleteResearchItem: (id: string) => void;
-  onBatchAddPosts?: (posts: Post[]) => void;
+  onBatchAddPosts?: (posts: Post[], toastMessage?: string) => void;
 }
 
 const RESEARCH_TYPES: ResearchType[] = ['calendar', 'research', 'plan', 'brief', 'notes'];
@@ -57,12 +59,29 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
   selectedBrandFilter,
   teamMembers,
   activeTeammate,
+  posts,
   onAddResearchItem,
   onDeleteResearchItem,
   onBatchAddPosts
 }) => {
   const confirm = useConfirm();
   const { brands } = useBrands();
+
+  const importPostsWithDuplicateCheck = async (postsToImport: Post[]) => {
+    if (!onBatchAddPosts) return;
+    const duplicates = findDuplicateMatches(postsToImport, posts);
+    if (duplicates.length > 0) {
+      const proceed = await confirm({
+        title: 'Possible duplicate import',
+        body: `${duplicates.length} of these ${postsToImport.length} posts already appear to be on the calendar -- ${formatImportSummary(duplicates, brands)}. Import all ${postsToImport.length} anyway?`,
+        confirmLabel: 'Import Anyway',
+        cancelLabel: 'Cancel',
+        tone: 'danger',
+      });
+      if (!proceed) return;
+    }
+    onBatchAddPosts(postsToImport, `Imported ${postsToImport.length} posts to ${formatImportSummary(postsToImport, brands)}!`);
+  };
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBrand, setSelectedBrand] = useState<BrandId | 'shared' | 'all'>(
@@ -219,8 +238,8 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
 
       // Auto-populate Calendar if requested and supported
       if (fileType === 'csv' && parsedRows && autoPopulateCalendar && onBatchAddPosts) {
-        const posts = convertCsvRowsToPosts(parsedRows, brand, owner.trim(), undefined, brands);
-        onBatchAddPosts(posts);
+        const postsToImport = convertCsvRowsToPosts(parsedRows, brand, owner.trim(), undefined, brands);
+        await importPostsWithDuplicateCheck(postsToImport);
       }
 
       handleCloseUploadModal();
@@ -635,10 +654,10 @@ export const ResearchPlans: React.FC<ResearchPlansProps> = ({
               <div className="space-y-3">
                 {onBatchAddPosts && (
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       const rows = (viewingItem.parsedMetadata as any).rows as CalendarCsvRow[];
-                      const posts = convertCsvRowsToPosts(rows, viewingItem.brand, viewingItem.owner, undefined, brands);
-                      onBatchAddPosts(posts);
+                      const postsToImport = convertCsvRowsToPosts(rows, viewingItem.brand, viewingItem.owner, undefined, brands);
+                      await importPostsWithDuplicateCheck(postsToImport);
                     }}
                     className="w-full py-2 bg-[#f1f1f0] border border-[#e9e9e7] text-[#4f46e5] font-label-caps text-xs font-bold rounded hover:bg-[#e9e9e7] flex items-center justify-center gap-2 transition-colors shadow-sm"
                   >

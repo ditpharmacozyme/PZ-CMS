@@ -677,7 +677,7 @@ export function App() {
             <ContentBank contentBank={contentBank} selectedBrandFilter={selectedBrandFilter} onAddBankItem={handleAddBankItem} onUpdateBankItem={handleUpdateBankItem} onDeleteBankItem={handleDeleteBankItem} onCreatePostFromCopy={handleCreatePostFromCopy} />
           )}
           {currentTab === 'research' && (
-            <ResearchPlans researchItems={researchItems} selectedBrandFilter={selectedBrandFilter} teamMembers={teamMembers} activeTeammate={activeTeammate} onAddResearchItem={handleAddResearchItem} onDeleteResearchItem={handleDeleteResearchItem} onBatchAddPosts={handleBatchAddPosts} />
+            <ResearchPlans researchItems={researchItems} selectedBrandFilter={selectedBrandFilter} teamMembers={teamMembers} activeTeammate={activeTeammate} posts={posts} onAddResearchItem={handleAddResearchItem} onDeleteResearchItem={handleDeleteResearchItem} onBatchAddPosts={handleBatchAddPosts} />
           )}
           {currentTab === 'audit' && <AuditLogView teamMembers={teamMembers} />}
           </Suspense>
