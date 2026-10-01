@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
+import { TeamMember } from '../../types';
+import { Popover } from '../ui/Popover';
 
 interface BulkActionsBarProps {
   selectedCount: number;
@@ -6,10 +8,9 @@ interface BulkActionsBarProps {
   setIsSelectMode: (val: boolean) => void;
   onSelectAll: () => void;
   onClearSelection: () => void;
-  bulkAssignee: string;
-  onApplyBulkAssignee: (assignee: string) => void;
+  onApplyBulkAssignees: (assignees: string[]) => void;
   onBulkDelete: () => void;
-  teamMembers: { name: string }[];
+  teamMembers: TeamMember[];
 }
 
 export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
@@ -18,12 +19,30 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
   setIsSelectMode,
   onSelectAll,
   onClearSelection,
-  bulkAssignee,
-  onApplyBulkAssignee,
+  onApplyBulkAssignees,
   onBulkDelete,
   teamMembers
 }) => {
+  const [isAssignOpen, setIsAssignOpen] = useState(false);
+  const [checkedNames, setCheckedNames] = useState<Set<string>>(new Set());
+  const assignButtonRef = useRef<HTMLButtonElement>(null);
+
   if (!isSelectMode && selectedCount === 0) return null;
+
+  const toggleName = (name: string) => {
+    setCheckedNames((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name); else next.add(name);
+      return next;
+    });
+  };
+
+  const handleApply = () => {
+    if (checkedNames.size === 0) return;
+    onApplyBulkAssignees(Array.from(checkedNames));
+    setCheckedNames(new Set());
+    setIsAssignOpen(false);
+  };
 
   return (
     <>
@@ -63,19 +82,56 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
             Select All
           </button>
 
-          {/* Assignee Dropdown */}
-          <select
-            value={bulkAssignee}
-            onChange={(e) => onApplyBulkAssignee(e.target.value)}
-            className="bg-[#2a2b27] text-white text-xs font-label-caps py-1 px-2 rounded border border-[#57574f] focus:outline-none focus:ring-1 focus:ring-[#4f46e5] flex-shrink-0"
+          {/* Assign People (multi-select) */}
+          <button
+            ref={assignButtonRef}
+            onClick={() => setIsAssignOpen((v) => !v)}
+            className="bg-[#2a2b27] text-white text-xs font-label-caps py-1 px-2 rounded border border-[#57574f] hover:border-[#4f46e5] transition-all flex-shrink-0 whitespace-nowrap"
           >
-            <option value="">Assign To...</option>
-            {teamMembers.map((m) => (
-              <option key={m.name} value={m.name}>
-                {m.name}
-              </option>
-            ))}
-          </select>
+            Assign People
+          </button>
+          <Popover isOpen={isAssignOpen} onClose={() => setIsAssignOpen(false)} anchorRef={assignButtonRef} ariaLabel="Assign people to selected posts" className="w-64">
+            <div className="p-2.5 border-b border-[var(--color-line-subtle)]">
+              <p className="font-label-caps text-[10px] font-bold text-[var(--color-ink-muted)]">Assign to selected posts</p>
+            </div>
+            {teamMembers.length === 0 ? (
+              <p className="p-3 text-[11px] font-body-md text-[var(--color-ink-muted)] italic">No team members to assign.</p>
+            ) : (
+              <div className="max-h-72 overflow-y-auto divide-y divide-[var(--color-line-subtle)]">
+                {teamMembers.map((m) => {
+                  const checked = checkedNames.has(m.name);
+                  return (
+                    <label key={m.id} className="flex items-center gap-2 p-2 hover:bg-[var(--color-muted)] transition-colors cursor-pointer min-h-[36px]">
+                      <span
+                        className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0"
+                        style={{ backgroundColor: m.color }}
+                      >
+                        {m.avatarInitials}
+                      </span>
+                      <span className="font-body-md text-[12px] text-[var(--color-ink)] truncate flex-1">{m.name}</span>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleName(m.name)}
+                        aria-label={m.name}
+                        className="w-3.5 h-3.5 text-[var(--color-accent)] border-[var(--color-line)] rounded flex-shrink-0 cursor-pointer"
+                      />
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+            {checkedNames.size > 0 && (
+              <div className="p-2 border-t border-[var(--color-line-subtle)]">
+                <button
+                  onClick={handleApply}
+                  className="w-full py-1.5 bg-[var(--color-accent)] text-white font-label-caps text-xs font-bold rounded hover:opacity-90 transition-opacity"
+                >
+                  Apply to {checkedNames.size === 1 ? '1 person' : `${checkedNames.size} people`}
+                </button>
+              </div>
+            )}
+          </Popover>
 
           {/* Delete Button */}
           <button

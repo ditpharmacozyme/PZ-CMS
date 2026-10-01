@@ -148,7 +148,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   // ── Multi-Select State ──────────────────────────────────────────────────────
   const [selectedPostIds, setSelectedPostIds] = useState<Set<string>>(new Set());
   const [isSelectMode, setIsSelectMode] = useState(false);
-  const [bulkAssignee, setBulkAssignee] = useState<string>('');
   const [lastSelectedPostId, setLastSelectedPostId] = useState<string | null>(null);
 
   // ── Drag/Touch State ────────────────────────────────────────────────────────
@@ -569,7 +568,6 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
   const clearSelection = () => {
     setSelectedPostIds(new Set());
-    setBulkAssignee('');
   };
 
   // Additive (adds the chosen person without dropping existing co-assignees --
@@ -579,31 +577,36 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   // need an owner -- couldn't be bulk-assigned at all), and batched through
   // onBatchSavePosts for one Supabase round-trip and one undoable toast
   // instead of N separate saves and N toasts.
-  const applyBulkAssignee = (assignee: string) => {
-    if (!assignee) return;
+  const applyBulkAssignees = (assignees: string[]) => {
+    if (assignees.length === 0) return;
     const selected = [...filteredCalendarPosts, ...filteredBacklogPosts].filter((p) => selectedPostIds.has(p.id));
-    if (selected.length === 0) { setBulkAssignee(''); return; }
+    if (selected.length === 0) return;
 
-    const actorName = activeTeammate ? activeTeammate.name : (assignee || 'Someone');
+    const actorName = activeTeammate ? activeTeammate.name : 'Someone';
     const updated = selected
-      .filter((post) => !post.assignees.includes(assignee))
-      .map((post) => ({
-        ...post,
-        assignees: [...post.assignees, assignee],
-        activityLog: [
-          { id: `act-${Date.now()}-${post.id}`, actor: actorName, action: `Added ${assignee} as an assignee (bulk update)`, timestamp: logTimestamp() },
-          ...post.activityLog
-        ]
-      }));
+      .map((post) => {
+        const added = assignees.filter((name) => !post.assignees.includes(name));
+        if (added.length === 0) return null;
+        return {
+          ...post,
+          assignees: [...post.assignees, ...added],
+          activityLog: [
+            { id: `act-${Date.now()}-${post.id}`, actor: actorName, action: `Added ${added.join(', ')} as assignee${added.length > 1 ? 's' : ''} (bulk update)`, timestamp: logTimestamp() },
+            ...post.activityLog
+          ]
+        };
+      })
+      .filter((p): p is NonNullable<typeof p> => p !== null);
 
     if (updated.length > 0) {
+      const names = assignees.join(', ');
+      const toastMessage = `Assigned ${names} to ${updated.length} post${updated.length > 1 ? 's' : ''}`;
       if (onBatchSavePosts) {
-        onBatchSavePosts(updated, `Assigned ${assignee} to ${updated.length} post${updated.length > 1 ? 's' : ''}`);
+        onBatchSavePosts(updated, toastMessage);
       } else {
         updated.forEach((post) => onSavePost(post));
       }
     }
-    setBulkAssignee('');
     clearSelection();
   };
 
@@ -738,8 +741,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             setIsSelectMode={setIsSelectMode}
             onSelectAll={() => setSelectedPostIds(new Set(filteredCalendarPosts.map((p) => p.id)))}
             onClearSelection={clearSelection}
-            bulkAssignee={bulkAssignee}
-            onApplyBulkAssignee={applyBulkAssignee}
+            onApplyBulkAssignees={applyBulkAssignees}
             onBulkDelete={handleBulkDelete}
             teamMembers={teamMembers}
           />
