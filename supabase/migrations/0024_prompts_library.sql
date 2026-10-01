@@ -17,7 +17,7 @@ create table if not exists prompts (
   category    text not null default 'Uncategorized',
   images      jsonb not null default '[]'::jsonb,
   video_links jsonb not null default '[]'::jsonb,
-  created_by  text,
+  created_by  text not null default '',
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
 );
