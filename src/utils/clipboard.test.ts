@@ -26,7 +26,7 @@ describe('copyImage', () => {
   it('fetches the image and writes it to the clipboard as image data', async () => {
     const blob = new Blob(['fake-bytes'], { type: 'image/png' });
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, blob: () => Promise.resolve(blob) }));
-    const write = vi.fn().mockResolvedValue(undefined);
+    const write = vi.fn(async ([item]: Record<string, Promise<Blob>>[]) => { await Promise.all(Object.values(item)); });
     vi.stubGlobal('ClipboardItem', function ClipboardItem(items: unknown) { return items; });
     vi.stubGlobal('navigator', { clipboard: { write, writeText: vi.fn() } });
 
@@ -51,13 +51,13 @@ describe('copyImage', () => {
       },
     );
 
-    const write = vi.fn().mockResolvedValue(undefined);
+    const write = vi.fn(async ([item]: Record<string, Promise<Blob>>[]) => { await Promise.all(Object.values(item)); });
     vi.stubGlobal('navigator', { clipboard: { write, writeText: vi.fn() } });
 
     await expect(copyImage('https://example.com/x.jpg')).resolves.toBe('image');
     expect(drawImage).toHaveBeenCalledTimes(1);
     expect(convertToBlob).toHaveBeenCalledWith({ type: 'image/png' });
-    expect(write).toHaveBeenCalledWith([{ 'image/png': pngBlob }]);
+    expect(await write.mock.calls[0][0][0]['image/png']).toBe(pngBlob);
   });
 
   it('falls back to copying the link when ClipboardItem is unsupported', async () => {
@@ -72,9 +72,9 @@ describe('copyImage', () => {
 
   it('falls back to the link when the fetch fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')));
-    vi.stubGlobal('ClipboardItem', vi.fn());
+    vi.stubGlobal('ClipboardItem', function ClipboardItem(items: unknown) { return items; });
     const writeText = vi.fn().mockResolvedValue(undefined);
-    vi.stubGlobal('navigator', { clipboard: { write: vi.fn(), writeText } });
+    vi.stubGlobal('navigator', { clipboard: { write: vi.fn(async ([item]: Record<string, Promise<Blob>>[]) => { await Promise.all(Object.values(item)); }), writeText } });
 
     await expect(copyImage('https://example.com/x.png')).resolves.toBe('link');
   });
