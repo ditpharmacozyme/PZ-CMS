@@ -114,7 +114,7 @@ export const PromptEditorModal: React.FC<PromptEditorModalProps> = ({
             {category && !categories.some((c) => c.name === category) && (
               <option value={category}>{category}</option>
             )}
-            {!categories.some((c) => c.name === UNCATEGORIZED) && (
+            {category !== UNCATEGORIZED && !categories.some((c) => c.name === UNCATEGORIZED) && (
               <option value={UNCATEGORIZED}>{UNCATEGORIZED}</option>
             )}
             {categories.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
