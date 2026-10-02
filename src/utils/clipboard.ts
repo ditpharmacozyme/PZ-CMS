@@ -20,13 +20,31 @@ export async function copyText(text: string): Promise<boolean> {
 async function toPngBlob(blob: Blob): Promise<Blob> {
   if (blob.type === 'image/png') return blob;
   const bitmap = await createImageBitmap(blob);
-  const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+  // OffscreenCanvas is missing on iOS Safari < 16.4, so fall back to a DOM canvas.
+  if (typeof OffscreenCanvas !== 'undefined') {
+    const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('2D canvas context unavailable');
+    ctx.drawImage(bitmap, 0, 0);
+    const pngBlob = await canvas.convertToBlob({ type: 'image/png' });
+    if (!pngBlob) throw new Error('PNG conversion failed');
+    return pngBlob;
+  }
+  const canvas = document.createElement('canvas');
+  canvas.width = bitmap.width;
+  canvas.height = bitmap.height;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('2D canvas context unavailable');
   ctx.drawImage(bitmap, 0, 0);
-  const pngBlob = await canvas.convertToBlob({ type: 'image/png' });
-  if (!pngBlob) throw new Error('PNG conversion failed');
-  return pngBlob;
+  return await new Promise<Blob>((resolve, reject) =>
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('PNG conversion failed'))), 'image/png'),
+  );
+}
+
+async function fetchAsPng(url: string): Promise<Blob> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Image fetch failed: ${res.status}`);
+  return toPngBlob(await res.blob());
 }
 
 /**
@@ -36,17 +54,18 @@ async function toPngBlob(blob: Blob): Promise<Blob> {
  * doesn't support writing images to the clipboard (or the fetch/convert/
  * write fails), so the caller can still tell the user *something* was
  * copied.
+ *
+ * `clipboard.write` must be called synchronously inside the tap handler:
+ * iOS Safari (and some Android browsers) reject it if any `await` runs
+ * first, because the user-activation window is gone by then. So the
+ * ClipboardItem is handed a *promise* for the PNG and the write happens
+ * immediately, while the fetch/convert resolves in the background.
  */
 export async function copyImage(url: string): Promise<'image' | 'link' | 'failed'> {
   try {
     if (typeof ClipboardItem !== 'undefined' && navigator?.clipboard?.write) {
-      const res = await fetch(url);
-      if (res.ok) {
-        const blob = await res.blob();
-        const pngBlob = await toPngBlob(blob);
-        await navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })]);
-        return 'image';
-      }
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': fetchAsPng(url) })]);
+      return 'image';
     }
   } catch {
     // fall through to the link fallback below

@@ -60,7 +60,7 @@ describe('ImageLightbox', () => {
     const blob = new Blob(['bytes'], { type: 'image/png' });
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, blob: () => Promise.resolve(blob) }));
     vi.stubGlobal('ClipboardItem', function ClipboardItem(items: unknown) { return items; });
-    const write = vi.fn().mockResolvedValue(undefined);
+    const write = vi.fn(async ([item]: Record<string, Promise<Blob>>[]) => { await Promise.all(Object.values(item)); });
     vi.stubGlobal('navigator', { clipboard: { write, writeText: vi.fn() } });
 
     render(<ImageLightbox isOpen onClose={() => {}} images={images} />);
