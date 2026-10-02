@@ -101,4 +101,27 @@ describe('TemplateLibrary — carousel images', () => {
     );
     expect(screen.queryByText(/^1\//)).toBeNull();
   });
+
+  it('opens a gallery viewer showing every image, not just the cover', () => {
+    render(
+      <BrandsProvider>
+        <ConfirmProvider>
+          <TemplateLibrary
+            templates={[{ ...tpl('t1', 'Clinical'), images: ['https://a', 'https://b', 'https://c'], imagePreview: 'https://a' }]}
+            onUseTemplate={() => {}}
+            onSaveNewTemplate={() => {}}
+            onUpdateTemplate={() => {}}
+            onDeleteTemplate={() => {}}
+            selectedBrandFilter="all"
+          />
+        </ConfirmProvider>
+      </BrandsProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /view images \(3\)/i }));
+    expect(screen.getByText('Image 1 of 3')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next image' }));
+    expect(screen.getByText('Image 2 of 3')).toBeTruthy();
+  });
 });
