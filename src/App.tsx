@@ -173,6 +173,7 @@ export function App() {
     templates: getStoredTemplates(),
     assets: getStoredAssets(),
     research: getStoredResearchItems(),
+    prompts: getStoredPrompts(),
     logoUrls: brandLogoUrls(),
   });
 
@@ -239,7 +240,7 @@ export function App() {
 
   // Keep the cleanup reference-count snapshot current (declared above usePosts).
   useEffect(() => {
-    recordsRef.current = { posts, templates, assets, research: researchItems, logoUrls: brandLogoUrls() };
+    recordsRef.current = { posts, templates, assets, research: researchItems, prompts, logoUrls: brandLogoUrls() };
   });
 
   // Retry any file deletes that failed while offline / mid-session, once on
@@ -688,7 +689,7 @@ export function App() {
             <MissionControlDashboard posts={posts} teamMembers={teamMembers} onOpenNewPostModal={() => { setNewPostInitialDate(undefined); setIsNewPostModalOpen(true); }} onSelectPost={handleSelectPost} onDeletePost={handleDeletePost} activeTeammate={activeTeammate} />
           )}
           {currentTab === 'integrations' && (
-            <GoogleAppsScriptHub posts={posts} onUploadComplete={(newUrl) => showToast(`Asset uploaded! Direct URL: ${newUrl}`)} cleanupRecords={{ posts, templates, assets, research: researchItems, logoUrls: brandLogoUrls() }} recordsLoaded={recordsLoaded} isAdmin={activeTeammate?.userRole === 'Admin'} />
+            <GoogleAppsScriptHub posts={posts} onUploadComplete={(newUrl) => showToast(`Asset uploaded! Direct URL: ${newUrl}`)} cleanupRecords={{ posts, templates, assets, research: researchItems, prompts, logoUrls: brandLogoUrls() }} recordsLoaded={recordsLoaded} isAdmin={activeTeammate?.userRole === 'Admin'} />
           )}
           {currentTab === 'content-bank' && (
             <ContentBank contentBank={contentBank} selectedBrandFilter={selectedBrandFilter} onAddBankItem={handleAddBankItem} onUpdateBankItem={handleUpdateBankItem} onDeleteBankItem={handleDeleteBankItem} onCreatePostFromCopy={handleCreatePostFromCopy} />

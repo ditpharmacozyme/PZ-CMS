@@ -197,15 +197,18 @@ export const PromptsLibrary: React.FC<PromptsLibraryProps> = ({
         ))}
       </div>
 
-      <PromptEditorModal
-        isOpen={editorOpen}
-        onClose={() => setEditorOpen(false)}
-        prompt={editingPrompt}
-        categories={categories}
-        activeTeammateName={activeTeammateName}
-        onSave={handleSave}
-        onDelete={editingPrompt ? onDeletePrompt : undefined}
-      />
+      {editorOpen && (
+        <PromptEditorModal
+          key={editingPrompt?.id ?? 'new'}
+          isOpen={editorOpen}
+          onClose={() => setEditorOpen(false)}
+          prompt={editingPrompt}
+          categories={categories}
+          activeTeammateName={activeTeammateName}
+          onSave={handleSave}
+          onDelete={editingPrompt ? onDeletePrompt : undefined}
+        />
+      )}
     </div>
   );
 };

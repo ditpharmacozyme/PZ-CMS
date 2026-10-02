@@ -3,6 +3,7 @@ import { Prompt, PromptCategory } from '../types';
 import { Modal } from './ui/Modal';
 import { ImageCarouselField } from './ui/ImageCarouselField';
 import { useConfirm } from './ui/ConfirmDialog';
+import { UNCATEGORIZED } from '../utils/promptCategories';
 
 export interface PromptEditorModalProps {
   isOpen: boolean;
@@ -110,7 +111,12 @@ export const PromptEditorModal: React.FC<PromptEditorModalProps> = ({
             onChange={(e) => setCategory(e.target.value)}
             className="w-full bg-[#f4f4f3] border border-[#e9e9e7] rounded-lg p-2 text-xs font-label-caps font-bold"
           >
-            {categories.length === 0 && <option value="">Uncategorized</option>}
+            {category && !categories.some((c) => c.name === category) && (
+              <option value={category}>{category}</option>
+            )}
+            {!categories.some((c) => c.name === UNCATEGORIZED) && (
+              <option value={UNCATEGORIZED}>{UNCATEGORIZED}</option>
+            )}
             {categories.map((c) => <option key={c.id} value={c.name}>{c.name}</option>)}
           </select>
         </div>

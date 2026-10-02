@@ -28,7 +28,7 @@ const LEGACY_TAB_REMAP: Record<string, NavTab> = {
 
 const VALID_TABS: NavTab[] = [
   'my-work', 'calendar', 'templates', 'brand-kit', 'assets',
-  'dashboard', 'integrations', 'content-bank', 'research', 'audit',
+  'dashboard', 'integrations', 'content-bank', 'research', 'audit', 'prompts',
 ];
 
 export function remapLegacyTab(rawTab: string | null): NavTab | null {

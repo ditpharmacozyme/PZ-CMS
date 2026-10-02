@@ -15,6 +15,10 @@ describe('remapLegacyTab', () => {
     expect(remapLegacyTab('my-work')).toBe('my-work');
   });
 
+  it('keeps the prompts tab valid across a reload', () => {
+    expect(remapLegacyTab('prompts')).toBe('prompts');
+  });
+
   it('returns null for a missing stored value', () => {
     expect(remapLegacyTab(null)).toBeNull();
   });

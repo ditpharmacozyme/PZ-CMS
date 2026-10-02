@@ -98,4 +98,33 @@ describe('PromptsLibrary', () => {
     fireEvent.click(await screen.findByRole('button', { name: /^delete$/i }));
     await waitFor(() => expect(onUpdatePrompt).toHaveBeenCalledWith(expect.objectContaining({ id: 'p1', category: 'Uncategorized' })));
   });
+
+  it('re-initializes the editor fields when switching between prompts without stale data (C1 regression)', async () => {
+    const { onUpdatePrompt } = renderLibrary();
+
+    // Open prompt A (p1) and confirm its own data is shown.
+    fireEvent.click(screen.getByText('Caption writer'));
+    expect(await screen.findByLabelText(/title/i)).toHaveValue('Caption writer');
+    // Close without saving.
+    fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
+    await waitFor(() => expect(screen.queryByLabelText(/title/i)).not.toBeInTheDocument());
+
+    // Open prompt B (p2) and confirm it shows B's data, not A's stale data.
+    fireEvent.click(screen.getByText('Hashtag generator'));
+    expect(await screen.findByLabelText(/title/i)).toHaveValue('Hashtag generator');
+
+    // Save B's edit (title tweak only) and assert B's original images/videoLinks
+    // survive intact — not emptied by stale state from A.
+    fireEvent.change(screen.getByLabelText(/title/i), { target: { value: 'Hashtag generator v2' } });
+    fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
+
+    expect(onUpdatePrompt).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'p2',
+        title: 'Hashtag generator v2',
+        images: prompts[1].images,
+        videoLinks: prompts[1].videoLinks,
+      })
+    );
+  });
 });

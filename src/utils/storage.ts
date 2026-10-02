@@ -727,7 +727,7 @@ function promptToRow(p: Prompt): Record<string, unknown> {
     category: p.category || 'Uncategorized',
     images: p.images || [],
     video_links: p.videoLinks || [],
-    created_by: p.createdBy || null,
+    created_by: p.createdBy || '',
     updated_at: new Date().toISOString(),
   };
 }

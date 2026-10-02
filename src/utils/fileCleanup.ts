@@ -1,4 +1,4 @@
-import type { Post, PostTemplate, BrandAsset, ResearchItem } from '../types';
+import type { Post, PostTemplate, BrandAsset, ResearchItem, Prompt } from '../types';
 import { supabase } from '../lib/supabase';
 
 export type FileRef =
@@ -74,6 +74,7 @@ export interface CleanupRecords {
   templates: PostTemplate[];
   assets: BrandAsset[];
   research: ResearchItem[];
+  prompts: Prompt[];
   logoUrls: string[];
 }
 
@@ -88,6 +89,8 @@ export function isFileStillReferenced(
     records.templates.some((t) => t.id !== excludeId && hit(identifyFile({ url: t.imagePreview }))) ||
     records.assets.some((a) => a.id !== excludeId && hit(identifyFile({ url: a.url, storagePath: a.storagePath }))) ||
     records.research.some((r) => r.id !== excludeId && hit(identifyFile({ driveFileId: r.driveFileId }))) ||
+    records.prompts.some((pr) => pr.id !== excludeId &&
+      pr.images.some((url) => hit(identifyFile({ url })))) ||
     // Brand logos are never keyed by a record id, so they can't be excluded —
     // a logo reference always protects the file.
     records.logoUrls.some((u) => hit(identifyFile({ url: u })))
