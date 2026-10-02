@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Post, PostTemplate, BrandAsset, AppNotification, BrandId, ContentBankItem, TeamMember, ResearchItem } from './types';
+import { Post, PostTemplate, BrandAsset, AppNotification, BrandId, ContentBankItem, TeamMember, ResearchItem, Prompt } from './types';
 import {
   getStoredTemplates,
   saveStoredTemplates,
@@ -17,6 +17,12 @@ import {
   upsertRemoteContentBankItem,
   deleteRemoteContentBankItem,
   subscribeRemoteContentBank,
+  fetchRemotePrompts,
+  upsertRemotePrompt,
+  deleteRemotePrompt,
+  subscribeRemotePrompts,
+  getStoredPrompts,
+  saveStoredPrompts,
   fetchRemoteResearchItems,
   upsertRemoteResearchItem,
   deleteRemoteResearchItem,
@@ -65,6 +71,7 @@ const AssetLibrary = lazyNamed(() => import('./components/AssetLibrary'), 'Asset
 const MissionControlDashboard = lazyNamed(() => import('./components/MissionControlDashboard'), 'MissionControlDashboard');
 const GoogleAppsScriptHub = lazyNamed(() => import('./components/GoogleAppsScriptHub'), 'GoogleAppsScriptHub');
 const ContentBank = lazyNamed(() => import('./components/ContentBank'), 'ContentBank');
+const PromptsLibrary = lazyNamed(() => import('./components/PromptsLibrary'), 'PromptsLibrary');
 const ResearchPlans = lazyNamed(() => import('./components/ResearchPlans'), 'ResearchPlans');
 const AuditLogView = lazyNamed(() => import('./components/AuditLogView'), 'AuditLogView');
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
@@ -166,6 +173,7 @@ export function App() {
     templates: getStoredTemplates(),
     assets: getStoredAssets(),
     research: getStoredResearchItems(),
+    prompts: getStoredPrompts(),
     logoUrls: brandLogoUrls(),
   });
 
@@ -227,11 +235,12 @@ export function App() {
   const [templates, setTemplates] = useState<PostTemplate[]>(() => getStoredTemplates());
   const [assets, setAssets] = useState<BrandAsset[]>(() => getStoredAssets());
   const [contentBank, setContentBank] = useState<ContentBankItem[]>(() => getStoredContentBank());
+  const [prompts, setPrompts] = useState<Prompt[]>(() => getStoredPrompts());
   const [researchItems, setResearchItems] = useState<ResearchItem[]>(() => getStoredResearchItems());
 
   // Keep the cleanup reference-count snapshot current (declared above usePosts).
   useEffect(() => {
-    recordsRef.current = { posts, templates, assets, research: researchItems, logoUrls: brandLogoUrls() };
+    recordsRef.current = { posts, templates, assets, research: researchItems, prompts, logoUrls: brandLogoUrls() };
   });
 
   // Retry any file deletes that failed while offline / mid-session, once on
@@ -287,6 +296,7 @@ export function App() {
   useEffect(() => { saveStoredTemplates(templates); }, [templates]);
   useEffect(() => { saveStoredAssets(assets); }, [assets]);
   useEffect(() => { saveStoredContentBank(contentBank); }, [contentBank]);
+  useEffect(() => { saveStoredPrompts(prompts); }, [prompts]);
   useEffect(() => { saveStoredResearchItems(researchItems); }, [researchItems]);
 
   // True once the first remote fetch for the cleanup collections has settled
@@ -300,16 +310,18 @@ export function App() {
     if (!isSupabaseConfigured()) return;
     (async () => {
       try {
-        const [remoteTemplates, remoteAssets, remoteBank, remoteResearch] = await Promise.all([
+        const [remoteTemplates, remoteAssets, remoteBank, remoteResearch, remotePrompts] = await Promise.all([
           fetchRemoteTemplates(),
           fetchRemoteAssets(),
           fetchRemoteContentBank(),
           fetchRemoteResearchItems(),
+          fetchRemotePrompts(),
         ]);
         if (remoteTemplates && remoteTemplates.length > 0) setTemplates(remoteTemplates);
         if (remoteAssets && remoteAssets.length > 0) setAssets(remoteAssets);
         if (remoteBank && remoteBank.length > 0) setContentBank(remoteBank);
         if (remoteResearch && remoteResearch.length > 0) setResearchItems(remoteResearch);
+        if (remotePrompts && remotePrompts.length > 0) setPrompts(remotePrompts);
       } finally {
         setRecordsLoaded(true);
       }
@@ -319,6 +331,7 @@ export function App() {
       subscribeRemoteAssets((data) => setAssets(data)),
       subscribeRemoteContentBank((data) => setContentBank(data)),
       subscribeRemoteResearchItems((data) => setResearchItems(data)),
+      subscribeRemotePrompts((data) => setPrompts(data)),
     ];
     return () => unsubs.forEach((u) => u());
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -416,6 +429,11 @@ export function App() {
   const handleAddBankItem = (newItem: ContentBankItem) => { setContentBank((prev) => [newItem, ...prev]); upsertRemoteContentBankItem(newItem); showToast('Added copy item to bank.'); };
   const handleUpdateBankItem = (updatedItem: ContentBankItem) => { setContentBank((prev) => prev.map((item) => (item.id === updatedItem.id ? updatedItem : item))); upsertRemoteContentBankItem(updatedItem); showToast('Updated copy item in bank.'); };
   const handleDeleteBankItem = (id: string) => { setContentBank((prev) => prev.filter((item) => item.id !== id)); deleteRemoteContentBankItem(id); showToast('Deleted copy item from bank.'); }; // no file field
+
+  // ── Prompts Handlers ──────────────────────────────────────────────────────────
+  const handleAddPrompt = (p: Prompt) => { setPrompts((prev) => [p, ...prev]); upsertRemotePrompt(p); showToast('Saved prompt.'); };
+  const handleUpdatePrompt = (p: Prompt) => { setPrompts((prev) => prev.map((x) => (x.id === p.id ? p : x))); upsertRemotePrompt(p); showToast('Updated prompt.'); };
+  const handleDeletePrompt = (id: string) => { setPrompts((prev) => prev.filter((x) => x.id !== id)); deleteRemotePrompt(id); showToast('Deleted prompt.'); };
 
   // ── Research Handlers ─────────────────────────────────────────────────────────
   const handleAddResearchItem = (newItem: ResearchItem) => {
@@ -671,10 +689,20 @@ export function App() {
             <MissionControlDashboard posts={posts} teamMembers={teamMembers} onOpenNewPostModal={() => { setNewPostInitialDate(undefined); setIsNewPostModalOpen(true); }} onSelectPost={handleSelectPost} onDeletePost={handleDeletePost} activeTeammate={activeTeammate} />
           )}
           {currentTab === 'integrations' && (
-            <GoogleAppsScriptHub posts={posts} onUploadComplete={(newUrl) => showToast(`Asset uploaded! Direct URL: ${newUrl}`)} cleanupRecords={{ posts, templates, assets, research: researchItems, logoUrls: brandLogoUrls() }} recordsLoaded={recordsLoaded} isAdmin={activeTeammate?.userRole === 'Admin'} />
+            <GoogleAppsScriptHub posts={posts} onUploadComplete={(newUrl) => showToast(`Asset uploaded! Direct URL: ${newUrl}`)} cleanupRecords={{ posts, templates, assets, research: researchItems, prompts, logoUrls: brandLogoUrls() }} recordsLoaded={recordsLoaded} isAdmin={activeTeammate?.userRole === 'Admin'} />
           )}
           {currentTab === 'content-bank' && (
             <ContentBank contentBank={contentBank} selectedBrandFilter={selectedBrandFilter} onAddBankItem={handleAddBankItem} onUpdateBankItem={handleUpdateBankItem} onDeleteBankItem={handleDeleteBankItem} onCreatePostFromCopy={handleCreatePostFromCopy} />
+          )}
+          {currentTab === 'prompts' && (
+            <PromptsLibrary
+              prompts={prompts}
+              onAddPrompt={handleAddPrompt}
+              onUpdatePrompt={handleUpdatePrompt}
+              onDeletePrompt={handleDeletePrompt}
+              activeTeammateName={activeTeammate?.name || 'Someone'}
+              showToast={showToast}
+            />
           )}
           {currentTab === 'research' && (
             <ResearchPlans researchItems={researchItems} selectedBrandFilter={selectedBrandFilter} teamMembers={teamMembers} activeTeammate={activeTeammate} posts={posts} onAddResearchItem={handleAddResearchItem} onDeleteResearchItem={handleDeleteResearchItem} onBatchAddPosts={handleBatchAddPosts} />

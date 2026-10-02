@@ -12,7 +12,7 @@ vi.mock('../lib/supabase', () => ({
   },
 }));
 
-const emptyRecords = (): CleanupRecords => ({ posts: [], templates: [], assets: [], research: [], logoUrls: [] });
+const emptyRecords = (): CleanupRecords => ({ posts: [], templates: [], assets: [], research: [], prompts: [], logoUrls: [] });
 const SB_URL = 'https://sgevopyvcsclkasvekah.supabase.co/storage/v1/object/public/brand-assets/assets/IMG.png';
 const DRIVE_URL = 'https://lh3.googleusercontent.com/d/TPLIMG';
 

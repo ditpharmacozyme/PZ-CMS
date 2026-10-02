@@ -1,4 +1,4 @@
-import { Post, PostTemplate, TemplateCategory, BrandAsset, AppNotification, ContentBankItem, TeamMember, ResearchItem, BrandConfig, BrandId } from '../types';
+import { Post, PostTemplate, TemplateCategory, BrandAsset, AppNotification, ContentBankItem, TeamMember, ResearchItem, BrandConfig, BrandId, Prompt, PromptCategory } from '../types';
 import { INITIAL_POSTS, INITIAL_TEMPLATES, INITIAL_ASSETS, INITIAL_NOTIFICATIONS, INITIAL_CONTENT_BANK } from '../data/initialData';
 import { SEED_BRANDS } from '../data/brands';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
@@ -13,6 +13,8 @@ const TEAM_KEY = 'pharmacozyme_brandops_team_v4'; // Bumped to v4 to evict old f
 const TEAM_KEY_LEGACY = 'pharmacozyme_brandops_team_v3'; // Old key — only used for cleanup
 const BRANDS_KEY = 'pharmacozyme_brandops_brands_v1';
 const TEMPLATE_CATEGORIES_KEY = 'pharmacozyme_brandops_template_categories_v1';
+const PROMPT_CATEGORIES_KEY = 'pharmacozyme_brandops_prompt_categories_v1';
+const PROMPTS_KEY = 'pharmacozyme_brandops_prompts_v1';
 
 // Default PIN is a generic placeholder, not a real credential — change it per-person in Settings after first login.
 const DEFAULT_TEAM_MEMBERS: TeamMember[] = [
@@ -643,6 +645,139 @@ export function subscribeRemoteContentBank(onChange: (items: ContentBankItem[]) 
     })
     .subscribe();
   return () => { supabase.removeChannel(channel); };
+}
+
+// ─── Prompt Categories ──────────────────────────────────────────────────
+function rowToPromptCategory(row: any): PromptCategory {
+  return { id: row.id, name: row.name, sortOrder: row.sort_order ?? 0, createdAt: row.created_at };
+}
+
+function promptCategoryToRow(c: Omit<PromptCategory, 'createdAt'>): Record<string, unknown> {
+  return { id: c.id, name: c.name, sort_order: c.sortOrder };
+}
+
+export async function fetchRemotePromptCategories(): Promise<PromptCategory[] | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.from('prompt_categories').select('*').order('sort_order', { ascending: true });
+  if (error) { console.error('[Supabase] fetchRemotePromptCategories failed:', error.message); return null; }
+  return data.map(rowToPromptCategory);
+}
+
+export async function upsertRemotePromptCategory(c: Omit<PromptCategory, 'createdAt'>): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from('prompt_categories').upsert(promptCategoryToRow(c));
+  if (error) console.error('[Supabase] upsertRemotePromptCategory failed:', error.message);
+}
+
+export async function deleteRemotePromptCategory(id: string): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from('prompt_categories').delete().eq('id', id);
+  if (error) console.error('[Supabase] deleteRemotePromptCategory failed:', error.message);
+}
+
+export function subscribeRemotePromptCategories(onChange: (c: PromptCategory[]) => void): () => void {
+  if (!supabase) return () => {};
+  const channel = supabase
+    .channel('prompt-categories-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'prompt_categories' }, async () => {
+      const c = await fetchRemotePromptCategories();
+      if (c) onChange(c);
+    })
+    .subscribe();
+  return () => { supabase.removeChannel(channel); };
+}
+
+export function getStoredPromptCategories(): PromptCategory[] {
+  try {
+    const raw = localStorage.getItem(PROMPT_CATEGORIES_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveStoredPromptCategories(list: PromptCategory[]): void {
+  try {
+    localStorage.setItem(PROMPT_CATEGORIES_KEY, JSON.stringify(list));
+  } catch {
+    /* quota — ignore */
+  }
+}
+
+// ─── Prompts ─────────────────────────────────────────────────────────────
+function rowToPrompt(row: any): Prompt {
+  return {
+    id: row.id,
+    title: row.title,
+    promptText: row.prompt_text,
+    category: row.category || 'Uncategorized',
+    images: Array.isArray(row.images) ? row.images : [],
+    videoLinks: Array.isArray(row.video_links) ? row.video_links : [],
+    createdBy: row.created_by || '',
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function promptToRow(p: Prompt): Record<string, unknown> {
+  return {
+    id: p.id,
+    title: p.title,
+    prompt_text: p.promptText,
+    category: p.category || 'Uncategorized',
+    images: p.images || [],
+    video_links: p.videoLinks || [],
+    created_by: p.createdBy || '',
+    updated_at: new Date().toISOString(),
+  };
+}
+
+export async function fetchRemotePrompts(): Promise<Prompt[] | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.from('prompts').select('*').order('created_at', { ascending: false });
+  if (error) { console.error('[Supabase] fetchRemotePrompts failed:', error.message); return null; }
+  return data.map(rowToPrompt);
+}
+
+export async function upsertRemotePrompt(p: Prompt): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from('prompts').upsert(promptToRow(p));
+  if (error) console.error('[Supabase] upsertRemotePrompt failed:', error.message);
+}
+
+export async function deleteRemotePrompt(id: string): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from('prompts').delete().eq('id', id);
+  if (error) console.error('[Supabase] deleteRemotePrompt failed:', error.message);
+}
+
+export function subscribeRemotePrompts(onChange: (prompts: Prompt[]) => void): () => void {
+  if (!supabase) return () => {};
+  const channel = supabase
+    .channel('prompts-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'prompts' }, async () => {
+      const p = await fetchRemotePrompts();
+      if (p) onChange(p);
+    })
+    .subscribe();
+  return () => { supabase.removeChannel(channel); };
+}
+
+export function getStoredPrompts(): Prompt[] {
+  try {
+    const raw = localStorage.getItem(PROMPTS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveStoredPrompts(prompts: Prompt[]): void {
+  try {
+    localStorage.setItem(PROMPTS_KEY, JSON.stringify(prompts));
+  } catch {
+    /* quota — ignore */
+  }
 }
 
 // ─── Research & Plans ────────────────────────────────────────────────────
