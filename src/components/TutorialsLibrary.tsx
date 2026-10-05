@@ -53,22 +53,18 @@ export const TutorialsLibrary: React.FC<TutorialsLibraryProps> = ({
   // Filtered tutorials
   const filteredTutorials = useMemo(() => {
     return tutorials.filter((t) => {
-      // 1. Global Brand filter or local brand filter
       if (brandFilter !== 'all') {
         if (t.brandId !== brandFilter) return false;
       } else if (selectedBrandFilter !== 'all') {
-        // Respect top nav selected brand
         if (t.brandId !== 'shared' && t.brandId !== selectedBrandFilter) return false;
       }
 
-      // 2. Category filter
       if (activeCategoryFilter !== 'all') {
         if ((t.category || '').toLowerCase() !== activeCategoryFilter.toLowerCase()) {
           return false;
         }
       }
 
-      // 3. Search query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
         const titleMatch = t.title.toLowerCase().includes(q);
@@ -158,157 +154,185 @@ export const TutorialsLibrary: React.FC<TutorialsLibraryProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col p-6 max-w-7xl mx-auto w-full gap-6">
-      {/* Header section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="p-4 md:p-8 space-y-6 max-w-7xl mx-auto">
+
+      {/* ── Header ── */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#efefed]">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="material-symbols-outlined text-2xl text-indigo-500">school</span>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-              Tutorials & Courses
-            </h1>
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[#4f46e5] text-xl">school</span>
+            <span className="font-label-caps text-xs text-[#4f46e5] font-bold tracking-widest">
+              Knowledge Hub
+            </span>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <h2 className="font-display-xl text-2xl md:text-3xl text-[#1b1c1a] font-bold mt-1">
+            Tutorials & Courses
+          </h2>
+          <p className="font-body-md text-xs text-[#5f5f5b] mt-0.5">
             Internal video courses, YouTube & Drive tutorials, SOPs, copyable prompts, and reference files.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
             onClick={() => setIsCategoryModalOpen(true)}
-            className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-colors border border-slate-200 dark:border-slate-700/60"
+            className="px-3.5 py-2 bg-white border border-[#e9e9e7] hover:bg-[#f4f4f3] text-[#57574f] rounded-xl font-label-caps text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
           >
-            <span className="material-symbols-outlined text-sm">settings</span>
-            <span>Manage Categories</span>
+            <span className="material-symbols-outlined text-sm">tune</span>
+            <span>Manage categories</span>
           </button>
 
           <button
             type="button"
             onClick={handleOpenCreate}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-medium flex items-center gap-1.5 transition-colors shadow-sm shadow-indigo-600/30"
+            className="bg-[#4f46e5] hover:bg-[#4338ca] text-white font-label-caps text-xs px-4 py-2.5 rounded-xl shadow-xs transition-all flex items-center gap-2 font-bold cursor-pointer"
           >
-            <span className="material-symbols-outlined text-sm">add</span>
-            <span>New Tutorial</span>
+            <span className="material-symbols-outlined text-base">add_box</span>
+            <span>+ New Tutorial</span>
           </button>
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="flex flex-col gap-3 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          {/* Search Input */}
-          <div className="relative flex-1">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">
-              search
-            </span>
-            <input
-              type="text"
-              placeholder="Search tutorials, prompts, topics, or links..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-indigo-500"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 p-0.5"
-              >
-                <span className="material-symbols-outlined text-xs">close</span>
-              </button>
-            )}
-          </div>
-
-          {/* Brand Scope Filter Select */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <span className="text-xs text-slate-400 font-medium">Brand:</span>
-            <select
-              value={brandFilter}
-              onChange={(e) => setBrandFilter(e.target.value as any)}
-              className="px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
+      {/* ── Search & Brand Filter ── */}
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 bg-[#f4f4f3] p-3 rounded-xl border border-[#efefed]">
+        {/* Search */}
+        <div className="relative flex-1 min-w-[220px]">
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#5f5f5b]">
+            search
+          </span>
+          <input
+            type="text"
+            placeholder="Search tutorials, prompts, topics, or links..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-8 py-2 text-xs bg-white border border-[#e9e9e7] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#4f46e5] text-[#1b1c1a] placeholder-[#5f5f5b]"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#5f5f5b] hover:text-[#1b1c1a] p-0.5 cursor-pointer"
             >
-              <option value="all">All Brands</option>
-              <option value="shared">Shared Only</option>
-              {Object.values(brands).map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
-          </div>
+              <span className="material-symbols-outlined text-xs">close</span>
+            </button>
+          )}
         </div>
 
-        {/* Category Pills Strip */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pt-2 border-t border-slate-100 dark:border-slate-800/80 scrollbar-none">
-          <button
-            type="button"
-            onClick={() => setActiveCategoryFilter('all')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5 ${
-              activeCategoryFilter === 'all'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-            }`}
-          >
-            <span>All Categories</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20">
-              {tutorials.length}
-            </span>
-          </button>
-
-          {categories.map((cat) => {
-            const count = tutorials.filter(
-              (t) => (t.category || '').toLowerCase() === cat.name.toLowerCase()
-            ).length;
-
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => setActiveCategoryFilter(cat.name)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5 ${
-                  activeCategoryFilter.toLowerCase() === cat.name.toLowerCase()
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                }`}
-              >
-                <span>{cat.name}</span>
-                {count > 0 && (
-                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-200 dark:bg-slate-700/80">
-                    {count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
+        {/* Brand Selector Tabs */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0">
+          {([['all', 'All Brands'], ['shared', 'Shared']] as [string, string][]).map(([val, label]) => (
+            <button
+              key={val}
+              type="button"
+              onClick={() => setBrandFilter(val as any)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-label-caps font-bold transition-all cursor-pointer whitespace-nowrap ${
+                brandFilter === val
+                  ? 'bg-[#4f46e5] text-white shadow-xs'
+                  : 'bg-white border border-[#e9e9e7] text-[#57574f] hover:bg-[#f1f1f0]'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+          {Object.values(brands).map((b) => (
+            <button
+              key={b.id}
+              type="button"
+              onClick={() => setBrandFilter(b.id)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-label-caps font-bold transition-all cursor-pointer whitespace-nowrap ${
+                brandFilter === b.id
+                  ? 'bg-[#4f46e5] text-white shadow-xs'
+                  : 'bg-white border border-[#e9e9e7] text-[#57574f] hover:bg-[#f1f1f0]'
+              }`}
+            >
+              {b.shortCode}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Grid of Tutorial Cards */}
+      {/* ── Category Filter Pills ── */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+        <button
+          type="button"
+          onClick={() => setActiveCategoryFilter('all')}
+          className={`px-3.5 py-2 font-label-caps text-xs rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+            activeCategoryFilter === 'all'
+              ? 'bg-[#1b1c1a] text-white font-bold shadow-md'
+              : 'bg-white border border-[#efefed] text-[#57574f] hover:bg-[#f1f1f0]'
+          }`}
+        >
+          <span className="material-symbols-outlined text-sm">grid_view</span>
+          <span>All Tutorials</span>
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/20 tabular-nums">
+            {tutorials.length}
+          </span>
+        </button>
+
+        {categories.map((cat) => {
+          const count = tutorials.filter(
+            (t) => (t.category || '').toLowerCase() === cat.name.toLowerCase()
+          ).length;
+          const isActive = activeCategoryFilter.toLowerCase() === cat.name.toLowerCase();
+
+          return (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => setActiveCategoryFilter(cat.name)}
+              className={`px-3.5 py-2 font-label-caps text-xs rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
+                isActive
+                  ? 'bg-[#1b1c1a] text-white font-bold shadow-md'
+                  : 'bg-white border border-[#efefed] text-[#57574f] hover:bg-[#f1f1f0]'
+              }`}
+            >
+              <span className="material-symbols-outlined text-sm">sell</span>
+              <span>{cat.name}</span>
+              {count > 0 && (
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full tabular-nums ${isActive ? 'bg-white/20' : 'bg-[#efefed] text-[#57574f]'}`}>
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── Results summary ── */}
+      {(searchQuery || activeCategoryFilter !== 'all' || brandFilter !== 'all') && (
+        <p className="font-body-md text-xs text-[#5f5f5b]">
+          Showing <span className="font-bold text-[#1b1c1a]">{filteredTutorials.length}</span> of {tutorials.length} tutorials
+        </p>
+      )}
+
+      {/* ── Grid of Tutorial Cards ── */}
       {filteredTutorials.length === 0 ? (
-        <div className="flex flex-col items-center justify-center p-12 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 text-center gap-3">
-          <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-500 flex items-center justify-center">
+        <div className="flex flex-col items-center justify-center p-16 bg-white rounded-2xl border border-[#efefed] text-center gap-4">
+          <div className="w-16 h-16 rounded-2xl bg-[#eef2ff] text-[#4f46e5] flex items-center justify-center">
             <span className="material-symbols-outlined text-3xl">school</span>
           </div>
-          <h3 className="text-base font-semibold text-slate-900 dark:text-white">
-            No tutorials found
-          </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm">
-            {searchQuery || activeCategoryFilter !== 'all' || brandFilter !== 'all'
-              ? 'Try adjusting your search keywords, category, or brand filter.'
-              : 'Add your first video course, Google Drive tutorial, or internal team SOP.'}
-          </p>
+          <div>
+            <h3 className="font-headline-md text-base font-bold text-[#1b1c1a]">
+              No tutorials found
+            </h3>
+            <p className="font-body-md text-xs text-[#5f5f5b] max-w-sm mt-1">
+              {searchQuery || activeCategoryFilter !== 'all' || brandFilter !== 'all'
+                ? 'Try adjusting your search, category, or brand filter.'
+                : 'Add your first video course, Google Drive tutorial, or internal team SOP.'}
+            </p>
+          </div>
           <button
             type="button"
             onClick={handleOpenCreate}
-            className="mt-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-medium transition-colors flex items-center gap-1.5 shadow-sm"
+            className="bg-[#4f46e5] hover:bg-[#4338ca] text-white font-label-caps text-xs px-4 py-2.5 rounded-xl shadow-xs transition-all flex items-center gap-2 font-bold cursor-pointer"
           >
-            <span className="material-symbols-outlined text-sm">add</span>
-            <span>Add Tutorial</span>
+            <span className="material-symbols-outlined text-base">add_box</span>
+            <span>+ Add Tutorial</span>
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredTutorials.map((tut) => {
             const brand = tut.brandId !== 'shared' ? brands[tut.brandId] : undefined;
             return (
@@ -325,7 +349,7 @@ export const TutorialsLibrary: React.FC<TutorialsLibraryProps> = ({
         </div>
       )}
 
-      {/* Detail Modal with in-app video player */}
+      {/* Detail Modal */}
       <TutorialDetailModal
         isOpen={!!detailTutorial}
         onClose={() => setDetailTutorial(null)}
@@ -334,7 +358,7 @@ export const TutorialsLibrary: React.FC<TutorialsLibraryProps> = ({
         onEdit={handleOpenEdit}
       />
 
-      {/* Editor Modal for create / edit */}
+      {/* Editor Modal */}
       <TutorialEditorModal
         isOpen={isEditorOpen}
         onClose={() => {
