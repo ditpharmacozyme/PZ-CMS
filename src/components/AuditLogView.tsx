@@ -19,6 +19,9 @@ const ACTION_COLORS: Record<AuditActionType, { bg: string; text: string; border:
   research_uploaded: { bg: '#e6f4ea', text: '#137333', border: '#ceead6', icon: 'upload_file' },
   research_deleted: { bg: '#fce8e6', text: '#c5221f', border: '#fad2cf', icon: 'delete' },
   brand_edited: { bg: '#e8f0fe', text: '#1a73e8', border: '#d2e3fc', icon: 'palette' },
+  tutorial_created: { bg: '#e6f4ea', text: '#137333', border: '#ceead6', icon: 'school' },
+  tutorial_edited: { bg: '#e8f0fe', text: '#1a73e8', border: '#d2e3fc', icon: 'edit' },
+  tutorial_deleted: { bg: '#fce8e6', text: '#c5221f', border: '#fad2cf', icon: 'delete' },
   login: { bg: '#e8f0fe', text: '#1a73e8', border: '#d2e3fc', icon: 'login' },
   logout: { bg: '#f1f3f4', text: '#5f6368', border: '#dadce0', icon: 'logout' }
 };

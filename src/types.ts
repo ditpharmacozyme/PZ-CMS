@@ -27,6 +27,9 @@ export type AuditActionType =
   | 'research_uploaded'
   | 'research_deleted'
   | 'brand_edited'
+  | 'tutorial_created'
+  | 'tutorial_edited'
+  | 'tutorial_deleted'
   | 'login'
   | 'logout';
 
@@ -35,7 +38,7 @@ export interface AuditEvent {
   actorId: string;
   actorName: string;
   actionType: AuditActionType;
-  entityType: 'post' | 'member' | 'template' | 'asset' | 'content_bank' | 'research' | 'session' | 'brand';
+  entityType: 'post' | 'member' | 'template' | 'asset' | 'content_bank' | 'research' | 'session' | 'brand' | 'tutorial';
   entityId?: string;
   entityTitle?: string;
   beforeValue?: Record<string, unknown>;
@@ -214,4 +217,50 @@ export interface AppNotification {
   read: boolean;
   postId?: string;
   brandId?: BrandId;
+}
+
+export interface TutorialVideo {
+  title: string;
+  url: string;
+  platform?: 'youtube' | 'drive' | 'vimeo' | 'other';
+}
+
+export interface TutorialLink {
+  title: string;
+  url: string;
+}
+
+export interface TutorialPrompt {
+  title: string;
+  promptText: string;
+}
+
+export interface TutorialFile {
+  name: string;
+  url: string;
+  fileType?: string;
+  driveFileId?: string;
+}
+
+export interface TutorialCategory {
+  id: string;
+  name: string;
+  sortOrder: number;
+  createdAt: string;
+}
+
+export interface Tutorial {
+  id: string;
+  brandId: BrandId | 'shared';
+  title: string;
+  description: string;
+  category: string;
+  tags: string[];
+  videos: TutorialVideo[];
+  links: TutorialLink[];
+  prompts: TutorialPrompt[];
+  files: TutorialFile[];
+  createdBy?: string;
+  createdAt: string;
+  updatedAt: string;
 }

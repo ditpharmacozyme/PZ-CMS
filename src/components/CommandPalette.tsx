@@ -27,6 +27,7 @@ const TAB_ITEMS: { tab: NavTab; label: string; icon: string }[] = [
   { tab: 'my-work', label: 'Go to My Work', icon: 'checklist' },
   { tab: 'calendar', label: 'Go to Calendar', icon: 'calendar_month' },
   { tab: 'templates', label: 'Go to Templates', icon: 'quiz' },
+  { tab: 'tutorials', label: 'Go to Tutorials', icon: 'school' },
   { tab: 'content-bank', label: 'Go to Content Bank', icon: 'article' },
   { tab: 'research', label: 'Go to Research & Plans', icon: 'lightbulb' },
   { tab: 'brand-kit', label: 'Go to Brand Kit', icon: 'palette' },

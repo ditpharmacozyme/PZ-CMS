@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export type NavTab = 'my-work' | 'calendar' | 'templates' | 'brand-kit' | 'assets' | 'dashboard' | 'integrations' | 'content-bank' | 'research' | 'audit';
+export type NavTab = 'my-work' | 'calendar' | 'templates' | 'brand-kit' | 'assets' | 'dashboard' | 'integrations' | 'content-bank' | 'tutorials' | 'research' | 'audit';
 
 interface SideNavProps {
   currentTab: NavTab;
@@ -13,13 +13,14 @@ interface SideNavProps {
 
 type NavItem = { tab: NavTab; label: string; icon: string };
 
-// The six primary pages — always visible, one click away regardless of
+// The primary pages — always visible, one click away regardless of
 // which brand is currently selected in TopNav's brand picker.
 const NAV_ITEMS: NavItem[] = [
   { tab: 'my-work', label: 'My Work', icon: 'checklist' },
   { tab: 'dashboard', label: 'Dashboard', icon: 'monitoring' },
   { tab: 'calendar', label: 'Calendar', icon: 'calendar_month' },
   { tab: 'templates', label: 'Templates', icon: 'quiz' },
+  { tab: 'tutorials', label: 'Tutorials', icon: 'school' },
   { tab: 'content-bank', label: 'Content Bank', icon: 'article' },
   { tab: 'research', label: 'Research & Plans', icon: 'lightbulb' }
 ];
