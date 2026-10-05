@@ -197,6 +197,25 @@ export interface TemplateCategory {
   createdAt: string;
 }
 
+export interface PromptCategory {
+  id: string;
+  name: string;
+  sortOrder: number;
+  createdAt: string;
+}
+
+export interface Prompt {
+  id: string;
+  title: string;
+  promptText: string;
+  category: string; // name, not FK; 'Uncategorized' fallback — same convention as PostTemplate.category
+  images: string[]; // ImageCarouselField + uploadImages(), same as Post/PostTemplate
+  videoLinks: string[];
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface BrandAsset {
   id: string;
   brandId: BrandId;

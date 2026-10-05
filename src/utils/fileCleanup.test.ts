@@ -67,7 +67,7 @@ describe('fileRefsEqual', () => {
   });
 });
 
-const emptyRecords = { posts: [], templates: [], assets: [], research: [], logoUrls: [] };
+const emptyRecords = { posts: [], templates: [], assets: [], research: [], prompts: [], logoUrls: [] };
 const post = (id: string, visualUrl: string): Post => ({ id, visualUrl } as Post);
 const tpl = (id: string, imagePreview: string): PostTemplate => ({ id, imagePreview } as PostTemplate);
 const asset = (id: string, url: string, storagePath?: string): BrandAsset => ({ id, url, storagePath } as BrandAsset);

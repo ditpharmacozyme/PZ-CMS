@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export type NavTab = 'my-work' | 'calendar' | 'templates' | 'brand-kit' | 'assets' | 'dashboard' | 'integrations' | 'content-bank' | 'tutorials' | 'research' | 'audit';
+export type NavTab = 'my-work' | 'calendar' | 'templates' | 'brand-kit' | 'assets' | 'dashboard' | 'integrations' | 'content-bank' | 'tutorials' | 'prompts' | 'research' | 'audit';
 
 interface SideNavProps {
   currentTab: NavTab;
@@ -21,7 +21,7 @@ const NAV_ITEMS: NavItem[] = [
   { tab: 'calendar', label: 'Calendar', icon: 'calendar_month' },
   { tab: 'templates', label: 'Templates', icon: 'quiz' },
   { tab: 'tutorials', label: 'Tutorials', icon: 'school' },
-  { tab: 'content-bank', label: 'Content Bank', icon: 'article' },
+  { tab: 'prompts', label: 'Prompts Library', icon: 'auto_stories' },
   { tab: 'research', label: 'Research & Plans', icon: 'lightbulb' }
 ];
 
@@ -31,6 +31,7 @@ const NAV_ITEMS: NavItem[] = [
 const MORE_ITEMS: NavItem[] = [
   { tab: 'brand-kit', label: 'Brand Kit', icon: 'palette' },
   { tab: 'assets', label: 'Assets', icon: 'layers' },
+  { tab: 'content-bank', label: 'Content Bank', icon: 'article' },
   { tab: 'audit', label: 'Activity Log', icon: 'shield_person' },
   { tab: 'integrations', label: 'Integrations', icon: 'terminal' }
 ];

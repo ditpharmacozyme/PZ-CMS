@@ -1,11 +1,11 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { PostTemplate, BrandId, Platform } from '../types';
 import { useBrands } from '../context/BrandsContext';
-import { copyText } from '../utils/clipboard';
 import { useConfirm } from './ui/ConfirmDialog';
 import { useTemplateCategories } from '../hooks/useTemplateCategories';
 import { applyCategoryRename, applyCategoryDelete, UNCATEGORIZED } from '../utils/templateCategories';
 import { ImageCarouselField } from './ui/ImageCarouselField';
+import { ImageLightbox } from './ui/ImageLightbox';
 import { coverOf } from '../utils/images';
 
 interface TemplateLibraryProps {
@@ -91,19 +91,10 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
   // disclosure -- only Name, Brand, Category are always visible.
   const [showMoreOptions, setShowMoreOptions] = useState(false);
 
-  // Inline feedback for the thumbnail "Copy link" action -- spec §3 Phase D
-  // wanted a toast, but this component receives no `showToast` prop, so the
-  // button label flips to "Copied" for ~1.5s instead of the copy being silent.
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  const handleCopyLink = async (template: PostTemplate) => {
-    const ok = await copyText(template.imagePreview!);
-    if (ok) {
-      setCopiedId(template.id);
-      window.setTimeout(() => {
-        setCopiedId((cur) => (cur === template.id ? null : cur));
-      }, 1500);
-    }
-  };
+  // Full-screen gallery for viewing every image of a template (the card
+  // thumbnail only ever showed the cover) and copying the actual image
+  // bytes to the clipboard -- see ImageLightbox.
+  const [viewerTemplate, setViewerTemplate] = useState<PostTemplate | null>(null);
 
   // ── Category management (scoped to `catScope`) ──
   // Rename/delete also cascade onto live templates via the Task 8 helpers;
@@ -561,7 +552,10 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                 className="bg-white border border-[#efefed] rounded-2xl overflow-hidden shadow-xs hover:shadow-md hover:border-[#e9e9e7] transition-all flex flex-col justify-between group"
               >
                 {/* Visual Header / Thumbnail */}
-                <div className="h-44 w-full bg-[#f4f4f3] border-b border-[#efefed] relative overflow-hidden flex items-center justify-center">
+                <div
+                  className={`h-44 w-full bg-[#f4f4f3] border-b border-[#efefed] relative overflow-hidden flex items-center justify-center ${template.imagePreview ? 'cursor-pointer' : ''}`}
+                  onClick={() => { if (template.imagePreview) setViewerTemplate(template); }}
+                >
                   {template.imagePreview ? (
                     <img
                       src={template.imagePreview}
@@ -611,25 +605,12 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          window.open(template.imagePreview, '_blank', 'noopener');
+                          setViewerTemplate(template);
                         }}
                         className="bg-white/95 border border-[#e9e9e7] text-[#1b1c1a] text-[10px] font-label-caps rounded px-2 py-1.5 md:py-1 flex items-center gap-1 shadow-xs hover:bg-white focus-visible:opacity-100"
                       >
-                        <span className="material-symbols-outlined text-[12px]">open_in_new</span>
-                        <span>Open image</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          void handleCopyLink(template);
-                        }}
-                        className="bg-white/95 border border-[#e9e9e7] text-[#1b1c1a] text-[10px] font-label-caps rounded px-2 py-1.5 md:py-1 flex items-center gap-1 shadow-xs hover:bg-white focus-visible:opacity-100"
-                      >
-                        <span className="material-symbols-outlined text-[12px]">
-                          {copiedId === template.id ? 'check' : 'link'}
-                        </span>
-                        <span>{copiedId === template.id ? 'Copied' : 'Copy link'}</span>
+                        <span className="material-symbols-outlined text-[12px]">open_in_full</span>
+                        <span>{template.images.length > 1 ? `View images (${template.images.length})` : 'View image'}</span>
                       </button>
                     </div>
                   )}
@@ -907,6 +888,13 @@ export const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
           </div>
         </div>
       )}
+
+      <ImageLightbox
+        isOpen={viewerTemplate !== null}
+        onClose={() => setViewerTemplate(null)}
+        images={viewerTemplate?.images || []}
+        title={viewerTemplate?.title}
+      />
     </div>
   );
 };

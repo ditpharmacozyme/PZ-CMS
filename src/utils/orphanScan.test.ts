@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { findOrphans, type ManagedFile } from './orphanScan';
 import type { CleanupRecords } from './fileCleanup';
 
-const empty: CleanupRecords = { posts: [], templates: [], assets: [], research: [], logoUrls: [] };
+const empty: CleanupRecords = { posts: [], templates: [], assets: [], research: [], prompts: [], logoUrls: [] };
 const drive = (id: string, name: string): ManagedFile => ({ ref: { backend: 'drive', fileId: id }, name, location: 'Pharmacozyme CMS Uploads' });
 const sb = (path: string): ManagedFile => ({ ref: { backend: 'supabase', path }, name: path.split('/').pop()!, location: 'brand-assets' });
 
