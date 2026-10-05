@@ -73,6 +73,7 @@ const GoogleAppsScriptHub = lazyNamed(() => import('./components/GoogleAppsScrip
 const ContentBank = lazyNamed(() => import('./components/ContentBank'), 'ContentBank');
 const PromptsLibrary = lazyNamed(() => import('./components/PromptsLibrary'), 'PromptsLibrary');
 const ResearchPlans = lazyNamed(() => import('./components/ResearchPlans'), 'ResearchPlans');
+const TutorialsLibrary = lazyNamed(() => import('./components/TutorialsLibrary'), 'TutorialsLibrary');
 const AuditLogView = lazyNamed(() => import('./components/AuditLogView'), 'AuditLogView');
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useTeamAndAuth } from './hooks/useTeamAndAuth';
@@ -678,6 +679,9 @@ export function App() {
           )}
           {currentTab === 'templates' && (
             <TemplateLibrary templates={templates} onUseTemplate={handleUseTemplate} onSaveNewTemplate={handleSaveNewTemplate} onUpdateTemplate={handleUpdateTemplate} onDeleteTemplate={handleDeleteTemplate} selectedBrandFilter={selectedBrandFilter} />
+          )}
+          {currentTab === 'tutorials' && (
+            <TutorialsLibrary selectedBrandFilter={selectedBrandFilter} teamMembers={teamMembers} activeTeammate={activeTeammate} />
           )}
           {currentTab === 'brand-kit' && (
             <BrandControlCenter selectedBrandFilter={selectedBrandFilter} onSelectBrandFilter={setSelectedBrandFilter} onSaveToLibrary={handleAddBankItem} showToast={showToast} />
