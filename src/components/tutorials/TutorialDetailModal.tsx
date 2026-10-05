@@ -3,7 +3,6 @@ import { Tutorial, BrandConfig } from '../../types';
 import { Modal } from '../ui/Modal';
 import { InAppVideoPlayer } from './InAppVideoPlayer';
 
-// Lazy-loaded to match ResearchPlans.tsx convention and keep bundle size lean
 const ReactMarkdown = React.lazy(() => import('react-markdown'));
 
 interface TutorialDetailModalProps {
@@ -42,12 +41,19 @@ export const TutorialDetailModal: React.FC<TutorialDetailModalProps> = ({
 
   const isShared = tutorial.brandId === 'shared';
   const brandLabel = isShared ? 'Shared' : (brand?.name || tutorial.brandId);
-  const brandColor = isShared ? '#6366f1' : (brand?.primaryColor || '#64748b');
+  const brandColor = isShared ? '#4f46e5' : (brand?.primaryColor || '#64748b');
 
   const videos = tutorial.videos || [];
   const prompts = tutorial.prompts || [];
   const links = tutorial.links || [];
   const files = tutorial.files || [];
+
+  const TABS: { id: DetailTab; label: string; icon: string; count?: number }[] = [
+    { id: 'notes', label: 'Notes & Overview', icon: 'description' },
+    { id: 'prompts', label: `Prompts`, icon: 'auto_stories', count: prompts.length },
+    { id: 'links', label: `Links`, icon: 'link', count: links.length },
+    { id: 'files', label: `Files`, icon: 'attachment', count: files.length },
+  ];
 
   return (
     <Modal
@@ -62,7 +68,7 @@ export const TutorialDetailModal: React.FC<TutorialDetailModalProps> = ({
             onClose();
             onEdit(tutorial);
           }}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-label-caps text-xs font-bold text-[#57574f] bg-white border border-[#e9e9e7] hover:bg-[#f4f4f3] transition-colors cursor-pointer"
         >
           <span className="material-symbols-outlined text-sm">edit</span>
           <span>Edit</span>
@@ -70,13 +76,13 @@ export const TutorialDetailModal: React.FC<TutorialDetailModalProps> = ({
       }
       footer={
         <div className="flex items-center justify-between w-full">
-          <div className="flex items-center gap-2 text-xs text-slate-400">
-            <span>Category: <strong className="text-slate-200">{tutorial.category}</strong></span>
+          <div className="flex items-center gap-2 text-xs text-[#5f5f5b]">
+            <span className="font-body-md">Category: <strong className="text-[#1b1c1a]">{tutorial.category}</strong></span>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-medium transition-colors"
+            className="px-4 py-2 bg-[#1b1c1a] hover:bg-[#2d2e2b] text-white rounded-lg font-label-caps text-xs font-bold transition-colors cursor-pointer"
           >
             Close
           </button>
@@ -84,31 +90,31 @@ export const TutorialDetailModal: React.FC<TutorialDetailModalProps> = ({
       }
     >
       <div className="flex flex-col gap-5 -mt-2">
-        {/* Top Video Player (if has videos) */}
+        {/* Video Player */}
         {videos.length > 0 && (
-          <div className="w-full">
+          <div className="w-full rounded-xl overflow-hidden border border-[#efefed]">
             <InAppVideoPlayer videos={videos} />
           </div>
         )}
 
-        {/* Header Tags & Metadata */}
-        <div className="flex items-center gap-2 flex-wrap pb-2 border-b border-slate-200 dark:border-slate-800">
+        {/* Brand + Category + Tags */}
+        <div className="flex items-center gap-2 flex-wrap pb-3 border-b border-[#efefed]">
           <span
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold text-white shadow-sm"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md font-label-caps text-xs font-bold text-white shadow-xs"
             style={{ backgroundColor: brandColor }}
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-white"></span>
-            <span>{brandLabel}</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-white/80" />
+            {brandLabel}
           </span>
 
-          <span className="px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+          <span className="px-2.5 py-1 rounded-md font-label-caps text-xs font-bold bg-[#f4f4f3] text-[#57574f] border border-[#efefed]">
             {tutorial.category}
           </span>
 
           {tutorial.tags?.map((tag, idx) => (
             <span
               key={idx}
-              className="px-2 py-0.5 rounded text-[11px] bg-slate-100 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400"
+              className="px-2 py-0.5 rounded font-body-md text-[11px] bg-[#f4f4f3] text-[#5f5f5b] border border-[#efefed]"
             >
               #{tag}
             </span>
@@ -116,107 +122,82 @@ export const TutorialDetailModal: React.FC<TutorialDetailModalProps> = ({
         </div>
 
         {/* Content Tabs */}
-        <div className="flex items-center gap-1 border-b border-slate-200 dark:border-slate-800 pb-px">
-          <button
-            type="button"
-            onClick={() => setActiveTab('notes')}
-            className={`px-3 py-2 text-xs font-medium border-b-2 flex items-center gap-1.5 transition-colors ${
-              activeTab === 'notes'
-                ? 'border-indigo-500 text-indigo-400'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <span className="material-symbols-outlined text-sm">description</span>
-            <span>Notes & Overview</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('prompts')}
-            className={`px-3 py-2 text-xs font-medium border-b-2 flex items-center gap-1.5 transition-colors ${
-              activeTab === 'prompts'
-                ? 'border-indigo-500 text-indigo-400'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <span className="material-symbols-outlined text-sm">auto_stories</span>
-            <span>Prompts ({prompts.length})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('links')}
-            className={`px-3 py-2 text-xs font-medium border-b-2 flex items-center gap-1.5 transition-colors ${
-              activeTab === 'links'
-                ? 'border-indigo-500 text-indigo-400'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <span className="material-symbols-outlined text-sm">link</span>
-            <span>Links ({links.length})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('files')}
-            className={`px-3 py-2 text-xs font-medium border-b-2 flex items-center gap-1.5 transition-colors ${
-              activeTab === 'files'
-                ? 'border-indigo-500 text-indigo-400'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <span className="material-symbols-outlined text-sm">attachment</span>
-            <span>Files ({files.length})</span>
-          </button>
+        <div className="flex items-center gap-0.5 border-b border-[#efefed] pb-px overflow-x-auto scrollbar-none">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-3 py-2 font-label-caps text-xs font-bold border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
+                activeTab === tab.id
+                  ? 'border-[#4f46e5] text-[#4f46e5]'
+                  : 'border-transparent text-[#5f5f5b] hover:text-[#1b1c1a] hover:border-[#d1d1cf]'
+              }`}
+            >
+              <span className="material-symbols-outlined text-sm">{tab.icon}</span>
+              <span>{tab.label}</span>
+              {tab.count !== undefined && tab.count > 0 && (
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full tabular-nums ${
+                  activeTab === tab.id ? 'bg-[#eef2ff] text-[#4f46e5]' : 'bg-[#f4f4f3] text-[#5f5f5b]'
+                }`}>
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          ))}
         </div>
 
-        {/* Tab 1: Notes & Description */}
+        {/* Tab: Notes */}
         {activeTab === 'notes' && (
-          <div className="prose prose-sm dark:prose-invert max-w-none text-slate-300 min-h-[120px]">
+          <div className="prose prose-sm max-w-none text-[#1b1c1a] min-h-[120px]">
             {tutorial.description ? (
-              <Suspense fallback={<div className="text-xs text-slate-500">Loading notes...</div>}>
+              <Suspense fallback={<div className="font-body-md text-xs text-[#5f5f5b]">Loading notes...</div>}>
                 <ReactMarkdown>{tutorial.description}</ReactMarkdown>
               </Suspense>
             ) : (
-              <div className="py-8 text-center text-xs text-slate-500">
+              <div className="py-10 text-center font-body-md text-xs text-[#5f5f5b]">
                 No description or notes provided for this tutorial.
               </div>
             )}
           </div>
         )}
 
-        {/* Tab 2: Prompts */}
+        {/* Tab: Prompts */}
         {activeTab === 'prompts' && (
           <div className="flex flex-col gap-3 min-h-[120px]">
             {prompts.length === 0 ? (
-              <div className="py-8 text-center text-xs text-slate-500">
+              <div className="py-10 text-center font-body-md text-xs text-[#5f5f5b]">
                 No prompts attached to this course.
               </div>
             ) : (
               prompts.map((p, idx) => (
                 <div
                   key={idx}
-                  className="p-3.5 bg-slate-900/70 border border-slate-800 rounded-xl flex flex-col gap-2 relative group"
+                  className="p-4 bg-[#f4f4f3] border border-[#efefed] rounded-xl flex flex-col gap-2"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
-                      <span className="material-symbols-outlined text-sm text-indigo-400">psychology</span>
-                      <span>{p.title || `Prompt ${idx + 1}`}</span>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-headline-md text-xs font-bold text-[#1b1c1a] flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-sm text-[#4f46e5]">psychology</span>
+                      {p.title || `Prompt ${idx + 1}`}
                     </span>
 
                     <button
                       type="button"
                       onClick={() => handleCopyPrompt(p.promptText, idx)}
-                      className="px-2.5 py-1 rounded-md text-xs font-medium bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 hover:text-white flex items-center gap-1 transition-colors"
+                      className={`px-2.5 py-1 rounded-lg font-label-caps text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
+                        copiedPromptIdx === idx
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          : 'bg-white border border-[#e9e9e7] text-[#57574f] hover:bg-[#4f46e5] hover:text-white hover:border-[#4f46e5]'
+                      }`}
                     >
                       <span className="material-symbols-outlined text-xs">
                         {copiedPromptIdx === idx ? 'check' : 'content_copy'}
                       </span>
-                      <span>{copiedPromptIdx === idx ? 'Copied!' : 'Copy Prompt'}</span>
+                      {copiedPromptIdx === idx ? 'Copied!' : 'Copy Prompt'}
                     </button>
                   </div>
 
-                  <pre className="p-3 bg-slate-950/80 rounded-lg text-xs font-mono text-slate-300 whitespace-pre-wrap break-words border border-slate-800/60 max-h-48 overflow-y-auto">
+                  <pre className="p-3 bg-white border border-[#efefed] rounded-lg font-body-md text-xs text-[#1b1c1a] whitespace-pre-wrap break-words max-h-48 overflow-y-auto">
                     {p.promptText}
                   </pre>
                 </div>
@@ -225,11 +206,11 @@ export const TutorialDetailModal: React.FC<TutorialDetailModalProps> = ({
           </div>
         )}
 
-        {/* Tab 3: Important Links */}
+        {/* Tab: Links */}
         {activeTab === 'links' && (
           <div className="flex flex-col gap-2 min-h-[120px]">
             {links.length === 0 ? (
-              <div className="py-8 text-center text-xs text-slate-500">
+              <div className="py-10 text-center font-body-md text-xs text-[#5f5f5b]">
                 No external links attached.
               </div>
             ) : (
@@ -239,22 +220,22 @@ export const TutorialDetailModal: React.FC<TutorialDetailModalProps> = ({
                   href={lnk.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-between p-3 bg-slate-900/50 hover:bg-slate-900 border border-slate-800 hover:border-indigo-500/40 rounded-xl group transition-all"
+                  className="flex items-center justify-between p-3 bg-white hover:bg-[#f4f4f3] border border-[#efefed] hover:border-[#c7c5f8] rounded-xl group transition-all"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-indigo-950/60 text-indigo-400 flex items-center justify-center flex-shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-[#eef2ff] text-[#4f46e5] flex items-center justify-center flex-shrink-0">
                       <span className="material-symbols-outlined text-base">link</span>
                     </div>
                     <div className="flex flex-col min-w-0">
-                      <span className="text-xs font-semibold text-slate-200 group-hover:text-indigo-300 transition-colors truncate">
+                      <span className="font-headline-md text-xs font-bold text-[#1b1c1a] group-hover:text-[#4f46e5] transition-colors truncate">
                         {lnk.title || lnk.url}
                       </span>
-                      <span className="text-[11px] text-slate-500 truncate">
+                      <span className="font-body-md text-[11px] text-[#5f5f5b] truncate">
                         {lnk.url}
                       </span>
                     </div>
                   </div>
-                  <span className="material-symbols-outlined text-sm text-slate-500 group-hover:text-indigo-400 group-hover:translate-x-0.5 transition-all">
+                  <span className="material-symbols-outlined text-sm text-[#5f5f5b] group-hover:text-[#4f46e5] group-hover:translate-x-0.5 transition-all flex-shrink-0">
                     open_in_new
                   </span>
                 </a>
@@ -263,11 +244,11 @@ export const TutorialDetailModal: React.FC<TutorialDetailModalProps> = ({
           </div>
         )}
 
-        {/* Tab 4: Files */}
+        {/* Tab: Files */}
         {activeTab === 'files' && (
           <div className="flex flex-col gap-2 min-h-[120px]">
             {files.length === 0 ? (
-              <div className="py-8 text-center text-xs text-slate-500">
+              <div className="py-10 text-center font-body-md text-xs text-[#5f5f5b]">
                 No files or templates attached.
               </div>
             ) : (
@@ -277,24 +258,24 @@ export const TutorialDetailModal: React.FC<TutorialDetailModalProps> = ({
                   href={f.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-between p-3 bg-slate-900/50 hover:bg-slate-900 border border-slate-800 hover:border-emerald-500/40 rounded-xl group transition-all"
+                  className="flex items-center justify-between p-3 bg-white hover:bg-[#f4f4f3] border border-[#efefed] hover:border-[#bbf7d0] rounded-xl group transition-all"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-950/60 text-emerald-400 flex items-center justify-center flex-shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center flex-shrink-0">
                       <span className="material-symbols-outlined text-base">
                         {f.fileType === 'pdf' ? 'picture_as_pdf' : 'attachment'}
                       </span>
                     </div>
                     <div className="flex flex-col min-w-0">
-                      <span className="text-xs font-semibold text-slate-200 group-hover:text-emerald-300 transition-colors truncate">
+                      <span className="font-headline-md text-xs font-bold text-[#1b1c1a] group-hover:text-[#16a34a] transition-colors truncate">
                         {f.name}
                       </span>
-                      <span className="text-[11px] text-slate-500 truncate">
+                      <span className="font-body-md text-[11px] text-[#5f5f5b] truncate">
                         {f.url}
                       </span>
                     </div>
                   </div>
-                  <span className="material-symbols-outlined text-sm text-slate-500 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all">
+                  <span className="material-symbols-outlined text-sm text-[#5f5f5b] group-hover:text-[#16a34a] group-hover:translate-x-0.5 transition-all flex-shrink-0">
                     download
                   </span>
                 </a>
