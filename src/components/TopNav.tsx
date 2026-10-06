@@ -282,14 +282,14 @@ export const TopNav: React.FC<TopNavProps> = ({
         </div>
 
         {/* Right: Actions — shrink-0 ensures it's never pushed off screen */}
-        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-auto">
 
-          {/* Quick Tutorials button — Desktop only (mobile uses bottom tab bar) */}
+          {/* Quick Tutorials button — Desktop only (md+) */}
           {onSelectTab && (
             <button
               onClick={() => onSelectTab('tutorials')}
               title="Tutorials & SOPs"
-              className={`hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-lg font-label-caps text-xs font-bold transition-all min-h-[38px] cursor-pointer ${
+              className={`hidden md:flex items-center gap-1.5 px-3 py-2 rounded-lg font-label-caps text-xs font-bold transition-all min-h-[38px] cursor-pointer ${
                 currentTab === 'tutorials'
                   ? 'bg-[#eef2ff] text-[#4f46e5] border border-[#c7c5f8] shadow-xs'
                   : 'bg-white border border-[#e9e9e7] text-[#57574f] hover:bg-[#f1f1f0] hover:text-[#1b1c1a]'
@@ -303,7 +303,7 @@ export const TopNav: React.FC<TopNavProps> = ({
           {/* Mobile search toggle */}
           <button
             onClick={() => setShowMobileSearch(!showMobileSearch)}
-            className="md:hidden p-2 min-w-[40px] min-h-[40px] flex items-center justify-center text-[#57574f] hover:bg-[#f1f1f0] rounded-full transition-colors"
+            className="md:hidden p-2 min-w-[38px] min-h-[38px] flex items-center justify-center text-[#57574f] hover:bg-[#f1f1f0] rounded-full transition-colors"
             aria-label="Search"
           >
             <span className="material-symbols-outlined text-xl">search</span>
@@ -322,7 +322,7 @@ export const TopNav: React.FC<TopNavProps> = ({
           <div className="relative">
             <button
               onClick={() => setShowNotificationsPopover(!showNotificationsPopover)}
-              className={`relative p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-full transition-colors ${
+              className={`relative p-2 min-w-[38px] min-h-[38px] flex items-center justify-center rounded-full transition-colors ${
                 unreadCount > 0
                   ? 'text-[#4f46e5] bg-[#eef2ff] hover:bg-[#e0e7ff]'
                   : 'text-[#57574f] hover:bg-[#f1f1f0] active:bg-[#e4e4e2]'
@@ -355,11 +355,11 @@ export const TopNav: React.FC<TopNavProps> = ({
             />
           </div>
 
-          {/* Settings — visible to Admin, Owner, and Manager. Hidden on mobile (accessible via profile dropdown) */}
+          {/* Settings — visible to Admin, Owner, and Manager. Hidden on mobile/tablet (accessible via profile dropdown) */}
           {canAccessSettings(activeTeammate) && (
             <button
               onClick={() => { setShowSettingsModal(true); setSettingsTab('team'); }}
-              className="hidden sm:flex p-2 min-w-[40px] min-h-[40px] items-center justify-center text-[#57574f] hover:bg-[#f1f1f0] rounded-full transition-colors cursor-pointer"
+              className="hidden md:flex p-2 min-w-[38px] min-h-[38px] items-center justify-center text-[#57574f] hover:bg-[#f1f1f0] rounded-full transition-colors cursor-pointer"
               title="Settings"
             >
               <span className="material-symbols-outlined text-xl">settings</span>

@@ -404,44 +404,53 @@ export const TutorialEditorModal: React.FC<TutorialEditorModalProps> = ({
           {videos.map((vid, idx) => {
             const platform = detectPlatform(vid.url);
             return (
-              <div key={idx} className="flex items-center gap-2">
-                <input
-                  type="text"
-                  placeholder="Lesson / Video Title"
-                  value={vid.title}
-                  onChange={(e) => {
-                    const next = [...videos];
-                    next[idx] = { ...next[idx], title: e.target.value };
-                    setVideos(next);
-                  }}
-                  className="w-1/3 px-3 py-2 bg-white border border-[#e9e9e7] rounded-xl text-xs text-[#1b1c1a] placeholder-[#5f5f5b] focus:outline-none focus:ring-1 focus:ring-[#4f46e5]"
-                />
-                <div className="relative flex-1">
-                  <input
-                    type="url"
-                    placeholder="https://youtube.com/..., drive.google.com/..., or .mp4 URL"
-                    value={vid.url}
-                    onChange={(e) => {
-                      const next = [...videos];
-                      next[idx] = { ...next[idx], url: e.target.value };
-                      setVideos(next);
-                    }}
-                    className="w-full pl-3 pr-20 py-2 bg-white border border-[#e9e9e7] rounded-xl text-xs text-[#1b1c1a] placeholder-[#5f5f5b] focus:outline-none focus:ring-1 focus:ring-[#4f46e5]"
-                  />
-                  {vid.url && (
-                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-[#f4f4f3] text-[#57574f] border border-[#efefed]">
-                      {platform}
-                    </span>
+              <div key={idx} className="p-3 bg-white border border-[#efefed] rounded-xl flex flex-col gap-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-label-caps font-bold text-[#5f5f5b]">
+                    Lesson {idx + 1}
+                  </span>
+                  {videos.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setVideos(videos.filter((_, i) => i !== idx))}
+                      className="p-1 text-[#5f5f5b] hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
+                      title="Remove video"
+                    >
+                      <span className="material-symbols-outlined text-sm">close</span>
+                    </button>
                   )}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setVideos(videos.filter((_, i) => i !== idx))}
-                  className="p-2 text-[#5f5f5b] hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
-                  title="Remove video"
-                >
-                  <span className="material-symbols-outlined text-sm">close</span>
-                </button>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  <input
+                    type="text"
+                    placeholder="Lesson / Video Title"
+                    value={vid.title}
+                    onChange={(e) => {
+                      const next = [...videos];
+                      next[idx] = { ...next[idx], title: e.target.value };
+                      setVideos(next);
+                    }}
+                    className="w-full sm:w-1/3 px-3 py-2 bg-[#f8f9fa] sm:bg-white border border-[#e9e9e7] rounded-xl text-xs text-[#1b1c1a] placeholder-[#5f5f5b] focus:outline-none focus:ring-1 focus:ring-[#4f46e5]"
+                  />
+                  <div className="relative flex-1">
+                    <input
+                      type="url"
+                      placeholder="https://youtube.com/..., drive.google.com/..., or .mp4 URL"
+                      value={vid.url}
+                      onChange={(e) => {
+                        const next = [...videos];
+                        next[idx] = { ...next[idx], url: e.target.value };
+                        setVideos(next);
+                      }}
+                      className="w-full pl-3 pr-20 py-2 bg-[#f8f9fa] sm:bg-white border border-[#e9e9e7] rounded-xl text-xs text-[#1b1c1a] placeholder-[#5f5f5b] focus:outline-none focus:ring-1 focus:ring-[#4f46e5]"
+                    />
+                    {vid.url && (
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-[#f4f4f3] text-[#57574f] border border-[#efefed]">
+                        {platform}
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
             );
           })}
@@ -533,7 +542,7 @@ export const TutorialEditorModal: React.FC<TutorialEditorModalProps> = ({
           </div>
 
           {links.map((lnk, idx) => (
-            <div key={idx} className="flex items-center gap-2">
+            <div key={idx} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-2.5 sm:p-0 bg-white sm:bg-transparent rounded-xl border sm:border-0 border-[#efefed]">
               <input
                 type="text"
                 placeholder="Link Title (e.g. Figma File)"
@@ -543,26 +552,28 @@ export const TutorialEditorModal: React.FC<TutorialEditorModalProps> = ({
                   next[idx] = { ...next[idx], title: e.target.value };
                   setLinks(next);
                 }}
-                className="w-1/3 px-3 py-2 bg-white border border-[#e9e9e7] rounded-xl text-xs text-[#1b1c1a] placeholder-[#5f5f5b] focus:outline-none focus:ring-1 focus:ring-[#4f46e5]"
+                className="w-full sm:w-1/3 px-3 py-2 bg-[#f8f9fa] sm:bg-white border border-[#e9e9e7] rounded-xl text-xs text-[#1b1c1a] placeholder-[#5f5f5b] focus:outline-none focus:ring-1 focus:ring-[#4f46e5]"
               />
-              <input
-                type="url"
-                placeholder="https://..."
-                value={lnk.url}
-                onChange={(e) => {
-                  const next = [...links];
-                  next[idx] = { ...next[idx], url: e.target.value };
-                  setLinks(next);
-                }}
-                className="flex-1 px-3 py-2 bg-white border border-[#e9e9e7] rounded-xl text-xs text-[#1b1c1a] placeholder-[#5f5f5b] focus:outline-none focus:ring-1 focus:ring-[#4f46e5]"
-              />
-              <button
-                type="button"
-                onClick={() => setLinks(links.filter((_, i) => i !== idx))}
-                className="p-2 text-[#5f5f5b] hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-sm">close</span>
-              </button>
+              <div className="flex items-center gap-2 flex-1">
+                <input
+                  type="url"
+                  placeholder="https://..."
+                  value={lnk.url}
+                  onChange={(e) => {
+                    const next = [...links];
+                    next[idx] = { ...next[idx], url: e.target.value };
+                    setLinks(next);
+                  }}
+                  className="flex-1 px-3 py-2 bg-[#f8f9fa] sm:bg-white border border-[#e9e9e7] rounded-xl text-xs text-[#1b1c1a] placeholder-[#5f5f5b] focus:outline-none focus:ring-1 focus:ring-[#4f46e5]"
+                />
+                <button
+                  type="button"
+                  onClick={() => setLinks(links.filter((_, i) => i !== idx))}
+                  className="p-2 text-[#5f5f5b] hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer shrink-0"
+                >
+                  <span className="material-symbols-outlined text-sm">close</span>
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -585,7 +596,7 @@ export const TutorialEditorModal: React.FC<TutorialEditorModalProps> = ({
           </div>
 
           {files.map((f, idx) => (
-            <div key={idx} className="flex items-center gap-2">
+            <div key={idx} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-2.5 sm:p-0 bg-white sm:bg-transparent rounded-xl border sm:border-0 border-[#efefed]">
               <input
                 type="text"
                 placeholder="File Name (e.g. Template.psd)"
@@ -595,26 +606,28 @@ export const TutorialEditorModal: React.FC<TutorialEditorModalProps> = ({
                   next[idx] = { ...next[idx], name: e.target.value };
                   setFiles(next);
                 }}
-                className="w-1/3 px-3 py-2 bg-white border border-[#e9e9e7] rounded-xl text-xs text-[#1b1c1a] placeholder-[#5f5f5b] focus:outline-none focus:ring-1 focus:ring-[#4f46e5]"
+                className="w-full sm:w-1/3 px-3 py-2 bg-[#f8f9fa] sm:bg-white border border-[#e9e9e7] rounded-xl text-xs text-[#1b1c1a] placeholder-[#5f5f5b] focus:outline-none focus:ring-1 focus:ring-[#4f46e5]"
               />
-              <input
-                type="url"
-                placeholder="Download or Drive View URL"
-                value={f.url}
-                onChange={(e) => {
-                  const next = [...files];
-                  next[idx] = { ...next[idx], url: e.target.value };
-                  setFiles(next);
-                }}
-                className="flex-1 px-3 py-2 bg-white border border-[#e9e9e7] rounded-xl text-xs text-[#1b1c1a] placeholder-[#5f5f5b] focus:outline-none focus:ring-1 focus:ring-[#4f46e5]"
-              />
-              <button
-                type="button"
-                onClick={() => setFiles(files.filter((_, i) => i !== idx))}
-                className="p-2 text-[#5f5f5b] hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-sm">close</span>
-              </button>
+              <div className="flex items-center gap-2 flex-1">
+                <input
+                  type="url"
+                  placeholder="Download or Drive View URL"
+                  value={f.url}
+                  onChange={(e) => {
+                    const next = [...files];
+                    next[idx] = { ...next[idx], url: e.target.value };
+                    setFiles(next);
+                  }}
+                  className="flex-1 px-3 py-2 bg-[#f8f9fa] sm:bg-white border border-[#e9e9e7] rounded-xl text-xs text-[#1b1c1a] placeholder-[#5f5f5b] focus:outline-none focus:ring-1 focus:ring-[#4f46e5]"
+                />
+                <button
+                  type="button"
+                  onClick={() => setFiles(files.filter((_, i) => i !== idx))}
+                  className="p-2 text-[#5f5f5b] hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer shrink-0"
+                >
+                  <span className="material-symbols-outlined text-sm">close</span>
+                </button>
+              </div>
             </div>
           ))}
         </div>

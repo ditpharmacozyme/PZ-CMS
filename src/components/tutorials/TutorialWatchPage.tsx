@@ -146,7 +146,7 @@ export const TutorialWatchPage: React.FC<TutorialWatchPageProps> = ({
             </button>
 
             {canManage && (
-              <>
+              <div className="hidden sm:flex items-center gap-1.5 sm:gap-2">
                 <button
                   type="button"
                   onClick={() => onEdit(tutorial)}
@@ -154,7 +154,7 @@ export const TutorialWatchPage: React.FC<TutorialWatchPageProps> = ({
                   title="Edit tutorial (Uploader only)"
                 >
                   <span className="material-symbols-outlined text-sm text-[#4f46e5]">edit</span>
-                  <span className="hidden sm:inline">Edit</span>
+                  <span>Edit</span>
                 </button>
                 <button
                   type="button"
@@ -163,9 +163,9 @@ export const TutorialWatchPage: React.FC<TutorialWatchPageProps> = ({
                   title="Delete tutorial (Uploader only)"
                 >
                   <span className="material-symbols-outlined text-sm">delete</span>
-                  <span className="hidden sm:inline">Delete</span>
+                  <span>Delete</span>
                 </button>
-              </>
+              </div>
             )}
           </div>
         </div>
