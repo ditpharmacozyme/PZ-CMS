@@ -17,7 +17,10 @@ describe('InAppVideoPlayer', () => {
     render(<InAppVideoPlayer videos={videos} />);
     const iframe = screen.getByTitle('Intro Lesson');
     expect(iframe).toBeInTheDocument();
-    expect(iframe).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ');
+    expect(iframe).toHaveAttribute(
+      'src',
+      'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?enablejsapi=1&fs=1&rel=0&playsinline=1'
+    );
   });
 
   it('renders iframe for Google Drive video', () => {
@@ -43,12 +46,18 @@ describe('InAppVideoPlayer', () => {
 
     // Starts on Part 1
     let iframe = screen.getByTitle('Part 1');
-    expect(iframe).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/video111111');
+    expect(iframe).toHaveAttribute(
+      'src',
+      'https://www.youtube-nocookie.com/embed/video111111?enablejsapi=1&fs=1&rel=0&playsinline=1'
+    );
 
     // Switch to Part 2
     fireEvent.click(tab2);
     iframe = screen.getByTitle('Part 2');
-    expect(iframe).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/video222222');
+    expect(iframe).toHaveAttribute(
+      'src',
+      'https://www.youtube-nocookie.com/embed/video222222?enablejsapi=1&fs=1&rel=0&playsinline=1'
+    );
   });
 
   it('renders fallback card for non-embeddable external URLs', () => {
@@ -88,5 +97,16 @@ describe('InAppVideoPlayer', () => {
     const video = container.querySelector('video');
     expect(video).toBeInTheDocument();
     expect(video).toHaveAttribute('src', 'https://example.com/videos/demo.mp4');
+  });
+
+  it('renders prominent Full Screen button and handles fullscreen toggle', () => {
+    const videos: TutorialVideo[] = [
+      { title: 'Full Screen Test', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' }
+    ];
+    render(<InAppVideoPlayer videos={videos} />);
+    const fsButton = screen.getByRole('button', { name: /full screen/i });
+    expect(fsButton).toBeInTheDocument();
+    fireEvent.click(fsButton);
+    expect(screen.getAllByRole('button', { name: /exit fullscreen/i }).length).toBeGreaterThan(0);
   });
 });

@@ -92,7 +92,7 @@ describe('videoEmbed utilities', () => {
       const info = getEmbedInfo('https://youtu.be/dQw4w9WgXcQ');
       expect(info.type).toBe('youtube');
       expect(info.videoId).toBe('dQw4w9WgXcQ');
-      expect(info.embedUrl).toBe('https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ');
+      expect(info.embedUrl).toBe('https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?enablejsapi=1&fs=1&rel=0&playsinline=1');
       expect(info.thumbnailUrl).toBe('https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg');
     });
 

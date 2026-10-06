@@ -89,7 +89,7 @@ export function getEmbedInfo(url: string): EmbedInfo {
         type: 'youtube',
         rawUrl: trimmed,
         videoId,
-        embedUrl: `https://www.youtube-nocookie.com/embed/${videoId}`,
+        embedUrl: `https://www.youtube-nocookie.com/embed/${videoId}?enablejsapi=1&fs=1&rel=0&playsinline=1`,
         thumbnailUrl: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
       };
     }
@@ -115,7 +115,7 @@ export function getEmbedInfo(url: string): EmbedInfo {
         type: 'vimeo',
         rawUrl: trimmed,
         videoId,
-        embedUrl: `https://player.vimeo.com/video/${videoId}`
+        embedUrl: `https://player.vimeo.com/video/${videoId}?fullscreen=1`
       };
     }
   }

@@ -281,23 +281,23 @@ export const TutorialsLibrary: React.FC<TutorialsLibraryProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap shrink-0">
           <button
             type="button"
             onClick={() => setIsCategoryModalOpen(true)}
-            className="px-3.5 py-2 bg-white border border-[#e9e9e7] hover:bg-[#f4f4f3] text-[#57574f] rounded-xl font-label-caps text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+            className="flex-1 sm:flex-initial justify-center px-3.5 py-2.5 bg-white border border-[#e9e9e7] hover:bg-[#f4f4f3] text-[#57574f] rounded-xl font-label-caps text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer min-h-[42px]"
           >
             <span className="material-symbols-outlined text-sm">tune</span>
-            <span>Manage categories</span>
+            <span className="whitespace-nowrap">Manage categories</span>
           </button>
 
           <button
             type="button"
             onClick={handleOpenCreate}
-            className="bg-[#4f46e5] hover:bg-[#4338ca] text-white font-label-caps text-xs px-4 py-2.5 rounded-xl shadow-xs transition-all flex items-center gap-2 font-bold cursor-pointer"
+            className="flex-1 sm:flex-initial justify-center bg-[#4f46e5] hover:bg-[#4338ca] text-white font-label-caps text-xs px-4 py-2.5 rounded-xl shadow-xs transition-all flex items-center gap-2 font-bold cursor-pointer min-h-[42px]"
           >
             <span className="material-symbols-outlined text-base">add_box</span>
-            <span>+ New Tutorial</span>
+            <span className="whitespace-nowrap">+ New Tutorial</span>
           </button>
         </div>
       </div>
@@ -440,7 +440,7 @@ export const TutorialsLibrary: React.FC<TutorialsLibraryProps> = ({
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
           {filteredTutorials.map((tut) => {
             const brand = tut.brandId !== 'shared' ? brands[tut.brandId] : undefined;
             return (

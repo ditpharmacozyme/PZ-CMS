@@ -102,13 +102,13 @@ export const TutorialWatchPage: React.FC<TutorialWatchPageProps> = ({
   return (
     <div className="min-h-screen bg-[#fafafa] text-[#0f0f0f] pb-16">
       {/* ── Top YouTube-style Navigation & Breadcrumb Bar ── */}
-      <div className="sticky top-16 z-30 bg-white/95 backdrop-blur-md border-b border-[#efefed] px-4 md:px-8 py-3">
-        <div className="max-w-[1720px] mx-auto flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+      <div className="sticky top-16 z-30 bg-white/95 backdrop-blur-md border-b border-[#efefed] px-3 sm:px-4 md:px-8 py-2.5 sm:py-3">
+        <div className="max-w-[1720px] mx-auto flex items-center justify-between gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
             <button
               type="button"
               onClick={onBack}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#f4f4f3] hover:bg-[#e9e9e7] active:scale-95 text-[#1b1c1a] font-label-caps text-xs font-bold transition-all cursor-pointer shadow-xs shrink-0"
+              className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-[#f4f4f3] hover:bg-[#e9e9e7] active:scale-95 text-[#1b1c1a] font-label-caps text-xs font-bold transition-all cursor-pointer shadow-xs shrink-0 min-h-[34px]"
               title="Back to Tutorials (Esc)"
             >
               <span className="material-symbols-outlined text-base">arrow_back</span>
@@ -127,11 +127,11 @@ export const TutorialWatchPage: React.FC<TutorialWatchPageProps> = ({
           </div>
 
           {/* Quick Header Actions */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               type="button"
               onClick={handleCopyLink}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-label-caps font-bold transition-all cursor-pointer border ${
+              className={`flex items-center gap-1 sm:gap-1.5 px-3 py-1.5 rounded-full text-xs font-label-caps font-bold transition-all cursor-pointer border min-h-[34px] ${
                 copiedLink
                   ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
                   : 'bg-white hover:bg-[#f4f4f3] text-[#1b1c1a] border-[#e9e9e7]'
@@ -140,7 +140,7 @@ export const TutorialWatchPage: React.FC<TutorialWatchPageProps> = ({
               <span className="material-symbols-outlined text-sm">
                 {copiedLink ? 'check' : 'share'}
               </span>
-              <span>{copiedLink ? 'Link Copied!' : 'Share'}</span>
+              <span>{copiedLink ? 'Copied' : 'Share'}</span>
             </button>
 
             {canManage && (
@@ -148,7 +148,7 @@ export const TutorialWatchPage: React.FC<TutorialWatchPageProps> = ({
                 <button
                   type="button"
                   onClick={() => onEdit(tutorial)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white hover:bg-[#f4f4f3] border border-[#e9e9e7] text-[#1b1c1a] text-xs font-label-caps font-bold transition-all cursor-pointer shadow-xs"
+                  className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-white hover:bg-[#f4f4f3] border border-[#e9e9e7] text-[#1b1c1a] text-xs font-label-caps font-bold transition-all cursor-pointer shadow-xs min-h-[34px]"
                   title="Edit tutorial (Uploader only)"
                 >
                   <span className="material-symbols-outlined text-sm text-[#4f46e5]">edit</span>
@@ -157,7 +157,7 @@ export const TutorialWatchPage: React.FC<TutorialWatchPageProps> = ({
                 <button
                   type="button"
                   onClick={() => onDelete(tutorial)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white hover:bg-rose-50 border border-rose-200 text-rose-600 text-xs font-label-caps font-bold transition-all cursor-pointer shadow-xs"
+                  className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-white hover:bg-rose-50 border border-rose-200 text-rose-600 text-xs font-label-caps font-bold transition-all cursor-pointer shadow-xs min-h-[34px]"
                   title="Delete tutorial (Uploader only)"
                 >
                   <span className="material-symbols-outlined text-sm">delete</span>
@@ -170,12 +170,12 @@ export const TutorialWatchPage: React.FC<TutorialWatchPageProps> = ({
       </div>
 
       {/* ── Main YouTube Layout (2 Columns: Watch Stage + Up Next Sidebar) ── */}
-      <div className="max-w-[1720px] mx-auto px-4 md:px-8 pt-4 md:pt-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 xl:gap-8">
+      <div className="max-w-[1720px] mx-auto px-0 sm:px-4 md:px-8 pt-0 sm:pt-4 md:pt-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 xl:gap-8">
           {/* ════ PRIMARY COLUMN: Video + Info + Description + Resources ════ */}
-          <div className="lg:col-span-8 xl:col-span-8 2xl:col-span-9 flex flex-col gap-4">
-            {/* 1. Theatre Video Player */}
-            <div className="w-full rounded-2xl overflow-hidden bg-black shadow-lg border border-[#e2e8f0]">
+          <div className="lg:col-span-8 xl:col-span-8 2xl:col-span-9 flex flex-col">
+            {/* 1. Theatre Video Player (Edge-to-edge on mobile, rounded on tablet/desktop) */}
+            <div className="w-full sm:rounded-2xl overflow-hidden bg-black sm:shadow-lg sm:border border-[#e2e8f0]">
               {videos.length > 0 ? (
                 <InAppVideoPlayer videos={videos} posterUrl={tutorial.thumbnailUrl} />
               ) : tutorial.thumbnailUrl ? (
@@ -185,16 +185,16 @@ export const TutorialWatchPage: React.FC<TutorialWatchPageProps> = ({
                     alt={tutorial.title}
                     className="w-full h-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end p-6">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end p-4 sm:p-6">
                     <span className="text-white font-label-caps text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded bg-black/60 backdrop-blur-xs">
                       Document & SOP Tutorial
                     </span>
                   </div>
                 </div>
               ) : (
-                <div className="w-full aspect-video max-h-[380px] bg-[#eef2ff] flex flex-col items-center justify-center text-center p-8">
-                  <span className="material-symbols-outlined text-6xl text-[#4f46e5]/50 mb-2">school</span>
-                  <h3 className="font-headline-md text-lg font-bold text-[#1b1c1a]">Standard Operating Procedure</h3>
+                <div className="w-full aspect-video max-h-[380px] bg-[#eef2ff] flex flex-col items-center justify-center text-center p-6 sm:p-8">
+                  <span className="material-symbols-outlined text-5xl sm:text-6xl text-[#4f46e5]/50 mb-2">school</span>
+                  <h3 className="font-headline-md text-base sm:text-lg font-bold text-[#1b1c1a]">Standard Operating Procedure</h3>
                   <p className="font-body-md text-xs text-[#5f5f5b] mt-1 max-w-md">
                     This tutorial contains internal documentation, prompt blueprints, and reference files below.
                   </p>
@@ -202,12 +202,14 @@ export const TutorialWatchPage: React.FC<TutorialWatchPageProps> = ({
               )}
             </div>
 
-            {/* 2. Video Title */}
-            <div>
-              <h1 className="font-display-xl text-xl sm:text-2xl md:text-3xl font-bold text-[#0f0f0f] leading-snug">
-                {tutorial.title}
-              </h1>
-            </div>
+            {/* Content Body with comfortable margins on mobile */}
+            <div className="px-3.5 sm:px-0 pt-4 flex flex-col gap-4">
+              {/* 2. Video Title */}
+              <div>
+                <h1 className="font-display-xl text-lg sm:text-2xl md:text-3xl font-bold text-[#0f0f0f] leading-snug">
+                  {tutorial.title}
+                </h1>
+              </div>
 
             {/* 3. YouTube-style Channel Bar (Uploader profile + Action pill buttons) */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#efefed]">
@@ -336,21 +338,21 @@ export const TutorialWatchPage: React.FC<TutorialWatchPageProps> = ({
             </div>
 
             {/* 5. Attached Resources Tabs (Prompts, Links, Files) */}
-            <div className="bg-white rounded-2xl border border-[#efefed] p-4 sm:p-5 flex flex-col gap-4 shadow-xs mt-2">
-              <div className="flex items-center justify-between border-b border-[#efefed] pb-3">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[#4f46e5] text-lg">folder_open</span>
-                  <h3 className="font-headline-md text-sm sm:text-base font-bold text-[#1b1c1a]">
+            <div className="bg-white rounded-2xl border border-[#efefed] p-3.5 sm:p-5 flex flex-col gap-4 shadow-xs mt-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-[#efefed] pb-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="material-symbols-outlined text-[#4f46e5] text-lg shrink-0">folder_open</span>
+                  <h3 className="font-headline-md text-sm sm:text-base font-bold text-[#1b1c1a] truncate">
                     Lesson Resources & Blueprint
                   </h3>
                 </div>
 
-                {/* Tab Switcher */}
-                <div className="flex items-center gap-1 bg-[#f4f4f3] p-1 rounded-xl">
+                {/* Tab Switcher - touch scrollable on mobile */}
+                <div className="flex items-center gap-1 bg-[#f4f4f3] p-1 rounded-xl overflow-x-auto scrollbar-none max-w-full shrink-0">
                   <button
                     type="button"
                     onClick={() => setActiveResourceTab('prompts')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-label-caps font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-label-caps font-bold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap min-h-[34px] ${
                       activeResourceTab === 'prompts'
                         ? 'bg-white text-[#4f46e5] shadow-xs'
                         : 'text-[#57574f] hover:text-[#1b1c1a]'
@@ -368,7 +370,7 @@ export const TutorialWatchPage: React.FC<TutorialWatchPageProps> = ({
                   <button
                     type="button"
                     onClick={() => setActiveResourceTab('links')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-label-caps font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-label-caps font-bold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap min-h-[34px] ${
                       activeResourceTab === 'links'
                         ? 'bg-white text-[#4f46e5] shadow-xs'
                         : 'text-[#57574f] hover:text-[#1b1c1a]'
@@ -386,7 +388,7 @@ export const TutorialWatchPage: React.FC<TutorialWatchPageProps> = ({
                   <button
                     type="button"
                     onClick={() => setActiveResourceTab('files')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-label-caps font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-label-caps font-bold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap min-h-[34px] ${
                       activeResourceTab === 'files'
                         ? 'bg-white text-[#4f46e5] shadow-xs'
                         : 'text-[#57574f] hover:text-[#1b1c1a]'
@@ -424,7 +426,7 @@ export const TutorialWatchPage: React.FC<TutorialWatchPageProps> = ({
                           <button
                             type="button"
                             onClick={() => handleCopyPrompt(p.promptText, idx)}
-                            className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-label-caps font-bold transition-all cursor-pointer bg-white border border-[#e9e9e7] hover:bg-[#4f46e5] hover:text-white hover:border-[#4f46e5] text-[#1b1c1a] shadow-2xs"
+                            className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-label-caps font-bold transition-all cursor-pointer bg-white border border-[#e9e9e7] hover:bg-[#4f46e5] hover:text-white hover:border-[#4f46e5] text-[#1b1c1a] shadow-2xs min-h-[30px]"
                           >
                             <span className="material-symbols-outlined text-xs">
                               {copiedPromptIdx === idx ? 'check' : 'content_copy'}
@@ -432,7 +434,7 @@ export const TutorialWatchPage: React.FC<TutorialWatchPageProps> = ({
                             <span>{copiedPromptIdx === idx ? 'Copied!' : 'Copy'}</span>
                           </button>
                         </div>
-                        <pre className="p-3 bg-white border border-[#efefed] rounded-lg font-mono text-xs text-[#1b1c1a] whitespace-pre-wrap break-words max-h-48 overflow-y-auto">
+                        <pre className="p-3 bg-white border border-[#efefed] rounded-lg font-mono text-xs text-[#1b1c1a] whitespace-pre-wrap break-words break-all max-h-48 overflow-y-auto">
                           {p.promptText}
                         </pre>
                       </div>
@@ -519,10 +521,11 @@ export const TutorialWatchPage: React.FC<TutorialWatchPageProps> = ({
                 </div>
               )}
             </div>
+            </div>
           </div>
 
           {/* ════ SECONDARY COLUMN: YouTube "Up Next" / Playlist Sidebar ════ */}
-          <div className="lg:col-span-4 xl:col-span-4 2xl:col-span-3 flex flex-col gap-4">
+          <div className="lg:col-span-4 xl:col-span-4 2xl:col-span-3 flex flex-col gap-4 px-3.5 sm:px-0 pb-8 sm:pb-0">
             {/* Sidebar Header */}
             <div className="flex items-center justify-between">
               <span className="font-headline-md text-sm font-bold text-[#0f0f0f] flex items-center gap-1.5">
@@ -551,10 +554,10 @@ export const TutorialWatchPage: React.FC<TutorialWatchPageProps> = ({
                     <div
                       key={tut.id}
                       onClick={() => onSelectTutorial(tut)}
-                      className="flex gap-3 p-2 rounded-xl bg-white hover:bg-[#f4f4f3] border border-[#efefed] hover:border-[#c7c5f8] transition-all cursor-pointer group"
+                      className="flex gap-2.5 sm:gap-3 p-2 rounded-xl bg-white hover:bg-[#f4f4f3] border border-[#efefed] hover:border-[#c7c5f8] transition-all cursor-pointer group"
                     >
                       {/* Compact 16:9 Thumbnail (Left side) */}
-                      <div className="relative w-36 sm:w-40 aspect-video rounded-lg overflow-hidden bg-[#f4f4f3] shrink-0 flex items-center justify-center">
+                      <div className="relative w-28 xs:w-32 sm:w-40 aspect-video rounded-lg overflow-hidden bg-[#f4f4f3] shrink-0 flex items-center justify-center">
                         {thumb ? (
                           <img
                             src={thumb}

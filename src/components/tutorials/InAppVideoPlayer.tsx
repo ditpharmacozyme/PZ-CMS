@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { TutorialVideo } from '../../types';
 import { getEmbedInfo } from '../../utils/videoEmbed';
 
@@ -30,6 +30,83 @@ export const InAppVideoPlayer: React.FC<InAppVideoPlayerProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Sync fullscreen state if user exits via browser ESC or native gesture
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const nativeActive = Boolean(
+        document.fullscreenElement ||
+        (document as any).webkitFullscreenElement ||
+        (document as any).mozFullScreenElement ||
+        (document as any).msFullscreenElement
+      );
+      if (!nativeActive && isFullscreen) {
+        setIsFullscreen(false);
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isFullscreen) {
+        handleExitFullscreen();
+      } else if ((e.key === 'f' || e.key === 'F') && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        // Only toggle fullscreen if not currently typing in an input
+        const tag = (document.activeElement?.tagName || '').toLowerCase();
+        if (tag !== 'input' && tag !== 'textarea') {
+          e.preventDefault();
+          handleToggleFullscreen();
+        }
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isFullscreen]);
+
+  const handleToggleFullscreen = useCallback(async () => {
+    if (!containerRef.current) return;
+
+    if (isFullscreen) {
+      handleExitFullscreen();
+      return;
+    }
+
+    try {
+      if (containerRef.current.requestFullscreen) {
+        await containerRef.current.requestFullscreen();
+        setIsFullscreen(true);
+      } else if ((containerRef.current as any).webkitRequestFullscreen) {
+        await (containerRef.current as any).webkitRequestFullscreen();
+        setIsFullscreen(true);
+      } else {
+        // Fallback to CSS viewport fullscreen for iOS Safari / restricted environments
+        setIsFullscreen(true);
+      }
+    } catch {
+      // If native requestFullscreen is rejected, fallback to full-viewport CSS mode
+      setIsFullscreen(true);
+    }
+  }, [isFullscreen]);
+
+  const handleExitFullscreen = useCallback(async () => {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else if ((document as any).webkitFullscreenElement) {
+        await (document as any).webkitExitFullscreen();
+      }
+    } catch {
+      // Ignore exit errors
+    } finally {
+      setIsFullscreen(false);
+    }
+  }, []);
+
   if (!videos || videos.length === 0) {
     return (
       <div
@@ -57,21 +134,6 @@ export const InAppVideoPlayer: React.FC<InAppVideoPlayerProps> = ({
     if (safeIdx < videos.length - 1) setActiveIdx(safeIdx + 1);
   };
 
-  const handleToggleFullscreen = async () => {
-    if (!containerRef.current) return;
-    try {
-      if (!document.fullscreenElement) {
-        await containerRef.current.requestFullscreen();
-        setIsFullscreen(true);
-      } else {
-        await document.exitFullscreen();
-        setIsFullscreen(false);
-      }
-    } catch (err) {
-      console.warn('Fullscreen request failed:', err);
-    }
-  };
-
   const getPlatformLabel = () => {
     if (isDirect) return 'Direct Video';
     if (embedInfo.type === 'youtube') return 'YouTube';
@@ -88,7 +150,6 @@ export const InAppVideoPlayer: React.FC<InAppVideoPlayerProps> = ({
     return 'open_in_new';
   };
 
-  // Embed URL with mobile-friendly playback options
   const finalEmbedUrl = embedInfo.embedUrl;
 
   return (
@@ -160,10 +221,14 @@ export const InAppVideoPlayer: React.FC<InAppVideoPlayerProps> = ({
         </div>
       )}
 
-      {/* ── Main Video Stage (16:9, Mobile-Edge-to-Edge Optimized) ── */}
+      {/* ── Main Video Stage (Clean, YouTube-style, No floating cards inside) ── */}
       <div
         ref={containerRef}
-        className="relative w-full aspect-video min-h-[200px] sm:min-h-[260px] rounded-xl sm:rounded-2xl overflow-hidden bg-black border border-[#e2e8f0] shadow-sm group"
+        className={
+          isFullscreen
+            ? 'fixed inset-0 z-[9999] bg-black w-screen h-screen flex flex-col justify-center items-center overflow-hidden'
+            : 'relative w-full aspect-video min-h-[200px] sm:min-h-[260px] rounded-xl sm:rounded-2xl overflow-hidden bg-black border border-[#e2e8f0] shadow-sm group'
+        }
       >
         {isDirect ? (
           <video
@@ -208,56 +273,73 @@ export const InAppVideoPlayer: React.FC<InAppVideoPlayerProps> = ({
           </div>
         )}
 
-        {/* Floating Quick Action Overlay (Always visible on mobile / touch) */}
-        {activeVideo.url && (
-          <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 z-10">
-            <a
-              href={activeVideo.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              title={`Open in ${getPlatformLabel()}`}
-              className="flex items-center gap-1 px-2.5 py-1.5 bg-black/75 hover:bg-black/90 text-white text-[11px] font-label-caps font-medium rounded-lg shadow-md border border-white/15 backdrop-blur-xs transition-all active:scale-95"
-            >
-              <span className="material-symbols-outlined text-xs">open_in_new</span>
-              <span className="hidden sm:inline">Open in {getPlatformLabel()}</span>
-              <span className="sm:hidden">Open</span>
-            </a>
-
+        {/* Prominent Exit Fullscreen control when in Fullscreen mode */}
+        {isFullscreen && (
+          <div className="absolute top-4 right-4 z-50 flex items-center gap-2">
             <button
               type="button"
-              onClick={handleToggleFullscreen}
-              title="Toggle Fullscreen"
-              aria-label="Toggle Fullscreen"
-              className="p-1.5 bg-black/75 hover:bg-black/90 text-white rounded-lg shadow-md border border-white/15 backdrop-blur-xs transition-all active:scale-95 flex items-center justify-center cursor-pointer min-w-[32px] min-h-[32px]"
+              onClick={handleExitFullscreen}
+              aria-label="Exit Fullscreen"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-black/80 hover:bg-black text-white text-xs font-label-caps font-bold rounded-xl border border-white/20 shadow-2xl backdrop-blur-md cursor-pointer active:scale-95 transition-all"
             >
-              <span className="material-symbols-outlined text-sm">
-                {isFullscreen ? 'fullscreen_exit' : 'fullscreen'}
-              </span>
+              <span className="material-symbols-outlined text-base">fullscreen_exit</span>
+              <span>Exit Fullscreen</span>
             </button>
           </div>
         )}
       </div>
 
-      {/* ── Bottom Info Bar ── */}
-      <div className="flex items-center justify-between gap-2 px-1 text-xs">
-        <div className="flex items-center gap-2 min-w-0">
+      {/* ── Bottom Info & Controls Bar (YouTube-style action bar) ── */}
+      <div className="flex flex-wrap items-center justify-between gap-2.5 px-1 pt-1 text-xs">
+        {/* Left: Video Title & Lesson Part */}
+        <div className="flex items-center gap-2 min-w-0 flex-1">
           <span className="font-headline-md font-bold text-[#1b1c1a] truncate text-xs sm:text-sm">
             {activeVideo.title || `Video ${safeIdx + 1}`}
           </span>
           {videos.length > 1 && (
-            <span className="text-[10px] font-label-caps font-semibold px-1.5 py-0.5 rounded bg-[#f4f4f3] text-[#5f5f5b] border border-[#efefed] shrink-0">
+            <span className="text-[10px] font-label-caps font-semibold px-2 py-0.5 rounded-full bg-[#f4f4f3] text-[#5f5f5b] border border-[#efefed] shrink-0 tabular-nums">
               Part {safeIdx + 1} of {videos.length}
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-1.5 shrink-0">
-          <span className="inline-flex items-center gap-1 text-[11px] font-label-caps font-semibold text-[#57574f] bg-[#f4f4f3] px-2 py-0.5 rounded-md border border-[#efefed]">
+        {/* Right: Fullscreen & Clean External Link controls */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Platform indicator badge */}
+          <span className="inline-flex items-center gap-1 text-[11px] font-label-caps font-semibold text-[#57574f] bg-[#f4f4f3] px-2.5 py-1 rounded-lg border border-[#efefed]">
             <span className="material-symbols-outlined text-xs text-[#4f46e5]">
               {getPlatformIcon()}
             </span>
             <span className="capitalize">{getPlatformLabel()}</span>
           </span>
+
+          {/* Clean External Link (outside video frame) */}
+          {activeVideo.url && (
+            <a
+              href={activeVideo.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={`Open original source link`}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[#57574f] hover:text-[#1b1c1a] hover:bg-[#f4f4f3] border border-[#efefed] font-label-caps text-xs font-medium transition-colors"
+            >
+              <span className="material-symbols-outlined text-xs">open_in_new</span>
+              <span className="hidden sm:inline">Open in new tab</span>
+            </a>
+          )}
+
+          {/* Prominent Full Screen Button */}
+          <button
+            type="button"
+            onClick={handleToggleFullscreen}
+            title={isFullscreen ? 'Exit Fullscreen (f)' : 'Full screen (f)'}
+            aria-label={isFullscreen ? 'Exit Fullscreen' : 'Full screen'}
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white hover:bg-[#f4f4f3] active:bg-[#e9e9e7] text-[#1b1c1a] border border-[#e2e8f0] font-label-caps text-xs font-bold transition-all cursor-pointer shadow-2xs hover:shadow-xs min-h-[30px]"
+          >
+            <span className="material-symbols-outlined text-base text-[#4f46e5]">
+              {isFullscreen ? 'fullscreen_exit' : 'fullscreen'}
+            </span>
+            <span>{isFullscreen ? 'Exit Fullscreen' : 'Full Screen'}</span>
+          </button>
         </div>
       </div>
     </div>
