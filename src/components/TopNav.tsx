@@ -20,6 +20,7 @@ interface TopNavProps {
   onSelectBrandFilter: (brand: BrandId | 'all') => void;
   onPublishNow: () => void;
   onResetData: () => void;
+  currentTab?: NavTab;
   onSelectTab?: (tab: NavTab) => void;
   teamMembers: TeamMember[];
   onSaveTeamMembers: (members: TeamMember[]) => void;
@@ -63,6 +64,7 @@ export const TopNav: React.FC<TopNavProps> = ({
   onSelectBrandFilter,
   onPublishNow,
   onResetData,
+  currentTab,
   onSelectTab,
   teamMembers,
   onSaveTeamMembers,
@@ -280,7 +282,40 @@ export const TopNav: React.FC<TopNavProps> = ({
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-1.5 sm:gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-2.5">
+
+          {/* Quick Tutorials button (Mobile & Desktop) */}
+          {onSelectTab && (
+            <>
+              {/* Mobile quick link to tutorials */}
+              <button
+                onClick={() => onSelectTab('tutorials')}
+                className={`md:hidden p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-full transition-colors cursor-pointer ${
+                  currentTab === 'tutorials'
+                    ? 'text-[#4f46e5] bg-[#eef2ff]'
+                    : 'text-[#57574f] hover:bg-[#f1f1f0]'
+                }`}
+                title="Tutorials & Knowledge Hub"
+                aria-label="Tutorials & Knowledge Hub"
+              >
+                <span className="material-symbols-outlined text-xl">school</span>
+              </button>
+
+              {/* Desktop quick link to tutorials */}
+              <button
+                onClick={() => onSelectTab('tutorials')}
+                title="Tutorials & SOPs"
+                className={`hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-lg font-label-caps text-xs font-bold transition-all min-h-[38px] cursor-pointer ${
+                  currentTab === 'tutorials'
+                    ? 'bg-[#eef2ff] text-[#4f46e5] border border-[#c7c5f8] shadow-xs'
+                    : 'bg-white border border-[#e9e9e7] text-[#57574f] hover:bg-[#f1f1f0] hover:text-[#1b1c1a]'
+                }`}
+              >
+                <span className="material-symbols-outlined text-base">school</span>
+                <span>Tutorials</span>
+              </button>
+            </>
+          )}
 
           {/* Mobile search toggle */}
           <button

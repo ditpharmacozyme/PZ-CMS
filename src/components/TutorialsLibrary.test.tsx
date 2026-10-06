@@ -144,4 +144,37 @@ describe('TutorialsLibrary', () => {
     expect(screen.getByText(/Notes & Overview/i)).toBeInTheDocument();
     expect(screen.getAllByText(/Prompts/i).length).toBeGreaterThan(0);
   });
+
+  it('navigates to next and previous tutorial inside detail modal', () => {
+    renderComponent();
+    const viewButtons = screen.getAllByRole('button', { name: /view tutorial/i });
+    fireEvent.click(viewButtons[0]);
+
+    const dialog = screen.getByRole('dialog');
+
+    // Starts on CapCut
+    expect(dialog).toHaveTextContent('CapCut Video Editing SOP');
+
+    // Click next tutorial button
+    const nextBtn = screen.getByRole('button', { name: /next tutorial/i });
+    fireEvent.click(nextBtn);
+
+    // Moves to Pharmacozyme Brand Guidelines
+    expect(dialog).toHaveTextContent('Pharmacozyme Brand Guidelines');
+
+    // Click previous tutorial button
+    const prevBtn = screen.getByRole('button', { name: /previous tutorial/i });
+    fireEvent.click(prevBtn);
+
+    // Moves back to CapCut
+    expect(dialog).toHaveTextContent('CapCut Video Editing SOP');
+  });
+
+  it('shows thumbnail upload option in the editor modal', () => {
+    renderComponent();
+    fireEvent.click(screen.getByRole('button', { name: /new tutorial/i }));
+
+    expect(screen.getByText(/Course Thumbnail \(Cover Image\)/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /upload image/i })).toBeInTheDocument();
+  });
 });

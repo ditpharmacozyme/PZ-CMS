@@ -58,4 +58,35 @@ describe('InAppVideoPlayer', () => {
     render(<InAppVideoPlayer videos={videos} />);
     expect(screen.getByText('Watch on External Site')).toBeInTheDocument();
   });
+
+  it('navigates through lessons using mobile forward and backward buttons', () => {
+    const videos: TutorialVideo[] = [
+      { title: 'Part 1', url: 'https://youtu.be/video111111' },
+      { title: 'Part 2', url: 'https://youtu.be/video222222' }
+    ];
+    render(<InAppVideoPlayer videos={videos} />);
+    const nextBtn = screen.getByRole('button', { name: /next lesson/i });
+    const prevBtn = screen.getByRole('button', { name: /previous lesson/i });
+
+    expect(prevBtn).toBeDisabled();
+    expect(nextBtn).not.toBeDisabled();
+
+    fireEvent.click(nextBtn);
+    expect(screen.getByTitle('Part 2')).toBeInTheDocument();
+    expect(nextBtn).toBeDisabled();
+    expect(prevBtn).not.toBeDisabled();
+
+    fireEvent.click(prevBtn);
+    expect(screen.getByTitle('Part 1')).toBeInTheDocument();
+  });
+
+  it('renders native video element for direct MP4 links', () => {
+    const videos: TutorialVideo[] = [
+      { title: 'Direct MP4', url: 'https://example.com/videos/demo.mp4' }
+    ];
+    const { container } = render(<InAppVideoPlayer videos={videos} />);
+    const video = container.querySelector('video');
+    expect(video).toBeInTheDocument();
+    expect(video).toHaveAttribute('src', 'https://example.com/videos/demo.mp4');
+  });
 });

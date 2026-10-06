@@ -153,6 +153,22 @@ export const TutorialsLibrary: React.FC<TutorialsLibraryProps> = ({
     }
   };
 
+  const detailIndex = detailTutorial ? filteredTutorials.findIndex((t) => t.id === detailTutorial.id) : -1;
+  const hasPrev = detailIndex > 0;
+  const hasNext = detailIndex >= 0 && detailIndex < filteredTutorials.length - 1;
+
+  const handleNavigatePrev = () => {
+    if (hasPrev) {
+      setDetailTutorial(filteredTutorials[detailIndex - 1]);
+    }
+  };
+
+  const handleNavigateNext = () => {
+    if (hasNext) {
+      setDetailTutorial(filteredTutorials[detailIndex + 1]);
+    }
+  };
+
   return (
     <div className="p-4 md:p-8 space-y-6 max-w-7xl mx-auto">
 
@@ -356,6 +372,12 @@ export const TutorialsLibrary: React.FC<TutorialsLibraryProps> = ({
         tutorial={detailTutorial}
         brand={detailTutorial && detailTutorial.brandId !== 'shared' ? brands[detailTutorial.brandId] : undefined}
         onEdit={handleOpenEdit}
+        onNavigatePrev={handleNavigatePrev}
+        onNavigateNext={handleNavigateNext}
+        hasPrev={hasPrev}
+        hasNext={hasNext}
+        currentIndex={detailIndex >= 0 ? detailIndex : 0}
+        totalCount={filteredTutorials.length}
       />
 
       {/* Editor Modal */}

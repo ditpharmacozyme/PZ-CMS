@@ -58,24 +58,22 @@ export const TutorialCategoryModal: React.FC<TutorialCategoryModalProps> = ({
     if (ok) {
       setEditingId(null);
     } else {
-      setErrorMsg('A category with that name already exists.');
+      setErrorMsg('Failed to rename category. Name might already be taken.');
     }
   };
 
-  const handleMove = (idx: number, direction: -1 | 1) => {
-    const targetIdx = idx + direction;
-    if (targetIdx < 0 || targetIdx >= categories.length) return;
-    const copy = [...categories];
-    const [moved] = copy.splice(idx, 1);
-    copy.splice(targetIdx, 0, moved);
-    void onReorderCategories(copy.map((c) => c.id));
+  const handleMove = async (currentIndex: number, direction: -1 | 1) => {
+    const targetIndex = currentIndex + direction;
+    if (targetIndex < 0 || targetIndex >= categories.length) return;
+
+    const reordered = [...categories];
+    const [moved] = reordered.splice(currentIndex, 1);
+    reordered.splice(targetIndex, 0, moved);
+
+    await onReorderCategories(reordered.map((c) => c.id));
   };
 
   const handleDelete = async (name: string) => {
-    if (name.toLowerCase() === UNCATEGORIZED.toLowerCase()) {
-      setErrorMsg(`Cannot delete default category "${UNCATEGORIZED}".`);
-      return;
-    }
     if (window.confirm(`Delete category "${name}"? Tutorials in this category will be moved to "${UNCATEGORIZED}".`)) {
       await onDeleteCategory(name);
     }
@@ -92,7 +90,7 @@ export const TutorialCategoryModal: React.FC<TutorialCategoryModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-medium transition-colors"
+            className="px-4 py-2 bg-[#1b1c1a] hover:bg-[#2d2e2b] text-white rounded-lg font-label-caps text-xs font-bold transition-colors cursor-pointer"
           >
             Done
           </button>
@@ -100,13 +98,13 @@ export const TutorialCategoryModal: React.FC<TutorialCategoryModalProps> = ({
       }
     >
       <div className="flex flex-col gap-4 -mt-2">
-        <p className="text-xs text-slate-400">
+        <p className="font-body-md text-xs text-[#5f5f5b]">
           Organize course and tutorial topics. Deleting a category moves existing tutorials to{' '}
-          <strong className="text-slate-200">{UNCATEGORIZED}</strong>.
+          <strong className="text-[#1b1c1a]">{UNCATEGORIZED}</strong>.
         </p>
 
         {errorMsg && (
-          <div className="p-2.5 rounded-lg bg-rose-950/50 border border-rose-800 text-rose-300 text-xs flex items-center gap-1.5">
+          <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-1.5 font-medium">
             <span className="material-symbols-outlined text-sm">warning</span>
             <span>{errorMsg}</span>
           </div>
@@ -115,14 +113,14 @@ export const TutorialCategoryModal: React.FC<TutorialCategoryModalProps> = ({
         {/* Categories List */}
         <div className="flex flex-col gap-2 max-h-64 overflow-y-auto pr-1">
           {categories.length === 0 ? (
-            <div className="text-center py-6 text-xs text-slate-500">
+            <div className="text-center py-6 text-xs text-[#5f5f5b]">
               No categories found. Add one below.
             </div>
           ) : (
             categories.map((cat, idx) => (
               <div
                 key={cat.id}
-                className="flex items-center justify-between p-2 rounded-lg bg-slate-900 border border-slate-800 text-xs"
+                className="flex items-center justify-between p-2.5 rounded-xl bg-[#f4f4f3] border border-[#efefed] text-xs transition-colors hover:bg-white hover:border-[#e9e9e7]"
               >
                 {editingId === cat.id ? (
                   <div className="flex items-center gap-1.5 flex-1 mr-2">
@@ -135,30 +133,31 @@ export const TutorialCategoryModal: React.FC<TutorialCategoryModalProps> = ({
                         if (e.key === 'Enter') void handleSaveRename(cat);
                         if (e.key === 'Escape') setEditingId(null);
                       }}
-                      className="flex-1 px-2 py-1 bg-slate-950 border border-indigo-500 rounded text-xs text-white focus:outline-none"
+                      className="flex-1 px-2.5 py-1 bg-white border border-[#4f46e5] rounded-lg text-xs text-[#1b1c1a] focus:outline-none"
                     />
                     <button
                       type="button"
                       onClick={() => void handleSaveRename(cat)}
-                      className="p-1 text-emerald-400 hover:text-emerald-300"
+                      className="p-1 text-emerald-600 hover:text-emerald-700 cursor-pointer"
                     >
-                      <span className="material-symbols-outlined text-sm">check</span>
+                      <span className="material-symbols-outlined text-base">check</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setEditingId(null)}
-                      className="p-1 text-slate-500 hover:text-slate-400"
+                      className="p-1 text-[#5f5f5b] hover:text-[#1b1c1a] cursor-pointer"
                     >
-                      <span className="material-symbols-outlined text-sm">close</span>
+                      <span className="material-symbols-outlined text-base">close</span>
                     </button>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 flex-1 min-w-0 mr-2">
-                    <span className="font-medium text-slate-200 truncate">{cat.name}</span>
+                    <span className="material-symbols-outlined text-sm text-[#4f46e5]">sell</span>
+                    <span className="font-semibold text-[#1b1c1a] truncate">{cat.name}</span>
                     <button
                       type="button"
                       onClick={() => startEdit(cat)}
-                      className="p-0.5 text-slate-500 hover:text-indigo-400 transition-colors"
+                      className="p-1 text-[#5f5f5b] hover:text-[#4f46e5] transition-colors cursor-pointer"
                       title="Rename"
                     >
                       <span className="material-symbols-outlined text-xs">edit</span>
@@ -172,7 +171,7 @@ export const TutorialCategoryModal: React.FC<TutorialCategoryModalProps> = ({
                     type="button"
                     disabled={idx === 0}
                     onClick={() => handleMove(idx, -1)}
-                    className="p-1 text-slate-500 hover:text-slate-300 disabled:opacity-30 disabled:hover:text-slate-500"
+                    className="p-1 text-[#5f5f5b] hover:text-[#1b1c1a] disabled:opacity-30 disabled:hover:text-[#5f5f5b] cursor-pointer"
                     title="Move up"
                   >
                     <span className="material-symbols-outlined text-sm">arrow_upward</span>
@@ -181,7 +180,7 @@ export const TutorialCategoryModal: React.FC<TutorialCategoryModalProps> = ({
                     type="button"
                     disabled={idx === categories.length - 1}
                     onClick={() => handleMove(idx, 1)}
-                    className="p-1 text-slate-500 hover:text-slate-300 disabled:opacity-30 disabled:hover:text-slate-500"
+                    className="p-1 text-[#5f5f5b] hover:text-[#1b1c1a] disabled:opacity-30 disabled:hover:text-[#5f5f5b] cursor-pointer"
                     title="Move down"
                   >
                     <span className="material-symbols-outlined text-sm">arrow_downward</span>
@@ -189,7 +188,7 @@ export const TutorialCategoryModal: React.FC<TutorialCategoryModalProps> = ({
                   <button
                     type="button"
                     onClick={() => void handleDelete(cat.name)}
-                    className="p-1 text-slate-500 hover:text-rose-400 transition-colors ml-1"
+                    className="p-1 text-[#5f5f5b] hover:text-rose-600 transition-colors ml-0.5 cursor-pointer"
                     title="Delete category"
                   >
                     <span className="material-symbols-outlined text-sm">delete</span>
@@ -201,20 +200,20 @@ export const TutorialCategoryModal: React.FC<TutorialCategoryModalProps> = ({
         </div>
 
         {/* Add Category Form */}
-        <form onSubmit={handleAdd} className="flex items-center gap-2 pt-3 border-t border-slate-800">
+        <form onSubmit={handleAdd} className="flex items-center gap-2 pt-3 border-t border-[#efefed]">
           <input
             type="text"
             placeholder="New category name..."
             value={newCategoryName}
             onChange={(e) => setNewCategoryName(e.target.value)}
-            className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+            className="flex-1 px-3 py-2 bg-white border border-[#e9e9e7] rounded-xl text-xs text-[#1b1c1a] placeholder-[#5f5f5b] focus:outline-none focus:ring-1 focus:ring-[#4f46e5]"
           />
           <button
             type="submit"
             disabled={!newCategoryName.trim()}
-            className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg text-xs font-medium flex items-center gap-1 transition-colors"
+            className="px-4 py-2 bg-[#4f46e5] hover:bg-[#4338ca] disabled:opacity-50 text-white rounded-xl font-label-caps text-xs font-bold flex items-center gap-1 transition-all cursor-pointer shadow-xs"
           >
-            <span className="material-symbols-outlined text-xs">add</span>
+            <span className="material-symbols-outlined text-sm">add</span>
             <span>Add</span>
           </button>
         </form>

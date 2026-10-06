@@ -19,6 +19,8 @@ create table if not exists tutorials (
   description text not null default '',
   category    text not null default 'Uncategorized',
   tags        jsonb not null default '[]'::jsonb,
+  thumbnail_url text,
+  thumbnail_storage_path text,
   videos      jsonb not null default '[]'::jsonb,
   links       jsonb not null default '[]'::jsonb,
   prompts     jsonb not null default '[]'::jsonb,
@@ -27,6 +29,9 @@ create table if not exists tutorials (
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
 );
+
+alter table tutorials add column if not exists thumbnail_url text;
+alter table tutorials add column if not exists thumbnail_storage_path text;
 
 create index if not exists tutorials_brand_id_idx on tutorials (brand_id);
 create index if not exists tutorials_category_idx on tutorials (category);

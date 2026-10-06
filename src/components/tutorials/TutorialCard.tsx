@@ -19,7 +19,7 @@ export const TutorialCard: React.FC<TutorialCardProps> = ({
 }) => {
   const primaryVideo = tutorial.videos?.[0];
   const embedInfo = primaryVideo ? getEmbedInfo(primaryVideo.url) : null;
-  const thumbnailUrl = embedInfo?.thumbnailUrl;
+  const thumbnailUrl = tutorial.thumbnailUrl || embedInfo?.thumbnailUrl;
 
   const isShared = tutorial.brandId === 'shared';
   const brandLabel = isShared ? 'Shared' : (brand?.name || tutorial.brandId);
@@ -45,18 +45,24 @@ export const TutorialCard: React.FC<TutorialCardProps> = ({
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             onError={(e) => {
               (e.currentTarget as HTMLElement).style.display = 'none';
+              const fallback = (e.currentTarget as HTMLElement).nextElementSibling;
+              if (fallback) (fallback as HTMLElement).style.display = 'flex';
             }}
           />
-        ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center bg-[#eef2ff] p-4 text-center">
-            <span className="material-symbols-outlined text-4xl text-[#4f46e5]/60 mb-1">
-              school
-            </span>
-            <span className="font-label-caps text-[10px] font-bold text-[#5f5f5b] tracking-widest">
-              Course & SOP
-            </span>
-          </div>
-        )}
+        ) : null}
+
+        <div
+          className={`w-full h-full flex flex-col items-center justify-center bg-[#eef2ff] p-4 text-center ${
+            thumbnailUrl ? 'hidden' : 'flex'
+          }`}
+        >
+          <span className="material-symbols-outlined text-4xl text-[#4f46e5]/60 mb-1">
+            school
+          </span>
+          <span className="font-label-caps text-[10px] font-bold text-[#5f5f5b] tracking-widest">
+            Course & SOP
+          </span>
+        </div>
 
         {/* Play Overlay */}
         {primaryVideo && (

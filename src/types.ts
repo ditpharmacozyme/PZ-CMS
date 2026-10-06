@@ -275,6 +275,8 @@ export interface Tutorial {
   description: string;
   category: string;
   tags: string[];
+  thumbnailUrl?: string;
+  thumbnailStoragePath?: string;
   videos: TutorialVideo[];
   links: TutorialLink[];
   prompts: TutorialPrompt[];

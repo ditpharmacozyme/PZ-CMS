@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Post, BrandId } from '../types';
 import { useBrands } from '../context/BrandsContext';
 import { NavTab } from './SideNav';
+import { getStoredTutorials } from '../utils/tutorialStorage';
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -92,6 +93,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         hint: `${brands[p.brandId]?.name || p.brandId} · ${p.scheduledDate || 'Idea'}`,
         icon: 'description',
         run: () => { onSelectTab('calendar'); onSelectPost(p); }
+      })),
+      ...getStoredTutorials().slice(0, 100).map((tut) => ({
+        id: `tutorial-${tut.id}`,
+        label: tut.title,
+        hint: `Tutorial · ${tut.category}`,
+        icon: 'school',
+        run: () => onSelectTab('tutorials')
       }))
     ];
 

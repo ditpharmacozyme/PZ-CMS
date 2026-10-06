@@ -79,6 +79,8 @@ export function rowToTutorial(row: Record<string, unknown>): Tutorial {
     description: String(row.description || ''),
     category: String(row.category || 'Uncategorized'),
     tags: Array.isArray(row.tags) ? (row.tags as string[]) : [],
+    thumbnailUrl: row.thumbnail_url ? String(row.thumbnail_url) : undefined,
+    thumbnailStoragePath: row.thumbnail_storage_path ? String(row.thumbnail_storage_path) : undefined,
     videos: Array.isArray(row.videos) ? (row.videos as Tutorial['videos']) : [],
     links: Array.isArray(row.links) ? (row.links as Tutorial['links']) : [],
     prompts: Array.isArray(row.prompts) ? (row.prompts as Tutorial['prompts']) : [],
@@ -90,7 +92,7 @@ export function rowToTutorial(row: Record<string, unknown>): Tutorial {
 }
 
 export function tutorialToRow(t: Tutorial): Record<string, unknown> {
-  return {
+  const row: Record<string, unknown> = {
     id: t.id,
     brand_id: t.brandId,
     title: t.title,
@@ -105,6 +107,15 @@ export function tutorialToRow(t: Tutorial): Record<string, unknown> {
     created_at: t.createdAt,
     updated_at: t.updatedAt
   };
+
+  if (t.thumbnailUrl !== undefined) {
+    row.thumbnail_url = t.thumbnailUrl;
+  }
+  if (t.thumbnailStoragePath !== undefined) {
+    row.thumbnail_storage_path = t.thumbnailStoragePath;
+  }
+
+  return row;
 }
 
 /* Remote Supabase sync */

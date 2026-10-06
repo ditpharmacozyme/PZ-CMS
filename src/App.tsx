@@ -614,6 +614,7 @@ export function App() {
           onSelectBrandFilter={setSelectedBrandFilter}
           onPublishNow={handlePublishNow}
           onResetData={handleResetData}
+          currentTab={currentTab}
           onSelectTab={setCurrentTab}
           teamMembers={teamMembers}
           onSaveTeamMembers={handleSaveTeamMembers}

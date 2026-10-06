@@ -1,4 +1,4 @@
-import React, { useState, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { Tutorial, BrandConfig } from '../../types';
 import { Modal } from '../ui/Modal';
 import { InAppVideoPlayer } from './InAppVideoPlayer';
@@ -11,6 +11,12 @@ interface TutorialDetailModalProps {
   tutorial: Tutorial | null;
   brand?: BrandConfig;
   onEdit: (t: Tutorial) => void;
+  onNavigatePrev?: () => void;
+  onNavigateNext?: () => void;
+  hasPrev?: boolean;
+  hasNext?: boolean;
+  currentIndex?: number;
+  totalCount?: number;
 }
 
 type DetailTab = 'notes' | 'prompts' | 'links' | 'files';
@@ -20,10 +26,38 @@ export const TutorialDetailModal: React.FC<TutorialDetailModalProps> = ({
   onClose,
   tutorial,
   brand,
-  onEdit
+  onEdit,
+  onNavigatePrev,
+  onNavigateNext,
+  hasPrev = false,
+  hasNext = false,
+  currentIndex,
+  totalCount
 }) => {
   const [activeTab, setActiveTab] = useState<DetailTab>('notes');
   const [copiedPromptIdx, setCopiedPromptIdx] = useState<number | null>(null);
+
+  // Keyboard navigation: Left/Right arrows navigate between tutorials
+  useEffect(() => {
+    if (!isOpen || !tutorial) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't intercept if user is typing in an input/textarea
+      const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+
+      if (e.key === 'ArrowLeft' && hasPrev && onNavigatePrev) {
+        e.preventDefault();
+        onNavigatePrev();
+      } else if (e.key === 'ArrowRight' && hasNext && onNavigateNext) {
+        e.preventDefault();
+        onNavigateNext();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, tutorial, hasPrev, hasNext, onNavigatePrev, onNavigateNext]);
 
   if (!tutorial) return null;
 
@@ -62,40 +96,105 @@ export const TutorialDetailModal: React.FC<TutorialDetailModalProps> = ({
       title={tutorial.title}
       size="lg"
       headerActions={
-        <button
-          type="button"
-          onClick={() => {
-            onClose();
-            onEdit(tutorial);
-          }}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-label-caps text-xs font-bold text-[#57574f] bg-white border border-[#e9e9e7] hover:bg-[#f4f4f3] transition-colors cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-sm">edit</span>
-          <span>Edit</span>
-        </button>
-      }
-      footer={
-        <div className="flex items-center justify-between w-full">
-          <div className="flex items-center gap-2 text-xs text-[#5f5f5b]">
-            <span className="font-body-md">Category: <strong className="text-[#1b1c1a]">{tutorial.category}</strong></span>
-          </div>
+        <div className="flex items-center gap-2">
+          {/* Previous / Next Tutorial Stepper */}
+          {totalCount && totalCount > 1 ? (
+            <div className="flex items-center gap-1 bg-[#f4f4f3] p-0.5 rounded-xl border border-[#efefed]">
+              <button
+                type="button"
+                onClick={onNavigatePrev}
+                disabled={!hasPrev}
+                title="Previous tutorial (←)"
+                aria-label="Previous tutorial"
+                className="p-1 rounded-lg text-[#57574f] hover:text-[#1b1c1a] hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer min-w-[28px] min-h-[28px] flex items-center justify-center"
+              >
+                <span className="material-symbols-outlined text-sm">arrow_back</span>
+              </button>
+              <span className="text-[11px] font-label-caps font-bold text-[#57574f] px-1 tabular-nums whitespace-nowrap">
+                {(currentIndex ?? 0) + 1} / {totalCount}
+              </span>
+              <button
+                type="button"
+                onClick={onNavigateNext}
+                disabled={!hasNext}
+                title="Next tutorial (→)"
+                aria-label="Next tutorial"
+                className="p-1 rounded-lg text-[#57574f] hover:text-[#1b1c1a] hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer min-w-[28px] min-h-[28px] flex items-center justify-center"
+              >
+                <span className="material-symbols-outlined text-sm">arrow_forward</span>
+              </button>
+            </div>
+          ) : null}
+
           <button
             type="button"
-            onClick={onClose}
-            className="px-4 py-2 bg-[#1b1c1a] hover:bg-[#2d2e2b] text-white rounded-lg font-label-caps text-xs font-bold transition-colors cursor-pointer"
+            onClick={() => {
+              onClose();
+              onEdit(tutorial);
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-label-caps text-xs font-bold text-[#57574f] bg-white border border-[#e9e9e7] hover:bg-[#f4f4f3] transition-colors cursor-pointer min-h-[32px]"
           >
-            Close
+            <span className="material-symbols-outlined text-sm">edit</span>
+            <span className="hidden sm:inline">Edit</span>
           </button>
         </div>
       }
-    >
-      <div className="flex flex-col gap-5 -mt-2">
-        {/* Video Player */}
-        {videos.length > 0 && (
-          <div className="w-full rounded-xl overflow-hidden border border-[#efefed]">
-            <InAppVideoPlayer videos={videos} />
+      footer={
+        <div className="flex items-center justify-between w-full gap-2">
+          <div className="flex items-center gap-2 text-xs text-[#5f5f5b] truncate">
+            <span className="font-body-md truncate">
+              Category: <strong className="text-[#1b1c1a]">{tutorial.category}</strong>
+            </span>
           </div>
-        )}
+
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Mobile / touch prev & next helpers in footer */}
+            {hasPrev && onNavigatePrev && (
+              <button
+                type="button"
+                onClick={onNavigatePrev}
+                className="sm:hidden px-3 py-2 bg-[#f4f4f3] text-[#1b1c1a] rounded-lg font-label-caps text-xs font-bold transition-colors cursor-pointer flex items-center gap-1"
+              >
+                <span className="material-symbols-outlined text-xs">arrow_back</span>
+                <span>Prev</span>
+              </button>
+            )}
+            {hasNext && onNavigateNext && (
+              <button
+                type="button"
+                onClick={onNavigateNext}
+                className="sm:hidden px-3 py-2 bg-[#f4f4f3] text-[#1b1c1a] rounded-lg font-label-caps text-xs font-bold transition-colors cursor-pointer flex items-center gap-1"
+              >
+                <span>Next</span>
+                <span className="material-symbols-outlined text-xs">arrow_forward</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 bg-[#1b1c1a] hover:bg-[#2d2e2b] text-white rounded-lg font-label-caps text-xs font-bold transition-colors cursor-pointer"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      }
+    >
+      <div className="flex flex-col gap-4 sm:gap-5 -mt-2">
+        {/* Video Player or Thumbnail Cover */}
+        {videos.length > 0 ? (
+          <div className="w-full rounded-xl sm:rounded-2xl overflow-hidden border border-[#efefed] bg-black">
+            <InAppVideoPlayer videos={videos} posterUrl={tutorial.thumbnailUrl} />
+          </div>
+        ) : tutorial.thumbnailUrl ? (
+          <div className="relative w-full aspect-video max-h-72 rounded-xl sm:rounded-2xl overflow-hidden border border-[#efefed] bg-[#f8f9fa]">
+            <img
+              src={tutorial.thumbnailUrl}
+              alt={tutorial.title}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        ) : null}
 
         {/* Brand + Category + Tags */}
         <div className="flex items-center gap-2 flex-wrap pb-3 border-b border-[#efefed]">
@@ -149,14 +248,23 @@ export const TutorialDetailModal: React.FC<TutorialDetailModalProps> = ({
 
         {/* Tab: Notes */}
         {activeTab === 'notes' && (
-          <div className="prose prose-sm max-w-none text-[#1b1c1a] min-h-[120px]">
+          <div className="flex flex-col gap-3 min-h-[140px]">
             {tutorial.description ? (
-              <Suspense fallback={<div className="font-body-md text-xs text-[#5f5f5b]">Loading notes...</div>}>
-                <ReactMarkdown>{tutorial.description}</ReactMarkdown>
-              </Suspense>
+              <div className="prose prose-sm max-w-none text-[#1b1c1a] font-body-md text-xs leading-relaxed space-y-2">
+                <Suspense fallback={<p className="whitespace-pre-wrap">{tutorial.description}</p>}>
+                  <ReactMarkdown>{tutorial.description}</ReactMarkdown>
+                </Suspense>
+              </div>
             ) : (
-              <div className="py-10 text-center font-body-md text-xs text-[#5f5f5b]">
+              <p className="font-body-md text-xs text-[#5f5f5b] italic py-4">
                 No description or notes provided for this tutorial.
+              </p>
+            )}
+
+            {tutorial.createdBy && (
+              <div className="pt-3 border-t border-[#efefed] flex items-center gap-2 text-[11px] text-[#5f5f5b]">
+                <span className="material-symbols-outlined text-xs">person</span>
+                <span>Added by: <strong className="text-[#1b1c1a]">{tutorial.createdBy}</strong></span>
               </div>
             )}
           </div>
@@ -164,39 +272,29 @@ export const TutorialDetailModal: React.FC<TutorialDetailModalProps> = ({
 
         {/* Tab: Prompts */}
         {activeTab === 'prompts' && (
-          <div className="flex flex-col gap-3 min-h-[120px]">
+          <div className="flex flex-col gap-3 min-h-[140px]">
             {prompts.length === 0 ? (
               <div className="py-10 text-center font-body-md text-xs text-[#5f5f5b]">
-                No prompts attached to this course.
+                No prompts attached to this tutorial.
               </div>
             ) : (
               prompts.map((p, idx) => (
-                <div
-                  key={idx}
-                  className="p-4 bg-[#f4f4f3] border border-[#efefed] rounded-xl flex flex-col gap-2"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-headline-md text-xs font-bold text-[#1b1c1a] flex items-center gap-1.5">
-                      <span className="material-symbols-outlined text-sm text-[#4f46e5]">psychology</span>
+                <div key={idx} className="p-3 bg-[#f8f9fa] border border-[#efefed] rounded-xl flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-headline-md text-xs font-bold text-[#1b1c1a]">
                       {p.title || `Prompt ${idx + 1}`}
                     </span>
-
                     <button
                       type="button"
                       onClick={() => handleCopyPrompt(p.promptText, idx)}
-                      className={`px-2.5 py-1 rounded-lg font-label-caps text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
-                        copiedPromptIdx === idx
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          : 'bg-white border border-[#e9e9e7] text-[#57574f] hover:bg-[#4f46e5] hover:text-white hover:border-[#4f46e5]'
-                      }`}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-label-caps font-bold transition-all cursor-pointer bg-white border border-[#e9e9e7] hover:bg-[#f1f1f0] text-[#1b1c1a]"
                     >
                       <span className="material-symbols-outlined text-xs">
                         {copiedPromptIdx === idx ? 'check' : 'content_copy'}
                       </span>
-                      {copiedPromptIdx === idx ? 'Copied!' : 'Copy Prompt'}
+                      <span>{copiedPromptIdx === idx ? 'Copied!' : 'Copy Prompt'}</span>
                     </button>
                   </div>
-
                   <pre className="p-3 bg-white border border-[#efefed] rounded-lg font-body-md text-xs text-[#1b1c1a] whitespace-pre-wrap break-words max-h-48 overflow-y-auto">
                     {p.promptText}
                   </pre>
