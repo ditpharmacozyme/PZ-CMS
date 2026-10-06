@@ -30,7 +30,18 @@ export const InAppVideoPlayer: React.FC<InAppVideoPlayerProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Track native fullscreen state only (no CSS-overlay fullscreen)
+  const handleExitFullscreen = useCallback(async () => {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else if ((document as any).webkitFullscreenElement) {
+        await (document as any).webkitExitFullscreen();
+      }
+    } catch { /* ignore */ }
+    setIsFullscreen(false);
+  }, []);
+
+  // Sync native fullscreen changes and keyboard shortcuts (f for fullscreen, Escape to exit)
   useEffect(() => {
     const handleFullscreenChange = () => {
       const nativeActive = Boolean(
@@ -39,10 +50,16 @@ export const InAppVideoPlayer: React.FC<InAppVideoPlayerProps> = ({
         (document as any).mozFullScreenElement ||
         (document as any).msFullscreenElement
       );
-      setIsFullscreen(nativeActive);
+      if (!nativeActive && isFullscreen) {
+        setIsFullscreen(false);
+      }
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isFullscreen) {
+        handleExitFullscreen();
+        return;
+      }
       if ((e.key === 'f' || e.key === 'F') && !e.ctrlKey && !e.metaKey && !e.altKey) {
         const tag = (document.activeElement?.tagName || '').toLowerCase();
         if (tag !== 'input' && tag !== 'textarea') {
@@ -60,34 +77,50 @@ export const InAppVideoPlayer: React.FC<InAppVideoPlayerProps> = ({
       document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
       window.removeEventListener('keydown', handleKeyDown);
     };
+  }, [isFullscreen, handleExitFullscreen]);
+
+  // Lock background scroll when in fullscreen
+  useEffect(() => {
+    if (isFullscreen) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
+    }
   }, [isFullscreen]);
 
   const handleToggleFullscreen = useCallback(async () => {
-    if (!containerRef.current) return;
-
     if (isFullscreen) {
-      try {
-        if (document.fullscreenElement) {
-          await document.exitFullscreen();
-        } else if ((document as any).webkitFullscreenElement) {
-          await (document as any).webkitExitFullscreen();
-        }
-      } catch { /* ignore */ }
-      setIsFullscreen(false);
+      handleExitFullscreen();
       return;
     }
 
-    try {
-      if (containerRef.current.requestFullscreen) {
-        await containerRef.current.requestFullscreen();
-      } else if ((containerRef.current as any).webkitRequestFullscreen) {
-        await (containerRef.current as any).webkitRequestFullscreen();
+    // Direct MP4 on iOS Safari: native video element fullscreen
+    if (containerRef.current) {
+      const videoEl = containerRef.current.querySelector('video') as HTMLVideoElement | null;
+      if (videoEl && (videoEl as any).webkitEnterFullscreen) {
+        try {
+          (videoEl as any).webkitEnterFullscreen();
+          return;
+        } catch { /* ignore */ }
       }
-      setIsFullscreen(true);
-    } catch {
-      setIsFullscreen(true);
     }
-  }, [isFullscreen]);
+
+    // Try native DOM requestFullscreen (Desktop Chrome / Safari Mac / Android Chrome)
+    if (containerRef.current?.requestFullscreen) {
+      try {
+        await containerRef.current.requestFullscreen();
+      } catch { /* ignore */ }
+    } else if ((containerRef.current as any)?.webkitRequestFullscreen) {
+      try {
+        await (containerRef.current as any).webkitRequestFullscreen();
+      } catch { /* ignore */ }
+    }
+
+    // Activate fullscreen view (handles iOS Safari iframe fallback seamlessly)
+    setIsFullscreen(true);
+  }, [isFullscreen, handleExitFullscreen]);
 
   if (!videos || videos.length === 0) {
     return (
@@ -186,48 +219,122 @@ export const InAppVideoPlayer: React.FC<InAppVideoPlayerProps> = ({
         </div>
       )}
 
-      {/* ── Video stage — edge-to-edge on mobile, rounded on desktop ── */}
+      {/* ── Main Video Stage ── */}
       <div
         ref={containerRef}
-        className="relative w-full aspect-video min-h-[180px] sm:min-h-[260px] rounded-none sm:rounded-xl overflow-hidden bg-black border-0 sm:border border-[#e2e8f0] sm:shadow-sm"
+        className={
+          isFullscreen
+            ? 'fixed inset-0 z-[100] bg-black flex flex-col justify-between overflow-hidden'
+            : 'relative w-full aspect-video min-h-[180px] sm:min-h-[260px] rounded-none sm:rounded-xl overflow-hidden bg-black border-0 sm:border border-[#e2e8f0] sm:shadow-sm'
+        }
       >
-        {isDirect ? (
-          <video
-            src={activeVideo.url}
-            controls
-            playsInline
-            preload="metadata"
-            poster={posterUrl || embedInfo.thumbnailUrl}
-            className="w-full h-full object-contain bg-black"
-          >
-            Your browser does not support the video tag.
-          </video>
-        ) : finalEmbedUrl ? (
-          <iframe
-            src={finalEmbedUrl}
-            title={activeVideo.title || `Tutorial Video ${safeIdx + 1}`}
-            className="w-full h-full border-0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
-            allowFullScreen
-          />
-        ) : (
-          <div className="flex flex-col items-center justify-center w-full h-full p-4 sm:p-8 text-center bg-[#f8f9fa] text-[#1b1c1a]">
-            <div className="w-14 h-14 rounded-2xl bg-[#eef2ff] text-[#4f46e5] flex items-center justify-center mb-3 shadow-xs">
-              <span className="material-symbols-outlined text-3xl">open_in_new</span>
-            </div>
-            <h4 className="font-headline-md text-sm sm:text-base font-bold text-[#1b1c1a] mb-3">
-              {activeVideo.title || 'External Course Video'}
-            </h4>
-            <a
-              href={activeVideo.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#4f46e5] hover:bg-[#4338ca] text-white rounded-xl text-xs font-label-caps font-bold transition-all shadow-xs min-h-[44px]"
+        {/* Fullscreen Overlay Header Bar */}
+        {isFullscreen && (
+          <div className="flex items-center justify-between px-3 sm:px-6 pt-[max(env(safe-area-inset-top),12px)] pb-2 bg-gradient-to-b from-black/80 to-transparent z-50 text-white shrink-0">
+            <button
+              type="button"
+              onClick={handleExitFullscreen}
+              aria-label="Exit Fullscreen"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/20 hover:bg-white/30 active:scale-95 text-white text-xs font-label-caps font-bold backdrop-blur-md cursor-pointer transition-all min-h-[38px]"
             >
-              <span>Watch on External Site</span>
-              <span className="material-symbols-outlined text-sm">open_in_new</span>
-            </a>
+              <span className="material-symbols-outlined text-base">fullscreen_exit</span>
+              <span>Exit Fullscreen</span>
+            </button>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1 text-[11px] font-label-caps font-bold px-2.5 py-1 rounded-full bg-white/10 text-white/90">
+                <span className="material-symbols-outlined text-xs">{getPlatformIcon()}</span>
+                <span>{getPlatformLabel()}</span>
+              </span>
+              {activeVideo.url && (
+                <a
+                  href={activeVideo.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Open source in new tab"
+                  className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors"
+                >
+                  <span className="material-symbols-outlined text-sm">open_in_new</span>
+                </a>
+              )}
+            </div>
           </div>
+        )}
+
+        {/* Video Stage Frame */}
+        <div className={isFullscreen ? 'flex-1 flex items-center justify-center w-full min-h-0 relative p-0 sm:p-4' : 'w-full h-full'}>
+          <div className={isFullscreen ? 'w-full max-w-full aspect-video max-h-full flex items-center justify-center' : 'w-full h-full'}>
+            {isDirect ? (
+              <video
+                src={activeVideo.url}
+                controls
+                playsInline
+                preload="metadata"
+                poster={posterUrl || embedInfo.thumbnailUrl}
+                className="w-full h-full object-contain bg-black"
+              >
+                Your browser does not support the video tag.
+              </video>
+            ) : finalEmbedUrl ? (
+              <iframe
+                src={finalEmbedUrl}
+                title={activeVideo.title || `Tutorial Video ${safeIdx + 1}`}
+                className="w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                allowFullScreen
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center w-full h-full p-4 sm:p-8 text-center bg-[#f8f9fa] text-[#1b1c1a]">
+                <div className="w-14 h-14 rounded-2xl bg-[#eef2ff] text-[#4f46e5] flex items-center justify-center mb-3 shadow-xs">
+                  <span className="material-symbols-outlined text-3xl">open_in_new</span>
+                </div>
+                <h4 className="font-headline-md text-sm sm:text-base font-bold text-[#1b1c1a] mb-3">
+                  {activeVideo.title || 'External Course Video'}
+                </h4>
+                <a
+                  href={activeVideo.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#4f46e5] hover:bg-[#4338ca] text-white rounded-xl text-xs font-label-caps font-bold transition-all shadow-xs min-h-[44px]"
+                >
+                  <span>Watch on External Site</span>
+                  <span className="material-symbols-outlined text-sm">open_in_new</span>
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Fullscreen Overlay Bottom Bar */}
+        {isFullscreen && (
+          videos.length > 1 ? (
+            <div className="flex items-center justify-between px-4 pb-[max(env(safe-area-inset-bottom),14px)] pt-2 bg-gradient-to-t from-black/80 to-transparent z-50 text-white shrink-0 text-xs">
+              <button
+                type="button"
+                onClick={() => safeIdx > 0 && setActiveIdx(safeIdx - 1)}
+                disabled={safeIdx === 0}
+                aria-label="Previous lesson"
+                className="px-3 py-1.5 rounded-lg bg-white/20 disabled:opacity-30 hover:bg-white/30 transition-all flex items-center gap-1 cursor-pointer min-h-[34px]"
+              >
+                <span className="material-symbols-outlined text-sm">arrow_back</span>
+                <span className="hidden sm:inline">Previous</span>
+              </button>
+              <span className="font-label-caps text-xs font-semibold tabular-nums">
+                Lesson {safeIdx + 1} of {videos.length}
+              </span>
+              <button
+                type="button"
+                onClick={() => safeIdx < videos.length - 1 && setActiveIdx(safeIdx + 1)}
+                disabled={safeIdx === videos.length - 1}
+                aria-label="Next lesson"
+                className="px-3 py-1.5 rounded-lg bg-white/20 disabled:opacity-30 hover:bg-white/30 transition-all flex items-center gap-1 cursor-pointer min-h-[34px]"
+              >
+                <span className="hidden sm:inline">Next</span>
+                <span className="material-symbols-outlined text-sm">arrow_forward</span>
+              </button>
+            </div>
+          ) : (
+            <div className="pb-[max(env(safe-area-inset-bottom),8px)]" />
+          )
         )}
       </div>
 
