@@ -1,12 +1,13 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Tutorial, BrandId, TeamMember } from '../types';
 import { useBrands } from '../context/BrandsContext';
 import { useConfirm } from './ui/ConfirmDialog';
 import { useTutorials } from '../hooks/useTutorials';
 import { useTutorialCategories } from '../hooks/useTutorialCategories';
 import { applyCategoryRename, applyCategoryDelete, UNCATEGORIZED } from '../utils/tutorialCategories';
+import { canManageTutorial } from '../utils/tutorialOwnership';
 import { TutorialCard } from './tutorials/TutorialCard';
-import { TutorialDetailModal } from './tutorials/TutorialDetailModal';
+import { TutorialWatchPage } from './tutorials/TutorialWatchPage';
 import { TutorialEditorModal } from './tutorials/TutorialEditorModal';
 import { TutorialCategoryModal } from './tutorials/TutorialCategoryModal';
 
@@ -44,13 +45,38 @@ export const TutorialsLibrary: React.FC<TutorialsLibraryProps> = ({
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>('all');
   const [brandFilter, setBrandFilter] = useState<BrandId | 'shared' | 'all'>('all');
 
+  // Active YouTube-style watch tutorial state
+  const [selectedTutorialId, setSelectedTutorialId] = useState<string | null>(null);
+
   // Modals state
-  const [detailTutorial, setDetailTutorial] = useState<Tutorial | null>(null);
   const [editorTutorial, setEditorTutorial] = useState<Tutorial | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
-  // Filtered tutorials
+  // Sync tutorial selection from URL query param `?tutorial=id`
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tutId = params.get('tutorial');
+    if (tutId && tutorials.length > 0) {
+      const found = tutorials.find((t) => t.id === tutId);
+      if (found) {
+        setSelectedTutorialId(found.id);
+      }
+    }
+  }, [tutorials]);
+
+  // Handle browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const tutId = params.get('tutorial');
+      setSelectedTutorialId(tutId || null);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Filtered tutorials for the library view
   const filteredTutorials = useMemo(() => {
     return tutorials.filter((t) => {
       if (brandFilter !== 'all') {
@@ -83,13 +109,46 @@ export const TutorialsLibrary: React.FC<TutorialsLibraryProps> = ({
     });
   }, [tutorials, brandFilter, selectedBrandFilter, activeCategoryFilter, searchQuery]);
 
-  // Handlers
+  // Currently viewed tutorial on the YouTube watch page
+  const activeTutorial = useMemo(() => {
+    if (!selectedTutorialId) return null;
+    return tutorials.find((t) => t.id === selectedTutorialId) || null;
+  }, [selectedTutorialId, tutorials]);
+
+  // Handlers for switching views
+  const handleOpenTutorialWatch = (t: Tutorial) => {
+    setSelectedTutorialId(t.id);
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tutorial', t.id);
+      window.history.pushState({}, '', url.toString());
+    } catch {
+      // Ignore URL history errors in tests or restricted iframes
+    }
+  };
+
+  const handleBackToLibrary = () => {
+    setSelectedTutorialId(null);
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('tutorial');
+      window.history.pushState({}, '', url.toString());
+    } catch {
+      // Ignore
+    }
+  };
+
+  // Handlers for creating/editing
   const handleOpenCreate = () => {
     setEditorTutorial(null);
     setIsEditorOpen(true);
   };
 
   const handleOpenEdit = (t: Tutorial) => {
+    if (!canManageTutorial(t, activeTeammate)) {
+      alert('Only the teammate who uploaded this tutorial can edit it.');
+      return;
+    }
     setEditorTutorial(t);
     setIsEditorOpen(true);
   };
@@ -101,6 +160,10 @@ export const TutorialsLibrary: React.FC<TutorialsLibraryProps> = ({
     if (id) {
       const existing = tutorials.find((t) => t.id === id);
       if (existing) {
+        if (!canManageTutorial(existing, activeTeammate)) {
+          alert('Only the teammate who uploaded this tutorial can edit it.');
+          return;
+        }
         await updateTutorial({
           ...existing,
           ...data,
@@ -108,14 +171,23 @@ export const TutorialsLibrary: React.FC<TutorialsLibraryProps> = ({
         });
       }
     } else {
-      await addTutorial({
+      const created = await addTutorial({
         ...data,
         createdBy: activeTeammate?.name || 'Team'
       });
+      // Optionally jump right into the created tutorial
+      if (created) {
+        handleOpenTutorialWatch(created);
+      }
     }
   };
 
   const handleDeleteTutorial = async (t: Tutorial) => {
+    if (!canManageTutorial(t, activeTeammate)) {
+      alert('Only the teammate who uploaded this tutorial can delete it.');
+      return;
+    }
+
     const ok = await confirm({
       title: `Delete tutorial "${t.title}"?`,
       body: 'This will permanently remove the tutorial, video links, attached prompts, and resources.',
@@ -124,8 +196,8 @@ export const TutorialsLibrary: React.FC<TutorialsLibraryProps> = ({
     });
     if (!ok) return;
 
-    if (detailTutorial?.id === t.id) {
-      setDetailTutorial(null);
+    if (selectedTutorialId === t.id) {
+      handleBackToLibrary();
     }
     await deleteTutorial(t.id);
   };
@@ -153,25 +225,45 @@ export const TutorialsLibrary: React.FC<TutorialsLibraryProps> = ({
     }
   };
 
-  const detailIndex = detailTutorial ? filteredTutorials.findIndex((t) => t.id === detailTutorial.id) : -1;
-  const hasPrev = detailIndex > 0;
-  const hasNext = detailIndex >= 0 && detailIndex < filteredTutorials.length - 1;
+  // ── YOUTUBE-STYLE WATCH VIEW ──
+  // If a tutorial is selected, transition to the full YouTube-like Watch Page
+  if (activeTutorial) {
+    const brand = activeTutorial.brandId !== 'shared' ? brands[activeTutorial.brandId] : undefined;
 
-  const handleNavigatePrev = () => {
-    if (hasPrev) {
-      setDetailTutorial(filteredTutorials[detailIndex - 1]);
-    }
-  };
+    return (
+      <>
+        <TutorialWatchPage
+          tutorial={activeTutorial}
+          allTutorials={filteredTutorials.length > 0 ? filteredTutorials : tutorials}
+          brand={brand}
+          brands={brands}
+          activeTeammate={activeTeammate}
+          onBack={handleBackToLibrary}
+          onSelectTutorial={handleOpenTutorialWatch}
+          onEdit={handleOpenEdit}
+          onDelete={handleDeleteTutorial}
+        />
 
-  const handleNavigateNext = () => {
-    if (hasNext) {
-      setDetailTutorial(filteredTutorials[detailIndex + 1]);
-    }
-  };
+        {/* Editor Modal for editing if uploader clicks Edit Video in the watch page */}
+        <TutorialEditorModal
+          isOpen={isEditorOpen}
+          onClose={() => {
+            setIsEditorOpen(false);
+            setEditorTutorial(null);
+          }}
+          tutorial={editorTutorial}
+          categories={categories}
+          defaultBrand={selectedBrandFilter === 'all' ? 'shared' : selectedBrandFilter}
+          onSave={handleSaveTutorial}
+          onOpenCategoryManager={() => setIsCategoryModalOpen(true)}
+        />
+      </>
+    );
+  }
 
+  // ── TUTORIALS LIBRARY GRID VIEW (YouTube Channel / Browse Library) ──
   return (
     <div className="p-4 md:p-8 space-y-6 max-w-7xl mx-auto">
-
       {/* ── Header ── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#efefed]">
         <div>
@@ -322,7 +414,7 @@ export const TutorialsLibrary: React.FC<TutorialsLibraryProps> = ({
         </p>
       )}
 
-      {/* ── Grid of Tutorial Cards ── */}
+      {/* ── Grid of Tutorial Cards (YouTube Browse View) ── */}
       {filteredTutorials.length === 0 ? (
         <div className="flex flex-col items-center justify-center p-16 bg-white rounded-2xl border border-[#efefed] text-center gap-4">
           <div className="w-16 h-16 rounded-2xl bg-[#eef2ff] text-[#4f46e5] flex items-center justify-center">
@@ -356,7 +448,8 @@ export const TutorialsLibrary: React.FC<TutorialsLibraryProps> = ({
                 key={tut.id}
                 tutorial={tut}
                 brand={brand}
-                onOpenDetail={setDetailTutorial}
+                activeTeammate={activeTeammate}
+                onOpenDetail={handleOpenTutorialWatch}
                 onEdit={handleOpenEdit}
                 onDelete={handleDeleteTutorial}
               />
@@ -364,21 +457,6 @@ export const TutorialsLibrary: React.FC<TutorialsLibraryProps> = ({
           })}
         </div>
       )}
-
-      {/* Detail Modal */}
-      <TutorialDetailModal
-        isOpen={!!detailTutorial}
-        onClose={() => setDetailTutorial(null)}
-        tutorial={detailTutorial}
-        brand={detailTutorial && detailTutorial.brandId !== 'shared' ? brands[detailTutorial.brandId] : undefined}
-        onEdit={handleOpenEdit}
-        onNavigatePrev={handleNavigatePrev}
-        onNavigateNext={handleNavigateNext}
-        hasPrev={hasPrev}
-        hasNext={hasNext}
-        currentIndex={detailIndex >= 0 ? detailIndex : 0}
-        totalCount={filteredTutorials.length}
-      />
 
       {/* Editor Modal */}
       <TutorialEditorModal
