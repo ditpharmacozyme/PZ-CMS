@@ -252,7 +252,20 @@ export function App() {
     void flushFailedDeletes(() => recordsRef.current);
   }, []);
 
-  const [currentTab, setCurrentTabState] = useState<NavTab>(persistedTab);
+  // ── URL-based Deep Linking ─────────────────────────────────────────────────
+  // If the page loads with ?tutorial=id, switch to the tutorials tab so the
+  // shared watch link opens the right view regardless of the persisted tab.
+  const getInitialTab = (): NavTab => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('tutorial')) return 'tutorials';
+    } catch {
+      // ignore in non-browser envs
+    }
+    return persistedTab;
+  };
+
+  const [currentTab, setCurrentTabState] = useState<NavTab>(getInitialTab);
   const [selectedBrandFilter, setSelectedBrandFilterState] = useState<BrandId | 'all'>(persistedBrand);
 
   const setCurrentTab = (tab: NavTab) => {

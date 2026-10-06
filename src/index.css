@@ -288,12 +288,21 @@ input:focus, textarea:focus, select:focus {
 /* ─── Drag Drop Visual Cues ─── */
 [draggable="true"] {
   cursor: grab;
+  touch-action: none;   /* prevent the page from scrolling/panning while dragging */
+  user-select: none;    /* prevent text-selection ghost drag on mobile */
+  -webkit-user-drag: element; /* Safari: enable element drag, not text drag */
 }
 [draggable="true"]:active {
   cursor: grabbing;
 }
 [draggable="true"]:hover {
   opacity: 0.92;
+}
+
+/* Prevent any element that is NOT explicitly draggable from being dragged
+   (images, text, etc. can hijack touch drag on iOS/Android) */
+img, p, span, h1, h2, h3, h4, h5, h6, li {
+  -webkit-user-drag: none;
 }
 
 /* ─── Drawer Panel Slide ─── */

@@ -168,7 +168,7 @@ export const TopNav: React.FC<TopNavProps> = ({
       <div className="flex items-center justify-between h-16 gap-2">
 
         {/* Left: Mobile menu button + brand context */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-1 sm:gap-3 min-w-0 shrink">
           <button
             onClick={onToggleMobileNav}
             className="md:hidden p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-[#57574f] hover:bg-[#f1f1f0] active:bg-[#e4e4e2] rounded-lg transition-colors"
@@ -195,9 +195,9 @@ export const TopNav: React.FC<TopNavProps> = ({
                   />
                 </span>
               )}
-              <div className="text-left min-w-0">
-                <p className="font-headline-md text-base sm:text-lg font-bold text-[#4f46e5] tracking-tight leading-none flex items-center gap-1 whitespace-nowrap">
-                  <span className="truncate max-w-[42vw] sm:max-w-none">
+              <div className="text-left min-w-0 overflow-hidden">
+                <p className="font-headline-md text-base sm:text-lg font-bold text-[#4f46e5] tracking-tight leading-none flex items-center gap-0.5 sm:gap-1 whitespace-nowrap">
+                  <span className="truncate max-w-[26vw] xs:max-w-[32vw] sm:max-w-none">
                     {selectedBrandFilter === 'all'
                       ? 'All 5 Brands'
                       : (brands[selectedBrandFilter]?.name || 'Pharmacozyme')}
@@ -281,40 +281,23 @@ export const TopNav: React.FC<TopNavProps> = ({
           )}
         </div>
 
-        {/* Right: Actions */}
-        <div className="flex items-center gap-1.5 sm:gap-2.5">
+        {/* Right: Actions — shrink-0 ensures it's never pushed off screen */}
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
 
-          {/* Quick Tutorials button (Mobile & Desktop) */}
+          {/* Quick Tutorials button — Desktop only (mobile uses bottom tab bar) */}
           {onSelectTab && (
-            <>
-              {/* Mobile quick link to tutorials */}
-              <button
-                onClick={() => onSelectTab('tutorials')}
-                className={`md:hidden p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-full transition-colors cursor-pointer ${
-                  currentTab === 'tutorials'
-                    ? 'text-[#4f46e5] bg-[#eef2ff]'
-                    : 'text-[#57574f] hover:bg-[#f1f1f0]'
-                }`}
-                title="Tutorials & Knowledge Hub"
-                aria-label="Tutorials & Knowledge Hub"
-              >
-                <span className="material-symbols-outlined text-xl">school</span>
-              </button>
-
-              {/* Desktop quick link to tutorials */}
-              <button
-                onClick={() => onSelectTab('tutorials')}
-                title="Tutorials & SOPs"
-                className={`hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-lg font-label-caps text-xs font-bold transition-all min-h-[38px] cursor-pointer ${
-                  currentTab === 'tutorials'
-                    ? 'bg-[#eef2ff] text-[#4f46e5] border border-[#c7c5f8] shadow-xs'
-                    : 'bg-white border border-[#e9e9e7] text-[#57574f] hover:bg-[#f1f1f0] hover:text-[#1b1c1a]'
-                }`}
-              >
-                <span className="material-symbols-outlined text-base">school</span>
-                <span>Tutorials</span>
-              </button>
-            </>
+            <button
+              onClick={() => onSelectTab('tutorials')}
+              title="Tutorials & SOPs"
+              className={`hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-lg font-label-caps text-xs font-bold transition-all min-h-[38px] cursor-pointer ${
+                currentTab === 'tutorials'
+                  ? 'bg-[#eef2ff] text-[#4f46e5] border border-[#c7c5f8] shadow-xs'
+                  : 'bg-white border border-[#e9e9e7] text-[#57574f] hover:bg-[#f1f1f0] hover:text-[#1b1c1a]'
+              }`}
+            >
+              <span className="material-symbols-outlined text-base">school</span>
+              <span>Tutorials</span>
+            </button>
           )}
 
           {/* Mobile search toggle */}
@@ -372,11 +355,11 @@ export const TopNav: React.FC<TopNavProps> = ({
             />
           </div>
 
-          {/* Settings — visible to Admin, Owner, and Manager */}
+          {/* Settings — visible to Admin, Owner, and Manager. Hidden on mobile (accessible via profile dropdown) */}
           {canAccessSettings(activeTeammate) && (
             <button
               onClick={() => { setShowSettingsModal(true); setSettingsTab('team'); }}
-              className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center text-[#57574f] hover:bg-[#f1f1f0] rounded-full transition-colors cursor-pointer"
+              className="hidden sm:flex p-2 min-w-[40px] min-h-[40px] items-center justify-center text-[#57574f] hover:bg-[#f1f1f0] rounded-full transition-colors cursor-pointer"
               title="Settings"
             >
               <span className="material-symbols-outlined text-xl">settings</span>
@@ -391,11 +374,11 @@ export const TopNav: React.FC<TopNavProps> = ({
             Mark Posted
           </button>
 
-          {/* Active Teammate Profile / Logout Dropdown */}
-          <div className="relative">
+          {/* Active Teammate Profile / Logout Dropdown — always visible, shrink-0 */}
+          <div className="relative shrink-0">
             <button
               onClick={() => setShowActiveTeammatePopover(!showActiveTeammatePopover)}
-              className="flex items-center gap-1.5 p-1 hover:bg-[#f1f1f0] rounded-full sm:rounded-lg transition-all focus:outline-none min-h-[38px] cursor-pointer"
+              className="flex items-center gap-1 sm:gap-1.5 p-1 hover:bg-[#f1f1f0] rounded-full sm:rounded-lg transition-all focus:outline-none min-h-[38px] cursor-pointer"
               title={`Logged in as: ${activeTeammate ? activeTeammate.name : 'Guest'}`}
             >
               <div

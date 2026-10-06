@@ -63,11 +63,13 @@ export const TutorialWatchPage: React.FC<TutorialWatchPageProps> = ({
     try {
       const url = new URL(window.location.href);
       url.searchParams.set('tutorial', tutorial.id);
-      await navigator.clipboard.writeText(url.toString());
+      // Remove any other tab-like params so the link is self-contained
+      const shareUrl = url.toString();
+      await navigator.clipboard.writeText(shareUrl);
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2200);
     } catch {
-      // Fallback
+      // Fallback — still show feedback
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2200);
     }
@@ -100,7 +102,7 @@ export const TutorialWatchPage: React.FC<TutorialWatchPageProps> = ({
   const creatorInitial = (tutorial.createdBy || 'T').charAt(0).toUpperCase();
 
   return (
-    <div className="min-h-screen bg-[#fafafa] text-[#0f0f0f] pb-16">
+    <div className="min-h-screen bg-[#fafafa] text-[#0f0f0f] pb-16 overflow-x-hidden">
       {/* ── Top YouTube-style Navigation & Breadcrumb Bar ── */}
       <div className="sticky top-16 z-30 bg-white/95 backdrop-blur-md border-b border-[#efefed] px-3 sm:px-4 md:px-8 py-2.5 sm:py-3">
         <div className="max-w-[1720px] mx-auto flex items-center justify-between gap-2 sm:gap-3">
@@ -173,7 +175,7 @@ export const TutorialWatchPage: React.FC<TutorialWatchPageProps> = ({
       <div className="max-w-[1720px] mx-auto px-0 sm:px-4 md:px-8 pt-0 sm:pt-4 md:pt-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 xl:gap-8">
           {/* ════ PRIMARY COLUMN: Video + Info + Description + Resources ════ */}
-          <div className="lg:col-span-8 xl:col-span-8 2xl:col-span-9 flex flex-col">
+          <div className="lg:col-span-8 xl:col-span-8 2xl:col-span-9 flex flex-col min-w-0">
             {/* 1. Theatre Video Player (Edge-to-edge on mobile, rounded on tablet/desktop) */}
             <div className="w-full sm:rounded-2xl overflow-hidden bg-black sm:shadow-lg sm:border border-[#e2e8f0]">
               {videos.length > 0 ? (
@@ -192,18 +194,65 @@ export const TutorialWatchPage: React.FC<TutorialWatchPageProps> = ({
                   </div>
                 </div>
               ) : (
-                <div className="w-full aspect-video max-h-[380px] bg-[#eef2ff] flex flex-col items-center justify-center text-center p-6 sm:p-8">
-                  <span className="material-symbols-outlined text-5xl sm:text-6xl text-[#4f46e5]/50 mb-2">school</span>
-                  <h3 className="font-headline-md text-base sm:text-lg font-bold text-[#1b1c1a]">Standard Operating Procedure</h3>
-                  <p className="font-body-md text-xs text-[#5f5f5b] mt-1 max-w-md">
-                    This tutorial contains internal documentation, prompt blueprints, and reference files below.
-                  </p>
+                /* ── Title-as-cover when no image uploaded ── */
+                <div
+                  className="relative w-full aspect-video max-h-[420px] overflow-hidden flex flex-col items-center justify-center text-center px-6 sm:px-10"
+                  style={{
+                    background: `linear-gradient(135deg, ${brandColor}22 0%, #eef2ff 50%, ${brandColor}11 100%)`,
+                  }}
+                >
+                  {/* Decorative pattern */}
+                  <div className="absolute inset-0 opacity-5" style={{
+                    backgroundImage: 'radial-gradient(circle at 1px 1px, #4f46e5 1px, transparent 0)',
+                    backgroundSize: '28px 28px'
+                  }} />
+                  {/* Brand pill */}
+                  <div className="absolute top-4 left-4">
+                    <span
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md font-label-caps text-[10px] font-bold text-white shadow-sm"
+                      style={{ backgroundColor: `${brandColor}dd` }}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-white/80" />
+                      {brandLabel}
+                    </span>
+                  </div>
+                  {/* Category chip */}
+                  {tutorial.category && (
+                    <div className="mb-3">
+                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/70 backdrop-blur-xs font-label-caps text-[10px] font-bold text-[#4f46e5] border border-[#4f46e5]/20">
+                        <span className="material-symbols-outlined text-xs">sell</span>
+                        {tutorial.category}
+                      </span>
+                    </div>
+                  )}
+                  {/* Title */}
+                  <h2 className="font-display-xl text-xl sm:text-3xl md:text-4xl font-bold text-[#1b1c1a] leading-tight line-clamp-3 max-w-2xl">
+                    {tutorial.title}
+                  </h2>
+                  {/* Tags */}
+                  {tutorial.tags && tutorial.tags.length > 0 && (
+                    <div className="flex items-center gap-2 flex-wrap justify-center mt-3">
+                      {tutorial.tags.slice(0, 4).map((tag, i) => (
+                        <span key={i} className="font-label-caps text-xs text-[#4f46e5] font-semibold">#{tag}</span>
+                      ))}
+                    </div>
+                  )}
+                  {/* Creator */}
+                  <div className="absolute bottom-4 right-4 flex items-center gap-1.5">
+                    <div
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-white font-bold text-[10px] shadow-sm"
+                      style={{ backgroundColor: brandColor }}
+                    >
+                      {creatorInitial}
+                    </div>
+                    <span className="font-body-md text-xs text-[#5f5f5b]">{tutorial.createdBy || 'Team'}</span>
+                  </div>
                 </div>
               )}
             </div>
 
             {/* Content Body with comfortable margins on mobile */}
-            <div className="px-3.5 sm:px-0 pt-4 flex flex-col gap-4">
+            <div className="px-3.5 sm:px-0 pt-4 flex flex-col gap-4 min-w-0 overflow-hidden">
               {/* 2. Video Title */}
               <div>
                 <h1 className="font-display-xl text-lg sm:text-2xl md:text-3xl font-bold text-[#0f0f0f] leading-snug">
@@ -525,7 +574,7 @@ export const TutorialWatchPage: React.FC<TutorialWatchPageProps> = ({
           </div>
 
           {/* ════ SECONDARY COLUMN: YouTube "Up Next" / Playlist Sidebar ════ */}
-          <div className="lg:col-span-4 xl:col-span-4 2xl:col-span-3 flex flex-col gap-4 px-3.5 sm:px-0 pb-8 sm:pb-0">
+          <div className="lg:col-span-4 xl:col-span-4 2xl:col-span-3 flex flex-col gap-4 px-3.5 sm:px-0 pb-8 sm:pb-0 min-w-0">
             {/* Sidebar Header */}
             <div className="flex items-center justify-between">
               <span className="font-headline-md text-sm font-bold text-[#0f0f0f] flex items-center gap-1.5">
