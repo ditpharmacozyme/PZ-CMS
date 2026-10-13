@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Post, TeamMember } from '../../types';
 import { useBrands } from '../../context/BrandsContext';
 import { fromDateStr, visibleStripDates } from '../../utils/date';
