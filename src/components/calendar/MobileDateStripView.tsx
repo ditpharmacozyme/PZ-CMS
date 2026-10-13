@@ -82,17 +82,18 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
   const selectedDayPosts = postsByDate[selectedMobileDate] || [];
   const selectedDaySummary = getDayBrandSummary(selectedDayPosts, brands);
 
-  // When this strip is showing the month/week that contains today, open on
-  // today and drop the earlier days -- a past date in the strip only invites
-  // scheduling into the past by mistake.
-  const hidePastDays = calendarCells.some((c) => c.dateStr === todayIso);
-  const stripCells = visibleStripDates(calendarCells, todayIso, hidePastDays);
+  // Show all days in the current month — past days are perfectly valid to view
+  // (users need to review old posts). Never hide past days; just filter out
+  // filler cells from adjacent months by passing hidePastDays = false.
+  const stripCells = visibleStripDates(calendarCells, todayIso, false);
 
-  // If the selection was left on a now-hidden past day (e.g. navigated away and
-  // back), snap it forward to today so the day list below stays in range.
+  // If the selected date isn't in the visible strip at all (e.g. navigated to a
+  // different month), snap to today so the day-list below stays in range.
+  const stripDateSet = new Set(stripCells.map((c) => c.dateStr));
   useEffect(() => {
-    if (hidePastDays && selectedMobileDate < todayIso) onSelectMobileDate(todayIso);
-  }, [hidePastDays, selectedMobileDate, todayIso, onSelectMobileDate]);
+    if (!stripDateSet.has(selectedMobileDate)) onSelectMobileDate(todayIso);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [calendarCells, todayIso, onSelectMobileDate]);
 
   return (
     <div className="md:hidden flex flex-col">

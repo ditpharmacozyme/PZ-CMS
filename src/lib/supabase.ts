@@ -1,7 +1,8 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const url = import.meta.env.VITE_SUPABASE_URL;
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const isTest = import.meta.env.MODE === 'test';
+const url = isTest ? undefined : import.meta.env.VITE_SUPABASE_URL;
+const anonKey = isTest ? undefined : import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 /**
  * Shared Supabase client, or null when no project is configured.
