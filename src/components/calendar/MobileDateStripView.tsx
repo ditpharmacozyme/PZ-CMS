@@ -86,19 +86,100 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
   // (users need to review old posts). Never hide past days; just filter out
   // filler cells from adjacent months by passing hidePastDays = false.
   const stripCells = visibleStripDates(calendarCells, todayIso, false);
+  const stripDateSet = useMemo(() => new Set(stripCells.map((c) => c.dateStr)), [stripCells]);
 
   // If the selected date isn't in the visible strip at all (e.g. navigated to a
-  // different month), snap to today so the day-list below stays in range.
-  const stripDateSet = new Set(stripCells.map((c) => c.dateStr));
+  // different month), snap to today if present in this month, otherwise first visible date.
   useEffect(() => {
-    if (!stripDateSet.has(selectedMobileDate)) onSelectMobileDate(todayIso);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [calendarCells, todayIso, onSelectMobileDate]);
+    if (!stripDateSet.has(selectedMobileDate)) {
+      if (stripDateSet.has(todayIso)) {
+        onSelectMobileDate(todayIso);
+      } else if (stripCells[0]?.dateStr) {
+        onSelectMobileDate(stripCells[0].dateStr);
+      }
+    }
+  }, [stripDateSet, selectedMobileDate, todayIso, onSelectMobileDate, stripCells]);
+
+  // Ref to the horizontal strip container
+  const stripRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to show Present day first (aligned at the left edge) while keeping past days scrollable to the left
+  useEffect(() => {
+    if (!stripRef.current) return;
+    const container = stripRef.current;
+
+    // Prioritize today if present in this month/strip, otherwise first visible date
+    const targetDate = stripDateSet.has(todayIso) ? todayIso : stripCells[0]?.dateStr;
+    if (!targetDate) return;
+
+    const alignTargetDate = () => {
+      const targetEl = container.querySelector<HTMLElement>(`[data-date-cell="${targetDate}"]`);
+      if (targetEl) {
+        const containerRect = container.getBoundingClientRect();
+        const targetRect = targetEl.getBoundingClientRect();
+        const targetScrollLeft = targetRect.left - containerRect.left + container.scrollLeft - 8;
+        container.scrollLeft = Math.max(0, targetScrollLeft);
+      }
+    };
+
+    alignTargetDate();
+    const frameId = requestAnimationFrame(alignTargetDate);
+    return () => cancelAnimationFrame(frameId);
+  }, [calendarCells, todayIso, stripDateSet, stripCells]);
+
+  // Mouse drag-to-scroll support for desktop testing & mouse usage
+  const isDraggingStrip = useRef(false);
+  const startX = useRef(0);
+  const scrollLeftStart = useRef(0);
+  const hasDragged = useRef(false);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (e.button !== 0 || !stripRef.current) return;
+    isDraggingStrip.current = true;
+    hasDragged.current = false;
+    startX.current = e.pageX;
+    scrollLeftStart.current = stripRef.current.scrollLeft;
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDraggingStrip.current || !stripRef.current) return;
+    const walk = e.pageX - startX.current;
+    if (Math.abs(walk) > 5) {
+      hasDragged.current = true;
+    }
+    stripRef.current.scrollLeft = scrollLeftStart.current - walk;
+  };
+
+  const handleMouseUp = () => {
+    isDraggingStrip.current = false;
+    setTimeout(() => {
+      hasDragged.current = false;
+    }, 50);
+  };
+
+  const handleMouseLeave = () => {
+    isDraggingStrip.current = false;
+    setTimeout(() => {
+      hasDragged.current = false;
+    }, 50);
+  };
 
   return (
     <div className="md:hidden flex flex-col">
       {/* Horizontal Date Strip */}
-      <div className="flex overflow-x-auto bg-[#f1f1f0] border-b border-[#e9e9e7] p-2 gap-2 hide-scrollbar">
+      <div
+        ref={stripRef}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseLeave}
+        className="flex overflow-x-auto bg-[#f1f1f0] border-b border-[#e9e9e7] p-2 gap-2 hide-scrollbar cursor-grab active:cursor-grabbing select-none"
+        style={{
+          WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'none',
+          overscrollBehaviorX: 'contain'
+        }}
+      >
         {stripCells
           .map((cell) => {
             const d = cell.dateStr ? fromDateStr(cell.dateStr) : null;
@@ -114,7 +195,10 @@ export const MobileDateStripView: React.FC<MobileDateStripViewProps> = ({
               <button
                 key={cell.dateStr}
                 data-date-cell={cell.dateStr || ''}
-                onClick={() => onSelectMobileDate(cell.dateStr!)}
+                onClick={() => {
+                  if (hasDragged.current) return;
+                  onSelectMobileDate(cell.dateStr!);
+                }}
                 className={`flex flex-col items-center justify-center min-w-[3.5rem] py-2 rounded-lg transition-colors relative flex-shrink-0 ${
                   isDropHover
                     ? 'bg-[#4f46e5] text-white ring-2 ring-[#4f46e5] ring-offset-1 scale-105'
