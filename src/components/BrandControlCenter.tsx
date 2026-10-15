@@ -154,6 +154,7 @@ export const BrandControlCenter: React.FC<BrandControlCenterProps> = ({
 
   // ── Master System Persona Prompt ─────────────────────────────────────────────
   const [isMasterPromptModalOpen, setIsMasterPromptModalOpen] = useState(false);
+  const [terminalView, setTerminalView] = useState<'post' | 'master'>('post');
   const [customMasterPrompts, setCustomMasterPrompts] = useState<Record<string, string | null>>(() => {
     const initial: Record<string, string | null> = {};
     try {
@@ -664,49 +665,126 @@ OUTPUT FORMAT:
             </div>
           </div>
 
-          {/* Generated Live Output */}
+          {/* Generated Live Output Terminal with Tab Switching */}
           <div className="lg:col-span-7 flex flex-col justify-between bg-[#1b1c1a] text-white p-5 rounded-xl space-y-4">
             <div>
-              <div className="flex items-center justify-between mb-2 pb-2 border-b border-white/10">
-                <span className="font-label-caps text-[10px] text-[#86efac] font-bold tracking-wider flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-[#15803d] animate-pulse" />
-                  Ready to paste into ChatGPT / Claude
-                </span>
-                <span className="text-[10px] text-white/50">{brand.name} Prompt</span>
+              {/* Terminal Tab Switcher */}
+              <div className="flex items-center justify-between mb-3 pb-2.5 border-b border-white/10 flex-wrap gap-2">
+                <div className="flex items-center gap-1 bg-white/5 p-1 rounded-lg border border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setTerminalView('post')}
+                    className={`px-3 py-1.5 text-xs font-bold font-label-caps rounded-md transition-all cursor-pointer ${
+                      terminalView === 'post'
+                        ? 'bg-[#4f46e5] text-white shadow-xs'
+                        : 'text-white/60 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    Post Prompt
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTerminalView('master')}
+                    className={`px-3 py-1.5 text-xs font-bold font-label-caps rounded-md transition-all flex items-center gap-1.5 cursor-pointer ${
+                      terminalView === 'master'
+                        ? 'bg-[#4f46e5] text-white shadow-xs'
+                        : 'text-white/60 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <span>Master System Prompt</span>
+                    {activeCustomMasterPrompt ? (
+                      <span className="w-2 h-2 rounded-full bg-[#86efac]" title="Customized prompt active" />
+                    ) : (
+                      <span className="text-[10px] text-white/40 font-normal">(Default)</span>
+                    )}
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="font-label-caps text-[10px] text-[#86efac] font-bold tracking-wider flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#15803d] animate-pulse" />
+                    {terminalView === 'master'
+                      ? (activeCustomMasterPrompt ? 'Customized for ' + brand.name : 'Brand Kit Default')
+                      : 'Ready to paste into ChatGPT / Claude'}
+                  </span>
+                </div>
               </div>
-              <pre className="font-code-sm text-xs text-white/90 whitespace-pre-wrap max-h-64 overflow-y-auto leading-relaxed bg-black/30 p-3.5 rounded-lg border border-white/5">
-                {generatedPostPrompt}
+
+              {/* Terminal Code Display */}
+              <pre className="font-code-sm text-xs text-white/90 whitespace-pre-wrap max-h-64 overflow-y-auto leading-relaxed bg-black/40 p-3.5 rounded-lg border border-white/10 select-all">
+                {terminalView === 'master' ? effectiveMasterPrompt : generatedPostPrompt}
               </pre>
             </div>
 
-            <div className="flex items-center justify-between gap-3 pt-2">
-              <button
-                onClick={() => handleCopy(generatedPostPrompt, 'Post Prompt')}
-                className="flex-1 bg-[#4f46e5] hover:bg-[#4338ca] text-white font-label-caps text-xs font-bold py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-xs cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-sm">content_copy</span>
-                <span>Copy Post Prompt</span>
-              </button>
+            {/* Contextual Actions based on active tab */}
+            <div className="flex items-center justify-between gap-3 pt-2 flex-wrap">
+              {terminalView === 'master' ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(effectiveMasterPrompt, 'Master System Prompt')}
+                    className="flex-1 bg-[#4f46e5] hover:bg-[#4338ca] text-white font-label-caps text-xs font-bold py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-sm">content_copy</span>
+                    <span>Copy Master System Prompt</span>
+                  </button>
 
-              {onSaveToLibrary && (
-                <button
-                  onClick={() => handleSavePrompt(generatedPostPrompt, 'Post Prompt', [selectedGoal, selectedTone])}
-                  className="bg-white/10 hover:bg-white/20 text-white font-label-caps text-xs font-bold py-2.5 px-3 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
-                  title="Save this prompt to the Content Bank"
-                >
-                  <span className="material-symbols-outlined text-sm">bookmark_add</span>
-                  <span>Save</span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsMasterPromptModalOpen(true)}
+                    className="bg-white/10 hover:bg-white/20 text-white font-label-caps text-xs font-bold py-2.5 px-3.5 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                    title="Edit or customize master prompt in modal"
+                  >
+                    <span className="material-symbols-outlined text-sm">edit_note</span>
+                    <span>Edit in Modal</span>
+                  </button>
+
+                  {onSaveToLibrary && (
+                    <button
+                      type="button"
+                      onClick={() => handleSavePrompt(effectiveMasterPrompt, 'System Persona Prompt', ['persona'])}
+                      className="bg-white/10 hover:bg-white/20 text-white font-label-caps text-xs font-bold py-2.5 px-3 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                      title="Save this prompt to the Content Bank"
+                    >
+                      <span className="material-symbols-outlined text-sm">bookmark_add</span>
+                      <span>Save</span>
+                    </button>
+                  )}
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(generatedPostPrompt, 'Post Prompt')}
+                    className="flex-1 bg-[#4f46e5] hover:bg-[#4338ca] text-white font-label-caps text-xs font-bold py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-sm">content_copy</span>
+                    <span>Copy Post Prompt</span>
+                  </button>
+
+                  {onSaveToLibrary && (
+                    <button
+                      type="button"
+                      onClick={() => handleSavePrompt(generatedPostPrompt, 'Post Prompt', [selectedGoal, selectedTone])}
+                      className="bg-white/10 hover:bg-white/20 text-white font-label-caps text-xs font-bold py-2.5 px-3 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                      title="Save this prompt to the Content Bank"
+                    >
+                      <span className="material-symbols-outlined text-sm">bookmark_add</span>
+                      <span>Save</span>
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(imageGenerationPrompt, 'Midjourney Image Prompt')}
+                    className="bg-white/10 hover:bg-white/20 text-white font-label-caps text-xs font-bold py-2.5 px-3 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                    title="Copy AI image generation prompt for Midjourney / DALL-E"
+                  >
+                    <span className="material-symbols-outlined text-sm">image</span>
+                    <span>Image Prompt</span>
+                  </button>
+                </>
               )}
-
-              <button
-                onClick={() => handleCopy(imageGenerationPrompt, 'Midjourney Image Prompt')}
-                className="bg-white/10 hover:bg-white/20 text-white font-label-caps text-xs font-bold py-2.5 px-3 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
-                title="Copy AI image generation prompt for Midjourney / DALL-E"
-              >
-                <span className="material-symbols-outlined text-sm">image</span>
-                <span>Image Prompt</span>
-              </button>
             </div>
           </div>
         </div>
@@ -882,6 +960,7 @@ OUTPUT FORMAT:
         showToast={showToast}
         onCustomPromptSaved={(custom) => {
           setCustomMasterPrompts((prev) => ({ ...prev, [activeBrandId]: custom }));
+          setTerminalView('master');
         }}
       />
     </div>
