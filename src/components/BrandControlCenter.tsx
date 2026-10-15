@@ -1,10 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { BrandId, BrandConfig, ContentBankItem } from '../types';
 import { useBrands } from '../context/BrandsContext';
 import { todayStr } from '../utils/date';
 import { voiceRulesReducer } from '../utils/voiceRules';
 import { uploadAsset } from '../utils/uploadAsset';
 import { logAuditEvent, buildAuditEvent } from '../utils/audit';
+import { fetchRemoteSetting } from '../utils/storage';
+import { BrandMasterPromptModal } from './brand/BrandMasterPromptModal';
 
 type ShowToast = (
   message: string,
@@ -151,6 +153,36 @@ export const BrandControlCenter: React.FC<BrandControlCenterProps> = ({
   };
 
   // ── Master System Persona Prompt ─────────────────────────────────────────────
+  const [isMasterPromptModalOpen, setIsMasterPromptModalOpen] = useState(false);
+  const [customMasterPrompts, setCustomMasterPrompts] = useState<Record<string, string | null>>(() => {
+    const initial: Record<string, string | null> = {};
+    try {
+      (['pharmacozyme', 'pz-academy', 'med-q', 'pillz', 'prescriptionz'] as const).forEach((id) => {
+        const val = localStorage.getItem(`master_system_prompt_${id}`);
+        if (val) initial[id] = val;
+      });
+    } catch {}
+    return initial;
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    const settingKey = `master_system_prompt_${activeBrandId}`;
+    fetchRemoteSetting(settingKey).then((val) => {
+      if (cancelled) return;
+      if (val) {
+        setCustomMasterPrompts((prev) => ({ ...prev, [activeBrandId]: val }));
+        try { localStorage.setItem(settingKey, val); } catch {}
+      } else {
+        setCustomMasterPrompts((prev) => ({ ...prev, [activeBrandId]: null }));
+        try { localStorage.removeItem(settingKey); } catch {}
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeBrandId]);
+
   const masterSystemPrompt = useMemo(() => {
     return `You are the Lead Content Strategist & Medical Copywriter for "${brand.name}".
 Tagline: "${brand.tagline}"
@@ -172,6 +204,9 @@ ${brand.voiceRules.map((r, i) => `${i + 1}. ${r}`).join('\n')}
 
 When generating content for this brand, always embody this tone, adhere strictly to these rules, and provide ready-to-publish scripts with visual suggestions.`;
   }, [brand]);
+
+  const activeCustomMasterPrompt = customMasterPrompts[activeBrandId] ?? null;
+  const effectiveMasterPrompt = activeCustomMasterPrompt || masterSystemPrompt;
 
   // ── Dynamic Post Prompt Builder ──────────────────────────────────────────────
   const generatedPostPrompt = useMemo(() => {
@@ -532,10 +567,10 @@ OUTPUT FORMAT:
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {onSaveToLibrary && (
               <button
-                onClick={() => handleSavePrompt(masterSystemPrompt, 'System Persona Prompt', ['persona'])}
+                onClick={() => handleSavePrompt(effectiveMasterPrompt, 'System Persona Prompt', ['persona'])}
                 className="px-3 py-2 bg-white border border-[#e9e9e7] hover:bg-[#eef2ff] text-[#4f46e5] font-label-caps text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
                 title="Save this prompt to the Content Bank"
               >
@@ -544,7 +579,18 @@ OUTPUT FORMAT:
               </button>
             )}
             <button
-              onClick={() => handleCopy(masterSystemPrompt, 'System Persona Prompt')}
+              onClick={() => setIsMasterPromptModalOpen(true)}
+              className="px-3.5 py-2 bg-white border border-[#e9e9e7] hover:bg-[#f1f1f0] text-[#1b1c1a] font-label-caps text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
+              title="View, edit, or customize the master system prompt for this brand"
+            >
+              <span className="material-symbols-outlined text-sm text-[#4f46e5]">edit_note</span>
+              <span>View & Edit Master Prompt</span>
+              {activeCustomMasterPrompt && (
+                <span className="inline-block w-2 h-2 rounded-full bg-[#4f46e5]" title="Customized prompt active" />
+              )}
+            </button>
+            <button
+              onClick={() => handleCopy(effectiveMasterPrompt, 'System Persona Prompt')}
               className="px-4 py-2 bg-[#1b1c1a] hover:bg-[#4f46e5] text-white font-label-caps text-xs font-bold rounded-lg transition-colors flex items-center gap-2 shadow-xs cursor-pointer"
             >
               <span className="material-symbols-outlined text-sm">content_copy</span>
@@ -826,6 +872,18 @@ OUTPUT FORMAT:
           </div>
         </div>
       </div>
+
+      {/* ── Brand Master Prompt View / Edit Modal ── */}
+      <BrandMasterPromptModal
+        isOpen={isMasterPromptModalOpen}
+        onClose={() => setIsMasterPromptModalOpen(false)}
+        brand={brand}
+        defaultPrompt={masterSystemPrompt}
+        showToast={showToast}
+        onCustomPromptSaved={(custom) => {
+          setCustomMasterPrompts((prev) => ({ ...prev, [activeBrandId]: custom }));
+        }}
+      />
     </div>
   );
 };
