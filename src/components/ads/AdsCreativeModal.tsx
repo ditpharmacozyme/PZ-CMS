@@ -16,21 +16,28 @@ interface AdsCreativeModalProps {
 
 export const AdsCreativeModal: React.FC<AdsCreativeModalProps> = ({ creative, sets, onSave, onClose }) => {
   const [name, setName] = useState(creative.name);
-  const [sourceUrl, setSourceUrl] = useState(creative.sourceUrl);
+  const originalUrl = (creative.sourceUrl ?? '').trim();
+  const [sourceUrl, setSourceUrl] = useState(creative.sourceUrl ?? '');
   const [setId, setSetId] = useState(creative.setId);
   const [hidden, setHidden] = useState(creative.hidden);
   const [saving, setSaving] = useState(false);
 
   const trimmedName = name.trim();
   const trimmedUrl = sourceUrl.trim();
+  const urlInvalid = trimmedUrl !== '' && !/^https?:\/\//i.test(trimmedUrl);
+  const showsImages = creative.format === 'image' || creative.format === 'carousel';
 
   const save = async () => {
-    if (!trimmedName) return;
+    if (!trimmedName || urlInvalid) return;
     const changes: AdsCreativeChanges = {};
     if (trimmedName !== creative.name) changes.name = trimmedName;
-    if (trimmedUrl !== creative.sourceUrl) changes.sourceUrl = trimmedUrl;
+    if (trimmedUrl !== originalUrl) changes.sourceUrl = trimmedUrl;
     if (setId !== creative.setId) changes.setId = setId;
     if (hidden !== creative.hidden) changes.hidden = hidden;
+    if (Object.keys(changes).length === 0) {
+      onClose();
+      return;
+    }
     setSaving(true);
     try { await onSave(changes); } finally { setSaving(false); }
   };
@@ -44,20 +51,31 @@ export const AdsCreativeModal: React.FC<AdsCreativeModalProps> = ({ creative, se
       footer={
         <div className="flex justify-end gap-2 w-full">
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" loading={saving} disabled={!trimmedName} onClick={() => void save()}>Save</Button>
+          <Button variant="primary" loading={saving} disabled={!trimmedName || urlInvalid} onClick={() => void save()}>Save</Button>
         </div>
       }
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 min-w-0">
         <div className="flex flex-col gap-3 min-w-0">
-          {creative.files.slice(0, 1).map((f) => (
-            <img
-              key={f.driveFileId}
-              src={thumbnailUrl(f, 640)}
-              alt={creative.name}
-              className="w-full max-h-64 object-contain rounded-lg bg-[#f4f4f3] border border-[#efefed]"
-            />
-          ))}
+          {showsImages ? (
+            <div className={creative.files.length > 1 ? 'grid grid-cols-2 gap-2' : ''}>
+              {creative.files.filter((f) => f.mimeType.startsWith('image/')).slice(0, 4).map((f) => (
+                <img
+                  key={f.driveFileId}
+                  src={thumbnailUrl(f, 640)}
+                  alt={f.name}
+                  className="w-full max-h-64 object-contain rounded-lg bg-[#f4f4f3] border border-[#efefed]"
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 min-w-0 p-4 rounded-lg bg-[#f4f4f3] border border-[#efefed]" data-testid="file-tile">
+              <span className="material-symbols-outlined text-2xl text-[#5f5f5b]">
+                {creative.format === 'video' ? 'movie' : creative.format === 'zip' ? 'folder_zip' : 'description'}
+              </span>
+              <span className="min-w-0 truncate text-sm text-[#1b1c1a]">{creative.files[0]?.name ?? creative.name}</span>
+            </div>
+          )}
           <ul className="flex flex-col gap-1.5 min-w-0">
             {creative.files.map((f) => (
               <li key={f.driveFileId} className="flex items-center gap-2 min-w-0">
@@ -78,7 +96,7 @@ export const AdsCreativeModal: React.FC<AdsCreativeModalProps> = ({ creative, se
 
         <div className="flex flex-col gap-4 min-w-0">
           <TextField label="Name" value={name} onChange={setName} />
-          <TextField label="Source link" hint="Optional. Where the original design lives." value={sourceUrl} onChange={setSourceUrl} placeholder="https://" />
+          <TextField label="Source link" hint="Optional. Where the original design lives." value={sourceUrl} onChange={setSourceUrl} placeholder="https://" error={urlInvalid ? 'The link must start with http:// or https://' : null} />
           {/^https?:\/\//i.test(trimmedUrl) && (
             <a
               href={trimmedUrl}

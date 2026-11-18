@@ -24,6 +24,21 @@ describe('AdsShareModal', () => {
     fireEvent.click(screen.getByRole('button', { name: /copy standing link/i }));
     await waitFor(() => expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/ads`));
   });
+  it('shows a plain message when the clipboard write fails', async () => {
+    writeText.mockRejectedValue(new Error('denied'));
+    render(<AdsShareModal level="set" targetId="s1" targetName="Set" links={[link('abc')]} onCreate={vi.fn()} onRevoke={vi.fn()} onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /copy share link abc/i }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(/copy it manually/i);
+  });
+  it('shows an inline error when create fails and guards double revoke', async () => {
+    const onRevoke = vi.fn(() => new Promise<void>(() => {}));
+    render(<AdsShareModal level="set" targetId="s1" targetName="Set" links={[link('abc')]} onCreate={vi.fn().mockRejectedValue(new Error('x'))} onRevoke={onRevoke} onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /create new link/i }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(/couldn't create/i);
+    fireEvent.click(screen.getByRole('button', { name: /revoke share link abc/i }));
+    fireEvent.click(screen.getByRole('button', { name: /revoke share link abc/i }));
+    expect(onRevoke).toHaveBeenCalledTimes(1);
+  });
   it('greys revoked links with no Copy; Revoke and Create call back', () => {
     const onRevoke = vi.fn();
     const onCreate = vi.fn();

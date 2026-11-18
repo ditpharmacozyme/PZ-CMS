@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 
@@ -8,12 +8,35 @@ interface AdsDeleteDialogProps {
   kind: 'program' | 'set';
   name: string;
   count: number;
-  onChoose: (mode: AdsDeleteMode) => void;
+  onChoose: (mode: AdsDeleteMode) => void | Promise<unknown>;
   onClose: () => void;
 }
 
 export const AdsDeleteDialog: React.FC<AdsDeleteDialogProps> = ({ kind, name, count, onChoose, onClose }) => {
   const cancelRef = useRef<HTMLButtonElement>(null);
+  const [busy, setBusy] = useState(false);
+  const busyRef = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
+
+  const choose = (mode: AdsDeleteMode) => {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    setBusy(true);
+    const release = () => {
+      busyRef.current = false;
+      if (mounted.current) setBusy(false);
+    };
+    try {
+      Promise.resolve(onChoose(mode)).then(release, release);
+    } catch {
+      release();
+    }
+  };
+
   return (
     <Modal
       isOpen
@@ -26,8 +49,8 @@ export const AdsDeleteDialog: React.FC<AdsDeleteDialogProps> = ({ kind, name, co
         <p className="text-sm text-[#1b1c1a]">This will affect {count} {count === 1 ? 'ad' : 'ads'}.</p>
         <p className="text-xs text-[#5f5f5b]">Choose what should happen to the ads inside.</p>
         <div className="flex flex-col gap-2">
-          <Button variant="danger" fullWidth onClick={() => onChoose('delete-all')}>Delete everything inside</Button>
-          <Button variant="secondary" fullWidth onClick={() => onChoose('move-to-unsorted')}>Move ads to Unsorted</Button>
+          <Button variant="danger" fullWidth disabled={busy} onClick={() => choose('delete-all')}>Delete everything inside</Button>
+          <Button variant="secondary" fullWidth disabled={busy} onClick={() => choose('move-to-unsorted')}>Move ads to Unsorted</Button>
           <button
             ref={cancelRef}
             type="button"

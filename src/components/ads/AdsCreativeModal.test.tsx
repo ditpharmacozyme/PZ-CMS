@@ -32,6 +32,31 @@ describe('AdsCreativeModal', () => {
     render(<AdsCreativeModal creative={{ ...creative, sourceUrl: 'javascript:alert(1)' }} sets={sets} onSave={vi.fn()} onClose={vi.fn()} />);
     expect(screen.queryByRole('link', { name: /Open source file/ })).toBeNull();
   });
+  it('Save just closes when nothing changed', () => {
+    const onSave = vi.fn();
+    const onClose = vi.fn();
+    render(<AdsCreativeModal creative={creative} sets={sets} onSave={onSave} onClose={onClose} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(onSave).not.toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalled();
+  });
+  it('saves a source-link-only change and rejects non-http links', () => {
+    const onSave = vi.fn();
+    render(<AdsCreativeModal creative={creative} sets={sets} onSave={onSave} onClose={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText('Source link'), { target: { value: 'ftp://x' } });
+    expect(screen.getByRole('alert')).toHaveTextContent(/http/);
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Source link'), { target: { value: ' https://x.com ' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(onSave).toHaveBeenCalledWith({ sourceUrl: 'https://x.com' });
+  });
+  it('tolerates a missing source link and shows a file tile for non-images', () => {
+    const video = { ...creative, format: 'video' as const, sourceUrl: undefined as unknown as string,
+      files: [{ driveFileId: 'v1', name: 'clip.mp4', mimeType: 'video/mp4', sizeBytes: 1 }] };
+    render(<AdsCreativeModal creative={video} sets={sets} onSave={vi.fn()} onClose={vi.fn()} />);
+    expect(screen.getByTestId('file-tile')).toHaveTextContent('clip.mp4');
+    expect(screen.queryByRole('img')).toBeNull();
+  });
   it('offers a download per file', () => {
     render(<AdsCreativeModal creative={creative} sets={sets} onSave={vi.fn()} onClose={vi.fn()} />);
     expect(screen.getByRole('link', { name: /Download hero.png/ })).toHaveAttribute('href', expect.stringContaining('id=d1'));

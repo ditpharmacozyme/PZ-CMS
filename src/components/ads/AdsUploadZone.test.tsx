@@ -104,4 +104,75 @@ describe('AdsUploadZone', () => {
     await waitFor(() => expect(onUploaded).toHaveBeenCalledTimes(1));
     expect(peak).toBe(3);
   });
+
+  it('reports each batch once: a second drop does not re-report the first batch', async () => {
+    const onUploaded = vi.fn();
+    render(<AdsUploadZone setId="s1" folderId="f1" onUploaded={onUploaded} />);
+    drop([png('first.png')]);
+    await waitFor(() => expect(onUploaded).toHaveBeenCalledTimes(1));
+    drop([png('second.png')]);
+    await waitFor(() => expect(onUploaded).toHaveBeenCalledTimes(2));
+    expect(onUploaded.mock.calls[0][0].map((i: { name: string }) => i.name)).toEqual(['first']);
+    expect(onUploaded.mock.calls[1][0].map((i: { name: string }) => i.name)).toEqual(['second']);
+  });
+
+  it('two carousel batches stay separate', async () => {
+    const onUploaded = vi.fn();
+    render(<AdsUploadZone setId="s1" folderId="f1" onUploaded={onUploaded} />);
+    drop([png('a.png'), png('b.png')]);
+    fireEvent.click(screen.getByRole('button', { name: /one carousel/i }));
+    await waitFor(() => expect(onUploaded).toHaveBeenCalledTimes(1));
+    drop([png('c.png'), png('d.png')]);
+    fireEvent.click(screen.getByRole('button', { name: /one carousel/i }));
+    await waitFor(() => expect(onUploaded).toHaveBeenCalledTimes(2));
+    expect(onUploaded.mock.calls[1][0]).toHaveLength(1);
+    expect(onUploaded.mock.calls[1][0][0].files.map((f: AdFile) => f.name)).toEqual(['c.png', 'd.png']);
+  });
+
+  it('retrying one failed file re-uploads only that file and reports all successes once', async () => {
+    const mk = (n: string) => new File(['x'], n, { type: 'application/pdf' });
+    let bFails = true;
+    upload.mockImplementation(async (f) => {
+      if (f.name === 'b.pdf' && bFails) throw new Error('boom');
+      return adFile(f);
+    });
+    const onUploaded = vi.fn();
+    render(<AdsUploadZone setId="s1" folderId="f1" onUploaded={onUploaded} />);
+    drop([mk('a.pdf'), mk('b.pdf'), mk('c.pdf')]);
+    await screen.findByText(/Upload failed/);
+    bFails = false;
+    fireEvent.click(screen.getByRole('button', { name: /retry/i }));
+    await waitFor(() => expect(onUploaded).toHaveBeenCalledTimes(1));
+    expect(upload.mock.calls.filter((c) => c[0].name === 'a.pdf')).toHaveLength(1);
+    expect(upload.mock.calls.filter((c) => c[0].name === 'b.pdf')).toHaveLength(2);
+    expect(onUploaded.mock.calls[0][0].map((i: { name: string }) => i.name)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('partial carousel: name from first dropped file, slides are the successes in order', async () => {
+    upload.mockImplementation(async (f) => {
+      if (f.name === 'a.png') throw new Error('boom');
+      return adFile(f);
+    });
+    const onUploaded = vi.fn();
+    render(<AdsUploadZone setId="s1" folderId="f1" onUploaded={onUploaded} />);
+    drop([png('a.png'), png('b.png'), png('c.png')]);
+    fireEvent.click(screen.getByRole('button', { name: /one carousel/i }));
+    await screen.findByText(/Upload failed/);
+    fireEvent.click(screen.getByRole('button', { name: /done/i }));
+    expect(onUploaded).toHaveBeenCalledTimes(1);
+    const [item] = onUploaded.mock.calls[0][0];
+    expect(item.name).toBe('a');
+    expect(item.files.map((f: AdFile) => f.name)).toEqual(['b.png', 'c.png']);
+  });
+
+  it('offers Clear when every file failed', async () => {
+    upload.mockRejectedValue(new Error('boom'));
+    const onUploaded = vi.fn();
+    render(<AdsUploadZone setId="s1" folderId="f1" onUploaded={onUploaded} />);
+    drop([png('a.png')]);
+    await screen.findByText(/Upload failed/);
+    fireEvent.click(screen.getByRole('button', { name: /clear/i }));
+    expect(screen.queryByText(/Upload failed/)).toBeNull();
+    expect(onUploaded).not.toHaveBeenCalled();
+  });
 });

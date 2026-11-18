@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { AdsFolderModal } from './AdsFolderModal';
 
 const brands = [{ id: 'b1', name: 'Brand One' }];
@@ -42,5 +42,34 @@ describe('AdsFolderModal', () => {
     fireEvent.change(screen.getByLabelText('New audience name'), { target: { value: ' Nurses ' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
     expect(onAddAudience).toHaveBeenCalledWith('Nurses');
+  });
+  it('never saves the add-audience placeholder; selects the new audience after adding', async () => {
+    const onSave = vi.fn();
+    render(<AdsFolderModal mode="set" {...base} canManageAudiences onAddAudience={vi.fn().mockResolvedValue(undefined)} onSave={onSave} />);
+    fireEvent.change(screen.getByLabelText(/^name/i), { target: { value: 'S' } });
+    fireEvent.change(screen.getByLabelText('Audience'), { target: { value: '__add__' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(onSave).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText('New audience name'), { target: { value: 'Nurses' } });
+    fireEvent.keyDown(screen.getByLabelText('New audience name'), { key: 'Enter' });
+    expect(onSave).not.toHaveBeenCalled();
+    await waitFor(() => expect(screen.getByLabelText('Audience')).toHaveValue('Nurses'));
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(onSave).toHaveBeenCalledWith({ name: 'S', audience: 'Nurses', programId: null });
+  });
+  it('shows an inline message when adding an audience fails', async () => {
+    render(<AdsFolderModal mode="set" {...base} canManageAudiences onAddAudience={vi.fn().mockRejectedValue(new Error('x'))} onSave={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText('Audience'), { target: { value: '__add__' } });
+    fireEvent.change(screen.getByLabelText('New audience name'), { target: { value: 'Nurses' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(/couldn't add/i);
+  });
+  it('requires an audience for a set when the list is empty', () => {
+    const onSave = vi.fn();
+    render(<AdsFolderModal mode="set" {...base} audiences={[]} onSave={onSave} />);
+    fireEvent.change(screen.getByLabelText(/^name/i), { target: { value: 'S' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(onSave).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert')).toHaveTextContent(/audience/i);
   });
 });
