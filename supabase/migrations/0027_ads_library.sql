@@ -125,80 +125,81 @@ on conflict (lower(name)) do nothing;
 insert into ad_sets (id, name, is_system) values ('ads-unsorted', 'Unsorted', true)
 on conflict (id) do nothing;
 
--- Public (anon) read of everything not hidden. created_by / uploaded_by are stripped.
-create or replace function ads_public_library()
+-- Public (anon) read of everything not hidden. created_by / uploaded_by and
+-- drive_folder_id (programs, sets) are stripped. Creatives keep files[].driveFileId.
+create or replace function public.ads_public_library()
 returns jsonb
 language sql
 stable
 security definer
-set search_path = public
+set search_path = ''
 as $$
   with vp as (
-    select * from ad_programs where not hidden
+    select * from public.ad_programs where not hidden
   ),
   vs as (
-    select s.* from ad_sets s
+    select s.* from public.ad_sets s
     where not s.hidden
       and (s.program_id is null or s.program_id in (select id from vp))
   ),
   vc as (
-    select c.* from ad_creatives c
+    select c.* from public.ad_creatives c
     where not c.hidden
       and c.set_id in (select id from vs)
   )
   select jsonb_build_object(
-    'programs',  coalesce((select jsonb_agg(to_jsonb(vp) - 'created_by')  from vp), '[]'::jsonb),
-    'sets',      coalesce((select jsonb_agg(to_jsonb(vs) - 'created_by')  from vs), '[]'::jsonb),
-    'creatives', coalesce((select jsonb_agg(to_jsonb(vc) - 'uploaded_by') from vc), '[]'::jsonb)
+    'programs',  coalesce((select jsonb_agg(to_jsonb(vp) - 'created_by' - 'drive_folder_id' order by vp.created_at, vp.id) from vp), '[]'::jsonb),
+    'sets',      coalesce((select jsonb_agg(to_jsonb(vs) - 'created_by' - 'drive_folder_id' order by vs.created_at, vs.id) from vs), '[]'::jsonb),
+    'creatives', coalesce((select jsonb_agg(to_jsonb(vc) - 'uploaded_by' order by vc.created_at, vc.id) from vc), '[]'::jsonb)
   );
 $$;
 
 -- Share-link scoped read. Ignores `hidden` (a link is an explicit grant).
 -- Unknown or revoked token returns three empty arrays.
-create or replace function ads_shared_scope(p_token text)
+create or replace function public.ads_shared_scope(p_token text)
 returns jsonb
 language sql
 stable
 security definer
-set search_path = public
+set search_path = ''
 as $$
   with l as (
-    select level, target_id from ad_share_links
+    select level, target_id from public.ad_share_links
     where token = p_token and revoked_at is null
   ),
   sp as (
-    select p.* from ad_programs p
+    select p.* from public.ad_programs p
     join l on l.level = 'program' and p.id = l.target_id
   ),
   ss as (
-    select s.* from ad_sets s
+    select s.* from public.ad_sets s
     where exists (select 1 from l where l.level = 'program' and s.program_id = l.target_id)
        or exists (select 1 from l where l.level = 'set' and s.id = l.target_id)
        or exists (
             select 1 from l
-            join ad_creatives c on c.id = l.target_id
+            join public.ad_creatives c on c.id = l.target_id
             where l.level = 'creative' and s.id = c.set_id
           )
   ),
   sc as (
-    select c.* from ad_creatives c
+    select c.* from public.ad_creatives c
     where exists (
             select 1 from l
             where l.level = 'program'
-              and c.set_id in (select s2.id from ad_sets s2 where s2.program_id = l.target_id)
+              and c.set_id in (select s2.id from public.ad_sets s2 where s2.program_id = l.target_id)
           )
        or exists (select 1 from l where l.level = 'set' and c.set_id = l.target_id)
        or exists (select 1 from l where l.level = 'creative' and c.id = l.target_id)
   )
   select jsonb_build_object(
-    'programs',  coalesce((select jsonb_agg(to_jsonb(sp) - 'created_by')  from sp), '[]'::jsonb),
-    'sets',      coalesce((select jsonb_agg(to_jsonb(ss) - 'created_by')  from ss), '[]'::jsonb),
-    'creatives', coalesce((select jsonb_agg(to_jsonb(sc) - 'uploaded_by') from sc), '[]'::jsonb)
+    'programs',  coalesce((select jsonb_agg(to_jsonb(sp) - 'created_by' - 'drive_folder_id' order by sp.created_at, sp.id) from sp), '[]'::jsonb),
+    'sets',      coalesce((select jsonb_agg(to_jsonb(ss) - 'created_by' - 'drive_folder_id' order by ss.created_at, ss.id) from ss), '[]'::jsonb),
+    'creatives', coalesce((select jsonb_agg(to_jsonb(sc) - 'uploaded_by' order by sc.created_at, sc.id) from sc), '[]'::jsonb)
   );
 $$;
 
-revoke all on function ads_public_library() from public;
-grant execute on function ads_public_library() to anon, authenticated;
+revoke all on function public.ads_public_library() from public;
+grant execute on function public.ads_public_library() to anon, authenticated;
 
-revoke all on function ads_shared_scope(text) from public;
-grant execute on function ads_shared_scope(text) to anon, authenticated;
+revoke all on function public.ads_shared_scope(text) from public;
+grant execute on function public.ads_shared_scope(text) to anon, authenticated;
