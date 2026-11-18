@@ -491,7 +491,8 @@ function handleAdsRenameFolder(data) {
 function handleAdsMoveFolder(data) {
   var r = adsResolveFolder(data.folderId, false);
   if (r.error) return adsError(r.error);
-  var target = adsResolveFolder(data.parentId, true);
+  // parentId is optional: omitted/empty means the Ads Library root.
+  var target = data.parentId ? adsResolveFolder(data.parentId, true) : { folder: getAdsRootFolder() };
   if (target.error) return adsError(target.error);
   // A folder can't be moved into itself or one of its own descendants.
   if (adsIsSameOrUnder(target.folder, r.folder.getId())) {

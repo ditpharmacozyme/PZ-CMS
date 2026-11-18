@@ -69,6 +69,8 @@ describe('adsDrive', () => {
     expect(lastBody().payload).toEqual({ action: 'adsRenameFolder', folderId: 'f', name: 'New' });
     await moveFolder('f', 'p');
     expect(lastBody().payload).toEqual({ action: 'adsMoveFolder', folderId: 'f', parentId: 'p' });
+    await moveFolder('f');
+    expect(lastBody().payload).toEqual({ action: 'adsMoveFolder', folderId: 'f' });
     await moveFile('x', 'f');
     expect(lastBody().payload).toEqual({ action: 'adsMoveFile', fileId: 'x', folderId: 'f' });
     await trashFile('x');

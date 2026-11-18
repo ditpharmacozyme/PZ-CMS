@@ -46,6 +46,19 @@ describe('Apps Script Ads Library actions', () => {
     expect(body).toContain('getRootFolder()');
   });
 
+  it('adsMoveFolder parentId is optional and falls back to the Ads root', () => {
+    const body = fnBody('handleAdsMoveFolder');
+    expect(body).toContain('data.parentId ?');
+    expect(body).toContain('getAdsRootFolder()');
+    expect(body).toContain('adsIsSameOrUnder(target.folder');
+    expect(body).not.toContain('`');
+    expect(body).not.toContain('${');
+  });
+
+  it('embedded script still parses', () => {
+    expect(() => new Function(code)).not.toThrow();
+  });
+
   it('documents the redeploy step', () => {
     expect(code).toContain(' * 16. ');
   });

@@ -193,9 +193,11 @@ export function useAdsLibrary(activeUserName: string) {
 
   const updateSet = useCallback(
     async (id: string, patch: Partial<Pick<AdSet, 'name' | 'audience' | 'hidden'>>): Promise<void> => {
-      if (id === UNSORTED_ID) throw new Error(UNSORTED_ERROR);
       const s = getSet(id);
       if (!s) throw new Error('Ad set not found');
+      if (id === UNSORTED_ID && patch.name !== undefined && patch.name !== s.name) {
+        throw new Error(UNSORTED_ERROR);
+      }
       if (patch.name !== undefined && patch.name !== s.name && s.driveFolderId) {
         await renameFolder(s.driveFolderId, patch.name);
       }
@@ -210,24 +212,25 @@ export function useAdsLibrary(activeUserName: string) {
       const s = getSet(id);
       if (!s) throw new Error('Ad set not found');
       if (s.programId === programId) return;
-      let folderId = s.driveFolderId;
-      const parent = parentFolderFor(programId);
-      if (!folderId) {
-        folderId = await ensureFolder(s.name, parent);
-      } else if (parent) {
-        await moveFolder(folderId, parent);
-      } else {
-        // moveFolder needs an explicit parent id and the Ads Library root id is
-        // not known to the client: recreate the folder under the root, move the
-        // files across, then trash the old (now empty) folder.
-        const newFolder = await ensureFolder(s.name);
-        for (const c of ref.current.creatives.filter((x) => x.setId === id)) {
-          for (const f of c.files) await moveFile(f.driveFileId, newFolder);
-        }
-        await trashFolder(folderId).catch(() => undefined);
-        folderId = newFolder;
+      let parent: string | undefined;
+      if (programId) {
+        parent = getProgram(programId)?.driveFolderId;
+        if (!parent) throw new Error("Target program has no Drive folder yet; can't move the ad set into it");
       }
-      await saveSet({ ...s, programId, driveFolderId: folderId, updatedAt: nowIso() });
+      // Drive first (omitted parent = Ads Library root), then the DB row.
+      // A set without a folder yet has nothing to move; its folder is created
+      // lazily under the new parent by ensureSetFolder.
+      const moved = !!s.driveFolderId;
+      if (moved) await moveFolder(s.driveFolderId, parent);
+      try {
+        await saveSet({ ...s, programId, updatedAt: nowIso() });
+      } catch (err) {
+        if (moved) {
+          const back = parentFolderFor(s.programId);
+          await moveFolder(s.driveFolderId, back).catch(() => undefined);
+        }
+        throw err;
+      }
     },
     [saveSet]
   );

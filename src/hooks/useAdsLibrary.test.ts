@@ -63,6 +63,8 @@ describe('useAdsLibrary', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(drive.ensureFolder).mockResolvedValue('newFolder');
+    vi.mocked(drive.trashFolder).mockResolvedValue(undefined);
+    vi.mocked(drive.trashFile).mockResolvedValue(undefined);
   });
 
   it('createSet does not persist when ensureFolder rejects', async () => {
@@ -108,6 +110,147 @@ describe('useAdsLibrary', () => {
     await act(async () => {
       await expect(result.current.deleteSet('ads-unsorted', 'delete-all')).rejects.toThrow("Unsorted can't be changed");
       await expect(result.current.updateSet('ads-unsorted', { name: 'Z' })).rejects.toThrow("Unsorted can't be changed");
+    });
+  });
+
+  it('deleteProgram delete-all removes sets and creatives from state and DB', async () => {
+    const { result } = await setup();
+    await act(async () => {
+      await result.current.deleteProgram('p1', 'delete-all');
+    });
+    expect(result.current.programs).toHaveLength(0);
+    expect(result.current.sets.map((s) => s.id)).toEqual(['ads-unsorted']);
+    expect(result.current.creatives).toHaveLength(0);
+    expect(storage.deleteRemoteCreative).toHaveBeenCalledWith('c1');
+    expect(storage.deleteRemoteCreative).toHaveBeenCalledWith('c2');
+    expect(storage.deleteRemoteSet).toHaveBeenCalledWith('s1');
+    expect(storage.deleteRemoteSet).toHaveBeenCalledWith('s2');
+    expect(storage.deleteRemoteProgram).toHaveBeenCalledWith('p1');
+  });
+
+  it('moveSet(null) moves the folder to root in place and updates programId', async () => {
+    const { result } = await setup();
+    await act(async () => {
+      await result.current.moveSet('s1', null);
+    });
+    expect(drive.moveFolder).toHaveBeenCalledWith('fS', undefined);
+    expect(drive.ensureFolder).not.toHaveBeenCalled();
+    expect(drive.trashFolder).not.toHaveBeenCalled();
+    expect(drive.moveFile).not.toHaveBeenCalled();
+    expect(result.current.sets.find((s) => s.id === 's1')!.programId).toBeNull();
+    expect(storage.upsertRemoteSet).toHaveBeenCalledTimes(1);
+  });
+
+  it('moveSet(program) moves the folder under the program folder', async () => {
+    const { result } = await setup();
+    await act(async () => {
+      await result.current.moveSet('s1', null);
+      await result.current.moveSet('s1', 'p1');
+    });
+    expect(drive.moveFolder).toHaveBeenLastCalledWith('fS', 'fP');
+    expect(result.current.sets.find((s) => s.id === 's1')!.programId).toBe('p1');
+  });
+
+  it('moveSet moves back and rethrows when the DB write fails', async () => {
+    const { result } = await setup();
+    vi.mocked(storage.upsertRemoteSet).mockRejectedValueOnce(new Error('db down'));
+    await act(async () => {
+      await expect(result.current.moveSet('s1', null)).rejects.toThrow('db down');
+    });
+    expect(drive.moveFolder).toHaveBeenNthCalledWith(1, 'fS', undefined);
+    expect(drive.moveFolder).toHaveBeenNthCalledWith(2, 'fS', 'fP');
+    expect(result.current.sets.find((s) => s.id === 's1')!.programId).toBe('p1');
+  });
+
+  it('moveSet into a program without a Drive folder throws', async () => {
+    vi.mocked(storage.fetchAdsSnapshot).mockResolvedValue({
+      programs: [{ ...program, driveFolderId: '' }],
+      sets: [mkSet({ programId: null })],
+      creatives: [],
+    });
+    vi.mocked(storage.fetchAdAudiences).mockResolvedValue([]);
+    vi.mocked(storage.fetchShareLinks).mockResolvedValue([]);
+    const { result } = renderHook(() => useAdsLibrary('Tester'));
+    await waitFor(() => expect(result.current.programs.length).toBe(1));
+    await act(async () => {
+      await expect(result.current.moveSet('s1', 'p1')).rejects.toThrow(/no Drive folder/);
+    });
+    expect(drive.moveFolder).not.toHaveBeenCalled();
+  });
+
+  it('deleteSet and deleteCreative report driveOk', async () => {
+    const { result } = await setup();
+    let a: { driveOk: boolean } | undefined;
+    let b: { driveOk: boolean } | undefined;
+    await act(async () => {
+      a = await result.current.deleteSet('s1', 'delete-all');
+    });
+    expect(a).toEqual({ driveOk: true });
+    await act(async () => {
+      b = await result.current.deleteCreative('c2');
+    });
+    expect(b).toEqual({ driveOk: true });
+    expect(drive.trashFile).toHaveBeenCalledWith('f2');
+    expect(drive.trashFile).toHaveBeenCalledWith('f3');
+  });
+
+  it('deleteSet and deleteCreative return driveOk:false when trash rejects', async () => {
+    const { result } = await setup();
+    vi.mocked(drive.trashFolder).mockRejectedValue(new Error('x'));
+    vi.mocked(drive.trashFile).mockRejectedValue(new Error('x'));
+    let a: { driveOk: boolean } | undefined;
+    let b: { driveOk: boolean } | undefined;
+    await act(async () => {
+      a = await result.current.deleteSet('s2', 'delete-all');
+    });
+    expect(a).toEqual({ driveOk: false });
+    expect(result.current.sets.some((s) => s.id === 's2')).toBe(false);
+    await act(async () => {
+      b = await result.current.deleteCreative('c1');
+    });
+    expect(b).toEqual({ driveOk: false });
+    expect(result.current.creatives.some((c) => c.id === 'c1')).toBe(false);
+  });
+
+  it('moveCreative moves the files and re-parents', async () => {
+    const { result } = await setup();
+    await act(async () => {
+      await result.current.moveCreative('c1', 's2');
+    });
+    expect(drive.moveFile).toHaveBeenCalledWith('f1', 'fS2');
+    expect(result.current.creatives.find((c) => c.id === 'c1')!.setId).toBe('s2');
+    expect(storage.upsertRemoteCreative).toHaveBeenCalled();
+  });
+
+  it('persists the lazily created Unsorted folder once', async () => {
+    const { result } = await setup();
+    let first = '';
+    let second = '';
+    await act(async () => {
+      first = await result.current.ensureSetFolder('ads-unsorted');
+    });
+    expect(first).toBe('newFolder');
+    expect(drive.ensureFolder).toHaveBeenCalledWith('Unsorted');
+    expect(storage.upsertRemoteSet).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'ads-unsorted', driveFolderId: 'newFolder' })
+    );
+    await act(async () => {
+      second = await result.current.ensureSetFolder('ads-unsorted');
+    });
+    expect(second).toBe('newFolder');
+    expect(drive.ensureFolder).toHaveBeenCalledTimes(1);
+  });
+
+  it('updateSet on Unsorted allows hidden/audience but blocks rename', async () => {
+    const { result } = await setup();
+    await act(async () => {
+      await result.current.updateSet('ads-unsorted', { hidden: true, audience: 'z' });
+    });
+    const u = result.current.sets.find((s) => s.id === 'ads-unsorted')!;
+    expect(u.hidden).toBe(true);
+    expect(u.audience).toBe('z');
+    await act(async () => {
+      await expect(result.current.updateSet('ads-unsorted', { name: 'Other' })).rejects.toThrow("Unsorted can't be changed");
     });
   });
 

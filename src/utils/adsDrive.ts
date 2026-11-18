@@ -47,8 +47,8 @@ export async function renameFolder(folderId: string, name: string): Promise<void
   await call({ action: 'adsRenameFolder', folderId, name });
 }
 
-export async function moveFolder(folderId: string, parentId: string): Promise<void> {
-  await call({ action: 'adsMoveFolder', folderId, parentId });
+export async function moveFolder(folderId: string, parentId?: string): Promise<void> {
+  await call({ action: 'adsMoveFolder', folderId, ...(parentId ? { parentId } : {}) });
 }
 
 export async function moveFile(fileId: string, folderId: string): Promise<void> {
