@@ -43,9 +43,13 @@ export const PublicAdsPage: React.FC<{ route: PublicRoute }> = ({ route }) => {
 
   const view = useMemo(() => {
     if (!snapshot) return snapshot;
-    const base = flat ? { ...snapshot, sets: [] } : snapshot;
-    return searchAds(base, query, filters, brandName);
+    // Search the full snapshot (it needs the sets), then drop them for the flat display.
+    const r = searchAds(snapshot, query, filters, brandName);
+    return flat ? { ...r, sets: [] } : r;
   }, [snapshot, flat, query, filters]);
+
+  const heading = flat && snapshot?.sets.length === 1 && snapshot.creatives.every(c => c.setId === snapshot.sets[0].id)
+    ? snapshot.sets[0].name : null;
 
   const searchActive = query.trim() !== '' || Object.values(filters).some(Boolean);
 
@@ -68,12 +72,17 @@ export const PublicAdsPage: React.FC<{ route: PublicRoute }> = ({ route }) => {
           filters={filters} onFiltersChange={setFilters}
           brands={brands} audiences={audiences}
         />
-        <AdsGallery
-          snapshot={view}
-          brandName={brandName}
-          selectable
-          searching={searchActive || flat}
-        />
+        {heading && <h2 className="text-sm font-bold text-[#0f0f0f]">{heading}</h2>}
+        {heading && !snapshot.creatives.length ? (
+          <p className="text-sm text-[#5f5f5b] text-center py-12">No ads in this set yet.</p>
+        ) : (
+          <AdsGallery
+            snapshot={view}
+            brandName={brandName}
+            selectable
+            searching={searchActive || flat}
+          />
+        )}
       </>
     );
   }

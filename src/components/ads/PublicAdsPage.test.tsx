@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import type { AdsSnapshot } from '../../types';
 
 vi.mock('../../utils/adsStorage', () => ({
@@ -50,6 +50,42 @@ describe('PublicAdsPage', () => {
     expect(screen.queryByText(/share/i)).toBeNull();
     expect(screen.queryByText(/hide/i)).toBeNull();
     expect(screen.queryByText(/delete/i)).toBeNull();
+    const names = screen.getAllByRole('button').map(b => b.textContent + ' ' + (b.getAttribute('aria-label') ?? '') + ' ' + (b.getAttribute('title') ?? ''));
+    expect(names.some(n => /share|hide|unhide|delete|edit|move|revoke/i.test(n))).toBe(false);
+    // only navigation (course folder) buttons on the top level
+    expect(screen.getAllByRole('button').length).toBeGreaterThan(0);
+  });
+
+  const search = (v: string) =>
+    fireEvent.change(screen.getByLabelText('Search ads'), { target: { value: v } });
+
+  it('searches a creative share link', async () => {
+    vi.mocked(fetchSharedScope).mockResolvedValue({ programs: [], sets: [set], creatives: [creative] } as unknown as AdsSnapshot);
+    render(<PublicAdsPage route={{ kind: 'share', token: 'abc12345' }} />);
+    await screen.findByText('Hero Banner');
+    search('hero');
+    expect(screen.getByText('Hero Banner')).toBeTruthy();
+    search('zzzz');
+    expect(screen.getByText('No ads match your search.')).toBeTruthy();
+  });
+
+  it('searches and filters a set share link, showing the set name', async () => {
+    vi.mocked(fetchSharedScope).mockResolvedValue({ programs: [], sets: [set], creatives: [creative] } as unknown as AdsSnapshot);
+    render(<PublicAdsPage route={{ kind: 'share', token: 'abc12345' }} />);
+    expect(await screen.findByRole('heading', { name: 'Spring Set' })).toBeTruthy();
+    search('hero');
+    expect(screen.getByText('Hero Banner')).toBeTruthy();
+    search('zzzz');
+    expect(screen.getByText('No ads match your search.')).toBeTruthy();
+    search('');
+    fireEvent.change(screen.getByLabelText('Audience'), { target: { value: 'Nurses' } });
+    expect(screen.getByText('Hero Banner')).toBeTruthy();
+  });
+
+  it('says an empty set is empty, not unavailable', async () => {
+    vi.mocked(fetchSharedScope).mockResolvedValue({ programs: [], sets: [set], creatives: [] } as unknown as AdsSnapshot);
+    render(<PublicAdsPage route={{ kind: 'share', token: 'abc12345' }} />);
+    expect(await screen.findByText('No ads in this set yet.')).toBeTruthy();
   });
 
   it('shows the empty standing copy', async () => {
