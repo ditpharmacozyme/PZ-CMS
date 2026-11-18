@@ -1,6 +1,25 @@
 import type {
-  AdFile, AdFormat, AdKind, AdShareLink, AdsSnapshot,
+  AdFile, AdFormat, AdKind, AdShareLink, AdsSnapshot, TeamMember,
 } from '../types';
+
+/**
+ * Delete permission for an ad item (course / ad set / creative): Admins, the
+ * original creator/uploader (matched by name, id or email, same as
+ * canManageTutorial) or anyone when the creator is unset (legacy data).
+ */
+export function canManageAd(
+  createdBy: string,
+  activeTeammate: TeamMember | null | undefined,
+): boolean {
+  if (!activeTeammate) return false;
+  if (activeTeammate.userRole === 'Admin') return true;
+  const creator = (createdBy || '').trim().toLowerCase();
+  if (!creator) return true;
+  const name = (activeTeammate.name || '').trim().toLowerCase();
+  const id = (activeTeammate.id || '').trim().toLowerCase();
+  const email = (activeTeammate.email || '').trim().toLowerCase();
+  return creator === name || creator === id || (Boolean(email) && creator === email);
+}
 
 export function detectFormat(files: Pick<AdFile, 'mimeType' | 'name'>[]): AdFormat {
   if (files.some(f => f.mimeType.startsWith('video/'))) return 'video';

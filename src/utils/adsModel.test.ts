@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import type { AdProgram, AdSet, AdCreative, AdsSnapshot } from '../types';
+import type { AdProgram, AdSet, AdCreative, AdsSnapshot, TeamMember } from '../types';
 import {
+  canManageAd,
   detectFormat,
   thumbnailUrl,
   downloadUrl,
@@ -160,5 +161,28 @@ describe('searchAds', () => {
   });
   it('no match returns empty arrays', () => {
     expect(ids(searchAds(snap, 'zzzz', {}, brandName))).toEqual({ p: [], s: [], c: [] });
+  });
+});
+
+describe('canManageAd', () => {
+  const tm = (over: Partial<TeamMember> = {}): TeamMember => ({
+    id: 'u1', name: 'Sarah Connor', role: 'Designer', userRole: 'Editor',
+    email: 'sarah@example.com', avatarInitials: 'SC', color: '#4f46e5', ...over,
+  });
+  it('is false without a teammate', () => {
+    expect(canManageAd('Sarah Connor', null)).toBe(false);
+    expect(canManageAd('', undefined)).toBe(false);
+  });
+  it('allows Admins on anything', () => {
+    expect(canManageAd('Someone Else', tm({ userRole: 'Admin' }))).toBe(true);
+  });
+  it('matches the creator by name, id or email, case-insensitively', () => {
+    expect(canManageAd('sarah connor', tm())).toBe(true);
+    expect(canManageAd('U1', tm())).toBe(true);
+    expect(canManageAd('SARAH@example.com', tm())).toBe(true);
+  });
+  it('denies other creators and allows legacy (empty) creators', () => {
+    expect(canManageAd('John Doe', tm())).toBe(false);
+    expect(canManageAd('  ', tm())).toBe(true);
   });
 });
