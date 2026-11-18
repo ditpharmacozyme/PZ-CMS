@@ -22,7 +22,7 @@ const FORMATS: { value: AdFormat; label: string }[] = [
   { value: 'carousel', label: 'Carousel' },
   { value: 'video', label: 'Video' },
   { value: 'zip', label: 'Zip' },
-  { value: 'other', label: 'Other' },
+  { value: 'other', label: 'File' },
 ];
 
 const selectClass =
@@ -58,9 +58,10 @@ export const AdsSearchBar: React.FC<AdsSearchBarProps> = ({
   return (
     <div className="flex flex-col gap-3 bg-white border border-[#efefed] rounded-2xl p-3">
       <div className="relative min-w-0">
-        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#5f5f5b] text-lg pointer-events-none">search</span>
+        <span aria-hidden="true" className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#5f5f5b] text-lg pointer-events-none">search</span>
         <input
           type="search"
+          aria-label="Search ads"
           value={query}
           onChange={e => onQueryChange(e.target.value)}
           placeholder="Search ads by name, course, brand or audience"

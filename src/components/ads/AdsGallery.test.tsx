@@ -10,7 +10,6 @@ vi.mock('./downloadFiles', () => ({
 
 import { AdsGallery } from './AdsGallery';
 import { AdsSearchBar } from './AdsSearchBar';
-import { downloadFiles as realDownload } from './downloadFiles';
 
 const file = (id: string, mime = 'image/png', name = `${id}.png`): AdFile => ({
   driveFileId: id, name, mimeType: mime, sizeBytes: 10,
@@ -125,19 +124,152 @@ describe('AdsSearchBar', () => {
   });
 });
 
+describe('AdsGallery behaviour (fix round 1)', () => {
+  const openSetA = () => {
+    fireEvent.click(screen.getByText('Pharma Course'));
+    fireEvent.click(screen.getByText('Course Set A'));
+  };
+
+  it('search-mode folder clicks notify the parent but do not change internal navigation', () => {
+    const onOpenProgram = vi.fn();
+    const onOpenSet = vi.fn();
+    const { rerender } = render(
+      <AdsGallery snapshot={snapshot} brandName={brandName} selectable={false} searching
+        onOpenProgram={onOpenProgram} onOpenSet={onOpenSet} />,
+    );
+    fireEvent.click(screen.getByText('Pharma Course'));
+    fireEvent.click(screen.getByText('Loose Set'));
+    expect(onOpenProgram).toHaveBeenCalledWith('p1');
+    expect(onOpenSet).toHaveBeenCalledWith('s2');
+    rerender(<AdsGallery snapshot={snapshot} brandName={brandName} selectable={false}
+      onOpenProgram={onOpenProgram} onOpenSet={onOpenSet} />);
+    // Back at the top level, not jumped into a course or set.
+    expect(screen.queryByRole('navigation', { name: 'Breadcrumb' })).toBeNull();
+    expect(screen.getByText('Loose Set')).toBeTruthy();
+    expect(screen.getByText('Pharma Course')).toBeTruthy();
+  });
+
+  it('selection persists across navigation', () => {
+    render(<AdsGallery snapshot={snapshot} brandName={brandName} selectable />);
+    openSetA();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select Banner One' }));
+    fireEvent.click(screen.getByRole('button', { name: 'All ads' }));
+    fireEvent.click(screen.getByText('Loose Set'));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select Loose Creative' }));
+    expect(screen.getByRole('button', { name: 'Download 2 selected' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'All ads' }));
+    fireEvent.click(screen.getByText('Pharma Course'));
+    fireEvent.click(screen.getByText('Course Set A'));
+    expect((screen.getByRole('checkbox', { name: 'Select Banner One' }) as HTMLInputElement).checked).toBe(true);
+  });
+
+  it('Select all toggles visible creatives on and off, skipping creatives with no files', () => {
+    render(<AdsGallery snapshot={snapshot} brandName={brandName} selectable />);
+    openSetA();
+    expect(screen.queryByRole('checkbox', { name: 'Select Empty Three' })).toBeNull();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select all' }));
+    expect(screen.getByRole('button', { name: 'Download 2 selected' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select all' }));
+    expect(screen.queryByRole('button', { name: /Download \d+ selected/ })).toBeNull();
+  });
+
+  it('drops selected creatives that vanish from the snapshot', () => {
+    const { rerender } = render(<AdsGallery snapshot={snapshot} brandName={brandName} selectable />);
+    openSetA();
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select Banner One' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select Carousel Two' }));
+    expect(screen.getByRole('button', { name: 'Download 2 selected' })).toBeTruthy();
+    rerender(<AdsGallery selectable brandName={brandName}
+      snapshot={{ ...snapshot, creatives: snapshot.creatives.filter(c => c.id !== 'c1') }} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Download 1 selected' }));
+    expect(downloadSpy.mock.calls[0][0].map(f => f.driveFileId)).toEqual(['f2', 'f3', 'f4']);
+  });
+
+  it('falls back to a tile when the thumbnail fails to load', () => {
+    render(<AdsGallery snapshot={snapshot} brandName={brandName} selectable={false} />);
+    openSetA();
+    const img = screen.getByAltText('Banner One');
+    expect(img.getAttribute('loading')).toBe('lazy');
+    fireEvent.error(img);
+    expect(screen.queryByAltText('Banner One')).toBeNull();
+    const card = screen.getByText('Banner One').closest('[data-testid="creative-card"]') as HTMLElement;
+    expect(within(card).getByTestId('creative-placeholder')).toBeTruthy();
+    expect(within(card).getByText('Preview unavailable')).toBeTruthy();
+  });
+
+  it('shows format badges and a generic tile (no thumbnail attempt) for zip files', () => {
+    const zipSnap: AdsSnapshot = {
+      programs: [],
+      sets: [snapshot.sets[1]],
+      creatives: [
+        { ...snapshot.creatives[3], id: 'z1', name: 'Zip Pack', format: 'zip', files: [file('z', 'application/zip', 'pack.zip')] },
+        { ...snapshot.creatives[3], id: 'v1', name: 'Video Ad', format: 'video', files: [file('v', 'video/mp4', 'v.mp4')] },
+        { ...snapshot.creatives[3], id: 'o1', name: 'Other Doc', format: 'other', files: [file('o', 'application/pdf', 'd.pdf')] },
+      ],
+    };
+    render(<AdsGallery snapshot={zipSnap} brandName={brandName} selectable={false} />);
+    fireEvent.click(screen.getByText('Loose Set'));
+    const zipCard = screen.getByText('Zip Pack').closest('[data-testid="creative-card"]') as HTMLElement;
+    expect(within(zipCard).queryByRole('img')).toBeNull();
+    expect(within(zipCard).getByText('Zip')).toBeTruthy();
+    expect(within(zipCard).getByTestId('creative-placeholder')).toBeTruthy();
+    const videoCard = screen.getByText('Video Ad').closest('[data-testid="creative-card"]') as HTMLElement;
+    expect(within(videoCard).getByText('Video')).toBeTruthy();
+    const otherCard = screen.getByText('Other Doc').closest('[data-testid="creative-card"]') as HTMLElement;
+    expect(within(otherCard).getByText('File')).toBeTruthy();
+  });
+
+  it('current-location crumb is not a button and is marked as current', () => {
+    render(<AdsGallery snapshot={snapshot} brandName={brandName} selectable={false} />);
+    fireEvent.click(screen.getByText('Pharma Course'));
+    const current = within(screen.getByRole('navigation', { name: 'Breadcrumb' })).getByText('Pharma Course');
+    expect(current.tagName).toBe('SPAN');
+    expect(current.getAttribute('aria-current')).toBe('page');
+  });
+});
+
 describe('downloadFiles', () => {
-  it('clicks one anchor per file', async () => {
+  const hrefOf = (id: string) => `https://drive.google.com/uc?export=download&id=${id}`;
+
+  it('clicks one anchor per file in order, with download attr, removing each anchor', async () => {
     const actual = await vi.importActual<typeof import('./downloadFiles')>('./downloadFiles');
-    expect(realDownload).toBeDefined();
+    const seen: { href: string; download: string; inDom: boolean }[] = [];
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      seen.push({ href: this.href, download: this.getAttribute('download') ?? '', inDom: document.body.contains(this) });
+    });
+    const append = vi.spyOn(document.body, 'appendChild');
+    await actual.downloadFiles([file('a'), file('b')], 0);
+    expect(seen.map(s => s.href)).toEqual([hrefOf('a'), hrefOf('b')]);
+    expect(seen.map(s => s.download)).toEqual(['a.png', 'b.png']);
+    expect(seen.every(s => s.inDom)).toBe(true);
+    expect(append).toHaveBeenCalledTimes(2);
+    expect(document.querySelectorAll('a[download]').length).toBe(0);
+    click.mockRestore();
+    append.mockRestore();
+  });
+
+  it('removes the anchor even when click throws', async () => {
+    const actual = await vi.importActual<typeof import('./downloadFiles')>('./downloadFiles');
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => { throw new Error('blocked'); });
+    await expect(actual.downloadFiles([file('a')], 0)).rejects.toThrow('blocked');
+    expect(document.querySelectorAll('a[download]').length).toBe(0);
+    click.mockRestore();
+  });
+
+  it('ignores an overlapping call while a run is in progress', async () => {
+    const actual = await vi.importActual<typeof import('./downloadFiles')>('./downloadFiles');
     const clicks: string[] = [];
-    const spy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
       clicks.push(this.href);
     });
-    await actual.downloadFiles([file('a'), file('b')], 0);
-    expect(clicks).toEqual([
-      'https://drive.google.com/uc?export=download&id=a',
-      'https://drive.google.com/uc?export=download&id=b',
-    ]);
-    spy.mockRestore();
+    const first = actual.downloadFiles([file('a'), file('b')], 5);
+    const second = actual.downloadFiles([file('c')], 5);
+    expect(second).toBe(first);
+    await first;
+    expect(clicks).toEqual([hrefOf('a'), hrefOf('b')]);
+    // A new run is allowed once the previous one finished.
+    await actual.downloadFiles([file('c')], 0);
+    expect(clicks[2]).toBe(hrefOf('c'));
+    click.mockRestore();
   });
 });

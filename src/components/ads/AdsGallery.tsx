@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import type { AdCreative, AdFormat, AdProgram, AdSet, AdsSnapshot } from '../../types';
 import { thumbnailUrl } from '../../utils/adsModel';
 import { downloadFiles } from './downloadFiles';
@@ -69,6 +69,9 @@ const CreativeCard: React.FC<{
 }> = ({ creative, selectable, selected, onToggle, onOpen, actions }) => {
   const [broken, setBroken] = useState(false);
   const first = creative.files[0];
+  const firstId = first?.driveFileId;
+  useEffect(() => { setBroken(false); }, [firstId]);
+  const canSelect = selectable && creative.files.length > 0;
   const showThumb = !!first && HAS_THUMB.includes(creative.format) && !broken;
 
   return (
@@ -99,7 +102,7 @@ const CreativeCard: React.FC<{
             {creative.files.length} slides
           </span>
         )}
-        {selectable && (
+        {canSelect && (
           <label className="absolute top-1 right-1 w-[38px] h-[38px] flex items-center justify-center cursor-pointer">
             <input
               type="checkbox"
@@ -112,14 +115,20 @@ const CreativeCard: React.FC<{
         )}
       </div>
       <div className="flex items-center gap-2 p-3 min-w-0">
-        <button
-          type="button"
-          onClick={onOpen}
-          className="flex-1 min-w-0 min-h-[38px] text-left text-sm font-bold text-[#1b1c1a] truncate cursor-pointer"
-          title={creative.name}
-        >
-          {creative.name}
-        </button>
+        {onOpen ? (
+          <button
+            type="button"
+            onClick={onOpen}
+            className="flex-1 min-w-0 min-h-[38px] text-left text-sm font-bold text-[#1b1c1a] truncate cursor-pointer"
+            title={creative.name}
+          >
+            {creative.name}
+          </button>
+        ) : (
+          <span className="flex-1 min-w-0 text-sm font-bold text-[#1b1c1a] truncate" title={creative.name}>
+            {creative.name}
+          </span>
+        )}
         <button
           type="button"
           aria-label={`Download ${creative.name}`}
@@ -156,7 +165,10 @@ export const AdsGallery: React.FC<AdsGalleryProps> = ({
     return (
       <FolderCard key={p.id} icon="school" title={p.name}
         subtitle={`${brandName(p.brandId)} · ${n} ad set${n === 1 ? '' : 's'}`}
-        onOpen={() => { setProgramId(p.id); setSetId(null); onOpenProgram?.(p.id); }}
+        onOpen={() => {
+          if (!searching) { setProgramId(p.id); setSetId(null); }
+          onOpenProgram?.(p.id);
+        }}
         actions={renderActions?.('program', p.id)} />
     );
   };
@@ -165,14 +177,17 @@ export const AdsGallery: React.FC<AdsGalleryProps> = ({
     return (
       <FolderCard key={s.id} icon="folder" title={s.name}
         subtitle={`${s.audience || 'Any audience'} · ${n} ad${n === 1 ? '' : 's'}`}
-        onOpen={() => { setSetId(s.id); onOpenSet?.(s.id); }}
+        onOpen={() => {
+          if (!searching) setSetId(s.id);
+          onOpenSet?.(s.id);
+        }}
         actions={renderActions?.('set', s.id)} />
     );
   };
 
   const visibleCreatives: AdCreative[] = useMemo(() => {
-    if (searching) return creatives;
-    return adSet ? creativesOf(adSet.id) : [];
+    const list = searching ? creatives : adSet ? creativesOf(adSet.id) : [];
+    return list.filter(c => c.files.length > 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searching, creatives, adSet]);
 
@@ -191,9 +206,9 @@ export const AdsGallery: React.FC<AdsGalleryProps> = ({
       return next;
     });
 
-  const selectedCount = creatives.filter(c => selected.has(c.id)).length;
+  const selectedCount = creatives.filter(c => c.files.length > 0 && selected.has(c.id)).length;
   const downloadSelected = () =>
-    void downloadFiles(creatives.filter(c => selected.has(c.id)).flatMap(c => c.files));
+    void downloadFiles(creatives.filter(c => c.files.length > 0 && selected.has(c.id)).flatMap(c => c.files));
 
   const creativeGrid = (list: AdCreative[]) => (
     <div className={GRID}>
@@ -246,13 +261,15 @@ export const AdsGallery: React.FC<AdsGalleryProps> = ({
           {program && (
             <>
               <Icon name="chevron_right" className="text-base" />
-              <button type="button" className={crumb} disabled={!adSet} onClick={() => setSetId(null)}>{program.name}</button>
+              {adSet
+                ? <button type="button" className={crumb} onClick={() => setSetId(null)}>{program.name}</button>
+                : <span aria-current="page" className="px-2 text-xs font-bold text-[#0f0f0f]">{program.name}</span>}
             </>
           )}
           {adSet && (
             <>
               <Icon name="chevron_right" className="text-base" />
-              <span className="px-2 text-xs font-bold text-[#0f0f0f]">{adSet.name}</span>
+              <span aria-current="page" className="px-2 text-xs font-bold text-[#0f0f0f]">{adSet.name}</span>
             </>
           )}
         </nav>
