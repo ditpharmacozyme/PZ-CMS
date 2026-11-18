@@ -341,13 +341,14 @@ function isUnderManagedFolder(file) {
       // folder literally named "constructor" / "__proto__" / "hasOwnProperty"
       // as a match via Object.prototype.
       var name = folder.getName();
-      if (name === DRIVE_FOLDER_NAME || name === "Research & Plans" || name === "Ads Library") return true;
+      if (name === DRIVE_FOLDER_NAME || name === "Research & Plans") return true;
       var up = folder.getParents();
       while (up.hasNext()) nextLevel.push(up.next());
     }
     level = nextLevel;
   }
-  return false;
+  // Ads Library files are managed too, matched by folder ID (never by name).
+  return isUnderAdsRoot(file);
 }
 
 // ---------------------------------------------------------------------------
@@ -389,9 +390,21 @@ function getAdsRootFolder() {
   }
   var folders = DriveApp.getFoldersByName(ADS_ROOT_FOLDER_NAME);
   var root = null;
+  var myDriveId = DriveApp.getRootFolder().getId();
+  var ownerEmail = Session.getEffectiveUser().getEmail();
   while (folders.hasNext()) {
     var candidate = folders.next();
-    if (!candidate.isTrashed()) { root = candidate; break; }
+    if (candidate.isTrashed()) continue;
+    // Only adopt a folder the script owner owns that sits at My Drive top
+    // level; a same-named folder shared by someone else is never trusted.
+    var owner = candidate.getOwner();
+    if (!owner || owner.getEmail() !== ownerEmail) continue;
+    var atTop = false;
+    var ps = candidate.getParents();
+    while (ps.hasNext()) { if (ps.next().getId() === myDriveId) atTop = true; }
+    if (!atTop) continue;
+    root = candidate;
+    break;
   }
   if (!root) root = DriveApp.createFolder(ADS_ROOT_FOLDER_NAME);
   props.setProperty(ADS_ROOT_PROP, root.getId());

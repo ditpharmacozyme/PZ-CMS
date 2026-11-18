@@ -16,18 +16,31 @@ async function call(payload: Record<string, unknown>): Promise<Record<string, an
   });
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(body?.error || body?.data?.error || `Request failed (${res.status})`);
+    throw new Error(body?.message || body?.error || body?.data?.error || `Request failed (${res.status})`);
   }
   const data = body?.data ?? {};
   if (data.status === 'error') {
     throw new Error(data.error || 'Apps Script request failed');
   }
+  // A non-JSON script reply (e.g. a Google sign-in page) is wrapped by the
+  // proxy as { data: { text } } with HTTP 200 — never treat that as success.
+  if (data.status !== 'success') {
+    throw new Error(data.error || UNEXPECTED_REPLY);
+  }
   return data;
+}
+
+const UNEXPECTED_REPLY =
+  'Google Apps Script returned an unexpected reply — redeploy the script / re-authorize it in Integrations';
+
+function requireString(value: unknown): string {
+  if (typeof value !== 'string' || !value) throw new Error(UNEXPECTED_REPLY);
+  return value;
 }
 
 export async function ensureFolder(name: string, parentId?: string): Promise<string> {
   const data = await call({ action: 'adsEnsureFolder', name, ...(parentId ? { parentId } : {}) });
-  return data.folderId as string;
+  return requireString(data.folderId);
 }
 
 export async function renameFolder(folderId: string, name: string): Promise<void> {
@@ -44,15 +57,15 @@ export async function moveFile(fileId: string, folderId: string): Promise<void> 
 
 export async function createUploadSession(args: { folderId: string; fileName: string; mimeType: string }): Promise<string> {
   const data = await call({ action: 'adsCreateUploadSession', ...args, origin: window.location.origin });
-  return data.sessionUrl as string;
+  return requireString(data.sessionUrl);
 }
 
 export async function finalizeFile(args: { folderId: string; fileName: string; fileId?: string }): Promise<AdFile> {
   const data = await call({ action: 'adsFinalizeFile', ...args });
   return {
-    driveFileId: data.fileId,
-    name: data.name,
-    mimeType: data.mimeType,
+    driveFileId: requireString(data.fileId),
+    name: requireString(data.name),
+    mimeType: requireString(data.mimeType),
     sizeBytes: Number(data.sizeBytes) || 0,
   };
 }

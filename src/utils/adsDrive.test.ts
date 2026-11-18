@@ -44,8 +44,23 @@ describe('adsDrive', () => {
   });
 
   it('rejects on a non-ok HTTP response', async () => {
-    fetchMock.mockReturnValue(Promise.resolve({ ok: false, status: 502, json: () => Promise.resolve({ error: 'bad gateway' }) }));
+    fetchMock.mockReturnValue(Promise.resolve({ ok: false, status: 502, json: () => Promise.resolve({ status: 'error', message: 'bad gateway' }) }));
     await expect(trashFile('a')).rejects.toThrow('bad gateway');
+  });
+
+  it('rejects when the proxy wraps a non-JSON reply as { data: { text } }', async () => {
+    fetchMock.mockReturnValue(ok({ text: '<html>Sign in</html>' }));
+    await expect(ensureFolder('x')).rejects.toThrow(/unexpected reply/);
+    await expect(createUploadSession({ folderId: 'f', fileName: 'a', mimeType: 'image/png' })).rejects.toThrow(/unexpected reply/);
+    await expect(renameFolder('f', 'n')).rejects.toThrow(/unexpected reply/);
+    await expect(trashFolder('f')).rejects.toThrow(/unexpected reply/);
+  });
+
+  it('rejects a success reply missing folderId / sessionUrl / file fields', async () => {
+    fetchMock.mockReturnValue(ok({ status: 'success' }));
+    await expect(ensureFolder('x')).rejects.toThrow(/unexpected reply/);
+    await expect(createUploadSession({ folderId: 'f', fileName: 'a', mimeType: 'image/png' })).rejects.toThrow(/unexpected reply/);
+    await expect(finalizeFile({ folderId: 'f', fileName: 'a' })).rejects.toThrow(/unexpected reply/);
   });
 
   it('rename/move/trash send the right payloads', async () => {
