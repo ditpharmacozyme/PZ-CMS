@@ -150,7 +150,7 @@ as $$
   select jsonb_build_object(
     'programs',  coalesce((select jsonb_agg(to_jsonb(vp) - 'created_by' - 'drive_folder_id' order by vp.created_at, vp.id) from vp), '[]'::jsonb),
     'sets',      coalesce((select jsonb_agg(to_jsonb(vs) - 'created_by' - 'drive_folder_id' order by vs.created_at, vs.id) from vs), '[]'::jsonb),
-    'creatives', coalesce((select jsonb_agg(to_jsonb(vc) - 'uploaded_by' order by vc.created_at, vc.id) from vc), '[]'::jsonb)
+    'creatives', coalesce((select jsonb_agg(to_jsonb(vc) - 'uploaded_by' - 'source_url' order by vc.created_at, vc.id) from vc), '[]'::jsonb)
   );
 $$;
 
@@ -194,7 +194,7 @@ as $$
   select jsonb_build_object(
     'programs',  coalesce((select jsonb_agg(to_jsonb(sp) - 'created_by' - 'drive_folder_id' order by sp.created_at, sp.id) from sp), '[]'::jsonb),
     'sets',      coalesce((select jsonb_agg(to_jsonb(ss) - 'created_by' - 'drive_folder_id' order by ss.created_at, ss.id) from ss), '[]'::jsonb),
-    'creatives', coalesce((select jsonb_agg(to_jsonb(sc) - 'uploaded_by' order by sc.created_at, sc.id) from sc), '[]'::jsonb)
+    'creatives', coalesce((select jsonb_agg(to_jsonb(sc) - 'uploaded_by' - 'source_url' order by sc.created_at, sc.id) from sc), '[]'::jsonb)
   );
 $$;
 

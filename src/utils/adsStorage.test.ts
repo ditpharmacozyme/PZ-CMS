@@ -35,6 +35,7 @@ describe('adsStorage mappers', () => {
       files: [{ driveFileId: 'f' }]
     });
     expect(c.uploadedBy).toBe('');
+    expect(c.sourceUrl).toBe('');
     expect(c.hidden).toBe(false);
     const row = creativeToRow(c);
     expect(row.id).toBe('c1');

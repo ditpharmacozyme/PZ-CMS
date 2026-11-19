@@ -11,10 +11,10 @@ insert into ad_programs (id, name, created_by, drive_folder_id) values ('verify-
 insert into ad_sets (id, program_id, name, hidden, created_by, drive_folder_id) values
   ('verify-set',  'verify-prog', 'VERIFY hidden set',  true,  'secret@example.com', 'secret-folder'),
   ('verify-vset', 'verify-prog', 'VERIFY visible set', false, 'secret@example.com', 'secret-folder');
-insert into ad_creatives (id, set_id, name, hidden, uploaded_by) values
-  ('verify-cr',   'verify-set',  'VERIFY creative in hidden set', false, 'secret@example.com'),
-  ('verify-hcr',  'verify-vset', 'VERIFY hidden creative',        true,  'secret@example.com'),
-  ('verify-vcr',  'verify-vset', 'VERIFY visible creative',       false, 'secret@example.com');
+insert into ad_creatives (id, set_id, name, hidden, uploaded_by, source_url) values
+  ('verify-cr',   'verify-set',  'VERIFY creative in hidden set', false, 'secret@example.com', 'https://www.canva.com/design/secret-source'),
+  ('verify-hcr',  'verify-vset', 'VERIFY hidden creative',        true,  'secret@example.com', 'https://www.canva.com/design/secret-source'),
+  ('verify-vcr',  'verify-vset', 'VERIFY visible creative',       false, 'secret@example.com', 'https://www.canva.com/design/secret-source');
 -- B) HIDDEN program whose set (and its creative) are themselves not hidden.
 insert into ad_programs (id, name, hidden) values ('verify-hprog', 'VERIFY hidden program', true);
 insert into ad_sets (id, program_id, name, hidden) values ('verify-hset', 'verify-hprog', 'VERIFY set under hidden program', false);
@@ -82,13 +82,17 @@ select (ads_shared_scope('verify-token')::text like '%created_by%'
      or ads_shared_scope('verify-token')::text like '%uploaded_by%'
      or ads_shared_scope('verify-token')::text like '%drive_folder_id%'
      or ads_shared_scope('verify-token')::text like '%secret@example.com%'
-     or ads_shared_scope('verify-token')::text like '%secret-folder%') as leaks_author_shared;
+     or ads_shared_scope('verify-token')::text like '%secret-folder%'
+     or ads_shared_scope('verify-token')::text like '%source_url%'
+     or ads_shared_scope('verify-token')::text like '%secret-source%') as leaks_author_shared;
 -- EXPECT: false
 select (ads_public_library()::text like '%created_by%'
      or ads_public_library()::text like '%uploaded_by%'
      or ads_public_library()::text like '%drive_folder_id%'
      or ads_public_library()::text like '%secret@example.com%'
-     or ads_public_library()::text like '%secret-folder%') as leaks_author_public;
+     or ads_public_library()::text like '%secret-folder%'
+     or ads_public_library()::text like '%source_url%'
+     or ads_public_library()::text like '%secret-source%') as leaks_author_public;
 -- EXPECT: false
 
 -- 5. program-level link returns program + sets + creatives (even hidden)
