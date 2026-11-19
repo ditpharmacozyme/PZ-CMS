@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
+import { AdsStatus } from './AdsStatus';
 import { SelectField, TextField } from '../ui/Field';
 import { adSetOptions, thumbnailUrl } from '../../utils/adsModel';
 import { fileLink } from './downloadFiles';
@@ -24,6 +25,8 @@ export const AdsCreativeModal: React.FC<AdsCreativeModalProps> = ({ creative, se
   const [setId, setSetId] = useState(creative.setId);
   const [hidden, setHidden] = useState(creative.hidden);
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
+  savingRef.current = saving; // Modal caches its key handler, so read the latest value through a ref
 
   const trimmedName = name.trim();
   const trimmedUrl = sourceUrl.trim();
@@ -48,12 +51,13 @@ export const AdsCreativeModal: React.FC<AdsCreativeModalProps> = ({ creative, se
   return (
     <Modal
       isOpen
-      onClose={onClose}
+      onClose={() => { if (!savingRef.current) onClose(); }}
       title="Edit ad"
       size="md"
       footer={
-        <div className="flex justify-end gap-2 w-full">
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+        <div className="flex flex-wrap items-center justify-end gap-2 w-full">
+          {saving && <AdsStatus className="mr-auto">Saving…</AdsStatus>}
+          <Button variant="secondary" disabled={saving} onClick={onClose}>Cancel</Button>
           <Button variant="primary" loading={saving} disabled={!trimmedName || urlInvalid} onClick={() => void save()}>Save</Button>
         </div>
       }

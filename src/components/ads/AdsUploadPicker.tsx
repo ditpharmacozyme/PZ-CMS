@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, type ModalDirtyPrompt } from '../ui/Modal';
 import { Button } from '../ui/Button';
+import { AdsStatus } from './AdsStatus';
 import { SelectField } from '../ui/Field';
 import { useConfirm } from '../ui/ConfirmDialog';
 import { AdsUploadZone, type AdsUploadedItem } from './AdsUploadZone';
@@ -75,6 +76,7 @@ export const AdsUploadPicker: React.FC<AdsUploadPickerProps> = ({
           disabled={!!folderId}
           options={adSetOptions(sets, programs)}
         />
+        {preparing && <AdsStatus>Getting the Drive folder ready…</AdsStatus>}
         {error && <p role="alert" className="text-xs text-[#b3261e]">{error}</p>}
         {folderId && (
           <AdsUploadZone

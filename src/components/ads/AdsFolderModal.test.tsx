@@ -72,4 +72,20 @@ describe('AdsFolderModal', () => {
     expect(onSave).not.toHaveBeenCalled();
     expect(screen.getByRole('alert')).toHaveTextContent(/audience/i);
   });
+  it('shows a Drive status and disables Cancel while creating a course', () => {
+    const onClose = vi.fn();
+    render(<AdsFolderModal mode="program" {...base} onClose={onClose} onSave={() => new Promise(() => {})} />);
+    fireEvent.change(screen.getByLabelText(/name/i), { target: { value: 'New' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(screen.getByRole('status')).toHaveTextContent('Creating the folder in Google Drive… this can take a few seconds.');
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(onClose).not.toHaveBeenCalled();
+  });
+  it('shows "Saving…" while editing', () => {
+    render(<AdsFolderModal mode="program" {...base} initial={{ name: 'Old' }} onSave={() => new Promise(() => {})} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(screen.getByRole('status')).toHaveTextContent('Saving…');
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
+  });
 });

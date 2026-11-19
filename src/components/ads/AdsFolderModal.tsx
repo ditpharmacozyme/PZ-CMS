@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
+import { AdsStatus } from './AdsStatus';
 import { SelectField, TextField } from '../ui/Field';
 import type { AdAudience, AdKind } from '../../types';
 
@@ -44,6 +45,8 @@ export const AdsFolderModal: React.FC<AdsFolderModalProps> = (props) => {
   const [addingAudience, setAddingAudience] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
+  savingRef.current = saving; // Modal caches its key handler, so read the latest value through a ref
 
   const addAudience = async () => {
     const n = newAudience.trim();
@@ -88,12 +91,13 @@ export const AdsFolderModal: React.FC<AdsFolderModalProps> = (props) => {
   return (
     <Modal
       isOpen
-      onClose={onClose}
+      onClose={() => { if (!savingRef.current) onClose(); }}
       title={props.mode === 'program' ? (init.name ? 'Edit course' : 'New course') : (init.name ? 'Edit ad set' : 'New ad set')}
       size="sm"
       footer={
-        <div className="flex justify-end gap-2 w-full">
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+        <div className="flex flex-wrap items-center justify-end gap-2 w-full">
+          {saving && <AdsStatus className="mr-auto">{init.name ? 'Saving…' : 'Creating the folder in Google Drive… this can take a few seconds.'}</AdsStatus>}
+          <Button variant="secondary" disabled={saving} onClick={onClose}>Cancel</Button>
           <Button variant="primary" loading={saving} onClick={() => void save()}>Save</Button>
         </div>
       }
