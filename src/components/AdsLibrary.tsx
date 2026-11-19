@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import type { AdShareLink, AdsSnapshot, BrandId, TeamMember } from '../types';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { useBrands } from '../context/BrandsContext';
@@ -15,6 +15,7 @@ import { AdsShareModal } from './ads/AdsShareModal';
 import { AdsDeleteDialog } from './ads/AdsDeleteDialog';
 import { AdsItemActions } from './ads/AdsItemActions';
 import { AdsUploadPicker } from './ads/AdsUploadPicker';
+import { AdsStatus } from './ads/AdsStatus';
 
 interface AdsLibraryProps {
   activeTeammate: TeamMember | null | undefined;
@@ -73,6 +74,7 @@ const AdsLibraryInner: React.FC<AdsLibraryProps> = ({ activeTeammate, selectedBr
   const [sharing, setSharing] = useState<{ level: AdShareLink['level']; id: string; name: string } | null>(null);
   const [deleting, setDeleting] = useState<{ kind: 'program' | 'set'; id: string } | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [inFlight, setInFlight] = useState(0);
 
   const brandOptions = useMemo(
     () => [{ id: 'shared', name: 'Shared' }, ...Object.values(brands).map((b) => ({ id: b.id as string, name: b.name }))],
@@ -95,12 +97,22 @@ const AdsLibraryInner: React.FC<AdsLibraryProps> = ({ activeTeammate, selectedBr
 
   const isEmpty = ads.programs.length === 0 && ads.creatives.length === 0 && ads.sets.every((s) => s.isSystem);
 
+  /** Counts a mutation as in flight until it settles (resolve or reject). */
+  const track = useCallback(async <T,>(fn: () => Promise<T>): Promise<T> => {
+    setInFlight((n) => n + 1);
+    try {
+      return await fn();
+    } finally {
+      setInFlight((n) => Math.max(0, n - 1));
+    }
+  }, []);
+
   const showError = (message: string) => showToast(message, undefined, 8000, 'error');
 
   /** Runs a mutation and reports failure with a plain toast. */
   const attempt = async (fn: () => Promise<unknown>, success?: string): Promise<boolean> => {
     try {
-      await fn();
+      await track(fn);
       if (success) showToast(success);
       return true;
     } catch (err) {
@@ -136,7 +148,7 @@ const AdsLibraryInner: React.FC<AdsLibraryProps> = ({ activeTeammate, selectedBr
     });
     if (!ok) return;
     try {
-      afterDelete(await ads.deleteCreative(id));
+      afterDelete(await track(() => ads.deleteCreative(id)));
     } catch (err) {
       showError(errorMessage(err));
     }
@@ -170,14 +182,16 @@ const AdsLibraryInner: React.FC<AdsLibraryProps> = ({ activeTeammate, selectedBr
   const onUploaded = async (setId: string, items: { name: string; files: import('../types').AdFile[] }[]) => {
     let added = 0;
     let failure: unknown = null;
-    for (const it of items) {
-      try {
-        await ads.addCreative({ setId, name: it.name, files: it.files });
-        added++;
-      } catch (err) {
-        failure = err; // surfaced as a toast once
+    await track(async () => {
+      for (const it of items) {
+        try {
+          await ads.addCreative({ setId, name: it.name, files: it.files });
+          added++;
+        } catch (err) {
+          failure = err; // surfaced as a toast once
+        }
       }
-    }
+    });
     if (added < items.length) showError(errorMessage(failure));
     if (added > 0) showToast(`Added ${added} ad${added === 1 ? '' : 's'}`);
   };
@@ -210,6 +224,10 @@ const AdsLibraryInner: React.FC<AdsLibraryProps> = ({ activeTeammate, selectedBr
           <Button variant="primary" icon="upload" onClick={() => setUploading(true)}>Upload</Button>
         </div>
       </div>
+
+      {inFlight > 0 && (
+        <AdsStatus className="px-3 py-2 border border-[#e9e9e7] rounded-lg bg-white">Working with Google Drive…</AdsStatus>
+      )}
 
       <AdsSearchBar
         query={query}
@@ -320,9 +338,9 @@ const AdsLibraryInner: React.FC<AdsLibraryProps> = ({ activeTeammate, selectedBr
           onChoose={async (mode) => {
             try {
               afterDelete(
-                deleting.kind === 'program'
-                  ? await ads.deleteProgram(deleting.id, mode)
-                  : await ads.deleteSet(deleting.id, mode)
+                await track(() => deleting.kind === 'program'
+                  ? ads.deleteProgram(deleting.id, mode)
+                  : ads.deleteSet(deleting.id, mode))
               );
             } catch (err) {
               showError(errorMessage(err));

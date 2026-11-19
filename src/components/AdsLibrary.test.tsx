@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrandsProvider } from '../context/BrandsContext';
 import { ConfirmProvider } from './ui/ConfirmDialog';
 import { AdsLibrary } from './AdsLibrary';
@@ -275,5 +275,29 @@ describe('AdsLibrary', () => {
     fireEvent.click(await screen.findByRole('button', { name: /zone folder-1/i }));
     await waitFor(() => expect(toast).toHaveBeenCalledWith('Added 1 ad'));
     expect(toast).toHaveBeenCalledWith('Something went wrong. Please try again.', undefined, 8000, 'error');
+  });
+
+  it('shows the Drive working bar during a pending mutation and clears it after resolve', async () => {
+    let resolve!: (v: unknown) => void;
+    hook.value = makeHook({ createProgram: vi.fn(() => new Promise((r) => { resolve = r; })) });
+    renderLib();
+    expect(screen.queryByText('Working with Google Drive…')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /new course/i }));
+    fireEvent.change(screen.getByLabelText(/name/i), { target: { value: 'A' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(screen.getByText('Working with Google Drive…')).toBeInTheDocument());
+    await act(async () => { resolve(program()); });
+    await waitFor(() => expect(screen.queryByText('Working with Google Drive…')).toBeNull());
+  });
+
+  it('clears the Drive working bar after a rejection and still shows the error toast', async () => {
+    let reject!: (e: unknown) => void;
+    hook.value = makeHook({ sets: [adSet()], updateSet: vi.fn(() => new Promise((_, r) => { reject = r; })) });
+    const toast = renderLib(teammate({ userRole: 'Admin' }));
+    fireEvent.click(screen.getByRole('button', { name: /hide loose set/i }));
+    await waitFor(() => expect(screen.getByText('Working with Google Drive…')).toBeInTheDocument());
+    await act(async () => { reject(new Error('Drive said no')); });
+    await waitFor(() => expect(screen.queryByText('Working with Google Drive…')).toBeNull());
+    expect(toast).toHaveBeenCalledWith('Drive said no', undefined, 8000, 'error');
   });
 });

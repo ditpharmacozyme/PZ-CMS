@@ -77,4 +77,14 @@ describe('AdsUploadPicker', () => {
     fireEvent.click(prompts[prompts.length - 1]);
     await vi.waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
   });
+  it('shows a status while the Drive folder is being prepared', () => {
+    render(
+      <ConfirmProvider>
+        <AdsUploadPicker sets={sets} programs={programs} defaultSetId="ads-unsorted"
+          ensureSetFolder={() => new Promise<string>(() => {})} onUploaded={vi.fn()} onClose={vi.fn()} />
+      </ConfirmProvider>
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(screen.getByRole('status')).toHaveTextContent('Getting the Drive folder ready…');
+  });
 });
