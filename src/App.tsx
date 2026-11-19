@@ -74,6 +74,7 @@ const ContentBank = lazyNamed(() => import('./components/ContentBank'), 'Content
 const PromptsLibrary = lazyNamed(() => import('./components/PromptsLibrary'), 'PromptsLibrary');
 const ResearchPlans = lazyNamed(() => import('./components/ResearchPlans'), 'ResearchPlans');
 const TutorialsLibrary = lazyNamed(() => import('./components/TutorialsLibrary'), 'TutorialsLibrary');
+const AdsLibrary = lazyNamed(() => import('./components/AdsLibrary'), 'AdsLibrary');
 const AuditLogView = lazyNamed(() => import('./components/AuditLogView'), 'AuditLogView');
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useTeamAndAuth } from './hooks/useTeamAndAuth';
@@ -696,6 +697,9 @@ export function App() {
           )}
           {currentTab === 'tutorials' && (
             <TutorialsLibrary selectedBrandFilter={selectedBrandFilter} teamMembers={teamMembers} activeTeammate={activeTeammate} />
+          )}
+          {currentTab === 'ads' && (
+            <AdsLibrary activeTeammate={activeTeammate} selectedBrandFilter={selectedBrandFilter} showToast={showToast} />
           )}
           {currentTab === 'brand-kit' && (
             <BrandControlCenter selectedBrandFilter={selectedBrandFilter} onSelectBrandFilter={setSelectedBrandFilter} onSaveToLibrary={handleAddBankItem} showToast={showToast} />

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export type NavTab = 'my-work' | 'calendar' | 'templates' | 'brand-kit' | 'assets' | 'dashboard' | 'integrations' | 'content-bank' | 'tutorials' | 'prompts' | 'research' | 'audit';
+export type NavTab = 'my-work' | 'calendar' | 'templates' | 'brand-kit' | 'assets' | 'dashboard' | 'integrations' | 'content-bank' | 'tutorials' | 'ads' | 'prompts' | 'research' | 'audit';
 
 interface SideNavProps {
   currentTab: NavTab;
@@ -21,6 +21,7 @@ const NAV_ITEMS: NavItem[] = [
   { tab: 'calendar', label: 'Calendar', icon: 'calendar_month' },
   { tab: 'templates', label: 'Templates', icon: 'quiz' },
   { tab: 'tutorials', label: 'Tutorials', icon: 'school' },
+  { tab: 'ads', label: 'Ads Library', icon: 'photo_library' },
   { tab: 'prompts', label: 'Prompts Library', icon: 'auto_stories' },
   { tab: 'research', label: 'Research & Plans', icon: 'lightbulb' }
 ];

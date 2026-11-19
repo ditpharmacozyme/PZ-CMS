@@ -216,6 +216,76 @@ export interface Prompt {
   updatedAt: string;
 }
 
+export type AdKind = 'course' | 'workshop' | 'webinar' | 'program';
+export type AdFormat = 'image' | 'carousel' | 'video' | 'zip' | 'other';
+
+export interface AdFile {
+  driveFileId: string;
+  name: string;
+  mimeType: string;
+  sizeBytes: number;
+}
+
+export interface AdProgram {
+  id: string;
+  name: string;
+  brandId: string;
+  kind: AdKind;
+  driveFolderId: string;
+  hidden: boolean;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdSet {
+  id: string;
+  programId: string | null;
+  name: string;
+  audience: string;
+  driveFolderId: string;
+  hidden: boolean;
+  isSystem: boolean;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdCreative {
+  id: string;
+  setId: string;
+  name: string;
+  format: AdFormat;
+  files: AdFile[];
+  sourceUrl: string;
+  hidden: boolean;
+  uploadedBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdAudience {
+  id: string;
+  name: string;
+  sortOrder: number;
+}
+
+export interface AdShareLink {
+  token: string;
+  level: 'program' | 'set' | 'creative';
+  targetId: string;
+  label: string;
+  createdBy: string;
+  createdAt: string;
+  revokedAt: string | null;
+}
+
+export interface AdsSnapshot {
+  programs: AdProgram[];
+  sets: AdSet[];
+  creatives: AdCreative[];
+}
+
 export interface BrandAsset {
   id: string;
   brandId: BrandId;

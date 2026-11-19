@@ -42,6 +42,14 @@ export const GOOGLE_APPS_SCRIPT_CODE = `/**
  *     app's delete buttons and Storage Cleanup panel need. deleteFile only
  *     ever trashes files that live under "Pharmacozyme CMS Uploads" or
  *     "Research & Plans" -- anything else is refused.
+ * 16. AFTER updating this script (Ads Library release): redeploy again --
+ *     Deploy -> "Manage deployments" -> edit the active deployment -> "New
+ *     version" -> Deploy -- to activate the adsEnsureFolder / adsRenameFolder /
+ *     adsMoveFolder / adsMoveFile / adsCreateUploadSession / adsFinalizeFile /
+ *     adsTrashFile / adsTrashFolder actions. They only touch the "Ads Library"
+ *     folder tree in Drive. Uploads use the Drive REST API, so Google may ask
+ *     you to re-authorize the script (run any function once in the editor and
+ *     click "Review permissions" -> "Allow") after the redeploy.
  */
 
 // Global Configuration
@@ -119,6 +127,22 @@ function doPost(e) {
       return handleDeleteFile(data);
     } else if (action === "listManagedFiles") {
       return handleListManagedFiles();
+    } else if (action === "adsEnsureFolder") {
+      return handleAdsEnsureFolder(data);
+    } else if (action === "adsRenameFolder") {
+      return handleAdsRenameFolder(data);
+    } else if (action === "adsMoveFolder") {
+      return handleAdsMoveFolder(data);
+    } else if (action === "adsMoveFile") {
+      return handleAdsMoveFile(data);
+    } else if (action === "adsCreateUploadSession") {
+      return handleAdsCreateUploadSession(data);
+    } else if (action === "adsFinalizeFile") {
+      return handleAdsFinalizeFile(data);
+    } else if (action === "adsTrashFile") {
+      return handleAdsTrashFile(data);
+    } else if (action === "adsTrashFolder") {
+      return handleAdsTrashFolder(data);
     } else {
       throw new Error("Unknown action requested: " + action);
     }
@@ -323,7 +347,304 @@ function isUnderManagedFolder(file) {
     }
     level = nextLevel;
   }
+  // Ads Library files are managed too, matched by folder ID (never by name).
+  return isUnderAdsRoot(file);
+}
+
+// ---------------------------------------------------------------------------
+// Ads Library: folder organisation + browser-direct resumable uploads.
+// Every operation below refuses anything outside the "Ads Library" root.
+// ---------------------------------------------------------------------------
+
+var ADS_ROOT_FOLDER_NAME = "Ads Library";
+var ADS_ROOT_PROP = "ADS_ROOT_FOLDER_ID";
+
+function adsJson(obj) {
+  return ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function adsError(message) {
+  return adsJson({ status: "error", error: message });
+}
+
+function adsIsGoneError(msg) {
+  return /not found|no item|does not exist|invalid.*id/i.test(msg);
+}
+
+/**
+ * Find-or-create the "Ads Library" root folder by name ONCE, then remember its
+ * id in Script Property ADS_ROOT_FOLDER_ID so renames/duplicates never matter.
+ */
+function getAdsRootFolder() {
+  var props = PropertiesService.getScriptProperties();
+  var savedId = props.getProperty(ADS_ROOT_PROP);
+  if (savedId) {
+    try {
+      var saved = DriveApp.getFolderById(savedId);
+      if (!saved.isTrashed()) return saved;
+    } catch (err) {
+      Logger.log("Saved Ads root folder unavailable, re-resolving: " + err.toString());
+    }
+  }
+  var folders = DriveApp.getFoldersByName(ADS_ROOT_FOLDER_NAME);
+  var root = null;
+  var myDriveId = DriveApp.getRootFolder().getId();
+  var ownerEmail = Session.getEffectiveUser().getEmail();
+  while (folders.hasNext()) {
+    var candidate = folders.next();
+    if (candidate.isTrashed()) continue;
+    // Only adopt a folder the script owner owns that sits at My Drive top
+    // level; a same-named folder shared by someone else is never trusted.
+    var owner = candidate.getOwner();
+    if (!owner || owner.getEmail() !== ownerEmail) continue;
+    var atTop = false;
+    var ps = candidate.getParents();
+    while (ps.hasNext()) { if (ps.next().getId() === myDriveId) atTop = true; }
+    if (!atTop) continue;
+    root = candidate;
+    break;
+  }
+  if (!root) root = DriveApp.createFolder(ADS_ROOT_FOLDER_NAME);
+  props.setProperty(ADS_ROOT_PROP, root.getId());
+  return root;
+}
+
+/**
+ * True if the file/folder IS the Ads root or lives anywhere beneath it.
+ * Walks parents upward breadth-first with a depth cap (like isUnderManagedFolder)
+ * comparing folder ids to the saved root id.
+ */
+function isUnderAdsRoot(item) {
+  var rootId = getAdsRootFolder().getId();
+  return adsIsSameOrUnder(item, rootId);
+}
+
+function adsIsSameOrUnder(item, ancestorId) {
+  if (item.getId() === ancestorId) return true;
+  var seen = {};
+  var level = [];
+  var parents = item.getParents();
+  while (parents.hasNext()) level.push(parents.next());
+
+  for (var depth = 0; depth < 20 && level.length; depth++) {
+    var nextLevel = [];
+    for (var i = 0; i < level.length; i++) {
+      var folder = level[i];
+      var id = folder.getId();
+      if (id === ancestorId) return true;
+      if (Object.prototype.hasOwnProperty.call(seen, id)) continue;
+      seen[id] = true;
+      var up = folder.getParents();
+      while (up.hasNext()) nextLevel.push(up.next());
+    }
+    level = nextLevel;
+  }
   return false;
+}
+
+/**
+ * Resolve a folder id that must be the Ads root or inside it. Returns
+ * { folder } on success or { error } (message) otherwise.
+ */
+function adsResolveFolder(folderId, allowRoot) {
+  if (!folderId) return { error: "Missing folder id." };
+  var folder;
+  try {
+    folder = DriveApp.getFolderById(folderId);
+  } catch (err) {
+    return { error: String(err), gone: adsIsGoneError(String(err)) };
+  }
+  if (!isUnderAdsRoot(folder)) {
+    return { error: "Folder is not inside the Ads Library; refusing." };
+  }
+  if (!allowRoot && folder.getId() === getAdsRootFolder().getId()) {
+    return { error: "Refusing to modify the Ads Library root folder." };
+  }
+  return { folder: folder };
+}
+
+function handleAdsEnsureFolder(data) {
+  if (!data.name) throw new Error("Missing name in payload.");
+  var parent;
+  if (data.parentId) {
+    var r = adsResolveFolder(data.parentId, true);
+    if (r.error) return adsError(r.error);
+    parent = r.folder;
+  } else {
+    parent = getAdsRootFolder();
+  }
+  // Always a NEW folder: two ad sets with the same name must never merge.
+  var created = parent.createFolder(String(data.name));
+  return adsJson({ status: "success", folderId: created.getId() });
+}
+
+function handleAdsRenameFolder(data) {
+  if (!data.name) throw new Error("Missing name in payload.");
+  var r = adsResolveFolder(data.folderId, false);
+  if (r.error) return adsError(r.error);
+  r.folder.setName(String(data.name));
+  return adsJson({ status: "success" });
+}
+
+function handleAdsMoveFolder(data) {
+  var r = adsResolveFolder(data.folderId, false);
+  if (r.error) return adsError(r.error);
+  // parentId is optional: omitted/empty means the Ads Library root.
+  var target = data.parentId ? adsResolveFolder(data.parentId, true) : { folder: getAdsRootFolder() };
+  if (target.error) return adsError(target.error);
+  // A folder can't be moved into itself or one of its own descendants.
+  if (adsIsSameOrUnder(target.folder, r.folder.getId())) {
+    return adsError("Cannot move a folder into itself or its own subfolder.");
+  }
+  r.folder.moveTo(target.folder);
+  return adsJson({ status: "success" });
+}
+
+function handleAdsMoveFile(data) {
+  if (!data.fileId) throw new Error("Missing fileId in payload.");
+  var file;
+  try {
+    file = DriveApp.getFileById(data.fileId);
+  } catch (err) {
+    return adsError(String(err));
+  }
+  if (!isUnderAdsRoot(file)) return adsError("File is not inside the Ads Library; refusing.");
+  var target = adsResolveFolder(data.folderId, true);
+  if (target.error) return adsError(target.error);
+  file.moveTo(target.folder);
+  return adsJson({ status: "success" });
+}
+
+/**
+ * Case-insensitive response-header lookup (Drive returns "Location" but
+ * UrlFetchApp may surface a different casing).
+ */
+function adsGetHeader(headers, name) {
+  var wanted = name.toLowerCase();
+  for (var key in headers) {
+    if (Object.prototype.hasOwnProperty.call(headers, key) && key.toLowerCase() === wanted) {
+      return headers[key];
+    }
+  }
+  return null;
+}
+
+/**
+ * Start a Drive resumable upload session on behalf of the browser. The
+ * browser then PUTs the file bytes straight to the returned sessionUrl, so
+ * big videos never pass through Apps Script.
+ */
+function handleAdsCreateUploadSession(data) {
+  if (!data.fileName || !data.mimeType) throw new Error("Missing fileName or mimeType in payload.");
+  var r = adsResolveFolder(data.folderId, true);
+  if (r.error) return adsError(r.error);
+
+  var url = "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=false";
+  var headers = {
+    "Authorization": "Bearer " + ScriptApp.getOAuthToken(),
+    "X-Upload-Content-Type": String(data.mimeType)
+  };
+  var options = {
+    method: "post",
+    contentType: "application/json; charset=UTF-8",
+    headers: headers,
+    payload: JSON.stringify({ name: String(data.fileName), parents: [r.folder.getId()] }),
+    muteHttpExceptions: true
+  };
+
+  var response;
+  if (data.origin) {
+    headers["Origin"] = String(data.origin);
+    try {
+      response = UrlFetchApp.fetch(url, options);
+    } catch (originErr) {
+      // Some runtimes refuse a custom Origin header; retry without it.
+      delete headers["Origin"];
+      response = UrlFetchApp.fetch(url, options);
+    }
+  } else {
+    response = UrlFetchApp.fetch(url, options);
+  }
+
+  var code = response.getResponseCode();
+  if (code < 200 || code >= 300) {
+    return adsError("Drive refused to start the upload (HTTP " + code + "): " + response.getContentText());
+  }
+  var sessionUrl = adsGetHeader(response.getAllHeaders(), "Location");
+  if (Object.prototype.toString.call(sessionUrl) === "[object Array]") sessionUrl = sessionUrl[0];
+  if (!sessionUrl) return adsError("Drive did not return an upload session URL.");
+  return adsJson({ status: "success", sessionUrl: sessionUrl });
+}
+
+/**
+ * After the browser finished the resumable upload: resolve the new file (by
+ * id, or the newest file with that name in the folder), make it link-viewable
+ * and report its metadata.
+ */
+function handleAdsFinalizeFile(data) {
+  var r = adsResolveFolder(data.folderId, true);
+  if (r.error) return adsError(r.error);
+
+  var file = null;
+  if (data.fileId) {
+    try {
+      file = DriveApp.getFileById(data.fileId);
+    } catch (err) {
+      return adsError(String(err));
+    }
+  } else {
+    if (!data.fileName) throw new Error("Missing fileName or fileId in payload.");
+    var matches = r.folder.getFilesByName(String(data.fileName));
+    while (matches.hasNext()) {
+      var f = matches.next();
+      if (f.isTrashed()) continue;
+      if (!file || f.getDateCreated().getTime() > file.getDateCreated().getTime()) file = f;
+    }
+    if (!file) return adsError("Uploaded file not found in the folder yet.");
+  }
+
+  if (!isUnderAdsRoot(file)) return adsError("File is not inside the Ads Library; refusing.");
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return adsJson({
+    status: "success",
+    fileId: file.getId(),
+    name: file.getName(),
+    mimeType: file.getMimeType(),
+    sizeBytes: file.getSize()
+  });
+}
+
+function handleAdsTrashFile(data) {
+  if (!data.fileId) throw new Error("Missing fileId in payload.");
+  try {
+    var file = DriveApp.getFileById(data.fileId);
+    if (file.isTrashed()) return adsJson({ status: "success", alreadyGone: true });
+    if (!isUnderAdsRoot(file)) return adsError("File is not inside the Ads Library; refusing to trash.");
+    file.setTrashed(true);
+    return adsJson({ status: "success" });
+  } catch (err) {
+    var msg = String(err);
+    if (adsIsGoneError(msg)) return adsJson({ status: "success", alreadyGone: true, note: msg });
+    return adsError(msg);
+  }
+}
+
+function handleAdsTrashFolder(data) {
+  if (!data.folderId) throw new Error("Missing folderId in payload.");
+  try {
+    var folder = DriveApp.getFolderById(data.folderId);
+    if (folder.isTrashed()) return adsJson({ status: "success", alreadyGone: true });
+    if (!isUnderAdsRoot(folder)) return adsError("Folder is not inside the Ads Library; refusing to trash.");
+    if (folder.getId() === getAdsRootFolder().getId()) return adsError("Refusing to trash the Ads Library root folder.");
+    folder.setTrashed(true);
+    return adsJson({ status: "success" });
+  } catch (err) {
+    var msg = String(err);
+    if (adsIsGoneError(msg)) return adsJson({ status: "success", alreadyGone: true, note: msg });
+    return adsError(msg);
+  }
 }
 
 /**
