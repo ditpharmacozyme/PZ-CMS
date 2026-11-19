@@ -42,8 +42,13 @@ describe('Apps Script Ads Library actions', () => {
   it('root name fallback only adopts an owned, top-level folder', () => {
     const body = fnBody('getAdsRootFolder');
     expect(body).toContain('getOwner()');
-    expect(body).toContain('Session.getEffectiveUser()');
     expect(body).toContain('getRootFolder()');
+  });
+
+  it('getAdsRootFolder needs no Session call (no userinfo.email scope)', () => {
+    const body = fnBody('getAdsRootFolder');
+    expect(body).not.toContain('Session.');
+    expect(body).toContain('DriveApp.getRootFolder().getOwner()');
   });
 
   it('adsMoveFolder parentId is optional and falls back to the Ads root', () => {
@@ -57,6 +62,10 @@ describe('Apps Script Ads Library actions', () => {
 
   it('embedded script still parses', () => {
     expect(() => new Function(code)).not.toThrow();
+  });
+
+  it('notes that no extra Google permission is needed', () => {
+    expect(code).toContain('no extra Google permission');
   });
 
   it('documents the redeploy step', () => {
