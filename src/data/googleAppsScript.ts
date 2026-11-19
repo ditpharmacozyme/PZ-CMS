@@ -47,7 +47,8 @@ export const GOOGLE_APPS_SCRIPT_CODE = `/**
  *     version" -> Deploy -- to activate the adsEnsureFolder / adsRenameFolder /
  *     adsMoveFolder / adsMoveFile / adsCreateUploadSession / adsFinalizeFile /
  *     adsTrashFile / adsTrashFolder actions. They only touch the "Ads Library"
- *     folder tree in Drive. Uploads use the Drive REST API, so Google may ask
+ *     folder tree in Drive. (Note: no extra Google permission is needed beyond
+ *     what this script already uses.) Uploads use the Drive REST API, so Google may ask
  *     you to re-authorize the script (run any function once in the editor and
  *     click "Review permissions" -> "Allow") after the redeploy.
  */
@@ -391,8 +392,10 @@ function getAdsRootFolder() {
   var folders = DriveApp.getFoldersByName(ADS_ROOT_FOLDER_NAME);
   var root = null;
   var myDriveId = DriveApp.getRootFolder().getId();
-  var ownerEmail = Session.getEffectiveUser().getEmail();
-  while (folders.hasNext()) {
+  // The owner of the My Drive root is the script owner (no extra OAuth scope).
+  var myOwner = DriveApp.getRootFolder().getOwner();
+  var ownerEmail = myOwner ? myOwner.getEmail() : "";
+  while (ownerEmail && folders.hasNext()) {
     var candidate = folders.next();
     if (candidate.isTrashed()) continue;
     // Only adopt a folder the script owner owns that sits at My Drive top

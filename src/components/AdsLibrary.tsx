@@ -5,6 +5,7 @@ import { useBrands } from '../context/BrandsContext';
 import { UNSORTED_ID, useAdsLibrary, type DeleteResult } from '../hooks/useAdsLibrary';
 import { canManageAd, searchAds, type AdsFilters } from '../utils/adsModel';
 import { Button } from './ui/Button';
+import type { ToastItem } from './ui/Toast';
 import { useConfirm } from './ui/ConfirmDialog';
 import { AdsGallery, type AdsItemKind } from './ads/AdsGallery';
 import { AdsSearchBar } from './ads/AdsSearchBar';
@@ -18,7 +19,12 @@ import { AdsUploadPicker } from './ads/AdsUploadPicker';
 interface AdsLibraryProps {
   activeTeammate: TeamMember | null | undefined;
   selectedBrandFilter: BrandId | 'all';
-  showToast: (message: string) => void;
+  showToast: (
+    message: string,
+    action?: ToastItem['action'],
+    durationMs?: number,
+    variant?: ToastItem['variant']
+  ) => void;
 }
 
 const DRIVE_WARNING =
@@ -31,7 +37,15 @@ const GENERIC_ERROR = "Something went wrong. Please try again.";
  * failures (ADS_DB_ERROR), network TypeErrors and anything else get the
  * generic text.
  */
+const AUTH_ERROR =
+  'Google Drive needs to be re-approved by an admin. Ask an admin to open the Apps Script, run any function once, click Allow, and redeploy.';
+const SCRIPT_ERROR = "Google Drive couldn't complete that. Please try again, or ask an admin to check the Apps Script.";
+
 function errorMessage(err: unknown): string {
+  if (err instanceof Error && /permission|authoriz|Required permissions|Exception:/i.test(err.message)) {
+    console.error(err);
+    return /permission|authoriz|Required permissions/i.test(err.message) ? AUTH_ERROR : SCRIPT_ERROR;
+  }
   if (err instanceof Error && err.name === 'Error' && err.message.trim()) return err.message;
   return GENERIC_ERROR;
 }
@@ -81,6 +95,8 @@ const AdsLibraryInner: React.FC<AdsLibraryProps> = ({ activeTeammate, selectedBr
 
   const isEmpty = ads.programs.length === 0 && ads.creatives.length === 0 && ads.sets.every((s) => s.isSystem);
 
+  const showError = (message: string) => showToast(message, undefined, 8000, 'error');
+
   /** Runs a mutation and reports failure with a plain toast. */
   const attempt = async (fn: () => Promise<unknown>, success?: string): Promise<boolean> => {
     try {
@@ -88,11 +104,11 @@ const AdsLibraryInner: React.FC<AdsLibraryProps> = ({ activeTeammate, selectedBr
       if (success) showToast(success);
       return true;
     } catch (err) {
-      showToast(errorMessage(err));
+      showError(errorMessage(err));
       return false;
     }
   };
-  const afterDelete = (r: DeleteResult) => showToast(r.driveOk ? 'Removed.' : DRIVE_WARNING);
+  const afterDelete = (r: DeleteResult) => (r.driveOk ? showToast('Removed.') : showError(DRIVE_WARNING));
 
   const findHidden = (kind: AdsItemKind, id: string): boolean =>
     kind === 'program' ? !!ads.programs.find((p) => p.id === id)?.hidden
@@ -122,7 +138,7 @@ const AdsLibraryInner: React.FC<AdsLibraryProps> = ({ activeTeammate, selectedBr
     try {
       afterDelete(await ads.deleteCreative(id));
     } catch (err) {
-      showToast(errorMessage(err));
+      showError(errorMessage(err));
     }
   };
 
@@ -162,7 +178,7 @@ const AdsLibraryInner: React.FC<AdsLibraryProps> = ({ activeTeammate, selectedBr
         failure = err; // surfaced as a toast once
       }
     }
-    if (added < items.length) showToast(errorMessage(failure));
+    if (added < items.length) showError(errorMessage(failure));
     if (added > 0) showToast(`Added ${added} ad${added === 1 ? '' : 's'}`);
   };
 
@@ -309,7 +325,7 @@ const AdsLibraryInner: React.FC<AdsLibraryProps> = ({ activeTeammate, selectedBr
                   : await ads.deleteSet(deleting.id, mode)
               );
             } catch (err) {
-              showToast(errorMessage(err));
+              showError(errorMessage(err));
             }
             setDeleting(null);
           }}
