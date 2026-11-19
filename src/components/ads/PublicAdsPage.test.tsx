@@ -93,4 +93,20 @@ describe('PublicAdsPage', () => {
     render(<PublicAdsPage route={{ kind: 'standing' }} />);
     await waitFor(() => expect(screen.getByText('No ads are available right now.')).toBeTruthy());
   });
+
+  it('hides an empty Unsorted set on the standing page but shows it when it has ads', async () => {
+    const unsorted = { ...set, id: 'ads-unsorted', programId: null, name: 'Unsorted', isSystem: true };
+    vi.mocked(fetchPublicLibrary).mockResolvedValue({ ...full, sets: [set, unsorted] } as unknown as AdsSnapshot);
+    const { unmount } = render(<PublicAdsPage route={{ kind: 'standing' }} />);
+    expect(await screen.findByText('Enzyme Course')).toBeTruthy();
+    expect(screen.queryByText('Unsorted')).toBeNull();
+    unmount();
+    vi.mocked(fetchPublicLibrary).mockResolvedValue({
+      ...full,
+      sets: [set, unsorted],
+      creatives: [creative, { ...creative, id: 'c2', setId: 'ads-unsorted', name: 'Loose Ad' }],
+    } as unknown as AdsSnapshot);
+    render(<PublicAdsPage route={{ kind: 'standing' }} />);
+    expect(await screen.findByText('Unsorted')).toBeTruthy();
+  });
 });

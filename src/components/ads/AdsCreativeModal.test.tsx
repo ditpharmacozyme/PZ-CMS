@@ -61,4 +61,24 @@ describe('AdsCreativeModal', () => {
     render(<AdsCreativeModal creative={creative} sets={sets} onSave={vi.fn()} onClose={vi.fn()} />);
     expect(screen.getByRole('link', { name: /Download hero.png/ })).toHaveAttribute('href', expect.stringContaining('id=d1'));
   });
+  it('download links never leave the page; a large file opens its Drive page', () => {
+    const big = { ...creative, format: 'video' as const,
+      files: [{ driveFileId: 'v1', name: 'clip.mp4', mimeType: 'video/mp4', sizeBytes: 300 * 1024 * 1024 }] };
+    const { unmount } = render(<AdsCreativeModal creative={creative} sets={sets} onSave={vi.fn()} onClose={vi.fn()} />);
+    const small = screen.getByRole('link', { name: /Download hero.png/ });
+    expect(small).toHaveAttribute('target', '_blank');
+    expect(small).toHaveAttribute('rel', 'noopener noreferrer');
+    unmount();
+    render(<AdsCreativeModal creative={big} sets={sets} onSave={vi.fn()} onClose={vi.fn()} />);
+    const large = screen.getByRole('link', { name: /Download clip.mp4/ });
+    expect(large).toHaveAttribute('href', 'https://drive.google.com/file/d/v1/view');
+    expect(large).toHaveAttribute('target', '_blank');
+    expect(large).not.toHaveAttribute('download');
+  });
+  it('labels ad sets "Course / Set" so same-named sets can be told apart', () => {
+    const twins = [{ ...set('s1', 'Module 1'), programId: 'p2' }, { ...set('s2', 'Module 1'), programId: 'p1' }];
+    render(<AdsCreativeModal creative={creative} sets={twins} programs={[{ id: 'p1', name: 'Biology' }, { id: 'p2', name: 'Anatomy' }]} onSave={vi.fn()} onClose={vi.fn()} />);
+    const labels = Array.from((screen.getByLabelText('Ad set') as HTMLSelectElement).options).map((o) => o.textContent);
+    expect(labels).toEqual(['Anatomy / Module 1', 'Biology / Module 1']);
+  });
 });

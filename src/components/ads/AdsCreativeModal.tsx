@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { SelectField, TextField } from '../ui/Field';
-import { downloadUrl, thumbnailUrl } from '../../utils/adsModel';
+import { adSetOptions, thumbnailUrl } from '../../utils/adsModel';
+import { fileLink } from './downloadFiles';
 import type { AdCreative, AdSet } from '../../types';
 
 export type AdsCreativeChanges = Partial<Pick<AdCreative, 'name' | 'sourceUrl' | 'setId' | 'hidden'>>;
@@ -10,11 +11,13 @@ export type AdsCreativeChanges = Partial<Pick<AdCreative, 'name' | 'sourceUrl' |
 interface AdsCreativeModalProps {
   creative: AdCreative;
   sets: AdSet[];
+  /** Courses, for labelling ad sets "Course / Set". */
+  programs?: { id: string; name: string }[];
   onSave: (changes: AdsCreativeChanges) => void | Promise<unknown>;
   onClose: () => void;
 }
 
-export const AdsCreativeModal: React.FC<AdsCreativeModalProps> = ({ creative, sets, onSave, onClose }) => {
+export const AdsCreativeModal: React.FC<AdsCreativeModalProps> = ({ creative, sets, programs = [], onSave, onClose }) => {
   const [name, setName] = useState(creative.name);
   const originalUrl = (creative.sourceUrl ?? '').trim();
   const [sourceUrl, setSourceUrl] = useState(creative.sourceUrl ?? '');
@@ -77,12 +80,17 @@ export const AdsCreativeModal: React.FC<AdsCreativeModalProps> = ({ creative, se
             </div>
           )}
           <ul className="flex flex-col gap-1.5 min-w-0">
-            {creative.files.map((f) => (
+            {creative.files.map((f) => {
+              const link = fileLink(f);
+              return (
               <li key={f.driveFileId} className="flex items-center gap-2 min-w-0">
                 <span className="flex-1 min-w-0 truncate text-xs text-[#1b1c1a]">{f.name}</span>
                 <a
-                  href={downloadUrl(f)}
-                  download
+                  href={link.href}
+                  download={link.large ? undefined : f.name}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={link.large ? 'Large file: opens in Google Drive in a new tab.' : undefined}
                   aria-label={`Download ${f.name}`}
                   className="inline-flex items-center justify-center gap-1 min-h-[38px] px-3 text-xs font-semibold text-[#4f46e5] border border-[#e9e9e7] rounded-lg hover:bg-[#f4f4f3]"
                 >
@@ -90,7 +98,8 @@ export const AdsCreativeModal: React.FC<AdsCreativeModalProps> = ({ creative, se
                   Download
                 </a>
               </li>
-            ))}
+              );
+            })}
           </ul>
         </div>
 
@@ -108,7 +117,7 @@ export const AdsCreativeModal: React.FC<AdsCreativeModalProps> = ({ creative, se
               Open source file
             </a>
           )}
-          <SelectField label="Ad set" value={setId} onChange={setSetId} options={sets.map((s) => ({ value: s.id, label: s.name }))} />
+          <SelectField label="Ad set" value={setId} onChange={setSetId} options={adSetOptions(sets, programs)} />
           <label className="flex items-center gap-2 min-h-[38px] text-sm text-[#1b1c1a] cursor-pointer">
             <input type="checkbox" checked={hidden} onChange={(e) => setHidden(e.target.checked)} className="w-4 h-4 accent-[#4f46e5]" />
             Hide from the public ads page

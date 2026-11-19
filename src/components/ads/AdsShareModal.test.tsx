@@ -39,6 +39,12 @@ describe('AdsShareModal', () => {
     fireEvent.click(screen.getByRole('button', { name: /revoke share link abc/i }));
     expect(onRevoke).toHaveBeenCalledTimes(1);
   });
+  it('shows an inline error when revoke fails', async () => {
+    const onRevoke = vi.fn().mockRejectedValue(new Error('denied'));
+    render(<AdsShareModal level="set" targetId="s1" targetName="Set" links={[link('abc')]} onCreate={vi.fn()} onRevoke={onRevoke} onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /revoke share link abc/i }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(/couldn't revoke/i);
+  });
   it('greys revoked links with no Copy; Revoke and Create call back', () => {
     const onRevoke = vi.fn();
     const onCreate = vi.fn();

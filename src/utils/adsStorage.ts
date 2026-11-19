@@ -195,17 +195,27 @@ export async function fetchShareLinks(): Promise<AdShareLink[] | null> {
   return (data || []).map((r) => rowToShareLink(r as Row));
 }
 
-/* Writes */
+/* Writes: a failed write throws so callers can roll back and tell the user. */
+/** Error name for raw database failures; the UI shows these as a generic message. */
+export const ADS_DB_ERROR = 'AdsDbError';
+
+function writeFailed(label: string, message: string): Error {
+  console.error(`[Supabase] ${label} failed:`, message);
+  const err = new Error(message || `${label} failed`);
+  err.name = ADS_DB_ERROR;
+  return err;
+}
+
 async function upsertRow(table: string, row: Row, label: string): Promise<void> {
   if (!supabase) return;
   const { error } = await supabase.from(table).upsert(row);
-  if (error) console.error(`[Supabase] ${label} failed:`, error.message);
+  if (error) throw writeFailed(label, error.message);
 }
 
 async function deleteRow(table: string, id: string, label: string): Promise<void> {
   if (!supabase) return;
   const { error } = await supabase.from(table).delete().eq('id', id);
-  if (error) console.error(`[Supabase] ${label} failed:`, error.message);
+  if (error) throw writeFailed(label, error.message);
 }
 
 export const upsertRemoteProgram = (p: AdProgram): Promise<void> =>

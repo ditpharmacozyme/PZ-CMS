@@ -18,9 +18,9 @@ vi.mock('../hooks/useAdsLibrary', () => ({
   useAdsLibrary: () => hook.value,
 }));
 vi.mock('./ads/AdsUploadZone', () => ({
-  AdsUploadZone: ({ setId, folderId, onUploaded }: { setId: string; folderId: string; onUploaded: (i: { name: string; files: unknown[] }[]) => void }) => (
+  AdsUploadZone: ({ folderId, onUploaded }: { folderId: string; onUploaded: (i: { name: string; files: unknown[] }[]) => void }) => (
     <button onClick={() => onUploaded([{ name: 'a.png', files: [] }, { name: 'b.png', files: [] }])}>
-      zone {setId} {folderId}
+      zone {folderId}
     </button>
   ),
 }));
@@ -126,7 +126,7 @@ describe('AdsLibrary', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Delete' }));
     await waitFor(() => expect(h.deleteCreative).toHaveBeenCalledWith('c1'));
     await waitFor(() => expect(toast).toHaveBeenCalledWith(
-      "Removed. Some Drive files couldn't be trashed — an admin can clean them up in Settings."
+      "Removed. Some files in Google Drive couldn't be moved to the trash — ask an admin to check the Ads Library folder."
     ));
   });
 
@@ -174,7 +174,7 @@ describe('AdsLibrary', () => {
     fireEvent.click(screen.getByRole('button', { name: /upload$/i }));
     fireEvent.change(screen.getByLabelText(/ad set/i), { target: { value: 's1' } });
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
-    fireEvent.click(await screen.findByRole('button', { name: /zone s1 folder-1/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /zone folder-1/i }));
     await waitFor(() => expect(h.addCreative).toHaveBeenCalledTimes(2));
     expect(h.addCreative).toHaveBeenCalledWith({ setId: 's1', name: 'a.png', files: [] });
     await waitFor(() => expect(toast).toHaveBeenCalledWith('Added 2 ads'));
@@ -187,5 +187,41 @@ describe('AdsLibrary', () => {
     fireEvent.change(screen.getByLabelText('Search ads'), { target: { value: 'winter' } });
     expect(screen.getByText('Winter Webinar')).toBeInTheDocument();
     expect(screen.queryByText('Spring Course')).not.toBeInTheDocument();
+  });
+
+  it('shows purpose-written error messages but hides raw database errors', async () => {
+    const dbError = Object.assign(new Error('duplicate key value violates unique constraint'), { name: 'AdsDbError' });
+    const h = makeHook({
+      programs: [program()],
+      updateProgram: vi.fn()
+        .mockRejectedValueOnce(new Error('Google Apps Script returned an unexpected reply — redeploy the script.'))
+        .mockRejectedValueOnce(dbError)
+        .mockRejectedValueOnce(new TypeError('Failed to fetch')),
+    });
+    hook.value = h;
+    const toast = renderLib();
+    const hide = () => fireEvent.click(screen.getByRole('button', { name: /^hide spring course/i }));
+    hide();
+    await waitFor(() => expect(toast).toHaveBeenLastCalledWith('Google Apps Script returned an unexpected reply — redeploy the script.'));
+    hide();
+    await waitFor(() => expect(toast).toHaveBeenLastCalledWith('Something went wrong. Please try again.'));
+    toast.mockClear();
+    hide();
+    await waitFor(() => expect(toast).toHaveBeenCalledWith('Something went wrong. Please try again.'));
+  });
+
+  it('reports failed ad saves after an upload instead of claiming success', async () => {
+    const h = makeHook({
+      sets: [adSet()],
+      addCreative: vi.fn().mockResolvedValueOnce(creative()).mockRejectedValueOnce(Object.assign(new Error('x'), { name: 'AdsDbError' })),
+    });
+    hook.value = h;
+    const toast = renderLib();
+    fireEvent.click(screen.getByRole('button', { name: /upload$/i }));
+    fireEvent.change(screen.getByLabelText(/ad set/i), { target: { value: 's1' } });
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /zone folder-1/i }));
+    await waitFor(() => expect(toast).toHaveBeenCalledWith('Added 1 ad'));
+    expect(toast).toHaveBeenCalledWith('Something went wrong. Please try again.');
   });
 });

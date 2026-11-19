@@ -1,7 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const rpc = vi.fn();
-vi.mock('../lib/supabase', () => ({ supabase: { rpc: (...a: unknown[]) => rpc(...a) } }));
+const upsert = vi.fn();
+const eq = vi.fn();
+vi.mock('../lib/supabase', () => ({
+  supabase: {
+    rpc: (...a: unknown[]) => rpc(...a),
+    from: () => ({ upsert: (...a: unknown[]) => upsert(...a), delete: () => ({ eq: (...a: unknown[]) => eq(...a) }) })
+  }
+}));
 
 import {
   rowToCreative,
@@ -10,7 +17,10 @@ import {
   rowToSet,
   rowToShareLink,
   fetchPublicLibrary,
-  fetchSharedScope
+  fetchSharedScope,
+  upsertRemoteShareLink,
+  upsertRemoteAudience,
+  deleteRemoteCreative
 } from './adsStorage';
 
 const EMPTY = { programs: [], sets: [], creatives: [] };
@@ -71,5 +81,37 @@ describe('public RPC wrappers', () => {
     expect(rpc).toHaveBeenCalledWith('ads_shared_scope', { p_token: 't' });
     expect(snap.creatives).toHaveLength(1);
     expect(snap.creatives[0].setId).toBe('s');
+  });
+});
+
+describe('ads writes report failure', () => {
+  beforeEach(() => {
+    upsert.mockReset();
+    eq.mockReset();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  const link = { token: 't', level: 'set' as const, targetId: 's', label: '', createdBy: '', createdAt: 'x', revokedAt: 'y' };
+
+  it('a failed upsert throws with the database message', async () => {
+    upsert.mockResolvedValue({ error: { message: 'permission denied' } });
+    await expect(upsertRemoteShareLink(link)).rejects.toThrow('permission denied');
+  });
+
+  it('a duplicate audience name throws instead of failing silently', async () => {
+    upsert.mockResolvedValue({ error: { message: 'duplicate key value violates unique constraint' } });
+    await expect(upsertRemoteAudience({ id: 'a', name: 'nurses', sortOrder: 1 })).rejects.toThrow(/duplicate key/);
+  });
+
+  it('a failed delete throws', async () => {
+    eq.mockResolvedValue({ error: { message: 'nope' } });
+    await expect(deleteRemoteCreative('c1')).rejects.toThrow('nope');
+  });
+
+  it('a successful write resolves', async () => {
+    upsert.mockResolvedValue({ error: null });
+    eq.mockResolvedValue({ error: null });
+    await expect(upsertRemoteShareLink(link)).resolves.toBeUndefined();
+    await expect(deleteRemoteCreative('c1')).resolves.toBeUndefined();
   });
 });

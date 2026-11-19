@@ -22,7 +22,7 @@ beforeEach(() => {
 describe('AdsUploadZone', () => {
   it('asks carousel vs separate when 2 images are dropped, and carousel yields one item with 2 files', async () => {
     const onUploaded = vi.fn();
-    render(<AdsUploadZone setId="s1" folderId="f1" onUploaded={onUploaded} />);
+    render(<AdsUploadZone folderId="f1" onUploaded={onUploaded} />);
     drop([png('a.png'), png('b.png')]);
     expect(screen.getByText(/Save as/i)).toBeInTheDocument();
     expect(upload).not.toHaveBeenCalled();
@@ -37,7 +37,7 @@ describe('AdsUploadZone', () => {
 
   it('separate ads yields one item per file with extension-less names', async () => {
     const onUploaded = vi.fn();
-    render(<AdsUploadZone setId="s1" folderId="f1" onUploaded={onUploaded} />);
+    render(<AdsUploadZone folderId="f1" onUploaded={onUploaded} />);
     drop([png('a.png'), png('b.png')]);
     fireEvent.click(screen.getByRole('button', { name: /separate ads/i }));
     await waitFor(() => expect(onUploaded).toHaveBeenCalledTimes(1));
@@ -46,7 +46,7 @@ describe('AdsUploadZone', () => {
 
   it('a single file uploads without the question', async () => {
     const onUploaded = vi.fn();
-    render(<AdsUploadZone setId="s1" folderId="f1" onUploaded={onUploaded} />);
+    render(<AdsUploadZone folderId="f1" onUploaded={onUploaded} />);
     drop([png('one.png')]);
     expect(screen.queryByText(/Save as/i)).toBeNull();
     await waitFor(() => expect(onUploaded).toHaveBeenCalledTimes(1));
@@ -55,7 +55,7 @@ describe('AdsUploadZone', () => {
   it('shows Upload failed + Retry, does not call onUploaded, and retry succeeds', async () => {
     upload.mockRejectedValueOnce(new Error('Upload failed — check your connection and try again'));
     const onUploaded = vi.fn();
-    render(<AdsUploadZone setId="s1" folderId="f1" onUploaded={onUploaded} />);
+    render(<AdsUploadZone folderId="f1" onUploaded={onUploaded} />);
     drop([png('one.png')]);
     expect(await screen.findByText(/Upload failed/)).toBeInTheDocument();
     expect(onUploaded).not.toHaveBeenCalled();
@@ -72,7 +72,7 @@ describe('AdsUploadZone', () => {
       return adFile(f);
     });
     const onUploaded = vi.fn();
-    render(<AdsUploadZone setId="s1" folderId="f1" onUploaded={onUploaded} />);
+    render(<AdsUploadZone folderId="f1" onUploaded={onUploaded} />);
     drop([pdf, zip]);
     await screen.findByText(/Upload failed/);
     expect(onUploaded).not.toHaveBeenCalled();
@@ -82,7 +82,7 @@ describe('AdsUploadZone', () => {
   });
 
   it('rejects unsupported types with a plain message', () => {
-    render(<AdsUploadZone setId="s1" folderId="f1" onUploaded={vi.fn()} />);
+    render(<AdsUploadZone folderId="f1" onUploaded={vi.fn()} />);
     drop([new File(['x'], 'a.exe', { type: 'application/x-msdownload' })]);
     expect(screen.getByText("That file type isn't supported here.")).toBeInTheDocument();
     expect(upload).not.toHaveBeenCalled();
@@ -99,7 +99,7 @@ describe('AdsUploadZone', () => {
       return adFile(f);
     });
     const onUploaded = vi.fn();
-    render(<AdsUploadZone setId="s1" folderId="f1" onUploaded={onUploaded} />);
+    render(<AdsUploadZone folderId="f1" onUploaded={onUploaded} />);
     drop(Array.from({ length: 5 }, (_, i) => new File(['x'], `d${i}.pdf`, { type: 'application/pdf' })));
     await waitFor(() => expect(onUploaded).toHaveBeenCalledTimes(1));
     expect(peak).toBe(3);
@@ -107,7 +107,7 @@ describe('AdsUploadZone', () => {
 
   it('reports each batch once: a second drop does not re-report the first batch', async () => {
     const onUploaded = vi.fn();
-    render(<AdsUploadZone setId="s1" folderId="f1" onUploaded={onUploaded} />);
+    render(<AdsUploadZone folderId="f1" onUploaded={onUploaded} />);
     drop([png('first.png')]);
     await waitFor(() => expect(onUploaded).toHaveBeenCalledTimes(1));
     drop([png('second.png')]);
@@ -118,7 +118,7 @@ describe('AdsUploadZone', () => {
 
   it('two carousel batches stay separate', async () => {
     const onUploaded = vi.fn();
-    render(<AdsUploadZone setId="s1" folderId="f1" onUploaded={onUploaded} />);
+    render(<AdsUploadZone folderId="f1" onUploaded={onUploaded} />);
     drop([png('a.png'), png('b.png')]);
     fireEvent.click(screen.getByRole('button', { name: /one carousel/i }));
     await waitFor(() => expect(onUploaded).toHaveBeenCalledTimes(1));
@@ -137,7 +137,7 @@ describe('AdsUploadZone', () => {
       return adFile(f);
     });
     const onUploaded = vi.fn();
-    render(<AdsUploadZone setId="s1" folderId="f1" onUploaded={onUploaded} />);
+    render(<AdsUploadZone folderId="f1" onUploaded={onUploaded} />);
     drop([mk('a.pdf'), mk('b.pdf'), mk('c.pdf')]);
     await screen.findByText(/Upload failed/);
     bFails = false;
@@ -154,7 +154,7 @@ describe('AdsUploadZone', () => {
       return adFile(f);
     });
     const onUploaded = vi.fn();
-    render(<AdsUploadZone setId="s1" folderId="f1" onUploaded={onUploaded} />);
+    render(<AdsUploadZone folderId="f1" onUploaded={onUploaded} />);
     drop([png('a.png'), png('b.png'), png('c.png')]);
     fireEvent.click(screen.getByRole('button', { name: /one carousel/i }));
     await screen.findByText(/Upload failed/);
@@ -168,11 +168,95 @@ describe('AdsUploadZone', () => {
   it('offers Clear when every file failed', async () => {
     upload.mockRejectedValue(new Error('boom'));
     const onUploaded = vi.fn();
-    render(<AdsUploadZone setId="s1" folderId="f1" onUploaded={onUploaded} />);
+    render(<AdsUploadZone folderId="f1" onUploaded={onUploaded} />);
     drop([png('a.png')]);
     await screen.findByText(/Upload failed/);
     fireEvent.click(screen.getByRole('button', { name: /clear/i }));
     expect(screen.queryByText(/Upload failed/)).toBeNull();
     expect(onUploaded).not.toHaveBeenCalled();
+  });
+
+  describe('closing the upload window', () => {
+    const pdf = (n: string) => new File(['x'], n, { type: 'application/pdf' });
+    const deferred = () => {
+      let resolve!: (v: AdFile) => void;
+      const promise = new Promise<AdFile>((r) => { resolve = r; });
+      return { promise, resolve };
+    };
+
+    it('reports finished uploads of an unfinished batch once when closed', async () => {
+      const slow = deferred();
+      upload.mockImplementation((f) => (f.name === 'b.pdf' ? slow.promise : Promise.resolve(adFile(f))));
+      const onUploaded = vi.fn();
+      const { unmount } = render(<AdsUploadZone folderId="f1" onUploaded={onUploaded} />);
+      drop([pdf('a.pdf'), pdf('b.pdf')]);
+      await screen.findByText('Uploaded');
+      expect(onUploaded).not.toHaveBeenCalled();
+      unmount();
+      expect(onUploaded).toHaveBeenCalledTimes(1);
+      expect(onUploaded.mock.calls[0][0]).toEqual([{ name: 'a', files: [adFile(pdf('a.pdf'))] }]);
+      slow.resolve(adFile(pdf('b.pdf')));
+      await waitFor(() => expect(onUploaded).toHaveBeenCalledTimes(2));
+      expect(onUploaded.mock.calls[1][0]).toEqual([{ name: 'b', files: [adFile(pdf('b.pdf'))] }]);
+      await new Promise((r) => setTimeout(r, 10));
+      expect(onUploaded).toHaveBeenCalledTimes(2);
+    });
+
+    it('reports an upload that finishes after the window closed, once', async () => {
+      const slow = deferred();
+      upload.mockImplementation(() => slow.promise);
+      const onUploaded = vi.fn();
+      const { unmount } = render(<AdsUploadZone folderId="f1" onUploaded={onUploaded} />);
+      drop([pdf('late.pdf')]);
+      await waitFor(() => expect(upload).toHaveBeenCalledTimes(1));
+      unmount();
+      expect(onUploaded).not.toHaveBeenCalled();
+      slow.resolve(adFile(pdf('late.pdf')));
+      await waitFor(() => expect(onUploaded).toHaveBeenCalledTimes(1));
+      expect(onUploaded.mock.calls[0][0]).toEqual([{ name: 'late', files: [adFile(pdf('late.pdf'))] }]);
+      await new Promise((r) => setTimeout(r, 10));
+      expect(onUploaded).toHaveBeenCalledTimes(1);
+    });
+
+    it('reports the successes of a batch with one failure when closed', async () => {
+      upload.mockImplementation(async (f) => {
+        if (f.name === 'bad.pdf') throw new Error('nope');
+        return adFile(f);
+      });
+      const onUploaded = vi.fn();
+      const { unmount } = render(<AdsUploadZone folderId="f1" onUploaded={onUploaded} />);
+      drop([pdf('good.pdf'), pdf('bad.pdf')]);
+      await screen.findByText(/Upload failed/);
+      expect(onUploaded).not.toHaveBeenCalled();
+      unmount();
+      expect(onUploaded).toHaveBeenCalledTimes(1);
+      expect(onUploaded.mock.calls[0][0]).toEqual([{ name: 'good', files: [adFile(pdf('good.pdf'))] }]);
+    });
+
+    it('keeps a carousel together: waits for its last slide after closing', async () => {
+      const slow = deferred();
+      upload.mockImplementation((f) => (f.name === 'b.png' ? slow.promise : Promise.resolve(adFile(f))));
+      const onUploaded = vi.fn();
+      const { unmount } = render(<AdsUploadZone folderId="f1" onUploaded={onUploaded} />);
+      drop([png('a.png'), png('b.png')]);
+      fireEvent.click(screen.getByRole('button', { name: /one carousel/i }));
+      await screen.findByText('Uploaded');
+      unmount();
+      expect(onUploaded).not.toHaveBeenCalled();
+      slow.resolve(adFile(png('b.png')));
+      await waitFor(() => expect(onUploaded).toHaveBeenCalledTimes(1));
+      expect(onUploaded.mock.calls[0][0][0].files.map((f: AdFile) => f.name)).toEqual(['a.png', 'b.png']);
+    });
+
+    it('tells the parent while uploads are running', async () => {
+      const slow = deferred();
+      upload.mockImplementation(() => slow.promise);
+      const onBusyChange = vi.fn();
+      render(<AdsUploadZone folderId="f1" onUploaded={vi.fn()} onBusyChange={onBusyChange} />);
+      drop([pdf('x.pdf')]);
+      await waitFor(() => expect(onBusyChange).toHaveBeenLastCalledWith(true));
+      slow.resolve(adFile(pdf('x.pdf')));
+      await waitFor(() => expect(onBusyChange).toHaveBeenLastCalledWith(false));
+    });
   });
 });

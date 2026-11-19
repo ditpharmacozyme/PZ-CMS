@@ -6,9 +6,15 @@ import type { AdFile } from '../../types';
 export interface AdsUploadedItem { name: string; files: AdFile[] }
 
 interface AdsUploadZoneProps {
-  setId: string;
   folderId: string;
+  /**
+   * Called once per finished batch. Also called after the zone unmounts: on close,
+   * finished uploads are reported straight away and uploads still running are
+   * reported when they finish, so files in Drive always become ads.
+   */
   onUploaded: (items: AdsUploadedItem[]) => void;
+  /** True while any file is waiting or uploading (used to confirm before closing). */
+  onBusyChange?: (busy: boolean) => void;
 }
 
 type Status = 'queued' | 'uploading' | 'done' | 'error';
@@ -41,7 +47,7 @@ const reasonOf = (err: unknown): string => {
   return msg.replace(/^Upload failed\s*[—-]?\s*/i, '').trim();
 };
 
-export const AdsUploadZone: React.FC<AdsUploadZoneProps> = ({ folderId, onUploaded }) => {
+export const AdsUploadZone: React.FC<AdsUploadZoneProps> = ({ folderId, onUploaded, onBusyChange }) => {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [pending, setPending] = useState<File[] | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -53,11 +59,25 @@ export const AdsUploadZone: React.FC<AdsUploadZoneProps> = ({ folderId, onUpload
   const mounted = useRef(true);
   const inputRef = useRef<HTMLInputElement>(null);
   const firstChoiceRef = useRef<HTMLButtonElement>(null);
+  // Latest parent callback: still called after unmount (the parent page stays mounted).
+  const onUploadedRef = useRef(onUploaded);
+  onUploadedRef.current = onUploaded;
 
   useEffect(() => {
     mounted.current = true;
-    return () => { mounted.current = false; };
+    return () => {
+      mounted.current = false;
+      // Files still waiting are never started once the window is closed.
+      entriesRef.current = entriesRef.current.filter((e) => e.status !== 'queued');
+      flushClosed();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const busy = entries.some((e) => e.status === 'queued' || e.status === 'uploading');
+  useEffect(() => {
+    onBusyChange?.(busy);
+  }, [busy, onBusyChange]);
 
   useEffect(() => {
     if (pending) firstChoiceRef.current?.focus();
@@ -92,13 +112,37 @@ export const AdsUploadZone: React.FC<AdsUploadZoneProps> = ({ folderId, onUpload
   const finishBatch = (batch: number) => {
     const items = batchItems(batch);
     commit(entriesRef.current.filter((e) => e.batch !== batch));
-    if (items.length === 0 || !mounted.current) return;
+    if (items.length === 0) return;
     announce(items.length === 1 ? 'Uploaded 1 ad.' : `Uploaded ${items.length} ads.`);
-    onUploaded(items);
+    onUploadedRef.current(items);
+  };
+
+  /**
+   * After the window closed: report every finished upload. A batch with nothing
+   * left running is reported whole (successes only); in a batch still running,
+   * finished separate ads are reported now and carousel slides wait for the rest.
+   */
+  const flushClosed = () => {
+    const batches = Array.from(new Set(entriesRef.current.map((e) => e.batch)));
+    for (const b of batches) {
+      const rows = entriesRef.current.filter((e) => e.batch === b);
+      if (!rows.some((e) => e.status === 'uploading')) {
+        finishBatch(b);
+        continue;
+      }
+      const ready = rows.filter((e) => e.status === 'done' && e.result && e.carouselName === undefined);
+      if (ready.length === 0) continue;
+      const ids = new Set(ready.map((e) => e.id));
+      entriesRef.current = entriesRef.current.filter((e) => !ids.has(e.id));
+      onUploadedRef.current(ready.map((e) => ({ name: baseName(e.file.name), files: [e.result!] })));
+    }
   };
 
   const pump = () => {
-    if (!mounted.current) return;
+    if (!mounted.current) {
+      flushClosed();
+      return;
+    }
     const cur = entriesRef.current;
     let active = cur.filter((e) => e.status === 'uploading').length;
     const starting: Entry[] = [];

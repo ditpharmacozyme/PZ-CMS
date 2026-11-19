@@ -1,5 +1,5 @@
 import type {
-  AdFile, AdFormat, AdKind, AdShareLink, AdsSnapshot, TeamMember,
+  AdFile, AdFormat, AdKind, AdProgram, AdSet, AdShareLink, AdsSnapshot, TeamMember,
 } from '../types';
 
 /**
@@ -43,6 +43,28 @@ export const downloadUrl = (file: Pick<AdFile, 'driveFileId'>): string =>
 
 export const viewUrl = (file: Pick<AdFile, 'driveFileId'>): string =>
   `https://drive.google.com/file/d/${file.driveFileId}/view`;
+
+/**
+ * Ad set dropdown options labelled "Course / Set" (or "No course / Set"), so sets
+ * that share a name in different courses can be told apart. Sets without a course
+ * come first, then by course name, then by set name.
+ */
+export function adSetOptions(
+  sets: Pick<AdSet, 'id' | 'name' | 'programId'>[],
+  programs: Pick<AdProgram, 'id' | 'name'>[]
+): { value: string; label: string }[] {
+  const courseOf = new Map(programs.map(p => [p.id, p.name]));
+  const rows = sets.map(s => {
+    const course = s.programId ? courseOf.get(s.programId) : undefined;
+    return { id: s.id, set: s.name, course: course ?? null };
+  });
+  rows.sort((a, b) => {
+    if ((a.course === null) !== (b.course === null)) return a.course === null ? -1 : 1;
+    const byCourse = (a.course ?? '').localeCompare(b.course ?? '', undefined, { sensitivity: 'base' });
+    return byCourse || a.set.localeCompare(b.set, undefined, { sensitivity: 'base' });
+  });
+  return rows.map(r => ({ value: r.id, label: `${r.course ?? 'No course'} / ${r.set}` }));
+}
 
 export function isVisibleOnStandingLink(snap: AdsSnapshot): AdsSnapshot {
   const programs = snap.programs.filter(p => !p.hidden);

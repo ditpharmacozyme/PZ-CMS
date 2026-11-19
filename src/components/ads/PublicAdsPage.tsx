@@ -13,6 +13,12 @@ const brandName = (id: string): string => {
   return seed?.name ?? id;
 };
 
+/** Standing page: system sets (Unsorted) only show when they have ads to see. */
+const dropEmptySystemSets = (s: AdsSnapshot): AdsSnapshot => {
+  const used = new Set(s.creatives.map(c => c.setId));
+  return { ...s, sets: s.sets.filter(set => !set.isSystem || used.has(set.id)) };
+};
+
 const isEmpty = (s: AdsSnapshot) => !s.programs.length && !s.sets.length && !s.creatives.length;
 
 export const PublicAdsPage: React.FC<{ route: PublicRoute }> = ({ route }) => {
@@ -24,7 +30,7 @@ export const PublicAdsPage: React.FC<{ route: PublicRoute }> = ({ route }) => {
   useEffect(() => {
     let cancelled = false;
     setSnapshot(null);
-    const load = route.kind === 'share' ? fetchSharedScope(token) : fetchPublicLibrary();
+    const load = route.kind === 'share' ? fetchSharedScope(token) : fetchPublicLibrary().then(dropEmptySystemSets);
     load.then(s => { if (!cancelled) setSnapshot(s); });
     return () => { cancelled = true; };
   }, [route.kind, token]);

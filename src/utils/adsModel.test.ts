@@ -9,6 +9,7 @@ import {
   isVisibleOnStandingLink,
   scopeFor,
   searchAds,
+  adSetOptions,
 } from './adsModel';
 
 const prog = (id: string, o: Partial<AdProgram> = {}): AdProgram => ({
@@ -184,5 +185,22 @@ describe('canManageAd', () => {
   it('denies other creators and allows legacy (empty) creators', () => {
     expect(canManageAd('John Doe', tm())).toBe(false);
     expect(canManageAd('  ', tm())).toBe(true);
+  });
+});
+
+describe('adSetOptions', () => {
+  const s = (id: string, name: string, programId: string | null) => ({ id, name, programId });
+  it('labels sets "Course / Set", no-course sets first, sorted by course then set', () => {
+    const opts = adSetOptions(
+      [s('a', 'Module 1', 'p2'), s('b', 'Module 1', 'p1'), s('u', 'Unsorted', null), s('c', 'Intro', 'p1'), s('x', 'Orphan', 'gone')],
+      [{ id: 'p1', name: 'Biology' }, { id: 'p2', name: 'Anatomy' }]
+    );
+    expect(opts).toEqual([
+      { value: 'x', label: 'No course / Orphan' },
+      { value: 'u', label: 'No course / Unsorted' },
+      { value: 'a', label: 'Anatomy / Module 1' },
+      { value: 'c', label: 'Biology / Intro' },
+      { value: 'b', label: 'Biology / Module 1' },
+    ]);
   });
 });

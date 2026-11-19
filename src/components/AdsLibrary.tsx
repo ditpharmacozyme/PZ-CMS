@@ -21,8 +21,20 @@ interface AdsLibraryProps {
   showToast: (message: string) => void;
 }
 
-const DRIVE_WARNING = "Removed. Some Drive files couldn't be trashed — an admin can clean them up in Settings.";
+const DRIVE_WARNING =
+  "Removed. Some files in Google Drive couldn't be moved to the trash — ask an admin to check the Ads Library folder.";
 const GENERIC_ERROR = "Something went wrong. Please try again.";
+
+/**
+ * Messages the app wrote itself (Drive helper and hook errors are plain Error
+ * instances with a purpose-written message) are shown as-is. Raw database
+ * failures (ADS_DB_ERROR), network TypeErrors and anything else get the
+ * generic text.
+ */
+function errorMessage(err: unknown): string {
+  if (err instanceof Error && err.name === 'Error' && err.message.trim()) return err.message;
+  return GENERIC_ERROR;
+}
 
 type Editing = { kind: AdsItemKind; id: string } | null;
 
@@ -75,8 +87,8 @@ const AdsLibraryInner: React.FC<AdsLibraryProps> = ({ activeTeammate, selectedBr
       await fn();
       if (success) showToast(success);
       return true;
-    } catch {
-      showToast(GENERIC_ERROR);
+    } catch (err) {
+      showToast(errorMessage(err));
       return false;
     }
   };
@@ -109,8 +121,8 @@ const AdsLibraryInner: React.FC<AdsLibraryProps> = ({ activeTeammate, selectedBr
     if (!ok) return;
     try {
       afterDelete(await ads.deleteCreative(id));
-    } catch {
-      showToast(GENERIC_ERROR);
+    } catch (err) {
+      showToast(errorMessage(err));
     }
   };
 
@@ -141,15 +153,16 @@ const AdsLibraryInner: React.FC<AdsLibraryProps> = ({ activeTeammate, selectedBr
 
   const onUploaded = async (setId: string, items: { name: string; files: import('../types').AdFile[] }[]) => {
     let added = 0;
+    let failure: unknown = null;
     for (const it of items) {
       try {
         await ads.addCreative({ setId, name: it.name, files: it.files });
         added++;
-      } catch {
-        // counted below; surfaced as a toast once
+      } catch (err) {
+        failure = err; // surfaced as a toast once
       }
     }
-    if (added < items.length) showToast(GENERIC_ERROR);
+    if (added < items.length) showToast(errorMessage(failure));
     if (added > 0) showToast(`Added ${added} ad${added === 1 ? '' : 's'}`);
   };
 
@@ -162,10 +175,11 @@ const AdsLibraryInner: React.FC<AdsLibraryProps> = ({ activeTeammate, selectedBr
     ? openSetId
     : ads.sets.some((s) => s.id === UNSORTED_ID) ? UNSORTED_ID : ads.sets[0]?.id ?? UNSORTED_ID;
 
+  const programOptions = useMemo(() => ads.programs.map((p) => ({ id: p.id, name: p.name })), [ads.programs]);
   const folderShared = {
     audiences: ads.audiences,
     brands: brandOptions.filter((b) => b.id !== 'shared'),
-    programs: ads.programs.map((p) => ({ id: p.id, name: p.name })),
+    programs: programOptions,
     canManageAudiences: isAdmin,
     onAddAudience: ads.addAudience,
   };
@@ -259,6 +273,7 @@ const AdsLibraryInner: React.FC<AdsLibraryProps> = ({ activeTeammate, selectedBr
         <AdsCreativeModal
           creative={editCreative}
           sets={ads.sets}
+          programs={programOptions}
           onClose={() => setEditing(null)}
           onSave={async ({ setId, ...rest }) => {
             const ok = await attempt(async () => {
@@ -293,8 +308,8 @@ const AdsLibraryInner: React.FC<AdsLibraryProps> = ({ activeTeammate, selectedBr
                   ? await ads.deleteProgram(deleting.id, mode)
                   : await ads.deleteSet(deleting.id, mode)
               );
-            } catch {
-              showToast(GENERIC_ERROR);
+            } catch (err) {
+              showToast(errorMessage(err));
             }
             setDeleting(null);
           }}
@@ -303,6 +318,7 @@ const AdsLibraryInner: React.FC<AdsLibraryProps> = ({ activeTeammate, selectedBr
       {uploading && (
         <AdsUploadPicker
           sets={ads.sets}
+          programs={programOptions}
           defaultSetId={uploadDefault}
           ensureSetFolder={ads.ensureSetFolder}
           onUploaded={(setId, items) => void onUploaded(setId, items)}

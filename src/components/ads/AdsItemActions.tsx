@@ -32,8 +32,13 @@ export const AdsItemActions: React.FC<AdsItemActionsProps> = ({
 }) => (
   <div className="flex flex-wrap items-center justify-end gap-1">
     {hidden && (
-      <span className="px-2 py-0.5 rounded-md bg-[#f4f4f3] text-[#5f5f5b] text-[10px] font-semibold">
-        Hidden from public page
+      // Icon-only chip on phones (the text stays available to screen readers); full text from sm.
+      <span
+        title="Hidden from public page"
+        className="inline-flex items-center gap-1 min-h-[24px] px-1.5 sm:px-2 py-0.5 rounded-md bg-[#f4f4f3] text-[#5f5f5b] text-[10px] font-semibold"
+      >
+        <span aria-hidden="true" className="material-symbols-outlined text-sm">visibility_off</span>
+        <span className="sr-only sm:not-sr-only">Hidden from public page</span>
       </span>
     )}
     <IconButton icon="share" label={`Share ${name}`} onClick={onShare} />

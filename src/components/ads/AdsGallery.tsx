@@ -41,11 +41,13 @@ const Heading: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 const FolderCard: React.FC<{
   icon: string; title: string; subtitle: string; onOpen: () => void; actions?: React.ReactNode;
 }> = ({ icon, title, subtitle, onOpen, actions }) => (
-  <div className="flex items-center gap-2 bg-white rounded-2xl border border-[#efefed] hover:border-[#c7c5f8] hover:shadow-md transition-all p-2">
+  // flex-wrap: when the title would get narrower than 12rem (phones, two-column
+  // tablets) the action row drops onto its own line under the title.
+  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 bg-white rounded-2xl border border-[#efefed] hover:border-[#c7c5f8] hover:shadow-md transition-all p-2">
     <button
       type="button"
       onClick={onOpen}
-      className="flex items-center gap-3 flex-1 min-w-0 min-h-[56px] px-2 text-left cursor-pointer"
+      className="flex items-center gap-3 grow basis-48 min-w-0 min-h-[56px] px-2 text-left cursor-pointer"
     >
       <span className="w-10 h-10 shrink-0 rounded-xl bg-[#eef2ff] text-[#4f46e5] flex items-center justify-center">
         <Icon name={icon} />
@@ -55,7 +57,7 @@ const FolderCard: React.FC<{
         <span className="block text-xs text-[#5f5f5b] truncate">{subtitle}</span>
       </span>
     </button>
-    {actions && <div className="flex items-center gap-1 shrink-0">{actions}</div>}
+    {actions && <div className="flex items-center justify-end gap-1 ml-auto max-w-full">{actions}</div>}
   </div>
 );
 
@@ -114,18 +116,18 @@ const CreativeCard: React.FC<{
           </label>
         )}
       </div>
-      <div className="flex items-center gap-2 p-3 min-w-0">
+      <div className="flex flex-wrap items-center gap-2 p-3 min-w-0">
         {onOpen ? (
           <button
             type="button"
             onClick={onOpen}
-            className="flex-1 min-w-0 min-h-[38px] text-left text-sm font-bold text-[#1b1c1a] truncate cursor-pointer"
+            className="grow basis-32 min-w-0 min-h-[38px] text-left text-sm font-bold text-[#1b1c1a] truncate cursor-pointer"
             title={creative.name}
           >
             {creative.name}
           </button>
         ) : (
-          <span className="flex-1 min-w-0 text-sm font-bold text-[#1b1c1a] truncate" title={creative.name}>
+          <span className="grow basis-32 min-w-0 text-sm font-bold text-[#1b1c1a] truncate" title={creative.name}>
             {creative.name}
           </span>
         )}
@@ -289,7 +291,7 @@ export const AdsGallery: React.FC<AdsGalleryProps> = ({
           <button
             type="button"
             onClick={downloadSelected}
-            title="Your browser may ask to allow multiple downloads."
+            title="Your browser may ask to allow multiple downloads. Large videos open in a new tab."
             className="min-h-[44px] px-5 rounded-xl bg-[#4f46e5] hover:bg-[#4338ca] text-white text-xs font-bold shadow-lg flex items-center gap-2 cursor-pointer"
           >
             <Icon name="download" className="text-base" />

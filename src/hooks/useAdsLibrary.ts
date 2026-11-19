@@ -35,6 +35,9 @@ interface Data {
   shareLinks: AdShareLink[];
 }
 
+/** Realtime events arrive in bursts (one per row written); refresh once they settle. */
+export const REFRESH_DEBOUNCE_MS = 300;
+
 const newId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 const nowIso = () => new Date().toISOString();
 
@@ -44,18 +47,45 @@ export function useAdsLibrary(activeUserName: string) {
   // Mutations read the latest data synchronously through the ref.
   const ref = useRef<Data>(data);
   const folderJobs = useRef<Map<string, Promise<string>>>(new Map());
+  // Stale-refresh guards: a refresh only applies if no newer refresh started and
+  // no local write landed while it was in flight.
+  const refreshSeq = useRef(0);
+  const writeSeq = useRef(0);
+  const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const commit = useCallback((patch: Partial<Data>) => {
+  const apply = useCallback((patch: Partial<Data>) => {
     ref.current = { ...ref.current, ...patch };
     setData(ref.current);
   }, []);
 
+  /** Local mutation result: applied now, and invalidates any refresh in flight. */
+  const commit = useCallback((patch: Partial<Data>) => {
+    writeSeq.current++;
+    apply(patch);
+  }, [apply]);
+
+  const scheduleRefresh = useCallback(() => {
+    if (refreshTimer.current) clearTimeout(refreshTimer.current);
+    refreshTimer.current = setTimeout(() => {
+      refreshTimer.current = null;
+      void refreshRef.current();
+    }, REFRESH_DEBOUNCE_MS);
+  }, []);
+
   const refresh = useCallback(async () => {
+    const mine = ++refreshSeq.current;
+    const writesAtStart = writeSeq.current;
     const [snap, audiences, links] = await Promise.all([
       fetchAdsSnapshot().catch(() => null),
       fetchAdAudiences().catch(() => null),
       fetchShareLinks().catch(() => null),
     ]);
+    if (mine !== refreshSeq.current) return; // a newer refresh will apply
+    if (writeSeq.current !== writesAtStart) {
+      // Fetched before a local write landed: it may be missing it. Fetch again.
+      scheduleRefresh();
+      return;
+    }
     const patch: Partial<Data> = {};
     if (snap) {
       patch.programs = snap.programs;
@@ -64,17 +94,21 @@ export function useAdsLibrary(activeUserName: string) {
     }
     if (audiences) patch.audiences = audiences;
     if (links) patch.shareLinks = links;
-    commit(patch);
+    apply(patch);
     setLoading(false);
-  }, [commit]);
+  }, [apply, scheduleRefresh]);
+  const refreshRef = useRef(refresh);
+  refreshRef.current = refresh;
 
   useEffect(() => {
-    refresh();
-    const unsub = subscribeAdsChanges(() => {
-      refresh();
-    });
-    return () => unsub();
-  }, [refresh]);
+    void refresh();
+    const unsub = subscribeAdsChanges(scheduleRefresh);
+    return () => {
+      unsub();
+      if (refreshTimer.current) clearTimeout(refreshTimer.current);
+      refreshTimer.current = null;
+    };
+  }, [refresh, scheduleRefresh]);
 
   const getProgram = (id: string) => ref.current.programs.find((p) => p.id === id);
   const getSet = (id: string) => ref.current.sets.find((s) => s.id === id);

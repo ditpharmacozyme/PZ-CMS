@@ -28,7 +28,7 @@ vi.mock('../utils/adsDrive', () => ({
 
 import * as storage from '../utils/adsStorage';
 import * as drive from '../utils/adsDrive';
-import { useAdsLibrary } from './useAdsLibrary';
+import { useAdsLibrary, REFRESH_DEBOUNCE_MS } from './useAdsLibrary';
 
 const ts = '2026-01-01T00:00:00Z';
 const program: AdProgram = { id: 'p1', name: 'Prog', brandId: 'b', kind: 'course', driveFolderId: 'fP', hidden: false, createdBy: 'x', createdAt: ts, updatedAt: ts };
@@ -270,6 +270,28 @@ describe('useAdsLibrary', () => {
     expect(storage.upsertRemoteShareLink).toHaveBeenCalled();
   });
 
+  it('revokeShareLink rejects and keeps the link live when the write fails', async () => {
+    const { result } = await setup();
+    let link: AdShareLink | undefined;
+    await act(async () => {
+      link = await result.current.createShareLink('set', 's1', 'L');
+    });
+    vi.mocked(storage.upsertRemoteShareLink).mockRejectedValueOnce(new Error('denied'));
+    await act(async () => {
+      await expect(result.current.revokeShareLink(link!.token)).rejects.toThrow('denied');
+    });
+    expect(result.current.shareLinks.find((l) => l.token === link!.token)!.revokedAt).toBeNull();
+  });
+
+  it('createShareLink rejects and adds nothing when the write fails', async () => {
+    const { result } = await setup();
+    vi.mocked(storage.upsertRemoteShareLink).mockRejectedValueOnce(new Error('denied'));
+    await act(async () => {
+      await expect(result.current.createShareLink('set', 's1', 'L')).rejects.toThrow('denied');
+    });
+    expect(result.current.shareLinks).toHaveLength(0);
+  });
+
   it('two addCreative calls with the same name produce two rows', async () => {
     const { result } = await setup();
     const files = [{ driveFileId: 'z', name: 'z.png', mimeType: 'image/png', sizeBytes: 1 }];
@@ -278,5 +300,81 @@ describe('useAdsLibrary', () => {
       await result.current.addCreative({ setId: 's1', name: 'Same', files });
     });
     expect(result.current.creatives.filter((c) => c.name === 'Same')).toHaveLength(2);
+  });
+
+  describe('realtime refresh', () => {
+    const realtime = () => vi.mocked(storage.subscribeAdsChanges).mock.calls[0][0] as () => void;
+
+    it('debounces a burst of realtime events into one refresh', async () => {
+      await setup();
+      expect(storage.fetchAdsSnapshot).toHaveBeenCalledTimes(1);
+      vi.useFakeTimers();
+      try {
+        const fire = realtime();
+        for (let i = 0; i < 45; i++) fire();
+        await vi.advanceTimersByTimeAsync(REFRESH_DEBOUNCE_MS - 1);
+        expect(storage.fetchAdsSnapshot).toHaveBeenCalledTimes(1);
+        await vi.advanceTimersByTimeAsync(1);
+        expect(storage.fetchAdsSnapshot).toHaveBeenCalledTimes(2);
+        expect(storage.fetchAdAudiences).toHaveBeenCalledTimes(2);
+        expect(storage.fetchShareLinks).toHaveBeenCalledTimes(2);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('a stale refresh never overwrites a newer local write', async () => {
+      const { result } = await setup();
+      const before = await vi.mocked(storage.fetchAdsSnapshot).mock.results[0].value;
+      let release!: (v: unknown) => void;
+      vi.mocked(storage.fetchAdsSnapshot).mockImplementationOnce(() => new Promise((r) => { release = r as (v: unknown) => void; }));
+      vi.useFakeTimers();
+      try {
+        realtime()();
+        await vi.advanceTimersByTimeAsync(REFRESH_DEBOUNCE_MS);
+        expect(storage.fetchAdsSnapshot).toHaveBeenCalledTimes(2);
+        await act(async () => {
+          await result.current.updateCreative('c1', { name: 'Renamed' });
+        });
+        await act(async () => {
+          release(before);
+          await vi.advanceTimersByTimeAsync(0);
+        });
+        expect(result.current.creatives.find((c) => c.id === 'c1')!.name).toBe('Renamed');
+        // The dropped refresh asks for a fresh one.
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(REFRESH_DEBOUNCE_MS);
+        });
+        expect(storage.fetchAdsSnapshot).toHaveBeenCalledTimes(3);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('an older refresh that resolves after a newer one is ignored', async () => {
+      const { result } = await setup();
+      const snap = await vi.mocked(storage.fetchAdsSnapshot).mock.results[0].value;
+      let releaseOld!: (v: unknown) => void;
+      vi.mocked(storage.fetchAdsSnapshot)
+        .mockImplementationOnce(() => new Promise((r) => { releaseOld = r as (v: unknown) => void; }))
+        .mockResolvedValueOnce({ ...snap, programs: [{ ...program, name: 'New name' }] });
+      vi.useFakeTimers();
+      try {
+        realtime()();
+        await vi.advanceTimersByTimeAsync(REFRESH_DEBOUNCE_MS);
+        realtime()();
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(REFRESH_DEBOUNCE_MS);
+        });
+        expect(result.current.programs[0].name).toBe('New name');
+        await act(async () => {
+          releaseOld({ ...snap, programs: [{ ...program, name: 'Old name' }] });
+          await vi.advanceTimersByTimeAsync(0);
+        });
+        expect(result.current.programs[0].name).toBe('New name');
+      } finally {
+        vi.useRealTimers();
+      }
+    });
   });
 });
